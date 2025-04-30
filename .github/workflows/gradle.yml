@@ -37,7 +37,7 @@ jobs:
   #      echo "${{ secrets.APPLICATION_MAIL_YML }}" | base64 --decode > backend/src/main/resources/application-mail.yml
         
     - name: Gradle build
-      run:
+      run: |
         cd backend
         mkdir -p build/generated-snippets/
         chmod +x gradlew
