@@ -38,7 +38,7 @@ jobs:
         
     - name: Gradle build
       run: |
-        cd backend
+        cd api-server
         mkdir -p build/generated-snippets/
         chmod +x gradlew
         ./gradlew build
