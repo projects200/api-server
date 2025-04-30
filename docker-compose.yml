@@ -1,0 +1,15 @@
+version: "3"
+
+services:
+  server-main:
+    image: "825773631552.dkr.ecr.ap-northeast-2.amazonaws.com/undabang-repository"
+    restart: always
+    container_name: "server-main"
+    ports:
+      - "8080:8080"
+    networks:
+      - server-network
+
+networks:
+  server-network:
+    driver: bridge
