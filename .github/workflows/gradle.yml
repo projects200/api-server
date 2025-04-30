@@ -40,7 +40,7 @@ jobs:
 
     - name: Build Gradle
       run: |
-        # cd server
+        #cd server
         mkdir -p src/main/resources/
         # echo ${{ secrets.APPLICATION_PROD_YML }} | base64 -d > src/main/resources/application-prod.yml
         chmod +x gradlew
@@ -78,7 +78,7 @@ jobs:
     - name: Upload build file to S3 and trigger CodeDeploy
       if: ${{ github.ref == 'refs/heads/main' }}
       run: |
-        cd server
+        #cd server
         mkdir -p deploy && cp -r deploy-main/* deploy/
         zip -r deploy.zip deploy
 
