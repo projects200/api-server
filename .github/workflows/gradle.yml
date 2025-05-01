@@ -73,8 +73,8 @@ jobs:
         docker build -t server-main .
         rm *.jar
         # docker tag $REPOSITORY:$IMAGE_TAG $REGISTRY/$REPOSITORY:$IMAGE_TAG
-        docker tag server-main $REGISTRY/$REPOSITORY:$IMAGE_TAG
-        docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+        docker tag server-main $REGISTRY:$IMAGE_TAG
+        docker push $REGISTRY:$IMAGE_TAG
 
 
     - name: Upload build file to S3 and trigger CodeDeploy
