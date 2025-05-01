@@ -68,7 +68,7 @@ jobs:
         mkdir -p deploy-main
          #cd server
         cp build/libs/*.jar deploy-main/
-        cp Dockerfile deploy-main/
+        cp src/Dockerfile deploy-main/
         cd deploy-main
         docker build -t server-main .
         rm *.jar
