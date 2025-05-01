@@ -83,6 +83,11 @@ jobs:
       run: |
         #cd server
         mkdir -p deploy && cp -r deploy-main/* deploy/
+        cp appspec.yml deploy/
+        cp docker-compose.yml deploy/
+        mkdir -p deploy/scripts
+        cp scripts/deploy.sh deploy/scripts/
+        
         zip -r deploy.zip deploy
 
         aws s3 cp deploy.zip s3://${{ secrets.AWS_S3_DEV_BUCKET_NAME }}/deploy.zip
