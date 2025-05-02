@@ -1,0 +1,15 @@
+version: "3"
+
+services:
+  server-prod:
+    image: "825773631552.dkr.ecr.ap-northeast-2.amazonaws.com/undabang/dev-server-repository:latest"
+    restart: always
+    container_name: "server-prod"
+    ports:
+      - "8081:8080"
+    networks:
+      - server-network
+
+networks:
+  server-network:
+    driver: bridge

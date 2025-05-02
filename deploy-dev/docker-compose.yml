@@ -1,10 +1,10 @@
 version: "3"
 
 services:
-  server-main:
-    image: "825773631552.dkr.ecr.ap-northeast-2.amazonaws.com/undabang-repository"
+  server-dev:
+    image: "825773631552.dkr.ecr.ap-northeast-2.amazonaws.com/undabang/dev-server-repository:latest"
     restart: always
-    container_name: "server-main"
+    container_name: "server-dev"
     ports:
       - "8080:8080"
     networks:
