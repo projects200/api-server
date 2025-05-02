@@ -38,7 +38,7 @@ jobs:
 
       - name: Configure AWS credentials
         if: ${{ github.ref == 'refs/heads/develop'}}
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -48,7 +48,7 @@ jobs:
         if: ${{ github.ref == 'refs/heads/develop' }}
         env:
           REGISTRY: 825773631552.dkr.ecr.ap-northeast-2.amazonaws.com
-          REPOSITORY: dev-server-repository
+          REPOSITORY: undabang/dev-server-repository
           IMAGE_TAG: latest
         run: |
           aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin $REGISTRY
