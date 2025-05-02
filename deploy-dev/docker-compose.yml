@@ -6,7 +6,7 @@ services:
     restart: always
     container_name: "server-dev"
     ports:
-      - "8080:8080"
+      - "8090:8080"
     networks:
       - server-network
 
