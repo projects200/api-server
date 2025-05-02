@@ -54,7 +54,7 @@ jobs:
           aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin $REGISTRY
           cp build/libs/*.jar deploy-dev/
           cd deploy-dev
-          docker build -t server-dev .
+          docker build -t $REPOSITORY .
           rm *.jar
           docker tag $REPOSITORY:$IMAGE_TAG $REGISTRY/$REPOSITORY:$IMAGE_TAG
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
