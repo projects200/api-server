@@ -1,0 +1,75 @@
+name: DEV SERVER CI/CD
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+jobs:
+  backend-CI:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "corretto"
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Build Gradle
+        run: |
+          mkdir -p src/main/resources/
+          echo ${{ secrets.APPLICATION_DEV_YML }} | base64 -d > src/main/resources/application-dev.yml
+          chmod +x gradlew
+          ./gradlew build
+        shell: bash
+
+      - name: Configure AWS credentials
+        if: ${{ github.ref == 'refs/heads/develop'}}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Build and push image to Amazon ECR
+        if: ${{ github.ref == 'refs/heads/develop' }}
+        env:
+          REGISTRY: 825773631552.dkr.ecr.ap-northeast-2.amazonaws.com
+          REPOSITORY: undabang/dev-server-repository
+          IMAGE_TAG: latest
+        run: |
+          aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin $REGISTRY
+          cp build/libs/*.jar deploy-dev/
+          cd deploy-dev
+          docker build -t $REPOSITORY .
+          rm *.jar
+          docker tag $REPOSITORY:$IMAGE_TAG $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+      - name: Upload build file to S3 and trigger CodeDeploy
+        if: ${{ github.ref == 'refs/heads/develop' }}
+        run: |
+          mkdir -p deploy && cp -r deploy-dev/* deploy/
+          zip -r deploy.zip deploy
+
+          aws s3 cp deploy.zip s3://${{ secrets.AWS_S3_DEPLOY_DEV_BUCKET_NAME }}/deploy.zip
+
+          aws deploy create-deployment \
+          --application-name ${{ secrets.AWS_CODEDEPLOY_DEV_APP_NAME }} \
+          --deployment-config-name CodeDeployDefault.AllAtOnce \
+          --deployment-group-name ${{ secrets.AWS_CODEDEPLOY_DEV_GROUP_NAME }} \
+          --file-exists-behavior OVERWRITE \
+          --s3-location bucket=${{ secrets.AWS_S3_DEPLOY_DEV_BUCKET_NAME }},bundleType=zip,key=deploy.zip
