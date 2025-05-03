@@ -31,7 +31,7 @@ jobs:
       - name: Build Gradle
         run: |
           mkdir -p src/main/resources/
-          echo ${{ secrets.APPLICATION_DEV_YML }} | base64 -d > src/main/resources/application-dev.yml
+          echo "${{ secrets.APPLICATION_DEV_YML }}" | base64 -d > src/main/resources/application-dev.yml
           chmod +x gradlew
           ./gradlew build
         shell: bash
