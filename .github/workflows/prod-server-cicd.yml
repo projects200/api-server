@@ -62,7 +62,7 @@ jobs:
       - name: Upload build file to S3 and trigger CodeDeploy
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
-          mkdir -p deploy && cp -r deploy-main/* deploy/
+          mkdir -p deploy && cp -r deploy-prod/* deploy/
           zip -r deploy.zip deploy
 
           aws s3 cp deploy.zip s3://${{ secrets.AWS_S3_DEPLOY_PROD_BUCKET_NAME }}/deploy.zip
