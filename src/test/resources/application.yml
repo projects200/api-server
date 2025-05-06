@@ -31,6 +31,6 @@ spring:
 
 logging:
   level:
-    store.undabang: debug
+    com.project200.undabang: debug
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace
