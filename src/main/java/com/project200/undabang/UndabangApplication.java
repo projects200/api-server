@@ -1,4 +1,4 @@
-package store.undabang.undabang;
+package com.project200.undabang;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
