@@ -25,7 +25,7 @@ public class Member {
     private String memberId;
 
     @Size(max = 320)
-    @Column(name = "member_email", length = 320)
+    @Column(name = "member_email", length = 320, unique = true)
     private String memberEmail;
 
     @Comment("M: 남 / F: 여 / U: 비공개")
@@ -37,7 +37,7 @@ public class Member {
 
     @Size(max = 50)
     @NotNull
-    @Column(name = "member_nickname", nullable = false, length = 50)
+    @Column(name = "member_nickname", nullable = false, length = 50, unique = true)
     private String memberNickname;
 
     @Size(max = 500)
