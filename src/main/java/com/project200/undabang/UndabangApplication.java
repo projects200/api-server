@@ -25,11 +25,13 @@ public class UndabangApplication {
             // 토큰이 존재할 경우
             Map<String, String> response = new HashMap<>();
             response.put("message", "Authorized");
+            response.put("AUTH INPUT HEADER come", "Congrats!");
             return ResponseEntity.ok(response);
         } else {
             // 토큰이 없을 경우
             Map<String, String> response = new HashMap<>();
             response.put("error", "Unauthorized");
+            response.put("AUTH INPUT Didn't come", "OOPS!");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
     }
@@ -38,6 +40,7 @@ public class UndabangApplication {
     public ResponseEntity<Map<String, String>> testOpenEndpoint() {
         Map<String, String> map = new HashMap<>();
         map.put("opened", "url");
+        map.put("no token", "url");
         return ResponseEntity.ok().body(map);
     }
 
@@ -46,6 +49,7 @@ public class UndabangApplication {
         // 토큰이 존재할 경우
         Map<String, String> response = new HashMap<>();
         response.put("message", "Authorized");
+        response.put("이 메시지는 https://www.undabang.store", "/user - id token");
         return ResponseEntity.ok(response);
     }
 }
