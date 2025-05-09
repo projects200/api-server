@@ -113,9 +113,9 @@ create table exercises
     member_id              char(36)                                                 not null,
     exercise_started_at    datetime default CURRENT_TIMESTAMP                       not null,
     exercise_ended_at      datetime default (exercise_started_at + interval 1 hour) not null,
-    exercise_detail        text                                                     not null,
+    exercise_detail        text                                                     null,
     exercise_title         varchar(255)                                             not null,
-    exercise_personal_type varchar(255)                                             not null comment '시스템이 아닌 개인 등록',
+    exercise_personal_type varchar(255)                                             null comment '시스템이 아닌 개인 등록',
     exercise_created_at    datetime default CURRENT_TIMESTAMP                       not null,
     exercise_deleted_at    datetime                                                 null,
     constraint FK_ex_member

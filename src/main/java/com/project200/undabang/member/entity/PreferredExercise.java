@@ -1,6 +1,6 @@
 package com.project200.undabang.member.entity;
 
-import com.project200.undabang.excercise.entity.ExerciseType;
+import com.project200.undabang.exercise.entity.ExerciseType;
 import com.project200.undabang.member.enums.ExerciseSkillLevel;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;

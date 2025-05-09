@@ -1,4 +1,4 @@
-package com.project200.undabang.excercise.entity;
+package com.project200.undabang.exercise.entity;
 
 import com.project200.undabang.member.entity.Member;
 import jakarta.persistence.*;
@@ -34,9 +34,8 @@ public class Exercise {
     @Column(name = "exercise_ended_at", nullable = false)
     private LocalDateTime exerciseEndedAt = LocalDateTime.now().plusHours(1);
 
-    @NotNull
     @Lob
-    @Column(name = "exercise_detail", nullable = false, columnDefinition = "text")
+    @Column(name = "exercise_detail", columnDefinition = "text")
     private String exerciseDetail;
 
     @Size(max = 255)
@@ -45,9 +44,8 @@ public class Exercise {
     private String exerciseTitle;
 
     @Size(max = 255)
-    @NotNull
     @org.hibernate.annotations.Comment("시스템이 아닌 개인 등록")
-    @Column(name = "exercise_personal_type", nullable = false)
+    @Column(name = "exercise_personal_type")
     private String exercisePersonalType;
 
     @NotNull

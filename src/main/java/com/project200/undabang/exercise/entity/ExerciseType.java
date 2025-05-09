@@ -1,4 +1,4 @@
-package com.project200.undabang.excercise.entity;
+package com.project200.undabang.exercise.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

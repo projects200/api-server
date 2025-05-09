@@ -1,4 +1,4 @@
-package com.project200.undabang.excercise.entity;
+package com.project200.undabang.exercise.entity;
 
 import com.project200.undabang.common.entity.Picture;
 import jakarta.persistence.*;
