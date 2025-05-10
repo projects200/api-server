@@ -2,7 +2,7 @@ package com.project200.undabang;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -20,20 +20,14 @@ public class UndabangApplication {
     }
 
     @GetMapping("/")
-    public ResponseEntity<Map<String, String>> testEndpoint(@RequestHeader(value = "Authorization", required = false) String authHeader) {
-        if (authHeader != null && !authHeader.isBlank()) {
-            // 토큰이 존재할 경우
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Authorized");
-            response.put("AUTH INPUT HEADER come", "Congrats!");
-            return ResponseEntity.ok(response);
-        } else {
-            // 토큰이 없을 경우
-            Map<String, String> response = new HashMap<>();
-            response.put("error", "Unauthorized");
-            response.put("AUTH INPUT Didn't come", "OOPS!");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-        }
+    public ResponseEntity<Map<String, String>> testEndpoint(@RequestHeader HttpHeaders headers) {
+        Map<String, String> headersMap = new HashMap<>();
+
+        headers.forEach((key, value) -> headersMap.put(key, value.getFirst()));
+
+        return ResponseEntity.ok(headersMap);
+
+
     }
 
     @GetMapping("/open")
