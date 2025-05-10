@@ -1,0 +1,28 @@
+package com.project200.undabang.post.entity;
+
+import com.project200.undabang.common.entity.Picture;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+@Entity
+@Table(name = "post_pictures")
+public class PostPicture {
+    @Id
+    @Column(name = "picture_id", nullable = false)
+    private Long id;
+
+    @MapsId
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "picture_id", nullable = false)
+    private Picture pictures;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "post_id", nullable = false)
+    private Post post;
+
+}

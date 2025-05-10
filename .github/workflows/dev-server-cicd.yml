@@ -36,6 +36,7 @@ jobs:
           ./gradlew build
         shell: bash
 
+
       - name: Configure AWS credentials
         if: ${{ github.ref == 'refs/heads/develop'}}
         uses: aws-actions/configure-aws-credentials@v4
