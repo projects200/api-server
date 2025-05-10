@@ -45,11 +45,12 @@ public class UndabangApplication {
     }
 
     @GetMapping("/user")
-    public ResponseEntity<Map<String, String>> testUserEndPoint(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+    public ResponseEntity<Map<String, String>> testUserEndPoint(@RequestHeader(value = "X-USER-ID", required = false) String userId) {
         // 토큰이 존재할 경우
         Map<String, String> response = new HashMap<>();
         response.put("message", "Authorized");
         response.put("이 메시지는 https://www.undabang.store", "/user - id token");
+        response.put("X-USER-ID : ", userId);
         return ResponseEntity.ok(response);
     }
 }
