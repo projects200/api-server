@@ -18,7 +18,8 @@ import java.time.LocalDateTime;
 @Table(name = "reports")
 public class Report {
     @Id
-    @Column(name = "report_id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "report_id", nullable = false, updatable = false)
     private Long id;
 
     @Size(max = 500)
@@ -27,7 +28,7 @@ public class Report {
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "report_datetime", nullable = false)
+    @Column(name = "report_datetime", nullable = false, updatable = false)
     private LocalDateTime reportDatetime = LocalDateTime.now();
 
     @Enumerated(EnumType.STRING)

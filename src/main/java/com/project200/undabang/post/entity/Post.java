@@ -15,17 +15,18 @@ import java.time.LocalDateTime;
 @Table(name = "posts")
 public class Post {
     @Id
-    @Column(name = "post_id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "post_id", nullable = false, updatable = false)
     private Long id;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "member_id", nullable = false)
+    @JoinColumn(name = "member_id", nullable = false, updatable = false)
     private Member member;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "post_type_id", nullable = false)
+    @JoinColumn(name = "post_type_id", nullable = false, updatable = false)
     private PostType postType;
 
     @NotNull
@@ -40,7 +41,7 @@ public class Post {
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "post_created_at", nullable = false)
+    @Column(name = "post_created_at", nullable = false, updatable = false)
     private LocalDateTime postCreatedAt = LocalDateTime.now();
 
     @Column(name = "post_deleted_at")

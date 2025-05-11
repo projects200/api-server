@@ -1,9 +1,6 @@
 package com.project200.undabang.member.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -13,6 +10,7 @@ import org.hibernate.annotations.Comment;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -21,8 +19,9 @@ import java.time.LocalDateTime;
 public class Member {
     @Id
     @Size(max = 36)
-    @Column(name = "member_id", nullable = false, length = 36, columnDefinition = "char(36)")
-    private String memberId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "member_id", nullable = false, updatable = false, length = 36, columnDefinition = "char(36)")
+    private UUID memberId;
 
     @Size(max = 320)
     @Column(name = "member_email", length = 320, unique = true)
@@ -57,7 +56,7 @@ public class Member {
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "member_created_at", nullable = false)
+    @Column(name = "member_created_at", nullable = false, updatable = false)
     private LocalDateTime memberCreatedAt = LocalDateTime.now();
 
     @Comment("탈퇴 시 삭제 일시 기록")

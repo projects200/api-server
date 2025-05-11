@@ -26,7 +26,7 @@ public class MemberPicture {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "member_id", nullable = false)
+    @JoinColumn(name = "member_id", nullable = false, updatable = false)
     private Member member;
 
     @Size(max = 255)
@@ -43,7 +43,7 @@ public class MemberPicture {
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "member_pictures_created_at", nullable = false)
+    @Column(name = "member_pictures_created_at", nullable = false, updatable = false)
     private LocalDateTime memberPicturesCreatedAt = LocalDateTime.now();
 
     @Column(name = "member_pictures_deleted_at")

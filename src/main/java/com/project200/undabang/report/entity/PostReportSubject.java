@@ -1,9 +1,6 @@
 package com.project200.undabang.report.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -15,7 +12,8 @@ import lombok.Setter;
 @Table(name = "post_report_subjects")
 public class PostReportSubject {
     @Id
-    @Column(name = "post_report_subject_id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "post_report_subject_id", nullable = false, updatable = false)
     private Long id;
 
     @Size(max = 255)

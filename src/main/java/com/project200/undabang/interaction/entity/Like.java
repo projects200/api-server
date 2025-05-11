@@ -16,22 +16,23 @@ import java.time.LocalDateTime;
 @Table(name = "likes")
 public class Like {
     @Id
-    @Column(name = "like_id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "like_id", nullable = false, updatable = false)
     private Long id;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "member_id", nullable = false)
+    @JoinColumn(name = "member_id", nullable = false, updatable = false)
     private Member member;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "post_id", nullable = false)
+    @JoinColumn(name = "post_id", nullable = false, updatable = false)
     private Post post;
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "like_created_at", nullable = false)
+    @Column(name = "like_created_at", nullable = false, updatable = false)
     private LocalDateTime likeCreatedAt = LocalDateTime.now();
 
     @Column(name = "like_canceled_at")

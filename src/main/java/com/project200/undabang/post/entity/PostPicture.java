@@ -12,17 +12,17 @@ import lombok.Setter;
 @Table(name = "post_pictures")
 public class PostPicture {
     @Id
-    @Column(name = "picture_id", nullable = false)
+    @Column(name = "picture_id", nullable = false, updatable = false)
     private Long id;
 
     @MapsId
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "picture_id", nullable = false)
+    @JoinColumn(name = "picture_id", nullable = false, updatable = false)
     private Picture pictures;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "post_id", nullable = false)
+    @JoinColumn(name = "post_id", nullable = false, updatable = false)
     private Post post;
 
 }

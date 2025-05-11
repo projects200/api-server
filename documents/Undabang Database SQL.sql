@@ -59,6 +59,7 @@ create table members
     member_warned_count tinyint  default 0                 not null comment '관리자 처리 신고 누적',
     member_created_at   datetime default CURRENT_TIMESTAMP not null,
     member_deleted_at   datetime                           null comment '탈퇴 시 삭제 일시 기록',
+    constraint check_member_gender check (member_gender in ('M', 'F', 'U')),
     constraint member_email
         unique (member_email),
     constraint member_nickname
