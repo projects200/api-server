@@ -1,7 +1,9 @@
 package com.project200.undabang.member.dto.request;
 
-import jakarta.validation.constraints.Email;
+import com.project200.undabang.member.enums.MemberGender;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,13 +14,14 @@ import java.time.LocalDate;
 @Getter@Setter
 @NoArgsConstructor
 public class SignUpRequestDto {
-    private String userId;
-    @Email
-    private String userEmail;
-    @NotBlank
-    @Size(min = 1, max = 1)
-    private String memberGender;
+    @NotNull(message = "성별을 올바르게 입력하세요")
+    private MemberGender memberGender;
+
+    @NotNull (message = "생일을 입력하세요")
     private LocalDate memberBday;
-    @NotBlank
+
+    @NotBlank (message = "닉네임을 설정해주세요")
+    @Size(min=1, max = 12, message = "닉네임은 12자 이내로 설정해주세요")
+    @Pattern(regexp = "^[가-힣a-zA-Z0-9]+$", message = "닉네임은 한글, 영문, 숫자만 사용 가능합니다")
     private String memberNickname;
 }
