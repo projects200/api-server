@@ -9,5 +9,4 @@ class UndabangApplicationTests {
 	@Test
 	void contextLoads() {
 	}
-
 }
