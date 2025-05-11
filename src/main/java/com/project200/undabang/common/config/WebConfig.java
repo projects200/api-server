@@ -1,5 +1,6 @@
 package com.project200.undabang.common.config;
 
+import com.project200.undabang.common.web.interceptor.XUserEmailCheckInterceptor;
 import com.project200.undabang.common.web.interceptor.XUserIdCheckInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,14 +25,22 @@ public class WebConfig implements WebMvcConfigurer {
         return new XUserIdCheckInterceptor();
     }
 
+    @Bean
+    public XUserEmailCheckInterceptor xUserEmailCheckInterceptor(){
+        return new XUserEmailCheckInterceptor();
+    }
+
+
     /**
      * 애플리케이션에서 사용할 인터셉터를 등록합니다.
      * XUserIdCheckInterceptor가 모든 경로 패턴에 적용됩니다.
      *
      * @param registry 인터셉터 레지스트리
      */
+
     @Override
     public void addInterceptors(final InterceptorRegistry registry) {
         registry.addInterceptor(xUserIdCheckInterceptor()).addPathPatterns("/**");
+        registry.addInterceptor(xUserEmailCheckInterceptor()).addPathPatterns("/auth/**");
     }
 }
