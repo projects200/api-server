@@ -1,9 +1,6 @@
 package com.project200.undabang.common.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -19,7 +16,8 @@ import java.time.LocalDateTime;
 @Table(name = "pictures")
 public class Picture {
     @Id
-    @Column(name = "picture_id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "picture_id", nullable = false, updatable = false)
     private Long id;
 
     @Size(max = 255)
@@ -40,7 +38,7 @@ public class Picture {
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "picture_created_at", nullable = false)
+    @Column(name = "picture_created_at", nullable = false, updatable = false)
     private LocalDateTime pictureCreatedAt = LocalDateTime.now();
 
     @Column(name = "picture_deleted_at")

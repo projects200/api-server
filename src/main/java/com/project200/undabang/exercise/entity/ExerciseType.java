@@ -1,9 +1,6 @@
 package com.project200.undabang.exercise.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -18,7 +15,8 @@ import java.time.LocalDateTime;
 @Table(name = "exercise_types")
 public class ExerciseType {
     @Id
-    @Column(name = "exercise_id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "exercise_id", nullable = false, updatable = false)
     private Long id;
 
     @Size(max = 50)
@@ -28,7 +26,7 @@ public class ExerciseType {
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "exercise_type_created_at", nullable = false)
+    @Column(name = "exercise_type_created_at", nullable = false, updatable = false)
     private LocalDateTime exerciseTypeCreatedAt = LocalDateTime.now();
 
     @Column(name = "exercise_type_deleted_at")

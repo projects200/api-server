@@ -56,7 +56,7 @@ public class Member {
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "member_created_at", nullable = false)
+    @Column(name = "member_created_at", nullable = false, updatable = false)
     private LocalDateTime memberCreatedAt = LocalDateTime.now();
 
     @Comment("탈퇴 시 삭제 일시 기록")
