@@ -1,8 +1,8 @@
 package com.project200.undabang.common.web.exception;
 
 public class CustomException extends RuntimeException {
-    private ErrorCode errorCode;
-    private String customMessage;
+    private final ErrorCode errorCode;
+    private final String customMessage;
 
     public CustomException(ErrorCode errorCode) {
         super(errorCode.getMessage());

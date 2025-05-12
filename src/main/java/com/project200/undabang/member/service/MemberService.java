@@ -4,7 +4,7 @@ import com.project200.undabang.member.dto.request.SignUpRequestDto;
 import com.project200.undabang.member.dto.response.SignUpResponseDto;
 
 public interface MemberService {
-    public boolean checkMemberEmail(String email);
-    public boolean checkMemberNickname(String nickname);
-    public SignUpResponseDto memberSignUp(SignUpRequestDto signUpRequestDto);
+    boolean checkMemberEmail(String email);
+    boolean checkMemberNickname(String nickname);
+    SignUpResponseDto memberSignUp(SignUpRequestDto signUpRequestDto);
 }
