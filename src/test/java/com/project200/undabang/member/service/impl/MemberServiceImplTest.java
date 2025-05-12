@@ -87,7 +87,7 @@ class MemberServiceImplTest {
 
     @Test
     @DisplayName("회원 가입 성공 테스트")
-    public void success_completeMemberProfileTest(){
+    public void success_memberSignUpTest(){
         // given
         SignUpRequestDto requestDto = new SignUpRequestDto();
         requestDto.setMemberNickname(TEST_NICKNAME);
@@ -96,24 +96,25 @@ class MemberServiceImplTest {
         Mockito.when(memberRepository.existsByMemberEmail(TEST_EMAIL)).thenReturn(false);
         Mockito.when(memberRepository.existsByMemberNickname(TEST_NICKNAME)).thenReturn(false);
 
-        Member member = new Member();
-        member.setMemberId(String.valueOf(TEST_UUID));
-        member.setMemberEmail(TEST_EMAIL);
-        member.setMemberNickname(TEST_NICKNAME);
-        member.setMemberGender(MemberGender.valueOf("M"));
-        member.setMemberScore((byte) 35);
-        member.setMemberBday(LocalDate.parse("2010-01-01"));
+        Member member = Member.builder()
+                .memberId(TEST_UUID)
+                .memberEmail(TEST_EMAIL)
+                .memberNickname(TEST_NICKNAME)
+                .memberGender(MemberGender.M)
+                .memberScore((byte) 35)
+                .memberBday(LocalDate.parse("2010-01-01"))
+                .build();
 
         Mockito.when(memberRepository.save(Mockito.any(Member.class))).thenReturn(member);
 
         //when
-        SignUpResponseDto result = memberService.completeMemberProfile(requestDto);
+        SignUpResponseDto result = memberService.memberSignUp(requestDto);
 
         //then
         // 특정 조건을 검증하기 위해 사용되며, 예상되는 결과와 실제 결과를 비교하여 테스트 수행
         // 단위테스트 / 통합 테스트에서 사용됨
         assertThat(result).isNotNull();
-        assertThat(result.getMemberId()).isEqualTo(TEST_UUID.toString());
+        assertThat(result.getMemberId()).isEqualTo(TEST_UUID);
         assertThat(result.getMemberEmail()).isEqualTo(TEST_EMAIL);
         assertThat(result.getMemberNickname()).isEqualTo(TEST_NICKNAME);
         assertThat(result.getMemberGender()).isEqualTo("남");

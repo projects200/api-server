@@ -33,8 +33,9 @@ public class MemberServiceImpl implements MemberService {
         return memberRepository.existsByMemberNickname(nickname);
     }
 
+    // 이름 변경
     @Override
-    public SignUpResponseDto completeMemberProfile(SignUpRequestDto signUpRequestDto){
+    public SignUpResponseDto memberSignUp(SignUpRequestDto signUpRequestDto){
         if(checkMemberEmail(UserContextHolder.getUserEmail())){
             throw new CustomException(ErrorCode.MEMBER_EMAIL_DUPLICATED);
         }
@@ -49,13 +50,14 @@ public class MemberServiceImpl implements MemberService {
             throw new CustomException(ErrorCode.MEMBER_GENDER_ERROR);
         }
 
-        Member member = new Member();
-        member.setMemberId(UserContextHolder.getUserId());
-        member.setMemberEmail(UserContextHolder.getUserEmail());
-        member.setMemberNickname(signUpRequestDto.getMemberNickname());
-        member.setMemberGender(memberGender);
-        member.setMemberScore((byte) 35);
-        member.setMemberBday(signUpRequestDto.getMemberBday());
+        Member member = Member.builder()
+                .memberId(UserContextHolder.getUserId())
+                .memberEmail(UserContextHolder.getUserEmail())
+                .memberNickname(signUpRequestDto.getMemberNickname())
+                .memberGender(memberGender)
+                .memberScore((byte) 35)
+                .memberBday(signUpRequestDto.getMemberBday())
+                .build();
 
         Member savedMember = memberRepository.save(member);
 

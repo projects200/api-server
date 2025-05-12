@@ -2,6 +2,7 @@ package com.project200.undabang.member.repository;
 
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.enums.MemberGender;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -10,27 +11,41 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DataJpaTest
 class MemberRepositoryTest {
+
     @Autowired
     MemberRepository memberRepository;
+
+    private UUID testUUID = UUID.randomUUID();
+
     @BeforeEach
     void setUp(){
-        Member member = new Member();
-        member.setMemberId("user1");
-        member.setMemberEmail("user@email.com");
-        member.setMemberNickname("유저닉네임");
-        member.setMemberGender(MemberGender.valueOf("M"));
-        member.setMemberBday(LocalDate.of(1990, 1, 1));
-        member.setMemberDesc("테스트 회원입니다.");
-        member.setMemberScore((byte) 0);
-        member.setMemberCreatedAt(LocalDateTime.now());
+;
+        Member member = Member.builder()
+                .memberId(testUUID)
+                .memberEmail("user@email.com")
+                .memberNickname("유저닉네임")
+                .memberGender(MemberGender.M)
+                .memberBday(LocalDate.of(1990, 1, 1))
+                .memberDesc("테스트 회원입니다ㄲ.")
+                .memberScore((byte) 35)
+                .memberCreatedAt(LocalDateTime.now())
+                .memberWarnedCount((byte)0)
+                .memberDeletedAt(null)
+                .build();
 
         memberRepository.save(member);
+    }
+
+    @AfterEach
+    void tearDown(){
+        memberRepository.deleteAll();
     }
 
     @Test
