@@ -22,11 +22,11 @@ class MemberRepositoryTest {
     @Autowired
     MemberRepository memberRepository;
 
-    private UUID testUUID = UUID.randomUUID();
-
+    private UUID testUUID;
     @BeforeEach
     void setUp(){
-;
+        testUUID = UUID.randomUUID();
+
         Member member = Member.builder()
                 .memberId(testUUID)
                 .memberEmail("user@email.com")

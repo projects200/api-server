@@ -69,7 +69,7 @@ public class MemberServiceImpl implements MemberService {
                 .memberId(savedMember.getMemberId())
                 .memberEmail(savedMember.getMemberEmail())
                 .memberNickname(savedMember.getMemberNickname())
-                .memberGender(savedMember.getMemberGender().getDescription())
+                .memberGender(savedMember.getMemberGender().getCode())
                 .memberBday(savedMember.getMemberBday())
                 .memberDesc(savedMember.getMemberDesc())
                 .memberScore(savedMember.getMemberScore())

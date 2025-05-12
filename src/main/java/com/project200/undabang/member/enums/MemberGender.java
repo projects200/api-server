@@ -4,13 +4,13 @@ import lombok.Getter;
 
 @Getter
 public enum MemberGender {
-    M("남"),
-    F("여"),
-    U("비공개");
+    M('m'),
+    F('f'),
+    U('u');
 
-    private final String description;
+    private final char code;
 
-    MemberGender(String description){
-        this.description = description;
+    MemberGender(char code){
+        this.code = code;
     }
 }
