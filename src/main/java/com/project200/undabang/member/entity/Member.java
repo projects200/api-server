@@ -1,5 +1,6 @@
 package com.project200.undabang.member.entity;
 
+import com.project200.undabang.member.enums.MemberGender;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -27,9 +28,10 @@ public class Member {
     @Column(name = "member_email", length = 320, unique = true)
     private String memberEmail;
 
+    @Enumerated(EnumType.STRING)
     @Comment("M: 남 / F: 여 / U: 비공개")
     @Column(name = "member_gender")
-    private Character memberGender;
+    private MemberGender memberGender;
 
     @Column(name = "member_bday")
     private LocalDate memberBday;

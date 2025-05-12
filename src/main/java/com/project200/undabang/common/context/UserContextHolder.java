@@ -33,6 +33,7 @@ import java.util.UUID;
 
 public class UserContextHolder {
     private static final ThreadLocal<UUID> userContext = new ThreadLocal<>();
+    private static final ThreadLocal<String> userEmailContext = new ThreadLocal<>();
 
     /**
      * 유틸리티 클래스의 인스턴스화를 방지합니다.
@@ -61,6 +62,14 @@ public class UserContextHolder {
         return userContext.get();
     }
 
+    public static void setUserEmail(String userEmail){
+        userEmailContext.set(userEmail);
+    }
+
+    public static String getUserEmail(){
+        return userEmailContext.get();
+    }
+
     /**
      * 현재 스레드에서 사용자 컨텍스트를 제거합니다.
      * 스레드 풀 환경에서는 요청 처리 완료 후 항상 이 메서드를 호출하여
@@ -68,5 +77,6 @@ public class UserContextHolder {
      */
     public static void reset() {
         userContext.remove();
+        userEmailContext.remove();
     }
 }
