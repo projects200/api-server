@@ -1,10 +1,10 @@
 package com.project200.undabang.member.entity;
 
+import com.project200.undabang.member.enums.MemberGender;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Comment;
 
@@ -12,24 +12,23 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Getter
-@Setter
-@Entity
-@Table(name = "members")
+@Getter@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Entity@Table(name = "members")
 public class Member {
     @Id
-    @Size(max = 36)
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "member_id", nullable = false, updatable = false, length = 36, columnDefinition = "char(36)")
+    @Column(name = "member_id", nullable = false, length = 36, columnDefinition = "char(36)")
     private UUID memberId;
 
     @Size(max = 320)
     @Column(name = "member_email", length = 320, unique = true)
     private String memberEmail;
 
+    @Enumerated(EnumType.STRING)
     @Comment("M: 남 / F: 여 / U: 비공개")
     @Column(name = "member_gender")
-    private Character memberGender;
+    private MemberGender memberGender;
 
     @Column(name = "member_bday")
     private LocalDate memberBday;
