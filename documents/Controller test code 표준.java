@@ -11,7 +11,7 @@ public class JUnit5ExampleTests extended AbstractRestDocSupport {
     Exception {
         // given
         BDDMockito.given(...).willReturn(...);    // 정상 반환 시
-        BDDMockito.given(...).willThrow(...);        // 에러 발생 시
+        BDDMockito.given(...).willThrow(...);     // 에러 발생 시
 
         // when
         HttpHeaders headers = new HttpHeaders();

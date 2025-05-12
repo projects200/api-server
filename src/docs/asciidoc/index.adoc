@@ -1,0 +1,138 @@
+= Undabang API 문서
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 2
+:sectlinks:
+:operation-curl-request-title: 요청 예시(curl)
+:operation-httpie-request-title: 요청 예시(httpie)
+:operation-http-request-title: HTTP 요청
+:operation-http-response-title: HTTP 응답
+:operation-request-fields-title: 요청 필드
+:operation-request-headers-title: 요청 헤더
+:operation-response-fields-title: 응답 필드
+
+[[overview]]
+== 개요
+
+Undabang API 서비스에 대한 문서입니다.
+
+[[overview-http-status-codes]]
+=== HTTP 상태 코드
+
+|===
+| 상태 코드 | 설명
+
+| `200 OK`
+| 요청이 성공적으로 처리됨
+
+| `201 Created`
+| 새 리소스가 성공적으로 생성됨
+
+| `400 Bad Request`
+| 잘못된 요청 또는 파라미터
+
+| `401 Unauthorized`
+| 인증 정보가 없거나 유효하지 않음
+
+| `403 Forbidden`
+| 인증은 되었지만 권한이 없음
+
+| `404 Not Found`
+| 요청한 리소스를 찾을 수 없음
+
+| `500 Internal Server Error`
+| 서버 오류
+|===
+
+[[overview-headers]]
+=== 공통 헤더
+
+|===
+| 헤더 | 설명
+
+| `X-USER-ID`
+| 사용자 식별자 (UUID 형식)
+
+| `Content-Type: application/json`
+| JSON 형식의 요청 본문
+
+| `Accept: application/json`
+| JSON 형식의 응답 본문
+|===
+
+[[overview-response-format]]
+=== 응답 형식
+
+[source,json]
+----
+{
+  "code": "string",
+  "message": "string",
+  "data": {
+    // 응답 데이터
+  }
+}
+----
+
+[[member]]
+== 회원(Member) API
+
+[[member-signup]]
+=== 회원 가입
+
+회원 가입을 위한 API입니다.
+
+==== 요청
+
+include::{snippets}/member-signup/http-request.adoc[]
+
+==== 요청 필드
+
+include::{snippets}/member-signup/request-fields.adoc[]
+
+==== 응답
+
+include::{snippets}/member-signup/http-response.adoc[]
+
+==== 응답 필드
+
+include::{snippets}/member-signup/response-fields.adoc[]
+
+==== 요청 예시 (curl)
+
+include::{snippets}/member-signup/curl-request.adoc[]
+
+==== 요청 예시 (httpie)
+
+include::{snippets}/member-signup/httpie-request.adoc[]
+
+[[member-registration-status]]
+=== 회원 등록 상태 조회
+
+사용자의 회원 등록 상태를 조회하는 API입니다.
+
+==== 요청
+
+include::{snippets}/member-rest-controller-test/get-registration-status_-success/http-request.adoc[]
+
+==== 요청 헤더
+
+include::{snippets}/member-rest-controller-test/get-registration-status_-success/request-headers.adoc[]
+
+==== 응답
+
+include::{snippets}/member-rest-controller-test/get-registration-status_-success/http-response.adoc[]
+
+==== 응답 필드
+
+include::{snippets}/member-rest-controller-test/get-registration-status_-success/response-fields.adoc[]
+
+==== 요청 예시 (curl)
+
+include::{snippets}/member-rest-controller-test/get-registration-status_-success/curl-request.adoc[]
+
+==== 요청 예시 (httpie)
+
+include::{snippets}/member-rest-controller-test/get-registration-status_-success/httpie-request.adoc[]

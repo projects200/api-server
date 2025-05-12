@@ -55,17 +55,20 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(xUserEmailCheckInterceptor()).addPathPatterns("/auth/**");
     }
 
-    /**
-     * 정적 리소스를 처리하기 위한 핸들러를 추가합니다.
-     * 이 메서드는 특정 경로에 대해 리소스의 위치와 캐시 설정을 정의합니다.
-     *
-     * @param registry 리소스 핸들러를 등록하기 위한 ResourceHandlerRegistry 객체
-     */
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        // build reports를 위한 리소스 핸들러
         registry.addResourceHandler("/build/reports/**")
                 .addResourceLocations("classpath:/static/", "file:./build/reports/")
                 .setCachePeriod(3600)
                 .resourceChain(true);
+
+        // REST Docs 문서를 위한 리소스 핸들러
+        registry.addResourceHandler("/docs/**")
+                .addResourceLocations("classpath:/static/docs/", "file:./build/docs/asciidoc/")
+                .setCachePeriod(3600)
+                .resourceChain(true);
     }
+
 }

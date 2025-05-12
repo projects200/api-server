@@ -61,7 +61,6 @@ tasks.named('test') {
 }
 
 tasks.named('asciidoctor') {
-	configurations 'asciidoctorExt'
 	inputs.dir snippetsDir
 	sourceDir file('src/docs/asciidoc')
 	attributes([
@@ -71,7 +70,7 @@ tasks.named('asciidoctor') {
 }
 
 // 생성된 문서를 JAR에 포함시키기
-bootJar {
+tasks.named('bootJar') {
 	dependsOn tasks.named('asciidoctor') // asciidoctor 작업이 먼저 실행되도록 보장
 	from("${tasks.named('asciidoctor').get().outputDir}") { // AsciidoctorTask의 outputDir 사용
 		into 'static/docs'
