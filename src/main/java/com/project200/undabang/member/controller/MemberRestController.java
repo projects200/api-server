@@ -1,6 +1,6 @@
 package com.project200.undabang.member.controller;
 
-import com.project200.undabang.common.web.response.ApiResponse;
+import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.member.dto.response.MemberRegistrationStatusResponseDto;
 import com.project200.undabang.member.service.MemberQueryService;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ public class MemberRestController {
      *         반환되는 데이터는 MemberRegistrationStatusResponseDto 형태입니다.
      */
     @GetMapping("/me/registration-status")
-    public ResponseEntity<ApiResponse<MemberRegistrationStatusResponseDto>> getRegistrationStatus() {
-        return ResponseEntity.ok(ApiResponse.success(memberQueryService.getRegistrationStatus()));
+    public ResponseEntity<CommonResponse<MemberRegistrationStatusResponseDto>> getRegistrationStatus() {
+        return ResponseEntity.ok(CommonResponse.success(memberQueryService.getRegistrationStatus()));
     }
 }

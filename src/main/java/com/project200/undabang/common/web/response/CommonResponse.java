@@ -10,29 +10,29 @@ import lombok.Getter;
  * @param <T> The type of the data included in the response.
  */
 @Getter
-public class ApiResponse<T> {
+public class CommonResponse<T> {
     private final boolean succeed;
     private final String code;
     private final String message;
     private final T data;
 
-    private ApiResponse(boolean succeed, String code, String message, T data) {
+    private CommonResponse(boolean succeed, String code, String message, T data) {
         this.succeed = succeed;
         this.code = code;
         this.message = message;
         this.data = data;
     }
 
-    public static <T> ApiResponse<T> success(T data) {
-        return new ApiResponse<>(true,"SUCCESS", "요청이 성공적으로 처리되었습니다.", data);
+    public static <T> CommonResponse<T> success(T data) {
+        return new CommonResponse<>(true,"SUCCESS", "요청이 성공적으로 처리되었습니다.", data);
     }
 
-    public static <T> ApiResponse<T> success(String code, String message) {
-        return new ApiResponse<>(true, code, message, null);
+    public static <T> CommonResponse<T> success(String code, String message) {
+        return new CommonResponse<>(true, code, message, null);
     }
 
-    public static <T> ApiResponse<T> success(String code, String message, T data) {
-        return new ApiResponse<>(true, code, message, data);
+    public static <T> CommonResponse<T> success(String code, String message, T data) {
+        return new CommonResponse<>(true, code, message, data);
     }
 
     /**
@@ -91,8 +91,8 @@ public class ApiResponse<T> {
          *
          * @return 설정된 값으로 생성된 ApiResponse 객체
          */
-        public ApiResponse<T> build() {
-            return new ApiResponse<>(this.succeed, this.code, this.message, this.data);
+        public CommonResponse<T> build() {
+            return new CommonResponse<>(this.succeed, this.code, this.message, this.data);
         }
     }
 }

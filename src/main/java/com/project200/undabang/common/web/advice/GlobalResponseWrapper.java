@@ -1,6 +1,6 @@
 package com.project200.undabang.common.web.advice;
 
-import com.project200.undabang.common.web.response.ApiResponse;
+import com.project200.undabang.common.web.response.CommonResponse;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +12,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 /**
  * 모든 REST 컨트롤러의 응답을 일관된 형식으로 래핑하는 글로벌 응답 래퍼입니다.
- * 이 클래스는 컨트롤러에서 반환하는 모든 응답을 HTTP STATUS OK에 {@link ApiResponse} 형식으로 자동 변환합니다.
+ * 이 클래스는 컨트롤러에서 반환하는 모든 응답을 HTTP STATUS OK에 {@link CommonResponse} 형식으로 자동 변환합니다.
  * {@link NoApiResponseWrapper} 어노테이션이 지정된 메소드나 클래스는 래핑 대상에서 제외됩니다.
  */
 @RestControllerAdvice
@@ -60,19 +60,22 @@ public class GlobalResponseWrapper implements ResponseBodyAdvice<Object> {
             return body;
         }
 
-        // Swagger/OpenAPI 관련 경로도 래핑하지 않도록 처리
-        // Swagger UI HTML 페이지, API docs (JSON/YAML) 등을 포함
-        if (path.contains("swagger") || path.contains("api-docs") || path.contains("v3/api-docs") || path.contains("webjars")) {
+        // Spring REST Docs 관련 경로도 래핑하지 않도록 처리
+        // REST Docs HTML 페이지, API 문서, 테스트 보고서 등을 포함
+        if (path.contains("docs") || path.contains("generated-docs") || path.contains("api-documentation") ||
+                path.contains("webjars") || path.contains("reports/tests")) {
             return body;
         }
 
+
+
         // body가 이미 ApiResponse 객체인 경우 (컨트롤러에서 직접 ApiResponse를 반환)
-        if (body instanceof ApiResponse) {
+        if (body instanceof CommonResponse) {
             return body;
         }
 
         // 위와 중복이지만 재차 점검
-        if (body instanceof ResponseEntity && ((ResponseEntity<?>) body).getBody() instanceof ApiResponse) {
+        if (body instanceof ResponseEntity && ((ResponseEntity<?>) body).getBody() instanceof CommonResponse) {
             return body;
         }
 
@@ -80,10 +83,10 @@ public class GlobalResponseWrapper implements ResponseBodyAdvice<Object> {
         // 또는 메소드 반환 타입이 void인 경우 (이때 body는 null)
         // 이 경우, 성공 응답으로 간주하고 data만 null인 ApiResponse를 생성합니다.
         if (body == null && returnType.getParameterType().equals(void.class)) {
-            return ApiResponse.success("SUCCESS", "요청이 성공적으로 처리되었지만 반환할 데이터가 없습니다.");
+            return CommonResponse.success("SUCCESS", "요청이 성공적으로 처리되었지만 반환할 데이터가 없습니다.");
         }
 
         // 원래 ResponseEntity의 상태 코드와 헤더를 유지하면서 본문만 ApiResponse로 변경된 형태로 반환
-        return ApiResponse.success(body);
+        return CommonResponse.success(body);
     }
 }

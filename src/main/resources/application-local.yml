@@ -14,6 +14,12 @@ spring:
   transaction:
     default-timeout: 60s
 
+  restdocs:
+    uris:
+      scheme: http
+      host: localhost
+      port: 8080
+
 logging:
   level:
     com.project200.undabang: debug  # 애플리케이션 로그
