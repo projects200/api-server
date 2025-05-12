@@ -14,12 +14,13 @@ import java.time.LocalDateTime;
 @Table(name = "member_blocks")
 public class MemberBlock {
     @Id
-    @Column(name = "member_block_id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "member_block_id", nullable = false, updatable = false)
     private Long id;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "blocker_id", nullable = false)
+    @JoinColumn(name = "blocker_id", nullable = false, updatable = false)
     private Member blocker;
 
     @NotNull
@@ -29,7 +30,7 @@ public class MemberBlock {
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "member_block_created_at", nullable = false)
+    @Column(name = "member_block_created_at", nullable = false, updatable = false)
     private LocalDateTime memberBlockCreatedAt = LocalDateTime.now();
 
     @Column(name = "member_block_deleted_at")

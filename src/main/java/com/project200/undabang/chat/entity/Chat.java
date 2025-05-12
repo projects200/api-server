@@ -16,17 +16,18 @@ import java.time.LocalDateTime;
 @Table(name = "chats")
 public class Chat {
     @Id
-    @Column(name = "chat_id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "chat_id", updatable = false, nullable = false)
     private Long id;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "chatroom_id", nullable = false)
+    @JoinColumn(name = "chatroom_id", nullable = false, updatable = false)
     private Chatroom chatroom;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "sender_id", nullable = false)
+    @JoinColumn(name = "sender_id", nullable = false, updatable = false)
     private Member sender;
 
     @Size(max = 500)
@@ -41,7 +42,7 @@ public class Chat {
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "chat_sended_at", nullable = false)
+    @Column(name = "chat_sended_at", nullable = false, updatable = false)
     private LocalDateTime chatSendedAt = LocalDateTime.now();
 
     @Column(name = "chat_deleted_at")

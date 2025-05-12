@@ -12,22 +12,22 @@ import lombok.Setter;
 @Table(name = "comment_reports")
 public class CommentReport {
     @Id
-    @Column(name = "report_id", nullable = false)
+    @Column(name = "report_id", nullable = false, updatable = false)
     private Long id;
 
     @MapsId
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "report_id", nullable = false)
+    @JoinColumn(name = "report_id", nullable = false, updatable = false)
     private Report reports;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "comment_id", nullable = false)
+    @JoinColumn(name = "comment_id", nullable = false, updatable = false)
     private Comment comment;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "comment_report_subject_id", nullable = false)
+    @JoinColumn(name = "comment_report_subject_id", nullable = false, updatable = false)
     private CommentReportSubject commentReportSubject;
 
 }

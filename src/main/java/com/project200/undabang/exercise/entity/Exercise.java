@@ -16,12 +16,13 @@ import java.time.LocalDateTime;
 @Table(name = "exercises")
 public class Exercise {
     @Id
-    @Column(name = "exercise_id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "exercise_id", nullable = false, updatable = false)
     private Long id;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "member_id", nullable = false)
+    @JoinColumn(name = "member_id", nullable = false, updatable = false)
     private Member member;
 
     @NotNull
@@ -50,7 +51,7 @@ public class Exercise {
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "exercise_created_at", nullable = false)
+    @Column(name = "exercise_created_at", nullable = false, updatable = false)
     private LocalDateTime exerciseCreatedAt = LocalDateTime.now();
 
     @Column(name = "exercise_deleted_at")

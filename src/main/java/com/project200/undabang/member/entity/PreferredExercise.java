@@ -18,22 +18,23 @@ import java.time.LocalDateTime;
 @Table(name = "preferred_exercises")
 public class PreferredExercise {
     @Id
-    @Column(name = "preferred_exercise_id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "preferred_exercise_id", nullable = false, updatable = false)
     private Long id;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "exercise_id", nullable = false)
+    @JoinColumn(name = "exercise_id", nullable = false, updatable = false)
     private ExerciseType exercise;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "member_id", nullable = false)
+    @JoinColumn(name = "member_id", nullable = false, updatable = false)
     private Member member;
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "preferred_exercise_created_at", nullable = false)
+    @Column(name = "preferred_exercise_created_at", nullable = false, updatable = false)
     private LocalDateTime preferredExerciseCreatedAt = LocalDateTime.now();
 
     @Column(name = "preferred_exercise_deleted_at")
