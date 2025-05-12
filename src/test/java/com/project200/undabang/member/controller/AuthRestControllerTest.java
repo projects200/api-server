@@ -104,7 +104,7 @@ class AuthRestControllerTest {
                 .memberId(TEST_UUID)
                 .memberEmail(TEST_EMAIL)
                 .memberNickname(TEST_NICKNAME)
-                .memberGender("남")
+                .memberGender(MemberGender.M.getCode())
                 .memberBday(LocalDate.of(2025, 1, 1))
                 .memberDesc("프로헬창이되기위한여정의시작")
                 .memberScore(35)
@@ -123,7 +123,7 @@ class AuthRestControllerTest {
                 .andExpect(jsonPath("$.memberId").value(TEST_UUID.toString()))
                 .andExpect(jsonPath("$.memberEmail").value(TEST_EMAIL))
                 .andExpect(jsonPath("$.memberNickname").value(TEST_NICKNAME))
-                .andExpect(jsonPath("$.memberGender").value("남"))
+                .andExpect(jsonPath("$.memberGender").value(String.valueOf(MemberGender.M.getCode())))
                 .andExpect(jsonPath("$.memberBday").exists())
                 .andExpect(jsonPath("$.memberScore").value(35))
                 .andExpect(jsonPath("$.memberCreatedAt").exists())
@@ -155,7 +155,7 @@ class AuthRestControllerTest {
         SignUpRequestDto invalidRequestDto = new SignUpRequestDto();
         // 필수 필드 누락
 
-        mockMvc.perform(post("/v1/auth/sign-up")
+        mockMvc.perform(post("/auth/sign-up/v1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidRequestDto)))
                 .andExpect(status().isBadRequest());

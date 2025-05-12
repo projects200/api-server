@@ -91,8 +91,9 @@ class MemberServiceImplTest {
         // given
         SignUpRequestDto requestDto = new SignUpRequestDto();
         requestDto.setMemberNickname(TEST_NICKNAME);
-        requestDto.setMemberGender(MemberGender.valueOf("M"));
+        requestDto.setMemberGender(MemberGender.M);
         requestDto.setMemberBday(LocalDate.parse("2010-01-01"));
+
         Mockito.when(memberRepository.existsByMemberEmail(TEST_EMAIL)).thenReturn(false);
         Mockito.when(memberRepository.existsByMemberNickname(TEST_NICKNAME)).thenReturn(false);
 
@@ -117,7 +118,6 @@ class MemberServiceImplTest {
         assertThat(result.getMemberId()).isEqualTo(TEST_UUID);
         assertThat(result.getMemberEmail()).isEqualTo(TEST_EMAIL);
         assertThat(result.getMemberNickname()).isEqualTo(TEST_NICKNAME);
-        assertThat(result.getMemberGender()).isEqualTo("남");
+        assertThat(result.getMemberGender()).isEqualTo('m');
     }
-
 }
