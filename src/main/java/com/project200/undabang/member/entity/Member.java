@@ -19,9 +19,8 @@ import java.util.UUID;
 @Table(name = "members")
 public class Member {
     @Id
-    @Size(max = 36)
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "member_id", nullable = false, updatable = false, length = 36, columnDefinition = "char(36)")
+    @Column(name = "member_id", nullable = false, updatable = false, columnDefinition = "char(36)")
     private UUID memberId;
 
     @Size(max = 320)
