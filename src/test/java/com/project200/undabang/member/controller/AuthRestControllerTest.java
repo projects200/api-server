@@ -115,7 +115,7 @@ class AuthRestControllerTest {
         Mockito.doReturn(respDto).when(memberServiceMock).memberSignUp(Mockito.any(SignUpRequestDto.class));
 
         //when, then
-        mockMvc.perform(post("/v1/auth/sign-up")
+        mockMvc.perform(post("/auth/sign-up/v1")
                 .contentType(MediaType.APPLICATION_JSON)
                         .header("X-USER-ID", TEST_UUID.toString())
                 .content(objectMapper.writeValueAsString(requestDto)))
