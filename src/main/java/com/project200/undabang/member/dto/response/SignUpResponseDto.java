@@ -7,12 +7,13 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class SignUpResponseDto {
-    private String memberId;
+    private UUID memberId;
     private String memberEmail;
     private String memberNickname;
     private String memberDesc;
