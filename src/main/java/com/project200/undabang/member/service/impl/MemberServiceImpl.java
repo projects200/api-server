@@ -50,7 +50,7 @@ public class MemberServiceImpl implements MemberService {
         }
 
         Member member = new Member();
-        member.setMemberId(String.valueOf(UserContextHolder.getUserId()));
+        member.setMemberId(UserContextHolder.getUserId());
         member.setMemberEmail(UserContextHolder.getUserEmail());
         member.setMemberNickname(signUpRequestDto.getMemberNickname());
         member.setMemberGender(memberGender);

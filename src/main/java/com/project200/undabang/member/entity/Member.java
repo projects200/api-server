@@ -11,6 +11,7 @@ import org.hibernate.annotations.Comment;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -19,8 +20,9 @@ import java.time.LocalDateTime;
 public class Member {
     @Id
     @Size(max = 36)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "member_id", nullable = false, length = 36, columnDefinition = "char(36)")
-    private String memberId;
+    private UUID memberId;
 
     @Size(max = 320)
     @Column(name = "member_email", length = 320, unique = true)
