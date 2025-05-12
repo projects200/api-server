@@ -1,5 +1,6 @@
 package com.project200.undabang.member.entity;
 
+import com.project200.undabang.common.converter.MemberGenderConverter;
 import com.project200.undabang.member.enums.MemberGender;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -20,7 +21,6 @@ import java.util.UUID;
 @Table(name = "members")
 public class Member {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "member_id", nullable = false, updatable = false, columnDefinition = "char(36)")
     private UUID memberId;
 
@@ -28,9 +28,9 @@ public class Member {
     @Column(name = "member_email", length = 320, unique = true)
     private String memberEmail;
 
-    @Enumerated(EnumType.STRING)
     @Comment("M: 남 / F: 여 / U: 비공개")
-    @Column(name = "member_gender")
+    @Convert(converter = MemberGenderConverter.class)
+    @Column(name = "member_gender", columnDefinition = "char(1)")
     private MemberGender memberGender;
 
     @Column(name = "member_bday")
