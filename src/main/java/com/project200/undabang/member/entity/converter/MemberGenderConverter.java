@@ -1,4 +1,4 @@
-package com.project200.undabang.common.converter;
+package com.project200.undabang.member.entity.converter;
 
 import com.project200.undabang.member.enums.MemberGender;
 import jakarta.persistence.AttributeConverter;

@@ -32,6 +32,7 @@ public class MemberBlock {
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "member_block_created_at", nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime memberBlockCreatedAt = LocalDateTime.now();
 
     @Column(name = "member_block_deleted_at")

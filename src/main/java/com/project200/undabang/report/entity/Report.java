@@ -30,12 +30,14 @@ public class Report {
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "report_datetime", nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime reportDatetime = LocalDateTime.now();
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "report_processing_status", nullable = false, length = 30)
+    @Column(name = "report_processing_status", length = 30)
     @JdbcTypeCode(SqlTypes.VARCHAR)
     @ColumnDefault("'PENDING'")
+    @Builder.Default
     private ReportProcessingStatus reportProcessingStatus = ReportProcessingStatus.PENDING;
 
     @Column(name = "report_processed_at")

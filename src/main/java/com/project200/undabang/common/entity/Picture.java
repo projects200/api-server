@@ -40,6 +40,7 @@ public class Picture {
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "picture_created_at", nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime pictureCreatedAt = LocalDateTime.now();
 
     @Column(name = "picture_deleted_at")

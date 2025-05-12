@@ -36,6 +36,7 @@ public class PreferredExercise {
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "preferred_exercise_created_at", nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime preferredExerciseCreatedAt = LocalDateTime.now();
 
     @Column(name = "preferred_exercise_deleted_at")

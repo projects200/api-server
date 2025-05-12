@@ -1,6 +1,6 @@
 package com.project200.undabang.member.entity;
 
-import com.project200.undabang.common.converter.MemberGenderConverter;
+import com.project200.undabang.member.entity.converter.MemberGenderConverter;
 import com.project200.undabang.member.enums.MemberGender;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -8,6 +8,8 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Comment;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -21,6 +23,7 @@ import java.util.UUID;
 @Table(name = "members")
 public class Member {
     @Id
+    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "member_id", nullable = false, updatable = false, columnDefinition = "char(36)")
     private UUID memberId;
 
@@ -48,17 +51,20 @@ public class Member {
     @Comment("0~100, 초기값 35")
     @ColumnDefault("35")
     @Column(name = "member_score")
+    @Builder.Default
     private Byte memberScore = 35;
 
     @NotNull
     @Comment("관리자 처리 신고 누적")
     @ColumnDefault("0")
     @Column(name = "member_warned_count", nullable = false)
+    @Builder.Default
     private Byte memberWarnedCount = 0;
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "member_created_at", nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime memberCreatedAt = LocalDateTime.now();
 
     @Comment("탈퇴 시 삭제 일시 기록")

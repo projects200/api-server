@@ -28,6 +28,7 @@ public class ExerciseType {
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "exercise_type_created_at", nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime exerciseTypeCreatedAt = LocalDateTime.now();
 
     @Column(name = "exercise_type_deleted_at")

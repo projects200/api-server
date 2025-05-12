@@ -34,6 +34,7 @@ public class Like {
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "like_created_at", nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime likeCreatedAt = LocalDateTime.now();
 
     @Column(name = "like_canceled_at")

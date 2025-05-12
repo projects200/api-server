@@ -3,6 +3,7 @@ package com.project200.undabang.common.web.advice;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.response.CommonResponse;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -79,6 +80,36 @@ public class GlobalExceptionHandler {
         String customMessage = "입력값 검증에 실패했습니다.";
 
         // 상세 오류 정보를 data 필드에 포함
+        CommonResponse<Map<String, String>> response = CommonResponse.<Map<String, String>>error(errorCode)
+                .message(customMessage).data(errors).build();
+
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
+    }
+
+
+    /**
+     * ConstraintViolationException 예외를 처리합니다.
+     * 이 메서드는 서비스 계층에서 @Validated 사용 시 메서드 파라미터 유효성 검증 실패로 인해 발생된
+     * {@link ConstraintViolationException} 예외를 처리하며,
+     * 유효성 검증 실패 항목(field, message)을 수집하여 클라이언트에 전달할 응답을 생성합니다.
+     *
+     * @param ex 처리할 {@link ConstraintViolationException} 예외
+     * @return 유효성 검증 실패 데이터를 포함한 오류 응답
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    protected ResponseEntity<CommonResponse<Map<String, String>>> handleConstraintViolationException(
+            ConstraintViolationException ex) {
+
+        ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
+
+        // 유효성 검증 실패 항목 수집
+        Map<String, String> errors = new HashMap<>();
+        ex.getConstraintViolations().forEach(violation ->
+                errors.put(violation.getPropertyPath().toString(), violation.getMessage())
+        );
+
+        String customMessage = "엔티티 유효성 검증에 실패했습니다.";
+
         CommonResponse<Map<String, String>> response = CommonResponse.<Map<String, String>>error(errorCode)
                 .message(customMessage).data(errors).build();
 

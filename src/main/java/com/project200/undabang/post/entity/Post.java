@@ -38,11 +38,13 @@ public class Post {
     @org.hibernate.annotations.Comment("관리자 제제 시 1")
     @ColumnDefault("0")
     @Column(name = "post_is_reported")
+    @Builder.Default
     private Boolean postIsReported = false;
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "post_created_at", nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime postCreatedAt = LocalDateTime.now();
 
     @Column(name = "post_deleted_at")
@@ -51,6 +53,7 @@ public class Post {
     @NotNull
     @ColumnDefault("0")
     @Column(name = "post_likes_cnt", nullable = false)
+    @Builder.Default
     private Integer postLikesCnt = 0;
 
 }

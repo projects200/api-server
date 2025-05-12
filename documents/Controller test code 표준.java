@@ -6,9 +6,7 @@ public class JUnit5ExampleTests extended AbstractRestDocSupport {
      */
     @Test
     @DisplayName("한국어로 입력")
-    public void testExample() extends
-
-    Exception {
+    public void testExample() extends Exception {
         // given
         BDDMockito.given(...).willReturn(...);    // 정상 반환 시
         BDDMockito.given(...).willThrow(...);     // 에러 발생 시

@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
@@ -26,14 +27,12 @@ public class GlobalResponseWrapper implements ResponseBodyAdvice<Object> {
      * @return 응답이 래핑되어야 하면 true, 그렇지 않으면 false
      */
     @Override
-    public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
+    public boolean supports(MethodParameter returnType, @NonNull Class<? extends HttpMessageConverter<?>> converterType) {
         // NoApiResponseWrapper 어노테이션이 메소드나 클래스에 있는지 확인
-        if (returnType.getMethodAnnotation(NoApiResponseWrapper.class) != null ||
-                (returnType.getContainingClass().isAnnotationPresent(NoApiResponseWrapper.class) &&
-                        returnType.getMethodAnnotation(NoApiResponseWrapper.class) == null)) { // 클래스에만 있고 메소드에는 없을 때
-            return false; // 래핑하지 않음
-        }
-        return true;
+        // 클래스에만 있고 메소드에는 없을 때
+        return returnType.getMethodAnnotation(NoApiResponseWrapper.class) == null &&
+                (!returnType.getContainingClass().isAnnotationPresent(NoApiResponseWrapper.class) ||
+                        returnType.getMethodAnnotation(NoApiResponseWrapper.class) != null); // 래핑하지 않음
     }
 
     /**
@@ -48,9 +47,9 @@ public class GlobalResponseWrapper implements ResponseBodyAdvice<Object> {
      * @return 변환된 응답 본문 (래핑된 형태 또는 원본)
      */
     @Override
-    public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType,
-                                  Class<? extends HttpMessageConverter<?>> selectedConverterType,
-                                  ServerHttpRequest request, ServerHttpResponse response) {
+    public Object beforeBodyWrite(Object body, @NonNull MethodParameter returnType, @NonNull MediaType selectedContentType,
+                                  @NonNull Class<? extends HttpMessageConverter<?>> selectedConverterType,
+                                  ServerHttpRequest request, @NonNull ServerHttpResponse response) {
 
         // 요청 경로 가져오기
         String path = request.getURI().getPath();
@@ -69,7 +68,7 @@ public class GlobalResponseWrapper implements ResponseBodyAdvice<Object> {
 
 
 
-        // body가 이미 ApiResponse 객체인 경우 (컨트롤러에서 직접 ApiResponse를 반환)
+        // body가 이미 CommonResponse 객체인 경우 (컨트롤러에서 직접 CommonResponse 반환)
         if (body instanceof CommonResponse) {
             return body;
         }

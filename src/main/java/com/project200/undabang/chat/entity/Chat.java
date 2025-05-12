@@ -39,11 +39,13 @@ public class Chat {
     @NotNull
     @ColumnDefault("0")
     @Column(name = "chat_is_read", nullable = false)
+    @Builder.Default
     private Boolean chatIsRead = false;
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "chat_sended_at", nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime chatSendedAt = LocalDateTime.now();
 
     @Column(name = "chat_deleted_at")

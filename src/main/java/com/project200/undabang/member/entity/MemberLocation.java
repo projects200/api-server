@@ -52,6 +52,7 @@ public class MemberLocation {
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "member_location_created_at", nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime memberLocationCreatedAt = LocalDateTime.now();
 
     @Column(name = "member_location_deleted_at")

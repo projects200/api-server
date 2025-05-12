@@ -28,12 +28,14 @@ public class Exercise {
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "exercise_started_at", nullable = false)
+    @Column(name = "exercise_started_at")
+    @Builder.Default
     private LocalDateTime exerciseStartedAt = LocalDateTime.now();
 
     @NotNull
     @ColumnDefault("((`exercise_started_at` + interval 1 hour))")
-    @Column(name = "exercise_ended_at", nullable = false)
+    @Column(name = "exercise_ended_at")
+    @Builder.Default
     private LocalDateTime exerciseEndedAt = LocalDateTime.now().plusHours(1);
 
     @Lob
@@ -53,6 +55,7 @@ public class Exercise {
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "exercise_created_at", nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime exerciseCreatedAt = LocalDateTime.now();
 
     @Column(name = "exercise_deleted_at")

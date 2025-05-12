@@ -33,6 +33,7 @@ public class Chatroom {
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "chatroom_created_at", nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime chatroomCreatedAt = LocalDateTime.now();
 
     @Column(name = "chatroom_deleted_at")
