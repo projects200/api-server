@@ -2,7 +2,7 @@ package com.project200.undabang.common.web.advice;
 
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
-import com.project200.undabang.common.web.response.ApiResponse;
+import com.project200.undabang.common.web.response.CommonResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -23,7 +23,7 @@ import java.util.Map;
  * @see RestControllerAdvice
  * @see ExceptionHandler
  * @see CustomException
- * @see ApiResponse
+ * @see CommonResponse
  */
 @Slf4j
 @RestControllerAdvice
@@ -40,14 +40,14 @@ public class GlobalExceptionHandler {
      * @return 구성된 오류 응답
      */
     @ExceptionHandler(CustomException.class)
-    protected ResponseEntity<ApiResponse<Void>> handleBusinessException(CustomException ex) {
+    protected ResponseEntity<CommonResponse<Void>> handleBusinessException(CustomException ex) {
         ErrorCode errorCode = ex.getErrorCode();
 
-        ApiResponse<Void> response;
+        CommonResponse<Void> response;
         if (ex.hasCustomMessage()) {
-            response = ApiResponse.<Void>error(errorCode).message(ex.getCustomMessage()).build();
+            response = CommonResponse.<Void>error(errorCode).message(ex.getCustomMessage()).build();
         } else {
-            response = ApiResponse.<Void>error(errorCode).build();
+            response = CommonResponse.<Void>error(errorCode).build();
         }
 
         return ResponseEntity.status(errorCode.getStatus()).body(response);
@@ -64,7 +64,7 @@ public class GlobalExceptionHandler {
      * @return 필드별 오류 메시지를 포함한 응답
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    protected ResponseEntity<ApiResponse<Map<String, String>>> handleMethodArgumentNotValidException(
+    protected ResponseEntity<CommonResponse<Map<String, String>>> handleMethodArgumentNotValidException(
             MethodArgumentNotValidException ex) {
 
         ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
@@ -79,7 +79,7 @@ public class GlobalExceptionHandler {
         String customMessage = "입력값 검증에 실패했습니다.";
 
         // 상세 오류 정보를 data 필드에 포함
-        ApiResponse<Map<String, String>> response = ApiResponse.<Map<String, String>>error(errorCode)
+        CommonResponse<Map<String, String>> response = CommonResponse.<Map<String, String>>error(errorCode)
                 .message(customMessage).data(errors).build();
 
         return ResponseEntity.status(errorCode.getStatus()).body(response);
@@ -98,10 +98,10 @@ public class GlobalExceptionHandler {
      * @return 내부 서버 오류 응답
      */
     @ExceptionHandler(Exception.class)
-    protected ResponseEntity<ApiResponse<Void>> handleException(Exception ex) {
+    protected ResponseEntity<CommonResponse<Void>> handleException(Exception ex) {
         log.error("처리되지 않은 예외 발생: ", ex);
         ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
-        ApiResponse<Void> response = ApiResponse.<Void>error(errorCode).build();
+        CommonResponse<Void> response = CommonResponse.<Void>error(errorCode).build();
         return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
 }

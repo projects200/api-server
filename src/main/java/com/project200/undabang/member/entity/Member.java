@@ -12,13 +12,16 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Getter@Builder
+@Getter
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Entity@Table(name = "members")
+@Entity
+@Table(name = "members")
 public class Member {
     @Id
-    @Column(name = "member_id", nullable = false, length = 36, columnDefinition = "char(36)")
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "member_id", nullable = false, updatable = false, columnDefinition = "char(36)")
     private UUID memberId;
 
     @Size(max = 320)

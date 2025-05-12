@@ -3,11 +3,12 @@ package com.project200.undabang.post.entity;
 import com.project200.undabang.common.entity.Picture;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
-@Setter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "post_pictures")
 public class PostPicture {
