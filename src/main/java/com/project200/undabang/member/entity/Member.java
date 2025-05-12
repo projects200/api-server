@@ -4,8 +4,7 @@ import com.project200.undabang.member.enums.MemberGender;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Comment;
 
@@ -13,14 +12,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Getter
-@Setter
-@Entity
-@Table(name = "members")
+@Getter@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Entity@Table(name = "members")
 public class Member {
     @Id
-    @Size(max = 36)
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "member_id", nullable = false, length = 36, columnDefinition = "char(36)")
     private UUID memberId;
 
