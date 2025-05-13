@@ -23,8 +23,9 @@ class MemberRepositoryTest {
     MemberRepository memberRepository;
 
     private UUID testUUID;
+
     @BeforeEach
-    void setUp(){
+    void setUp() {
         testUUID = UUID.randomUUID();
 
         Member member = Member.builder()
@@ -36,7 +37,7 @@ class MemberRepositoryTest {
                 .memberDesc("테스트 회원입니다ㄲ.")
                 .memberScore((byte) 35)
                 .memberCreatedAt(LocalDateTime.now())
-                .memberWarnedCount((byte)0)
+                .memberWarnedCount((byte) 0)
                 .memberDeletedAt(null)
                 .build();
 
@@ -44,13 +45,13 @@ class MemberRepositoryTest {
     }
 
     @AfterEach
-    void tearDown(){
+    void tearDown() {
         memberRepository.deleteAll();
     }
 
     @Test
     @DisplayName("이메일이 이미 존재하는 회원의 경우")
-    void existsByEmail_exists(){
+    void existsByEmail_exists() {
         String email = "user@email.com";
         boolean check = memberRepository.existsByMemberEmail(email);
 
@@ -59,7 +60,7 @@ class MemberRepositoryTest {
 
     @Test
     @DisplayName("이메일이 존재하지 않는 회원의 경우")
-    void existsByEmail_not_exists(){
+    void existsByEmail_not_exists() {
         String email = "user@gmail.com";
         boolean check = memberRepository.existsByMemberEmail(email);
 
@@ -68,7 +69,7 @@ class MemberRepositoryTest {
 
     @Test
     @DisplayName("이미 존재하는 닉네임을 입력한 회원의 경우")
-    void existsByMemberNickname_exists(){
+    void existsByMemberNickname_exists() {
         String name = "유저닉네임";
         boolean check = memberRepository.existsByMemberNickname(name);
         assertTrue(check);
@@ -76,9 +77,27 @@ class MemberRepositoryTest {
 
     @Test
     @DisplayName("닉네임을 중복없이 입력한 회원의 경우")
-    void existsByMemberNickname_not_exists(){
+    void existsByMemberNickname_not_exists() {
         String name = "테스트유저닉네임";
         boolean check = memberRepository.existsByMemberNickname(name);
         assertFalse(check);
     }
+
+    @Test
+    @DisplayName("이미 존재하는 멤버 ID를 가진 회원의 경우")
+    void existsByMemberId_exists() {
+        // 이미 setUp에서 생성한 testUUID를 사용
+        boolean check = memberRepository.existsByMemberId(testUUID);
+        assertTrue(check);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 멤버 ID를 가진 회원의 경우")
+    void existsByMemberId_not_exists() {
+        // 새로운 UUID 생성 (존재하지 않는 ID)
+        UUID nonExistentUUID = UUID.randomUUID();
+        boolean check = memberRepository.existsByMemberId(nonExistentUUID);
+        assertFalse(check);
+    }
+
 }
