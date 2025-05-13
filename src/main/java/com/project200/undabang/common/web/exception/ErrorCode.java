@@ -19,6 +19,7 @@ public enum ErrorCode {
     // 사용자 관련 에러
     MEMBER_NOT_FOUND(404, "USER_NOT_FOUND", "해당 사용자를 찾을 수 없습니다."),
     MEMBER_EMAIL_DUPLICATED(409, "MEMBER_EMAIL_DUPLICATED", "이미 사용 중인 이메일입니다."),
+    MEMBER_ID_DUPLICATED(409, "MEMBER_ID_DUPLICATED", "이미 가입한 회원 입니다."),
     MEMBER_NICKNAME_DUPLICATED(409, "MEMBER_NICKNAME_DUPLICATED", "이미 사용 중인 닉네임입니다."),
     MEMBER_GENDER_ERROR(409, "MEMBER_GENDER_ERROR", "유효하지 않은 입력 값입니다."),
     MEMBER_BDAY_ERROR(409, "MEMBER_BDAY_ERROR", "유효하지 않은 입력 값입니다.");

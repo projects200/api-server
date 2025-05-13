@@ -14,7 +14,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.UUID;
 
 @Service
 @Validated
@@ -33,9 +35,17 @@ public class MemberServiceImpl implements MemberService {
         return memberRepository.existsByMemberNickname(nickname);
     }
 
+    @Override
+    public boolean checkMemberId(UUID memberId) {
+        return memberRepository.existsByMemberId(memberId);
+    }
+
     // 이름 변경
     @Override
     public SignUpResponseDto memberSignUp(SignUpRequestDto signUpRequestDto){
+        if(checkMemberId(UserContextHolder.getUserId())){
+            throw new CustomException(ErrorCode.MEMBER_ID_DUPLICATED);
+        }
         if(checkMemberEmail(UserContextHolder.getUserEmail())){
             throw new CustomException(ErrorCode.MEMBER_EMAIL_DUPLICATED);
         }
@@ -55,6 +65,8 @@ public class MemberServiceImpl implements MemberService {
                 .memberEmail(UserContextHolder.getUserEmail())
                 .memberNickname(signUpRequestDto.getMemberNickname())
                 .memberGender(memberGender)
+                .memberWarnedCount((byte) 0)
+                .memberCreatedAt(LocalDateTime.now())
                 .memberScore((byte) 35)
                 .memberBday(signUpRequestDto.getMemberBday())
                 .build();
