@@ -22,7 +22,8 @@ public enum ErrorCode {
     MEMBER_ID_DUPLICATED(409, "MEMBER_ID_DUPLICATED", "이미 가입한 회원 입니다."),
     MEMBER_NICKNAME_DUPLICATED(409, "MEMBER_NICKNAME_DUPLICATED", "이미 사용 중인 닉네임입니다."),
     MEMBER_GENDER_ERROR(409, "MEMBER_GENDER_ERROR", "유효하지 않은 입력 값입니다."),
-    MEMBER_BDAY_ERROR(409, "MEMBER_BDAY_ERROR", "유효하지 않은 입력 값입니다.");
+    MEMBER_BDAY_ERROR(409, "MEMBER_BDAY_ERROR", "유효하지 않은 입력 값입니다."),
+    MEMBER_SAVE_FAILED_ERROR(500, "MEMBER_SAVE_FAILED_ERROR", "모종의 에러로 회원가입에 실패하였습니다.");
 
     private final HttpStatusCode status;
     private final String code;
