@@ -2,6 +2,8 @@ package com.project200.undabang.member.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project200.undabang.common.context.UserContextHolder;
+import com.project200.undabang.common.web.advice.GlobalExceptionHandler;
+import com.project200.undabang.common.web.advice.GlobalResponseWrapper;
 import com.project200.undabang.member.dto.request.SignUpRequestDto;
 import com.project200.undabang.member.dto.response.SignUpResponseDto;
 import com.project200.undabang.member.enums.MemberGender;
@@ -44,7 +46,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith({RestDocumentationExtension.class, SpringExtension.class})
 @AutoConfigureRestDocs
 @SpringBootTest
-class AuthRestControllerTest {
+class FailedAuthRestControllerTest {
 
     private MockMvc mockMvc;
 
@@ -56,6 +58,12 @@ class AuthRestControllerTest {
 
     @Autowired
     private AuthRestController authRestController;
+
+    @Autowired
+    private GlobalResponseWrapper globalResponseWrapper;
+
+    @Autowired
+    private GlobalExceptionHandler globalExceptionHandler;
 
     private MockedStatic<UserContextHolder> userContextHolderMock;
 
@@ -75,8 +83,17 @@ class AuthRestControllerTest {
         // AuthRestController의 MemberService 빈을 Mock 서비스로 교체
         ReflectionTestUtils.setField(authRestController, "memberService", memberServiceMock);
 
-        // MockMvc 설정 - 인터셉터 건너뛰게 설정 (standaloneSetup)
+
+        /**
+         *  SpringBootTest를 사용했기에 전체 웹어플리케이션이 구동됨 --> 인터셉터가 동작함
+         *  MockMvc 설정 - 인터셉터 건너뛰게 설정 (standaloneSetup)
+         *  하지만 내 테스트 코드에서는 컨트롤러만 적용되도록 했기 떄문에 공통 응답 객체가 사용되지 않음.
+         *  따라서 명세서에 공통응답이 적용되지 않았다.
+         *  따라서 setControllerAdvice를 적용하여 globalResponse/globalException Wrapper를 걸어주니 공통출력이 적용되는것을 확인할 수 있었다.
+         */
         this.mockMvc = MockMvcBuilders.standaloneSetup(authRestController)
+                .setControllerAdvice(globalResponseWrapper)
+                .setControllerAdvice(globalExceptionHandler)
                 .apply(documentationConfiguration(restDocumentation))
                 .build();
     }
@@ -95,10 +112,11 @@ class AuthRestControllerTest {
     @DisplayName("회원가입 API 테스트")
     void signUpAPITest() throws Exception{
         //given
-        SignUpRequestDto requestDto = new SignUpRequestDto();
-        requestDto.setMemberNickname(TEST_NICKNAME);
-        requestDto.setMemberGender(MemberGender.M);
-        requestDto.setMemberBday(LocalDate.of(2025,1,1));
+        SignUpRequestDto requestDto = SignUpRequestDto.builder()
+                .memberNickname(TEST_NICKNAME)
+                .memberGender(MemberGender.M)
+                .memberBday(LocalDate.parse("2010-01-01"))
+                .build();
 
         SignUpResponseDto respDto = SignUpResponseDto.builder()
                 .memberId(TEST_UUID)
@@ -120,13 +138,13 @@ class AuthRestControllerTest {
                         .header("X-USER-ID", TEST_UUID.toString())
                 .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.memberId").value(TEST_UUID.toString()))
-                .andExpect(jsonPath("$.memberEmail").value(TEST_EMAIL))
-                .andExpect(jsonPath("$.memberNickname").value(TEST_NICKNAME))
-                .andExpect(jsonPath("$.memberGender").value(String.valueOf(MemberGender.M.getCode())))
-                .andExpect(jsonPath("$.memberBday").exists())
-                .andExpect(jsonPath("$.memberScore").value(35))
-                .andExpect(jsonPath("$.memberCreatedAt").exists())
+                .andExpect(jsonPath("$.data.memberId").value(TEST_UUID.toString()))
+                .andExpect(jsonPath("$.data.memberEmail").value(TEST_EMAIL))
+                .andExpect(jsonPath("$.data.memberNickname").value(TEST_NICKNAME))
+                .andExpect(jsonPath("$.data.memberGender").value(String.valueOf(MemberGender.M.getCode())))
+                .andExpect(jsonPath("$.data.memberBday").exists())
+                .andExpect(jsonPath("$.data.memberScore").value(35))
+                .andExpect(jsonPath("$.data.memberCreatedAt").exists())
                 .andDo(document("member-signup",
                         preprocessRequest(prettyPrint()),
                         preprocessResponse(prettyPrint()),
@@ -135,14 +153,17 @@ class AuthRestControllerTest {
                                 fieldWithPath("memberGender").description("사용자 성별").type(JsonFieldType.STRING),
                                 fieldWithPath("memberBday").description("사용자 생년월일").type(JsonFieldType.STRING)
                         ),responseFields(
-                                fieldWithPath("memberId").description("가입된 회원 아이디").type(JsonFieldType.STRING),
-                                fieldWithPath("memberEmail").description("가입된 이메일").type(JsonFieldType.STRING),
-                                fieldWithPath("memberNickname").description("가입된 닉네임").type(JsonFieldType.STRING),
-                                fieldWithPath("memberGender").description("가입된 성별").type(JsonFieldType.STRING),
-                                fieldWithPath("memberBday").description("가입된 회원 생일").type(JsonFieldType.ARRAY),
-                                fieldWithPath("memberDesc").description("회원 설명").type(JsonFieldType.STRING).optional(),
-                                fieldWithPath("memberScore").description("회원 점수").type(JsonFieldType.NUMBER),
-                                fieldWithPath("memberCreatedAt").description("가입 일시").type(JsonFieldType.ARRAY)
+                                fieldWithPath("succeed").description("요청 성공 여부").type(JsonFieldType.BOOLEAN),
+                                fieldWithPath("code").description("응답 코드").type(JsonFieldType.STRING),
+                                fieldWithPath("message").description("응답 메시지").type(JsonFieldType.STRING),
+                                fieldWithPath("data.memberId").description("가입된 회원 아이디").type(JsonFieldType.STRING),
+                                fieldWithPath("data.memberEmail").description("가입된 이메일").type(JsonFieldType.STRING),
+                                fieldWithPath("data.memberNickname").description("가입된 닉네임").type(JsonFieldType.STRING),
+                                fieldWithPath("data.memberGender").description("가입된 성별").type(JsonFieldType.STRING),
+                                fieldWithPath("data.memberBday").description("가입된 회원 생일").type(JsonFieldType.ARRAY),
+                                fieldWithPath("data.memberDesc").description("회원 설명").type(JsonFieldType.STRING).optional(),
+                                fieldWithPath("data.memberScore").description("회원 점수").type(JsonFieldType.NUMBER),
+                                fieldWithPath("data.memberCreatedAt").description("가입 일시").type(JsonFieldType.ARRAY)
                         )
                 ));
     }
