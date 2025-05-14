@@ -68,6 +68,7 @@ Undabang API 서비스에 대한 문서입니다.
 [source,json]
 ----
 {
+  "success": "boolean",
   "code": "string",
   "message": "string",
   "data": {
@@ -110,6 +111,44 @@ include::{snippets}/member-signup/httpie-request.adoc[]
 
 [[member-registration-status]]
 === 회원 등록 상태 조회
+
+사용자의 회원 등록 상태를 조회하는 API입니다.
+
+==== 요청
+
+include::{snippets}/member-rest-controller-test/get-registration-status_-success/http-request.adoc[]
+
+==== 요청 헤더
+
+include::{snippets}/member-rest-controller-test/get-registration-status_-success/request-headers.adoc[]
+
+==== 응답
+
+include::{snippets}/member-rest-controller-test/get-registration-status_-success/http-response.adoc[]
+
+==== 응답 필드
+
+include::{snippets}/member-rest-controller-test/get-registration-status_-success/response-fields.adoc[]
+
+==== 요청 예시 (curl)
+
+include::{snippets}/member-rest-controller-test/get-registration-status_-success/curl-request.adoc[]
+
+==== 요청 예시 (httpie)
+
+include::{snippets}/member-rest-controller-test/get-registration-status_-success/httpie-request.adoc[]
+
+
+|===
+| 헤더 | 설명
+
+| `X-USER-EMAIL`
+| 사용자 이메일
+
+|===
+
+[[member-sign-up]]
+=== 회원 가입
 
 사용자의 회원 등록 상태를 조회하는 API입니다.
 
