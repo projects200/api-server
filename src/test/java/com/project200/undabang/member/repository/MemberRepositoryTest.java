@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -81,4 +82,38 @@ class MemberRepositoryTest {
         boolean check = memberRepository.existsByMemberNickname(name);
         assertFalse(check);
     }
+
+    /**
+     * 회원의 ID가 데이터베이스에 존재하는 경우를 테스트합니다.
+     */
+    @Test
+    @DisplayName("회원 ID가 존재하는 경우")
+    void existsByMemberId_exists() {
+        // given
+        UUID existingMemberId = testUUID;
+
+        // when
+        boolean result = memberRepository.existsByMemberId(existingMemberId);
+
+        // then
+        assertThat(result).isTrue();
+    }
+
+    /**
+     * 회원의 ID가 데이터베이스에 존재하지 않는 경우를 테스트합니다.
+     */
+    @Test
+    @DisplayName("회원 ID가 존재하지 않는 경우")
+    void existsByMemberId_not_exists() {
+        // given
+        UUID nonExistingMemberId = UUID.randomUUID();
+
+        // when
+        boolean result = memberRepository.existsByMemberId(nonExistingMemberId);
+
+        // then
+        assertThat(result).isFalse();
+    }
+
+
 }
