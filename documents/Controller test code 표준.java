@@ -8,8 +8,8 @@ public class JUnit5ExampleTests extended AbstractRestDocSupport {
     @DisplayName("한국어로 입력")
     public void testExample() extends Exception {
         // given
-        BDDMockito.given(...).willReturn(...);    // 정상 반환 시
-        BDDMockito.given(...).willThrow(...);     // 에러 발생 시
+        BDDMockito.given(mock.mock_method()).willReturn(...);    // 정상 반환 시
+        BDDMockito.given(mock.mock_method()).willThrow(...);     // 에러 발생 시
 
         // when
         HttpHeaders headers = new HttpHeaders();
@@ -63,6 +63,9 @@ public class JUnit5ExampleTests extended AbstractRestDocSupport {
         Assertions.assertThat(response).isEqualTo(expected);
 
         // 2) 에러 발생
-        Mockito.verify(service, never()).method();
+        BDDMockito.then(mock).should().mock_method()
+        BDDMockito.then(mock).should(BDDMockito.times(1)).mock_method()
+        BDDMockito.then(mock).shouldHaveNoMoreInteractions();
+        BDDMockito.then(mock).shouldHaveNoInteractions();
     }
 }
