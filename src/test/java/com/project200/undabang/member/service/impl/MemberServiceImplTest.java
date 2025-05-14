@@ -217,4 +217,50 @@ class MemberServiceImplTest {
         // when & then
         assertThrows(CustomException.class, () -> memberService.memberSignUp(requestDto));
     }
+
+    @Test
+    @DisplayName("생일 체크 - 미래 날짜인 경우 (유효하지 않음)")
+    public void invalid_checkMemberBday() {
+        // given
+        LocalDate futureBday = LocalDate.now().plusDays(1);
+
+        // when
+        boolean result = memberService.checkMemberBday(futureBday);
+
+        // then
+        assertTrue(result); // 미래 날짜이면 true 반환 (유효하지 않은 생일)
+    }
+
+    @Test
+    @DisplayName("생일 체크 - 과거 날짜인 경우 (유효함)")
+    public void valid_checkMemberBday() {
+        // given
+        LocalDate pastBday = LocalDate.now().minusDays(1);
+
+        // when
+        boolean result = memberService.checkMemberBday(pastBday);
+
+        // then
+        assertFalse(result); // 과거 날짜이면 false 반환 (유효한 생일)
+    }
+
+    @Test
+    @DisplayName("회원 가입 실패 - 미래 날짜의 생일")
+    public void fail_memberSignUp_invalidBirthday() {
+        // given
+        LocalDate futureBday = LocalDate.now().plusDays(1);
+        SignUpRequestDto requestDto = SignUpRequestDto.builder()
+                .memberNickname(TEST_NICKNAME)
+                .memberGender(MemberGender.M)
+                .memberBday(futureBday)
+                .build();
+
+        // 다른 검증은 통과하도록 설정
+        Mockito.when(memberRepository.existsByMemberId(TEST_UUID)).thenReturn(false);
+        Mockito.when(memberRepository.existsByMemberEmail(TEST_EMAIL)).thenReturn(false);
+        Mockito.when(memberRepository.existsByMemberNickname(TEST_NICKNAME)).thenReturn(false);
+
+        // when & then
+        assertThrows(CustomException.class, () -> memberService.memberSignUp(requestDto));
+    }
 }
