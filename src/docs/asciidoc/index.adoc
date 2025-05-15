@@ -68,6 +68,7 @@ Undabang API 서비스에 대한 문서입니다.
 [source,json]
 ----
 {
+  "success": "boolean",
   "code": "string",
   "message": "string",
   "data": {
@@ -86,27 +87,205 @@ Undabang API 서비스에 대한 문서입니다.
 
 ==== 요청
 
-include::{snippets}/member-signup/http-request.adoc[]
+include::{snippets}/auth-rest-controller-test/sign-up-member_-succeed/http-request.adoc[]
+
+
+==== 요청헤더
+
+|===
+| 헤더 | 설명
+| `X-USER-ID`
+| 사용자 식별자 (UUID 형식)
+| `X-USER-EMAIL`
+| 사용자 이메일
+
+|===
 
 ==== 요청 필드
 
-include::{snippets}/member-signup/request-fields.adoc[]
+include::{snippets}/auth-rest-controller-test/sign-up-member_-succeed/request-fields.adoc[]
 
 ==== 응답
 
-include::{snippets}/member-signup/http-response.adoc[]
+include::{snippets}/auth-rest-controller-test/sign-up-member_-succeed/http-response.adoc[]
 
 ==== 응답 필드
 
-include::{snippets}/member-signup/response-fields.adoc[]
+include::{snippets}/auth-rest-controller-test/sign-up-member_-succeed/response-fields.adoc[]
 
-==== 요청 예시 (curl)
+[[member-signup-failed]]
+=== 회원 가입 실패 - 사용자 ID 헤더 없음
 
-include::{snippets}/member-signup/curl-request.adoc[]
+회원 가입 시 X-USER-ID 헤더가 없는 경우의 응답입니다.
 
-==== 요청 예시 (httpie)
+==== 요청
 
-include::{snippets}/member-signup/httpie-request.adoc[]
+include::{snippets}/auth-rest-controller-test/sign-up-member_-failed_member-id_not-exist/http-request.adoc[]
+
+==== 요청 필드
+
+include::{snippets}/auth-rest-controller-test/sign-up-member_-failed_member-id_not-exist/request-headers.adoc[]
+
+==== 응답
+
+include::{snippets}/auth-rest-controller-test/sign-up-member_-failed_member-id_not-exist/http-response.adoc[]
+
+==== 응답 필드
+include::{snippets}/auth-rest-controller-test/sign-up-member_-failed_member-id_not-exist/response-fields.adoc[]
+
+=== 회원 가입 실패 - 사용자 Email 헤더 없음
+
+회원 가입 시 이메일이 없는 경우의 응답 입니다.
+
+==== 요청
+
+include::{snippets}/auth-rest-controller-test/email-not-exist/http-request.adoc[]
+
+==== 요청 필드
+
+include::{snippets}/auth-rest-controller-test/email-not-exist/request-headers.adoc[]
+
+==== 응답
+
+include::{snippets}/auth-rest-controller-test/email-not-exist/http-response.adoc[]
+
+==== 응답 필드
+include::{snippets}/auth-rest-controller-test/email-not-exist/response-fields.adoc[]
+
+=== 회원 가입 실패 - 사용자 Email 중복
+
+회원 가입 시 이메일이 중복된 경우의 응답입니다. (이미 존재하는 회원)
+
+==== 요청
+
+include::{snippets}/auth-rest-controller-test/email-duplicated/http-request.adoc[]
+
+==== 요청 필드
+
+include::{snippets}/auth-rest-controller-test/email-duplicated/request-headers.adoc[]
+
+==== 응답
+
+include::{snippets}/auth-rest-controller-test/email-duplicated/http-response.adoc[]
+
+==== 응답 필드
+include::{snippets}/auth-rest-controller-test/email-duplicated/response-fields.adoc[]
+
+
+=== 회원 가입 실패 - 사용자 Nickname 중복
+
+회원 가입 시 닉네임 중복된 경우의 응답입니다. (이미 사용하는 닉네임)
+
+==== 요청
+
+include::{snippets}/auth-rest-controller-test/nickname-duplicated/http-request.adoc[]
+
+==== 요청 필드
+
+include::{snippets}/auth-rest-controller-test/nickname-duplicated/request-headers.adoc[]
+
+==== 응답
+
+include::{snippets}/auth-rest-controller-test/nickname-duplicated/http-response.adoc[]
+
+==== 응답 필드
+include::{snippets}/auth-rest-controller-test/nickname-duplicated/response-fields.adoc[]
+
+
+=== 회원 가입 실패 - 사용자 생년월일 입력 오류
+
+회원 가입 시 미래의 생년월일을 입력한 경우의 응답입니다.
+
+==== 요청
+
+include::{snippets}/auth-rest-controller-test/b-day-failed/http-request.adoc[]
+
+==== 요청 필드
+
+include::{snippets}/auth-rest-controller-test/b-day-failed/request-headers.adoc[]
+
+==== 응답
+
+include::{snippets}/auth-rest-controller-test/b-day-failed/http-response.adoc[]
+
+==== 응답 필드
+include::{snippets}/auth-rest-controller-test/b-day-failed/response-fields.adoc[]
+
+=== 회원 가입 실패 - 사용자 성별 입력 오류
+
+회원 가입 시 성별을 잘못 입력한 경우의 응답입니다.
+
+==== 요청
+
+include::{snippets}/auth-rest-controller-test/gender-failed/http-request.adoc[]
+
+==== 요청 필드
+
+include::{snippets}/auth-rest-controller-test/gender-failed/request-headers.adoc[]
+
+==== 응답
+
+include::{snippets}/auth-rest-controller-test/gender-failed/http-response.adoc[]
+
+==== 응답 필드
+include::{snippets}/auth-rest-controller-test/gender-failed/response-fields.adoc[]
+
+=== 회원 가입 실패 - 필수 내용 누락
+
+회원 가입 시 특정 내용을 입력하지 않은 경우입니다.(nickname, gender, bday)
+
+==== 요청
+
+include::{snippets}/auth-rest-controller-test/validation-failed-missing-field/http-request.adoc[]
+
+==== 요청 필드
+
+include::{snippets}/auth-rest-controller-test/validation-failed-missing-field/request-headers.adoc[]
+
+==== 응답
+
+include::{snippets}/auth-rest-controller-test/validation-failed-missing-field/http-response.adoc[]
+
+==== 응답 필드
+include::{snippets}/auth-rest-controller-test/validation-failed-missing-field/response-fields.adoc[]
+
+=== 회원 가입 실패 - 잘못된 JSON 본문
+
+회원 가입 시 특정 내용을 잘못 입력한 경우입니다.(nickname)
+
+==== 요청
+
+include::{snippets}/auth-rest-controller-test/invalid-json-format/http-request.adoc[]
+
+==== 요청 필드
+
+include::{snippets}/auth-rest-controller-test/invalid-json-format/request-headers.adoc[]
+
+==== 응답
+
+include::{snippets}/auth-rest-controller-test/invalid-json-format/http-response.adoc[]
+
+==== 응답 필드
+include::{snippets}/auth-rest-controller-test/invalid-json-format/response-fields.adoc[]
+
+=== 회원 가입 실패 - DB 저장 실패
+
+회원 가입 시 데이터베이스에 회원이 저장되지 않은 경우 입니다.
+
+==== 요청
+
+include::{snippets}/auth-rest-controller-test/save-member-failed/http-request.adoc[]
+
+==== 요청 필드
+
+include::{snippets}/auth-rest-controller-test/save-member-failed/request-headers.adoc[]
+
+==== 응답
+
+include::{snippets}/auth-rest-controller-test/save-member-failed/http-response.adoc[]
+
+==== 응답 필드
+include::{snippets}/auth-rest-controller-test/save-member-failed/response-fields.adoc[]
 
 [[member-registration-status]]
 === 회원 등록 상태 조회

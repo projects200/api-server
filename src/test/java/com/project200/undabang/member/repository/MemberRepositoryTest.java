@@ -2,7 +2,6 @@ package com.project200.undabang.member.repository;
 
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.enums.MemberGender;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -10,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -23,34 +21,24 @@ class MemberRepositoryTest {
     MemberRepository memberRepository;
 
     private UUID testUUID;
-    @BeforeEach
-    void setUp(){
-        testUUID = UUID.randomUUID();
 
-        Member member = Member.builder()
-                .memberId(testUUID)
-                .memberEmail("user@email.com")
-                .memberNickname("유저닉네임")
-                .memberGender(MemberGender.M)
-                .memberBday(LocalDate.of(1990, 1, 1))
-                .memberDesc("테스트 회원입니다ㄲ.")
-                .memberScore((byte) 35)
-                .memberCreatedAt(LocalDateTime.now())
-                .memberWarnedCount((byte)0)
-                .memberDeletedAt(null)
-                .build();
+    @BeforeEach
+    void setUp() {
+        testUUID = UUID.randomUUID();
+        Member member = Member.createFromSignUp(
+                testUUID,
+                "user@email.com",
+                "유저닉네임",
+                MemberGender.M,
+                LocalDate.of(1990, 1, 1)
+        );
 
         memberRepository.save(member);
     }
 
-    @AfterEach
-    void tearDown(){
-        memberRepository.deleteAll();
-    }
-
     @Test
     @DisplayName("이메일이 이미 존재하는 회원의 경우")
-    void existsByEmail_exists(){
+    void existsByEmail_exists() {
         String email = "user@email.com";
         boolean check = memberRepository.existsByMemberEmail(email);
 
@@ -59,7 +47,7 @@ class MemberRepositoryTest {
 
     @Test
     @DisplayName("이메일이 존재하지 않는 회원의 경우")
-    void existsByEmail_not_exists(){
+    void existsByEmail_not_exists() {
         String email = "user@gmail.com";
         boolean check = memberRepository.existsByMemberEmail(email);
 
@@ -68,7 +56,7 @@ class MemberRepositoryTest {
 
     @Test
     @DisplayName("이미 존재하는 닉네임을 입력한 회원의 경우")
-    void existsByMemberNickname_exists(){
+    void existsByMemberNickname_exists() {
         String name = "유저닉네임";
         boolean check = memberRepository.existsByMemberNickname(name);
         assertTrue(check);
@@ -76,9 +64,27 @@ class MemberRepositoryTest {
 
     @Test
     @DisplayName("닉네임을 중복없이 입력한 회원의 경우")
-    void existsByMemberNickname_not_exists(){
+    void existsByMemberNickname_not_exists() {
         String name = "테스트유저닉네임";
         boolean check = memberRepository.existsByMemberNickname(name);
         assertFalse(check);
     }
+
+    @Test
+    @DisplayName("이미 존재하는 멤버 ID를 가진 회원의 경우")
+    void existsByMemberId_exists() {
+        // 이미 setUp에서 생성한 testUUID를 사용
+        boolean check = memberRepository.existsByMemberId(testUUID);
+        assertTrue(check);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 멤버 ID를 가진 회원의 경우")
+    void existsByMemberId_not_exists() {
+        // 새로운 UUID 생성 (존재하지 않는 ID)
+        UUID nonExistentUUID = UUID.randomUUID();
+        boolean check = memberRepository.existsByMemberId(nonExistentUUID);
+        assertFalse(check);
+    }
+
 }
