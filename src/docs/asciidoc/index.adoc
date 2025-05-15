@@ -122,7 +122,7 @@ include::{snippets}/auth-rest-controller-test/sign-up-member_-succeed/response-f
 
 include::{snippets}/auth-rest-controller-test/sign-up-member_-failed_member-id_not-exist/http-request.adoc[]
 
-==== 요청 필드
+==== 요청 헤더
 
 include::{snippets}/auth-rest-controller-test/sign-up-member_-failed_member-id_not-exist/request-headers.adoc[]
 
@@ -141,7 +141,7 @@ include::{snippets}/auth-rest-controller-test/sign-up-member_-failed_member-id_n
 
 include::{snippets}/auth-rest-controller-test/email-not-exist/http-request.adoc[]
 
-==== 요청 필드
+==== 요청 헤더
 
 include::{snippets}/auth-rest-controller-test/email-not-exist/request-headers.adoc[]
 
@@ -160,7 +160,7 @@ include::{snippets}/auth-rest-controller-test/email-not-exist/response-fields.ad
 
 include::{snippets}/auth-rest-controller-test/email-duplicated/http-request.adoc[]
 
-==== 요청 필드
+==== 요청 헤더
 
 include::{snippets}/auth-rest-controller-test/email-duplicated/request-headers.adoc[]
 
@@ -180,7 +180,7 @@ include::{snippets}/auth-rest-controller-test/email-duplicated/response-fields.a
 
 include::{snippets}/auth-rest-controller-test/nickname-duplicated/http-request.adoc[]
 
-==== 요청 필드
+==== 요청 헤더
 
 include::{snippets}/auth-rest-controller-test/nickname-duplicated/request-headers.adoc[]
 
@@ -200,7 +200,7 @@ include::{snippets}/auth-rest-controller-test/nickname-duplicated/response-field
 
 include::{snippets}/auth-rest-controller-test/b-day-failed/http-request.adoc[]
 
-==== 요청 필드
+==== 요청 헤더
 
 include::{snippets}/auth-rest-controller-test/b-day-failed/request-headers.adoc[]
 
@@ -219,7 +219,7 @@ include::{snippets}/auth-rest-controller-test/b-day-failed/response-fields.adoc[
 
 include::{snippets}/auth-rest-controller-test/gender-failed/http-request.adoc[]
 
-==== 요청 필드
+==== 요청 헤더
 
 include::{snippets}/auth-rest-controller-test/gender-failed/request-headers.adoc[]
 
@@ -238,7 +238,7 @@ include::{snippets}/auth-rest-controller-test/gender-failed/response-fields.adoc
 
 include::{snippets}/auth-rest-controller-test/validation-failed-missing-field/http-request.adoc[]
 
-==== 요청 필드
+==== 요청 헤더
 
 include::{snippets}/auth-rest-controller-test/validation-failed-missing-field/request-headers.adoc[]
 
@@ -257,7 +257,7 @@ include::{snippets}/auth-rest-controller-test/validation-failed-missing-field/re
 
 include::{snippets}/auth-rest-controller-test/invalid-json-format/http-request.adoc[]
 
-==== 요청 필드
+==== 요청 헤더
 
 include::{snippets}/auth-rest-controller-test/invalid-json-format/request-headers.adoc[]
 
@@ -276,7 +276,7 @@ include::{snippets}/auth-rest-controller-test/invalid-json-format/response-field
 
 include::{snippets}/auth-rest-controller-test/save-member-failed/http-request.adoc[]
 
-==== 요청 필드
+==== 요청 헤더
 
 include::{snippets}/auth-rest-controller-test/save-member-failed/request-headers.adoc[]
 
