@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -56,35 +55,19 @@ public class MemberServiceImpl implements MemberService {
             throw new CustomException(ErrorCode.MEMBER_GENDER_ERROR);
         }
 
-        Member member = Member.builder()
-                .memberId(UserContextHolder.getUserId())
-                .memberEmail(UserContextHolder.getUserEmail())
-                .memberNickname(signUpRequestDto.getMemberNickname())
-                .memberGender(memberGender)
-                .memberWarnedCount((byte) 0)
-                .memberCreatedAt(LocalDateTime.now())
-                .memberScore((byte) 35)
-                .memberBday(signUpRequestDto.getMemberBday())
-                .build();
+        Member member = Member.createFromSignUp(
+                UserContextHolder.getUserId(),
+                UserContextHolder.getUserEmail(),
+                signUpRequestDto.getMemberNickname(),
+                memberGender,
+                signUpRequestDto.getMemberBday()
+        );
 
         /**
          * 저장 실패시 에러처리
          */
-        try{
-            Member savedMember = memberRepository.save(member);
-            return SignUpResponseDto.builder()
-                    .memberId(savedMember.getMemberId())
-                    .memberEmail(savedMember.getMemberEmail())
-                    .memberNickname(savedMember.getMemberNickname())
-                    .memberGender(savedMember.getMemberGender().getCode())
-                    .memberBday(savedMember.getMemberBday())
-                    .memberDesc(savedMember.getMemberDesc())
-                    .memberScore(savedMember.getMemberScore())
-                    .memberCreatedAt(savedMember.getMemberCreatedAt())
-                    .build();
-        }catch (Exception e){
-            throw new CustomException(ErrorCode.MEMBER_SAVE_FAILED_ERROR);
-        }
+        Member savedMember = memberRepository.save(member);
+        return SignUpResponseDto.of(savedMember);
     }
 
     /**
