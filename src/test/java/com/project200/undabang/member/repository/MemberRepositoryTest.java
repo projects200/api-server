@@ -11,6 +11,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -70,21 +71,35 @@ class MemberRepositoryTest {
         assertFalse(check);
     }
 
+    /**
+     * 회원의 ID가 데이터베이스에 존재하는 경우를 테스트합니다.
+     */
     @Test
-    @DisplayName("이미 존재하는 멤버 ID를 가진 회원의 경우")
+    @DisplayName("회원 ID가 존재하는 경우")
     void existsByMemberId_exists() {
-        // 이미 setUp에서 생성한 testUUID를 사용
-        boolean check = memberRepository.existsByMemberId(testUUID);
-        assertTrue(check);
+        // given
+        UUID existingMemberId = testUUID;
+
+        // when
+        boolean result = memberRepository.existsByMemberId(existingMemberId);
+
+        // then
+        assertThat(result).isTrue();
     }
 
+    /**
+     * 회원의 ID가 데이터베이스에 존재하지 않는 경우를 테스트합니다.
+     */
     @Test
-    @DisplayName("존재하지 않는 멤버 ID를 가진 회원의 경우")
+    @DisplayName("회원 ID가 존재하지 않는 경우")
     void existsByMemberId_not_exists() {
-        // 새로운 UUID 생성 (존재하지 않는 ID)
-        UUID nonExistentUUID = UUID.randomUUID();
-        boolean check = memberRepository.existsByMemberId(nonExistentUUID);
-        assertFalse(check);
-    }
+        // given
+        UUID nonExistingMemberId = UUID.randomUUID();
 
+        // when
+        boolean result = memberRepository.existsByMemberId(nonExistingMemberId);
+
+        // then
+        assertThat(result).isFalse();
+    }
 }
