@@ -2,7 +2,6 @@ package com.project200.undabang.member.repository;
 
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.enums.MemberGender;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -10,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -27,26 +25,15 @@ class MemberRepositoryTest {
     @BeforeEach
     void setUp() {
         testUUID = UUID.randomUUID();
-
-        Member member = Member.builder()
-                .memberId(testUUID)
-                .memberEmail("user@email.com")
-                .memberNickname("유저닉네임")
-                .memberGender(MemberGender.M)
-                .memberBday(LocalDate.of(1990, 1, 1))
-                .memberDesc("테스트 회원입니다ㄲ.")
-                .memberScore((byte) 35)
-                .memberCreatedAt(LocalDateTime.now())
-                .memberWarnedCount((byte) 0)
-                .memberDeletedAt(null)
-                .build();
+        Member member = Member.createFromSignUp(
+                testUUID,
+                "user@email.com",
+                "유저닉네임",
+                MemberGender.M,
+                LocalDate.of(1990, 1, 1)
+        );
 
         memberRepository.save(member);
-    }
-
-    @AfterEach
-    void tearDown() {
-        memberRepository.deleteAll();
     }
 
     @Test

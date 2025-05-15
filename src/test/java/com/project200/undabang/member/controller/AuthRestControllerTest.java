@@ -61,7 +61,6 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 .memberCreatedAt(LocalDateTime.now())
                 .build();
 
-//        BDDMockito.given(memberService.memberSignUp(BDDMockito.any(reqDto)).willReturn(respDto);
         BDDMockito.given(memberService.memberSignUp(BDDMockito.any(SignUpRequestDto.class))).willReturn(respDto);
 
         // when
