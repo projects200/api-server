@@ -3,9 +3,13 @@ package com.project200.undabang.common.web.advice;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.response.CommonResponse;
+import jakarta.persistence.PersistenceException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -132,6 +136,29 @@ public class GlobalExceptionHandler {
     protected ResponseEntity<CommonResponse<Void>> handleException(Exception ex) {
         log.error("처리되지 않은 예외 발생: ", ex);
         ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+        CommonResponse<Void> response = CommonResponse.<Void>error(errorCode).build();
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
+    }
+
+    /**
+     * 데이터베이스 저장 실패와 관련된 예외를 처리합니다.
+     *
+     * <p>이 메서드는 JPA 및 데이터베이스 저장 작업 중 발생할 수 있는 다양한 예외를
+     * 처리하고 일관된 오류 응답을 제공합니다.</p>
+     *
+     * @param ex 데이터베이스 저장 관련 예외
+     * @return 구성된 오류 응답
+     */
+    @ExceptionHandler({
+            DataIntegrityViolationException.class,
+            JpaSystemException.class,
+            PersistenceException.class,
+            OptimisticLockingFailureException.class
+    })
+    protected ResponseEntity<CommonResponse<Void>> handleDatabaseException(Exception ex) {
+        log.error("데이터베이스 저장 실패: ", ex);
+        ErrorCode errorCode = ErrorCode.MEMBER_SAVE_FAILED_ERROR;
+
         CommonResponse<Void> response = CommonResponse.<Void>error(errorCode).build();
         return ResponseEntity.status(errorCode.getStatus()).body(response);
     }

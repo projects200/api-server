@@ -70,4 +70,15 @@ public class Member {
     @Comment("탈퇴 시 삭제 일시 기록")
     @Column(name = "member_deleted_at")
     private LocalDateTime memberDeletedAt;
+
+    public static Member createFromSignUp(UUID memberId, String memberEmail, String memberNickname, MemberGender memberGender, LocalDate memberBday){
+        return Member.builder()
+                .memberId(memberId)
+                .memberEmail(memberEmail)
+                .memberNickname(memberNickname)
+                .memberGender(memberGender)
+                .memberScore((byte) 0)
+                .memberBday(memberBday)
+                .build();
+    }
 }

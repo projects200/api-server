@@ -1,5 +1,6 @@
 package com.project200.undabang.member.dto.response;
 
+import com.project200.undabang.member.entity.Member;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,4 +22,17 @@ public class SignUpResponseDto {
     private LocalDate memberBday;
     private int memberScore;
     private LocalDateTime memberCreatedAt;
+
+    public static SignUpResponseDto of(Member member) {
+        return SignUpResponseDto.builder()
+                .memberId(member.getMemberId())
+                .memberEmail(member.getMemberEmail())
+                .memberNickname(member.getMemberNickname())
+                .memberGender(member.getMemberGender().getCode())
+                .memberBday(member.getMemberBday())
+                .memberDesc(member.getMemberDesc())
+                .memberScore(member.getMemberScore())
+                .memberCreatedAt(member.getMemberCreatedAt())
+                .build();
+    }
 }

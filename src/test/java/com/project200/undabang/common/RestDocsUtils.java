@@ -20,6 +20,12 @@ public class RestDocsUtils {
     public static final HeaderDescriptor HEADER_X_USER_ID =
             headerWithName("X-USER-ID").description("사용자 식별자 (UUID 형식)");
 
+    /**
+     * 회원가입 진행시 사용되는 X-USER-EMAIL 요청에 대한 HeaderDescriptor 상수
+     */
+    public static final HeaderDescriptor HEADER_X_USER_EMAIL =
+            headerWithName("X-USER-EMAIL").description("사용자 이메일");
+
 
     /**
      * 공통 응답 필드 설명을 생성하고, 'data' 필드 내의 구체적인 필드 설명을 추가합니다.
