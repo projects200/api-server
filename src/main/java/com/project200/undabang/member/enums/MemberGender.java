@@ -13,4 +13,13 @@ public enum MemberGender {
     MemberGender(char code){
         this.code = code;
     }
+
+    public static MemberGender fromCode(char code) {
+        for (MemberGender gender : MemberGender.values()) {
+            if (gender.getCode() == code) {
+                return gender;
+            }
+        }
+        throw new IllegalArgumentException("올바른 성별을 입력해주세요 : " + code);
+    }
 }

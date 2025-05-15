@@ -16,9 +16,8 @@ public class AuthRestController {
     private final MemberService memberService;
 
     @PostMapping("/auth/sign-up/v1")
-    public CommonResponse<SignUpResponseDto> signUpMember(@RequestBody @Valid SignUpRequestDto signUpRequestDto){
+    public CommonResponse<SignUpResponseDto> signUpMember(@Valid @RequestBody SignUpRequestDto signUpRequestDto){
         SignUpResponseDto responseDto = memberService.memberSignUp(signUpRequestDto);
-
         return CommonResponse.success(responseDto);
     }
 

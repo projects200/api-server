@@ -8,7 +8,9 @@ import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -161,5 +163,21 @@ public class GlobalExceptionHandler {
 
         CommonResponse<Void> response = CommonResponse.<Void>error(errorCode).build();
         return ResponseEntity.status(errorCode.getStatus()).body(response);
+    }
+
+    /**
+     * HttpMessageNotReadableException 예외를 처리합니다.
+     *
+     * <p>요청 본문을 읽을 수 없거나 파싱할 수 없을 때 발생하는 예외를 처리합니다.</p>
+     *
+     * @param ex 처리할 HttpMessageNotReadableException 예외
+     * @return 유효하지 않은 요청에 대한 오류 응답
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    protected ResponseEntity<CommonResponse<Void>> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
+        log.warn("HttpMessageNotReadableException 발생: ", ex);
+        ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
+        CommonResponse<Void> response = CommonResponse.<Void>error(errorCode).message("올바른 값을 입력해 주세요").build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 }

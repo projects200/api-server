@@ -22,6 +22,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.catchThrowable;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -199,10 +200,9 @@ class MemberServiceImplTest {
         // then
         assertThrows(CustomException.class, () -> memberService.memberSignUp(requestDto));
     }
-
     @Test
-    @DisplayName("회원 가입 실패 - 잘못된 성별 정보")
-    public void fail_memberSignUp_invalidGender() {
+    @DisplayName("회원 가입 실패 - 성별 정보 누락")
+    public void fail_memberSignUp_missingGender() {
         // given
         SignUpRequestDto requestDto = SignUpRequestDto.builder()
                 .memberNickname(TEST_NICKNAME)
@@ -210,12 +210,11 @@ class MemberServiceImplTest {
                 .memberBday(LocalDate.parse("2010-01-01"))
                 .build();
 
-        Mockito.when(memberRepository.existsByMemberId(TEST_UUID)).thenReturn(false);
-        Mockito.when(memberRepository.existsByMemberEmail(TEST_EMAIL)).thenReturn(false);
-        Mockito.when(memberRepository.existsByMemberNickname(TEST_NICKNAME)).thenReturn(false);
+        // when
+        Throwable thrown = catchThrowable(() -> memberService.memberSignUp(requestDto));
 
-        // when & then
-        assertThrows(CustomException.class, () -> memberService.memberSignUp(requestDto));
+        // then
+        assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

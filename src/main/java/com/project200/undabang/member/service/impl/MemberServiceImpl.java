@@ -6,7 +6,6 @@ import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.dto.request.SignUpRequestDto;
 import com.project200.undabang.member.dto.response.SignUpResponseDto;
 import com.project200.undabang.member.entity.Member;
-import com.project200.undabang.member.enums.MemberGender;
 import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.member.service.MemberService;
 import jakarta.transaction.Transactional;
@@ -47,19 +46,15 @@ public class MemberServiceImpl implements MemberService {
         if(checkMemberBday(signUpRequestDto.getMemberBday())){
             throw new CustomException((ErrorCode.MEMBER_BDAY_ERROR));
         }
-
-        MemberGender memberGender;
-        try{
-            memberGender = signUpRequestDto.getMemberGender();
-        } catch (IllegalArgumentException e){
-            throw new CustomException(ErrorCode.MEMBER_GENDER_ERROR);
+        if(signUpRequestDto.getMemberGender() == null){
+            throw new IllegalArgumentException("성별을 입력해주세요");
         }
 
         Member member = Member.createFromSignUp(
                 UserContextHolder.getUserId(),
                 UserContextHolder.getUserEmail(),
                 signUpRequestDto.getMemberNickname(),
-                memberGender,
+                signUpRequestDto.getMemberGender(),
                 signUpRequestDto.getMemberBday()
         );
 
