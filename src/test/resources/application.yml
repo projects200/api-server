@@ -29,6 +29,28 @@ spring:
   transaction:
     default-timeout: 30s
 
+  test:
+    restdocs:
+      uris:
+        scheme: https
+        host: api.undabang.store
+        port: 443
+
+  cloud:
+    aws:
+      region:
+        static: ap-northeast-2
+      credentials:
+        access-key: test
+        secret-key: test
+      s3:
+        endpoint: http://localhost:4566
+        path-style-access-enabled: true
+
+app:
+  s3:
+    bucket-name: my-test-image-bucket
+
 logging:
   level:
     com.project200.undabang: debug
