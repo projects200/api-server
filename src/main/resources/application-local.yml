@@ -27,5 +27,4 @@ logging:
     org.hibernate.orm.jdbc.bind: trace # SQL 파라미터 바인딩 로깅 (Hibernate 6.x)
 
 cors:
-  allowed-origins:
-    - http://localhost:3000
+  allowed-origins: http://localhost:3000
