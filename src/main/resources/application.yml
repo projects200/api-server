@@ -11,3 +11,8 @@ spring:
     hibernate:
       ddl-auto: validate
 
+#   서블릿 레벨이 아닌 애플리케이션 레벨의 파일 업로드 크기 제한
+  servlet:
+    multipart:
+      max-file-size: 10MB # 개별 파일 최대 크기
+      max-request-size: 50MB # 총 요청 최대 크기 (여러 파일 업로드 시)

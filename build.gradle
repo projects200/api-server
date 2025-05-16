@@ -29,29 +29,46 @@ repositories {
 
 ext {
 	set('snippetsDir', file("build/generated-snippets"))
-	springRestDocsVersion = '3.0.3'
+	set('springRestDocsVersion', "3.0.3")
+	set('springCloudAwsVersion', "3.3.0")
 }
 
 dependencies {
+	// Spring Cloud AWS BOM (Bill of Materials)
+	implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:${springCloudAwsVersion}")
+
+	// Spring Boot 의존성
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+
+	// 데이터베이스
 	runtimeOnly 'com.h2database:h2'
 	runtimeOnly 'com.mysql:mysql-connector-j'
-	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+	// Lombok
+	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
+	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+	// AWS 관련
+	implementation "io.awspring.cloud:spring-cloud-aws-starter-s3"	// Spring Cloud AWS S3 Starter
+
+	// 테스트 의존성
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	asciidoctorExt "org.springframework.restdocs:spring-restdocs-asciidoctor:${springRestDocsVersion}"
+	testImplementation 'io.awspring.cloud:spring-cloud-aws-testcontainers'
+	testImplementation 'org.testcontainers:localstack'
+	testImplementation 'org.testcontainers:junit-jupiter'
 
+	// Mockito 설정
 	mockitoAgent('org.mockito:mockito-core') {
 		transitive = false
 	}
-
 }
 
 tasks.named('test') {
