@@ -8,7 +8,9 @@ import com.project200.undabang.exercise.repository.ExerciseRepository;
 import com.project200.undabang.exercise.service.ExerciseRecordService;
 import com.project200.undabang.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -17,8 +19,10 @@ import java.util.UUID;
  * 운동 기록 조회 관련 서비스 구현체입니다.
  * 사용자의 운동 기록을 조회하고 접근 권한을 검증하는 기능을 제공합니다.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ExerciseRecordServiceImpl implements ExerciseRecordService {
     private final ExerciseRepository exerciseRepository;
     private final MemberRepository memberRepository;
@@ -52,17 +56,19 @@ public class ExerciseRecordServiceImpl implements ExerciseRecordService {
 
     @Override
     public FindExerciseRecordResponseDto findExerciseRecordByRecordId(Long recordId) {
-        if(!checkMemberId(UserContextHolder.getUserId())){
-            throw new CustomException(ErrorCode.USER_ID_HEADER_MISSING);
-        }
-        if(!checkExerciseRecordId(recordId)){
-            throw new CustomException(ErrorCode.EXERCISE_RECORD_NOT_FOUND);
-        }
-        if(!validateMemberRecordAccess(UserContextHolder.getUserId(), recordId)){
+        UUID memberId = UserContextHolder.getUserId();
+
+        if(!validateMemberRecordAccess(memberId, recordId)){
+            if(!checkMemberId(memberId)){
+                throw new CustomException(ErrorCode.USER_ID_HEADER_MISSING);
+            }
+            if(!checkExerciseRecordId(recordId)){
+                throw new CustomException(ErrorCode.EXERCISE_RECORD_NOT_FOUND);
+            }
             throw new CustomException(ErrorCode.AUTHORIZATION_DENIED);
         }
 
-        UUID memberId = UserContextHolder.getUserId();
+        log.debug("운동기록 조회 요청 : {}", recordId);
         FindExerciseRecordResponseDto responseDto = exerciseRepository.findExerciseByExerciseId(memberId, recordId);
 
         if(Objects.isNull(responseDto)){
