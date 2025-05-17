@@ -72,6 +72,21 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
                         exercise.exerciseDeletedAt.isNull())
                 .fetchOne();
 
+        // exercise 테이블에 운동기록 추가 시
+/*        FindExerciseRecordResponseDto respDto = queryFactory
+                .select(Projections.fields(FindExerciseRecordResponseDto.class,
+                        exercise.exerciseTitle,
+                        exercise.exerciseDetail,
+                        exercise.exercisePersonalType,
+                        exercise.exerciseStartedAt,
+                        exercise.exerciseEndedAt,
+                        exercise.exerciseLocate))
+                .from(exercise)
+                .where(exercise.member.memberId.eq(memberId),
+                        exercise.id.eq(recordId),
+                        exercise.exerciseDeletedAt.isNull())
+                .fetchOne();*/
+
         if(respDto != null){
             List<String> urlList = queryFactory
                     .select(picture.pictureUrl)
