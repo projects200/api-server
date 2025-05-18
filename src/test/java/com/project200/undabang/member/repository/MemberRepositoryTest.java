@@ -1,5 +1,6 @@
 package com.project200.undabang.member.repository;
 
+import com.project200.undabang.configuration.TestConfig;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.enums.MemberGender;
 import org.junit.jupiter.api.BeforeEach;
@@ -7,6 +8,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -16,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DataJpaTest
+@Import(TestConfig.class)
 class MemberRepositoryTest {
 
     @Autowired

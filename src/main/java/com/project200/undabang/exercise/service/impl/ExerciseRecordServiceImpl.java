@@ -58,13 +58,13 @@ public class ExerciseRecordServiceImpl implements ExerciseRecordService {
     public FindExerciseRecordResponseDto findExerciseRecordByRecordId(Long recordId) {
         UUID memberId = UserContextHolder.getUserId();
 
+        if(!checkMemberId(memberId)){
+            throw new CustomException(ErrorCode.MEMBER_NOT_FOUND);
+        }
+        if(!checkExerciseRecordId(recordId)){
+            throw new CustomException(ErrorCode.EXERCISE_RECORD_NOT_FOUND);
+        }
         if(!validateMemberRecordAccess(memberId, recordId)){
-            if(!checkMemberId(memberId)){
-                throw new CustomException(ErrorCode.USER_ID_HEADER_MISSING);
-            }
-            if(!checkExerciseRecordId(recordId)){
-                throw new CustomException(ErrorCode.EXERCISE_RECORD_NOT_FOUND);
-            }
             throw new CustomException(ErrorCode.AUTHORIZATION_DENIED);
         }
 
