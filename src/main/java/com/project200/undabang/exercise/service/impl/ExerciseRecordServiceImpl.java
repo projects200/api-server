@@ -85,7 +85,7 @@ public class ExerciseRecordServiceImpl implements ExerciseRecordService {
 
     @Override
     public Optional<List<FindExerciseRecordDateResponseDto>>  findExerciseRecordByDate(LocalDate inputDate) {
-        if(inputDate.isAfter(LocalDate.now())){
+        if(inputDate.isBefore(LocalDate.of(1945, 8, 15)) || inputDate.isAfter(LocalDate.now())){
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
         }
 
