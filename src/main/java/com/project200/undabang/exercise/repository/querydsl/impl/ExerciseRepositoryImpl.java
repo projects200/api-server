@@ -1,6 +1,7 @@
 package com.project200.undabang.exercise.repository.querydsl.impl;
 
 import com.project200.undabang.common.entity.QPicture;
+import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseDto;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.exercise.entity.QExercise;
@@ -11,6 +12,8 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -104,5 +107,45 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
         }
 
         return respDto;
+    }
+    /**
+     * 특정 회원의 특정 날짜에 해당하는 운동 기록을 조회합니다.
+     * 해당 날짜의 자정(00:00:00)부터 다음 날 자정 직전까지의 운동 기록을 검색합니다.
+     *
+     * 썸네일이 없을수도 있으니 LeftJoin을 사용하였습니다.
+     */
+    @Override
+    public Optional<List<FindExerciseRecordDateResponseDto>> findExerciseRecordByDate(UUID memberId, LocalDate date) {
+        QExercise exercise = QExercise.exercise;
+        QExercisePicture exercisePicture = QExercisePicture.exercisePicture;
+        QPicture picture = QPicture.picture;
+
+        LocalDateTime startDate = date.atStartOfDay();
+        LocalDateTime endDate = startDate.plusDays(1);
+
+        List<FindExerciseRecordDateResponseDto> respDtoList = queryFactory
+                .select(Projections.fields(FindExerciseRecordDateResponseDto.class,
+                        exercise.id.as("exerciseId"),
+                        exercise.exerciseTitle,
+                        exercise.exercisePersonalType,
+                        exercise.exerciseStartedAt,
+                        exercise.exerciseEndedAt,
+                        picture.pictureUrl.as("pictureUrl")))
+                .from(exercise).leftJoin(exercisePicture).on(exercisePicture.exercise.eq(exercise))
+                .leftJoin(picture).on(exercisePicture.pictures.eq(picture)
+                        .and(picture.pictureDeletedAt.isNull()))
+                .where(
+                        exercise.member.memberId.eq(memberId),
+                        exercise.exerciseStartedAt.goe(startDate).and(exercise.exerciseStartedAt.lt(endDate)),
+                        exercise.exerciseDeletedAt.isNull())
+                .distinct() // 현재 대표사진이 없으므로 일단 distinct() 적용, 랜덤으로 1장의 사진 적용
+                .fetch();
+
+
+        if(respDtoList.isEmpty()){
+            return Optional.empty();
+        }else{
+            return Optional.of(respDtoList);
+        }
     }
 }

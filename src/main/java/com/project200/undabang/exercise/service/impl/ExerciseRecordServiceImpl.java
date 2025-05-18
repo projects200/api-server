@@ -3,6 +3,7 @@ package com.project200.undabang.exercise.service.impl;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
+import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseDto;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
 import com.project200.undabang.exercise.service.ExerciseRecordService;
@@ -12,7 +13,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -77,6 +81,21 @@ public class ExerciseRecordServiceImpl implements ExerciseRecordService {
         }
 
         return responseDto;
+    }
+
+    @Override
+    public Optional<List<FindExerciseRecordDateResponseDto>>  findExerciseRecordByDate(LocalDate inputDate) {
+        if(inputDate.isAfter(LocalDate.now())){
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        UUID memberId = UserContextHolder.getUserId();
+
+        log.debug("날짜별 운동 기록 조회 요청: date={}", inputDate);
+        Optional<List<FindExerciseRecordDateResponseDto>> responseDtoList = exerciseRepository.findExerciseRecordByDate(memberId, inputDate);
+        log.debug("날짜별 운동 기록 조회 결과: date={}, count={}", inputDate, responseDtoList.get().size());
+
+        return responseDtoList;
     }
 }
 
