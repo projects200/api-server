@@ -35,6 +35,5 @@ logging:
 app:
   s3:
     bucket-name: my-local-image-bucket
-
 cors:
   allowed-origins: http://localhost:3000
