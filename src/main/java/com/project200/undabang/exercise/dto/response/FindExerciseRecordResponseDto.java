@@ -15,6 +15,6 @@ public class FindExerciseRecordResponseDto {
     private String exercisePersonalType;
     private LocalDateTime exerciseStartedAt;
     private LocalDateTime exerciseEndedAt;
-    private String memberLocationTitle;
+    private String exerciseLocation;
     private Optional<List<String>> exercisePictureUrls;
 }
