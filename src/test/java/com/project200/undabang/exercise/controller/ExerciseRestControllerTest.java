@@ -47,7 +47,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         FindExerciseRecordResponseDto respDto = new FindExerciseRecordResponseDto();
         respDto.setExerciseTitle("운동제목");
         respDto.setExerciseDetail("운동내용");
-        respDto.setMemberLocationTitle("운동위치");
+        respDto.setExerciseLocation("운동위치");
         respDto.setExercisePersonalType("운동종류");
         respDto.setExerciseStartedAt(currentTime);
         respDto.setExerciseEndedAt(currentTime.plusHours(12));
@@ -72,7 +72,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
                                 fieldWithPath("data.exercisePersonalType").type(JsonFieldType.STRING).description("운동 종류"),
                                 fieldWithPath("data.exerciseStartedAt").type(JsonFieldType.STRING).description("운동 시작 시간"),
                                 fieldWithPath("data.exerciseEndedAt").type(JsonFieldType.STRING).description("운동 종료 시간"),
-                                fieldWithPath("data.memberLocationTitle").type(JsonFieldType.STRING).description("운동 장소 제목"),
+                                fieldWithPath("data.exerciseLocation").type(JsonFieldType.STRING).description("운동 장소 제목"),
                                 fieldWithPath("data.exercisePictureUrls").type(JsonFieldType.ARRAY).description("운동 사진 URL")
                         ))
                 ))

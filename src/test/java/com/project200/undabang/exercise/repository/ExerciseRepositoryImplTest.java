@@ -61,21 +61,6 @@ class ExerciseRepositoryImplTest {
 
         em.persist(member);
 
-        String testLocationTitle = "테스트장소명";
-        String testLatitude = "36.5";
-        String testLongitude = "123.4567";
-        String testLocationAddr = "A시B구C동";
-
-        MemberLocation memberLocation = MemberLocation.builder()
-                .member(member)
-                .memberLocationTitle(testLocationTitle)
-                .memberLocationLatitude(testLatitude)
-                .memberLocationLongitude(testLongitude)
-                .memberLocationAddress(testLocationAddr)
-                .build();
-
-        em.persist(memberLocation);
-
         Exercise exercise = Exercise.builder()
                 .member(member)
                 .exerciseTitle("테스트 운동 제목")
@@ -83,6 +68,7 @@ class ExerciseRepositoryImplTest {
                 .exercisePersonalType("대충 어떤 운동 종류")
                 .exerciseStartedAt(LocalDateTime.now().minusHours(2))
                 .exerciseEndedAt(LocalDateTime.now().minusHours(1))
+                .exerciseLocation("테스트장소명")
                 .build();
 
         exercise = exerciseRepository.save(exercise);
@@ -180,7 +166,7 @@ class ExerciseRepositoryImplTest {
         assertThat(result.getExerciseTitle()).isEqualTo("테스트 운동 제목");
         assertThat(result.getExerciseDetail()).isEqualTo("테스트 운동 설명");
         assertThat(result.getExercisePersonalType()).isEqualTo("대충 어떤 운동 종류");
-        assertThat(result.getMemberLocationTitle()).isEqualTo("테스트장소명");
+        assertThat(result.getExerciseLocation()).isEqualTo("테스트장소명");
         assertThat(result.getExercisePictureUrls()).isPresent();
         assertThat(result.getExercisePictureUrls().get()).contains("https://s3-aws/test.jpg");
         assertThat(result.getExercisePictureUrls().get()).contains("https://s3-aws/test2.jpg");
