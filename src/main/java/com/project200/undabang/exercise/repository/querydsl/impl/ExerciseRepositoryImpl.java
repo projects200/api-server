@@ -7,7 +7,6 @@ import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.exercise.entity.QExercise;
 import com.project200.undabang.exercise.entity.QExercisePicture;
 import com.project200.undabang.exercise.repository.querydsl.ExerciseRepositoryCustom;
-import com.project200.undabang.member.entity.QMemberLocation;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
@@ -55,8 +54,7 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
      */
     @Override
     public FindExerciseRecordResponseDto findExerciseByExerciseId(UUID memberId, Long recordId) {
-        QExercise exercise = QExercise.exercise; // 인스턴스 생성
-        QMemberLocation memberLocation = QMemberLocation.memberLocation;
+        QExercise exercise = QExercise.exercise;
         QExercisePicture exercisePicture = QExercisePicture.exercisePicture;
         QPicture picture = QPicture.picture;
 
@@ -67,28 +65,12 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
                         exercise.exercisePersonalType,
                         exercise.exerciseStartedAt,
                         exercise.exerciseEndedAt,
-                        memberLocation.memberLocationTitle))
+                        exercise.exerciseLocation))
                 .from(exercise)
-                .join(memberLocation).on(memberLocation.member.eq(exercise.member).and(memberLocation.memberLocationDeletedAt.isNull()))
                 .where(exercise.member.memberId.eq(memberId),
                         exercise.id.eq(recordId),
                         exercise.exerciseDeletedAt.isNull())
                 .fetchOne();
-
-        // exercise 테이블에 운동기록 추가 시
-/*        FindExerciseRecordResponseDto respDto = queryFactory
-                .select(Projections.fields(FindExerciseRecordResponseDto.class,
-                        exercise.exerciseTitle,
-                        exercise.exerciseDetail,
-                        exercise.exercisePersonalType,
-                        exercise.exerciseStartedAt,
-                        exercise.exerciseEndedAt,
-                        exercise.exerciseLocate))
-                .from(exercise)
-                .where(exercise.member.memberId.eq(memberId),
-                        exercise.id.eq(recordId),
-                        exercise.exerciseDeletedAt.isNull())
-                .fetchOne();*/
 
         if(respDto != null){
             List<String> urlList = queryFactory
