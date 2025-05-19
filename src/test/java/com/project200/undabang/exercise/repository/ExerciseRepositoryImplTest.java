@@ -2,13 +2,13 @@ package com.project200.undabang.exercise.repository;
 
 import com.project200.undabang.common.entity.Picture;
 import com.project200.undabang.configuration.TestConfig;
+import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseDto;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.exercise.entity.ExercisePicture;
 import com.project200.undabang.exercise.repository.querydsl.ExerciseRepositoryCustom;
 import com.project200.undabang.exercise.repository.querydsl.impl.ExerciseRepositoryImpl;
 import com.project200.undabang.member.entity.Member;
-import com.project200.undabang.member.entity.MemberLocation;
 import com.project200.undabang.member.enums.MemberGender;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
@@ -21,6 +21,8 @@ import org.springframework.context.annotation.Import;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,6 +44,7 @@ class ExerciseRepositoryImplTest {
     private UUID testUUID = UUID.randomUUID();
     private String testEmail = "e@mail.com";
     private Long testRecordId;
+    private LocalDate testDate = LocalDate.now();
 
     @BeforeEach
     void setUp(){
@@ -181,5 +184,43 @@ class ExerciseRepositoryImplTest {
 
         // then
         assertThat(result).isNull();
+    }
+
+    @Test
+    @DisplayName("특정 날짜에 해당하는 운동기록 조회_성공")
+    void findExerciseRecordByDate_Success(){
+        List<FindExerciseRecordDateResponseDto> result = exerciseRepositoryCustom.findExerciseRecordByDate(testUUID, testDate).get();
+
+        //then
+        assertThat(result).isNotNull();
+        assertThat(result).isNotEmpty();
+
+        FindExerciseRecordDateResponseDto firstRecord = result.get(0);
+        assertThat(firstRecord.getExerciseId()).isEqualTo(testRecordId);
+        assertThat(firstRecord.getExerciseTitle()).isEqualTo("테스트 운동 제목");
+        assertThat(firstRecord.getExercisePersonalType()).isEqualTo("대충 어떤 운동 종류");
+        assertThat(firstRecord.getExerciseStartedAt().toLocalDate()).isEqualTo(testDate);
+        assertThat(firstRecord.getExerciseEndedAt().toLocalDate()).isEqualTo(testDate);
+        assertThat(firstRecord.getPictureUrl()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("특정 날짜에 해당하는 운동 기록 없음")
+    void findExerciseRecordByDate_Failed_RecordNotExist(){
+        Optional<List<FindExerciseRecordDateResponseDto>> result = exerciseRepositoryCustom.findExerciseRecordByDate(testUUID, LocalDate.of(2011,1,1));
+
+        assertThat(result).isEmpty();
+        assertThat(result.orElse(null)).isNull();
+    }
+
+    @Test
+    @DisplayName("다른 회원의 특정 날짜 운동기록 조회_실패")
+    void findExerciseRecordByDate_WrongMember() {
+        UUID randomUUID = UUID.randomUUID();
+
+        Optional<List<FindExerciseRecordDateResponseDto>> result = exerciseRepositoryCustom.findExerciseRecordByDate(randomUUID, testDate);
+
+        assertThat(result).isEmpty();
+        assertThat(result.orElse(null)).isNull();
     }
 }

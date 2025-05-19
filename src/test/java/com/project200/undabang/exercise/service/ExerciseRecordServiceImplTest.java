@@ -3,6 +3,7 @@ package com.project200.undabang.exercise.service;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
+import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseDto;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
 import com.project200.undabang.exercise.service.impl.ExerciseRecordServiceImpl;
@@ -15,6 +16,10 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
@@ -145,5 +150,69 @@ class ExerciseRecordServiceImplTest {
                     () -> service.findExerciseRecordByRecordId(testRecord));
             assertEquals(ErrorCode.AUTHORIZATION_DENIED, exception.getErrorCode());
         }
+    }
+
+    @Test
+    @DisplayName("특정 날짜의 운동기록 조회_조회성공")
+    void findExerciseRecordByDate_Success(){
+        UUID testUserId = UUID.randomUUID();
+        LocalDate testDate = LocalDate.of(2020,1,1);
+        List<FindExerciseRecordDateResponseDto> mockedListDto = new ArrayList<>();
+        mockedListDto.add(new FindExerciseRecordDateResponseDto());
+        Optional<List<FindExerciseRecordDateResponseDto>> optionalList = Optional.of(mockedListDto);
+
+        try(MockedStatic<UserContextHolder> mockedStatic = mockStatic(UserContextHolder.class)){
+            mockedStatic.when(UserContextHolder::getUserId).thenReturn(testUserId);
+
+            given(exerciseRepository.findExerciseRecordByDate(testUserId, testDate)).willReturn(optionalList);
+
+            //when
+            Optional<List<FindExerciseRecordDateResponseDto>> result = service.findExerciseRecordByDate(testDate);
+
+            //then
+            assertTrue(result.isPresent());
+            assertEquals(1, result.get().size());
+            then(exerciseRepository).should().findExerciseRecordByDate(testUserId, testDate);
+        }
+    }
+
+    @Test
+    @DisplayName("과거 날짜의 운동기록 조회_실패")
+    void findExerciseRecordByDate_PrevFailed(){
+        UUID testUserId = UUID.randomUUID();
+        LocalDate testDate = LocalDate.of(1900,1,1);
+        List<FindExerciseRecordDateResponseDto> mockedListDto = new ArrayList<>();
+        mockedListDto.add(new FindExerciseRecordDateResponseDto());
+        Optional<List<FindExerciseRecordDateResponseDto>> optionalList = Optional.of(mockedListDto);
+
+        try(MockedStatic<UserContextHolder> mockedStatic = mockStatic(UserContextHolder.class)){
+            mockedStatic.when(UserContextHolder::getUserId).thenReturn(testUserId);
+
+
+            CustomException exception = assertThrows(CustomException.class,
+                    () -> service.findExerciseRecordByDate(testDate));
+            assertEquals(ErrorCode.INVALID_INPUT_VALUE, exception.getErrorCode());
+        }
+
+    }
+
+    @Test
+    @DisplayName("미래 날짜의 운동기록 조회_실패")
+    void findExerciseRecordByDate_FutureFailed(){
+        UUID testUserId = UUID.randomUUID();
+        LocalDate testDate = LocalDate.now().plusDays(1);
+        List<FindExerciseRecordDateResponseDto> mockedListDto = new ArrayList<>();
+        mockedListDto.add(new FindExerciseRecordDateResponseDto());
+        Optional<List<FindExerciseRecordDateResponseDto>> optionalList = Optional.of(mockedListDto);
+
+        try(MockedStatic<UserContextHolder> mockedStatic = mockStatic(UserContextHolder.class)){
+            mockedStatic.when(UserContextHolder::getUserId).thenReturn(testUserId);
+
+
+            CustomException exception = assertThrows(CustomException.class,
+                    () -> service.findExerciseRecordByDate(testDate));
+            assertEquals(ErrorCode.INVALID_INPUT_VALUE, exception.getErrorCode());
+        }
+
     }
 }
