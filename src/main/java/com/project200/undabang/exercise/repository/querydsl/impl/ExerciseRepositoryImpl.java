@@ -3,6 +3,7 @@ package com.project200.undabang.exercise.repository.querydsl.impl;
 import com.project200.undabang.common.entity.QPicture;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseDto;
+import com.project200.undabang.exercise.dto.response.PictureDataResponse;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.exercise.entity.QExercise;
 import com.project200.undabang.exercise.entity.QExercisePicture;
@@ -74,19 +75,19 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
                 .fetchOne();
 
         if(respDto != null){
-            List<String> urlList = queryFactory
-                    .select(picture.pictureUrl)
+            List<PictureDataResponse> urlList = queryFactory
+                    .select(Projections.fields(PictureDataResponse.class,
+                            picture.id.as("pictureId"),
+                            picture.pictureUrl,
+                            picture.pictureName,
+                            picture.pictureExtension))
                     .from(exercisePicture)
                     .join(exercisePicture.pictures, picture)
                     .where(exercisePicture.exercise.id.eq(recordId)
                             .and(picture.pictureDeletedAt.isNull()))
                     .fetch();
 
-            if(urlList.isEmpty()){
-                respDto.setExercisePictureUrls(Optional.empty());
-            }else{
-                respDto.setExercisePictureUrls(Optional.of(urlList));
-            }
+            respDto.setPictureDataList(urlList.isEmpty() ? Optional.empty() : Optional.of(urlList));
         }
 
         return respDto;

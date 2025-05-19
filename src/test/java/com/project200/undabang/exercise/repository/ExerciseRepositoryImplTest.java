@@ -4,6 +4,7 @@ import com.project200.undabang.common.entity.Picture;
 import com.project200.undabang.configuration.TestConfig;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseDto;
+import com.project200.undabang.exercise.dto.response.PictureDataResponse;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.exercise.entity.ExercisePicture;
 import com.project200.undabang.exercise.repository.querydsl.ExerciseRepositoryCustom;
@@ -21,6 +22,7 @@ import org.springframework.context.annotation.Import;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -170,10 +172,17 @@ class ExerciseRepositoryImplTest {
         assertThat(result.getExerciseDetail()).isEqualTo("테스트 운동 설명");
         assertThat(result.getExercisePersonalType()).isEqualTo("대충 어떤 운동 종류");
         assertThat(result.getExerciseLocation()).isEqualTo("테스트장소명");
-        assertThat(result.getExercisePictureUrls()).isPresent();
-        assertThat(result.getExercisePictureUrls().get()).contains("https://s3-aws/test.jpg");
-        assertThat(result.getExercisePictureUrls().get()).contains("https://s3-aws/test2.jpg");
-        assertThat(result.getExercisePictureUrls().get()).contains("https://s3-aws/test3.jpg");
+        assertThat(result.getPictureDataList()).isPresent();
+
+        List<PictureDataResponse> pictureDataList = result.getPictureDataList().get();
+        assertThat(pictureDataList).hasSize(3);
+
+        List<String> pictureUrlList = new ArrayList<>();
+        for (PictureDataResponse response : pictureDataList) {
+            pictureUrlList.add(response.getPictureUrl());
+        }
+
+        assertThat(pictureUrlList).contains("https://s3-aws/test.jpg", "https://s3-aws/test2.jpg", "https://s3-aws/test3.jpg");
     }
 
     @Test

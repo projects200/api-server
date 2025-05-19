@@ -7,6 +7,7 @@ import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseDto;
+import com.project200.undabang.exercise.dto.response.PictureDataResponse;
 import com.project200.undabang.exercise.service.ExerciseRecordService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -44,10 +45,29 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         UUID memberId = UUID.randomUUID();
         Long recordId = 1L;
         LocalDateTime currentTime = LocalDateTime.now().minusHours(12);
-        List<String> urlList = new ArrayList<>();
-        urlList.add("https://s3/picture/pic1.jpg");
-        urlList.add("https://s3/picture/pic2.jpg");
-        urlList.add("https://s3/picture/pic3.jpg");
+
+        PictureDataResponse data = new PictureDataResponse();
+        data.setPictureId(1L);
+        data.setPictureName("find");
+        data.setPictureExtension("jpg");
+        data.setPictureUrl("https://s3/picture/pic1.jpg");
+
+        PictureDataResponse data2 = new PictureDataResponse();
+        data2.setPictureId(2L);
+        data2.setPictureName("find2");
+        data2.setPictureExtension("jpg");
+        data2.setPictureUrl("https://s3/picture/pic2.jpg");
+
+        PictureDataResponse data3 = new PictureDataResponse();
+        data3.setPictureId(3L);
+        data3.setPictureName("find3");
+        data3.setPictureExtension("jpg");
+        data3.setPictureUrl("https://s3/picture/pic3.jpg");
+
+        List<PictureDataResponse> pictureDataResponseList = new ArrayList<>();
+        pictureDataResponseList.add(data);
+        pictureDataResponseList.add(data2);
+        pictureDataResponseList.add(data3);
 
         FindExerciseRecordResponseDto respDto = new FindExerciseRecordResponseDto();
         respDto.setExerciseTitle("운동제목");
@@ -56,7 +76,8 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         respDto.setExercisePersonalType("운동종류");
         respDto.setExerciseStartedAt(currentTime);
         respDto.setExerciseEndedAt(currentTime.plusHours(12));
-        respDto.setExercisePictureUrls(Optional.of(urlList));
+        respDto.setPictureDataList(Optional.of(pictureDataResponseList));
+
 
         BDDMockito.given(exerciseRecordService.findExerciseRecordByRecordId(recordId)).willReturn(respDto);
 
@@ -78,7 +99,62 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
                                 fieldWithPath("data.exerciseStartedAt").type(JsonFieldType.STRING).description("운동 시작 시간"),
                                 fieldWithPath("data.exerciseEndedAt").type(JsonFieldType.STRING).description("운동 종료 시간"),
                                 fieldWithPath("data.exerciseLocation").type(JsonFieldType.STRING).description("운동 장소 제목"),
-                                fieldWithPath("data.exercisePictureUrls").type(JsonFieldType.ARRAY).description("운동 사진 URL")
+                                fieldWithPath("data.pictureDataList").type(JsonFieldType.ARRAY).description("운동 사진 관련 필드"),
+                                fieldWithPath("data.pictureDataList[].pictureId").type(JsonFieldType.NUMBER).description("사진 식별자 ID"),
+                                fieldWithPath("data.pictureDataList[].pictureUrl").type(JsonFieldType.STRING).description("사진 URL"),
+                                fieldWithPath("data.pictureDataList[].pictureName").type(JsonFieldType.STRING).description("사진 이름"),
+                                fieldWithPath("data.pictureDataList[].pictureExtension").type(JsonFieldType.STRING).description("사진 확장자")
+                        ))
+                ))
+                .andReturn().getResponse().getContentAsString();
+
+
+        //then
+        CommonResponse<FindExerciseRecordResponseDto> expectedData = CommonResponse.success(respDto);
+        String expected = objectMapper.writeValueAsString(expectedData);
+        Assertions.assertEquals(response, expected);
+    }
+
+    @Test
+    @DisplayName("사진 없는 운동기록 상세조회 - 자신의 운동기록 상세조회")
+    void findMemberExerciseRecord_NoPicture() throws Exception{
+        //given
+        UUID memberId = UUID.randomUUID();
+        Long recordId = 1L;
+        LocalDateTime currentTime = LocalDateTime.now().minusHours(12);
+
+
+        FindExerciseRecordResponseDto respDto = new FindExerciseRecordResponseDto();
+        respDto.setExerciseTitle("운동제목");
+        respDto.setExerciseDetail("운동내용");
+        respDto.setExerciseLocation("운동위치");
+        respDto.setExercisePersonalType("운동종류");
+        respDto.setExerciseStartedAt(currentTime);
+        respDto.setExerciseEndedAt(currentTime.plusHours(12));
+        respDto.setPictureDataList(Optional.empty());
+
+
+        BDDMockito.given(exerciseRecordService.findExerciseRecordByRecordId(recordId)).willReturn(respDto);
+
+        //when
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-USER-ID", memberId.toString());
+
+        String response = this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/{recordId}", recordId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(headers))
+                .andExpectAll(MockMvcResultMatchers.status().isOk())
+                .andDo(this.document.document(
+                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        responseFields(RestDocsUtils.commonResponseFields(
+                                fieldWithPath("data.exerciseTitle").type(JsonFieldType.STRING).description("운동 제목"),
+                                fieldWithPath("data.exerciseDetail").type(JsonFieldType.STRING).description("운동 내용"),
+                                fieldWithPath("data.exercisePersonalType").type(JsonFieldType.STRING).description("운동 종류"),
+                                fieldWithPath("data.exerciseStartedAt").type(JsonFieldType.STRING).description("운동 시작 시간"),
+                                fieldWithPath("data.exerciseEndedAt").type(JsonFieldType.STRING).description("운동 종료 시간"),
+                                fieldWithPath("data.exerciseLocation").type(JsonFieldType.STRING).description("운동 장소 제목"),
+                                fieldWithPath("data.pictureDataList").type(JsonFieldType.NULL).description("운동 사진 관련 필드")
                         ))
                 ))
                 .andReturn().getResponse().getContentAsString();
