@@ -119,6 +119,7 @@ create table exercises
     exercise_personal_type varchar(255)                                             null comment '시스템이 아닌 개인 등록',
     exercise_created_at    datetime default CURRENT_TIMESTAMP                       not null,
     exercise_deleted_at    datetime                                                 null,
+    exercise_location      varchar(255)                                             null,
     constraint FK_ex_member
         foreign key (member_id) references members (member_id)
 );
