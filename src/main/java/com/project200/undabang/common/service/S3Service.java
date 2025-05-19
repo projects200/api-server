@@ -1,11 +1,9 @@
 package com.project200.undabang.common.service;
 
 import com.project200.undabang.common.context.UserContextHolder;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -22,7 +20,7 @@ import java.util.UUID;
 public class S3Service {
     private final S3Client s3Client;
 
-    @Value("${cloud.aws.s3.bucket}") // 프로퍼티에서 값 주입
+    @Value("${app.s3.bucket-name}") // 프로퍼티에서 값 주입
     private String bucketName;
 
     /**
