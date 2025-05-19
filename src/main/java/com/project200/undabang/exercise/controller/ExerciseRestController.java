@@ -30,7 +30,7 @@ public class ExerciseRestController {
     /**
      * 특정 운동 기록 ID로 해당 운동 기록을 상세 조회합니다.
      */
-    @GetMapping("/v1/exerciseRecords/{recordId}")
+    @GetMapping("/v1/exercises/{recordId}")
     public ResponseEntity<CommonResponse<FindExerciseRecordResponseDto>> findMemberExerciseRecord(@PathVariable @Positive(message = "올바른 Record를 다시 입력해주세요") Long recordId){
         FindExerciseRecordResponseDto responseDto = exerciseRecordService.findExerciseRecordByRecordId(recordId);
         return ResponseEntity.ok(CommonResponse.success(responseDto));
@@ -41,7 +41,7 @@ public class ExerciseRestController {
      * 요청 파라미터로 전달된 날짜(YYYY-MM-DD 형식)에 해당하는 운동 기록을 반환합니다.
      * 날짜에 해당하는 운동이 없다면 null을 반환합니다.
      */
-    @GetMapping("/v1/exerciseRecords/date")
+    @GetMapping("/v1/exercises/date")
     public ResponseEntity<CommonResponse<List<FindExerciseRecordDateResponseDto>>> findExerciseRecordByDate(@RequestParam(value = "date") LocalDate inputDate){
         List<FindExerciseRecordDateResponseDto> responseDto = exerciseRecordService.findExerciseRecordByDate(inputDate).orElse(null);
 

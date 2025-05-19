@@ -70,6 +70,7 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
                 .where(exercise.member.memberId.eq(memberId),
                         exercise.id.eq(recordId),
                         exercise.exerciseDeletedAt.isNull())
+                .orderBy(exercise.id.asc())
                 .fetchOne();
 
         if(respDto != null){
