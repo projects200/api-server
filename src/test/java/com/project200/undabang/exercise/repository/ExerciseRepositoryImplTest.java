@@ -2,6 +2,7 @@ package com.project200.undabang.exercise.repository;
 
 import com.project200.undabang.common.entity.Picture;
 import com.project200.undabang.configuration.TestConfig;
+import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseDto;
 import com.project200.undabang.exercise.dto.response.PictureDataResponse;
@@ -21,7 +22,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -46,7 +47,10 @@ class ExerciseRepositoryImplTest {
     private UUID testUUID = UUID.randomUUID();
     private String testEmail = "e@mail.com";
     private Long testRecordId;
-    private LocalDate testDate = LocalDate.now();
+    private LocalDate testDate = LocalDate.of(2025,5,1);
+    private LocalDate startDate = LocalDate.of(2025,5,1);
+    private LocalDate endDate = LocalDate.of(2025,5,2);
+
 
     @BeforeEach
     void setUp(){
@@ -71,13 +75,26 @@ class ExerciseRepositoryImplTest {
                 .exerciseTitle("테스트 운동 제목")
                 .exerciseDetail("테스트 운동 설명")
                 .exercisePersonalType("대충 어떤 운동 종류")
-                .exerciseStartedAt(LocalDateTime.now().minusHours(2))
-                .exerciseEndedAt(LocalDateTime.now().minusHours(1))
+                .exerciseStartedAt(testDate.atTime(10,0))
+                .exerciseEndedAt(testDate.atTime(11,0))
                 .exerciseLocation("테스트장소명")
                 .build();
 
         exercise = exerciseRepository.save(exercise);
         testRecordId = exercise.getId();
+
+        Exercise exercise2 = Exercise.builder()
+                .member(member)
+                .exerciseTitle("테스트 운동 제목2")
+                .exerciseDetail("테스트 운동 설명2")
+                .exercisePersonalType("대충 어떤 운동 종류2")
+                .exerciseStartedAt(testDate.atTime(4,0))
+                .exerciseEndedAt(testDate.atTime(5,0))
+                .exerciseLocation("테스트장소명")
+                .build();
+
+        exerciseRepository.save(exercise2);
+
 
         Picture picture = Picture.builder()
                 .pictureName("테스트 이미지")
@@ -198,10 +215,13 @@ class ExerciseRepositoryImplTest {
     @Test
     @DisplayName("특정 날짜에 해당하는 운동기록 조회_성공")
     void findExerciseRecordByDate_Success(){
-        List<FindExerciseRecordDateResponseDto> result = exerciseRepositoryCustom.findExerciseRecordByDate(testUUID, testDate).get();
+        Optional<List<FindExerciseRecordDateResponseDto>> optionalList = exerciseRepositoryCustom.findExerciseRecordByDate(testUUID, testDate);
+
+        assertThat(optionalList).isPresent();
+
+        List<FindExerciseRecordDateResponseDto> result = optionalList.get();
 
         //then
-        assertThat(result).isNotNull();
         assertThat(result).isNotEmpty();
 
         FindExerciseRecordDateResponseDto firstRecord = result.get(0);
@@ -231,5 +251,35 @@ class ExerciseRepositoryImplTest {
 
         assertThat(result).isEmpty();
         assertThat(result.orElse(null)).isNull();
+    }
+
+    @Test
+    @DisplayName("특정 기간동안의 운동기록 조회_성공")
+    void findExerciseRecordsByPeriod(){
+        // when
+        List<FindExerciseRecordByPeriodResponseDto> result = exerciseRepositoryCustom.findExercisesByPeriod(testUUID, startDate, endDate);
+
+        // then
+        assertThat(result).isNotEmpty();
+        assertThat(result).isNotNull();
+
+        long days = ChronoUnit.DAYS.between(startDate, endDate);
+        assertThat(result).hasSize((int) days + 1);
+
+        boolean nonZero = false;
+        boolean zero = false;
+
+        for (FindExerciseRecordByPeriodResponseDto dto : result) {
+            Long count = dto.getExerciseCount();
+            if(count > 0){
+                nonZero = true;
+            }
+            if(count == 0){
+               zero = true;
+            }
+        }
+
+        assertThat(nonZero).isTrue();
+        assertThat(zero).isTrue();
     }
 }

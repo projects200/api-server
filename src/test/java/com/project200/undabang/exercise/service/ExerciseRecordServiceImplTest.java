@@ -3,6 +3,7 @@ package com.project200.undabang.exercise.service;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
+import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseDto;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
@@ -17,6 +18,7 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -214,5 +216,82 @@ class ExerciseRecordServiceImplTest {
             assertEquals(ErrorCode.INVALID_INPUT_VALUE, exception.getErrorCode());
         }
 
+    }
+
+    @Test
+    @DisplayName("특정 기간의 운동기록목록조회 _ 성공")
+    void findExerciseRecordsByPeriods(){
+        UUID memberId = UUID.randomUUID();
+        LocalDate startDate = LocalDate.of(2025,5,1);
+        LocalDate endDate = LocalDate.of(2025,5,20);
+        List<FindExerciseRecordByPeriodResponseDto> mockedDto = new ArrayList();
+
+        for (int i = 0; i <= (int) ChronoUnit.DAYS.between(startDate,endDate); i++) {
+            mockedDto.add(new FindExerciseRecordByPeriodResponseDto());
+        }
+
+        given(exerciseRepository.findExercisesByPeriod(memberId, startDate, endDate)).willReturn(mockedDto);
+
+        try(MockedStatic<UserContextHolder> mockedStatic = mockStatic(UserContextHolder.class)){
+            mockedStatic.when(UserContextHolder::getUserId).thenReturn(memberId);
+
+            List<FindExerciseRecordByPeriodResponseDto> dtoList = service.findExerciseRecordsByPeriod(startDate, endDate);
+
+            long size = ChronoUnit.DAYS.between(startDate, endDate)+1;
+            assertEquals((int)size, dtoList.size());
+            assertNotNull(dtoList);
+            then(exerciseRepository).should().findExercisesByPeriod(memberId,startDate,endDate);
+        }
+    }
+
+    @Test
+    @DisplayName("특정기간의 운동기록목록조회 _ 실패_ 과거 기간 조회")
+    void findExerciseRecordsByPeriods_Failed_PastPeriod(){
+        UUID memberId = UUID.randomUUID();
+        LocalDate endDate = LocalDate.of(1945, 8,15);
+        LocalDate startDate = endDate.minusDays(1);
+
+        try(MockedStatic<UserContextHolder> mockedStatic = mockStatic(UserContextHolder.class)){
+            mockedStatic.when(UserContextHolder::getUserId).thenReturn(memberId);
+
+            CustomException exception = assertThrows(CustomException.class,
+                    () -> service.findExerciseRecordsByPeriod(startDate,endDate));
+
+            assertEquals(exception.getErrorCode(), ErrorCode.INVALID_INPUT_VALUE);
+        }
+    }
+
+    @Test
+    @DisplayName("특정기간의 운동기록목록조회 _ 실패_미래기간 조회")
+    void findExerciseRecordsByPeriods_Failed_futurePeriod(){
+        UUID memberId = UUID.randomUUID();
+        LocalDate startDate = LocalDate.of(2025,5,1);
+        LocalDate endDate = LocalDate.now().plusDays(1);
+
+        try(MockedStatic<UserContextHolder> mockedStatic = mockStatic(UserContextHolder.class)){
+            mockedStatic.when(UserContextHolder::getUserId).thenReturn(memberId);
+
+            CustomException exception = assertThrows(CustomException.class,
+                    () -> service.findExerciseRecordsByPeriod(startDate,endDate));
+
+            assertEquals(exception.getErrorCode(), ErrorCode.INVALID_INPUT_VALUE);
+        }
+    }
+
+    @Test
+    @DisplayName("특정기간의 운동기록목록조회 _ 실패_기간 입력 실수(end < start)")
+    void findExerciseRecordsByPeriods_Failed_EndComesFasterThenStart(){
+        UUID memberId = UUID.randomUUID();
+        LocalDate startDate = LocalDate.of(2025,5,1);
+        LocalDate endDate = startDate.minusDays(1);
+
+        try(MockedStatic<UserContextHolder> mockedStatic = mockStatic(UserContextHolder.class)){
+            mockedStatic.when(UserContextHolder::getUserId).thenReturn(memberId);
+
+            CustomException exception = assertThrows(CustomException.class,
+                    () -> service.findExerciseRecordsByPeriod(startDate,endDate));
+
+            assertEquals(exception.getErrorCode(), ErrorCode.IMPOSSIBLE_INPUT_DATE);
+        }
     }
 }

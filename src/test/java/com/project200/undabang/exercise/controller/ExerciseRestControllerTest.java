@@ -5,6 +5,7 @@ import com.project200.undabang.common.RestDocsUtils;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.response.CommonResponse;
+import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseDto;
 import com.project200.undabang.exercise.dto.response.PictureDataResponse;
@@ -252,7 +253,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
     }
 
     @Test
-    @DisplayName("특정 날짜의 운동기록 조회_성공예시")
+    @DisplayName("특정 날짜의 운동기록 조회_성공")
     void findMemberExerciseRecordByDate_Success() throws Exception{
         //given
         UUID memberId = UUID.randomUUID();
@@ -464,4 +465,216 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         //then
         BDDMockito.then(exerciseRecordService).should(BDDMockito.times(1)).findExerciseRecordByDate(BDDMockito.any());
     }
+
+    @Test
+    @DisplayName("구간별 운동기록 조회_성공")
+    void findExerciseRecordsByPeriod() throws Exception{
+        UUID memberId = UUID.randomUUID();
+        LocalDate start = LocalDate.now();
+        LocalDate end = LocalDate.now();
+
+        List<FindExerciseRecordByPeriodResponseDto> respDtoList = new ArrayList<>();
+        respDtoList.add(new FindExerciseRecordByPeriodResponseDto(LocalDate.now(), 1L));
+        respDtoList.add(new FindExerciseRecordByPeriodResponseDto(LocalDate.now(), 2L));
+
+        // given
+        BDDMockito.given(exerciseRecordService.findExerciseRecordsByPeriod(start, end)).willReturn(respDtoList);
+
+        // when
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-USER-ID", memberId.toString());
+
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/period")
+                .param("startDate", start.toString())
+                .param("endDate", end.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .headers(headers))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andDo(this.document.document(
+                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        responseFields(
+                                fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
+                                fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
+                                fieldWithPath("message").type(JsonFieldType.STRING).description("응답 메시지"),
+                                fieldWithPath("data").type(JsonFieldType.ARRAY).description("운동 기록 목록"),
+                                fieldWithPath("data[].date").type(JsonFieldType.STRING).description("운동 날짜"),
+                                fieldWithPath("data[].exerciseCount").type(JsonFieldType.NUMBER).description("운동 횟수")
+                        )
+                ));
+
+        //then
+        BDDMockito.then(exerciseRecordService).should(BDDMockito.times(1)).findExerciseRecordsByPeriod(start, end);
+    }
+
+    @Test
+    @DisplayName("구간별 운동종목 조회 실패 _ 날짜 입력 형식 오류")
+    void findExerciseRecordsByPeriod_FailedInputType() throws  Exception{
+        //given
+        UUID memberId = UUID.randomUUID();
+        String start = "20250520";
+        LocalDate end = LocalDate.now();
+
+        //when
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-USER-ID", memberId.toString());
+
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/period")
+                .param("startDate", start)
+                .param("endDate", end.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .headers(headers))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                .andDo(this.document.document(
+                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        responseFields(
+                                fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
+                                fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
+                                fieldWithPath("message").type(JsonFieldType.STRING).description("응답 메시지"),
+                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("운동 기록 목록"),
+                                fieldWithPath("data.startDate").type(JsonFieldType.STRING).description("기록 구간 입력 오류")
+                        )
+                ));
+
+        BDDMockito.then(exerciseRecordService).should(BDDMockito.never()).findExerciseRecordsByPeriod(BDDMockito.any(), BDDMockito.any());
+    }
+
+
+    @Test
+    @DisplayName("구간별 운동종목 조회 실패 _ 날짜 입력 누락")
+    void findExerciseRecordsByPeriod_FailedInputLost() throws  Exception{
+        //given
+        UUID memberId = UUID.randomUUID();
+        LocalDate start = LocalDate.now();
+
+        //when
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-USER-ID", memberId.toString());
+
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/period")
+                        .param("startDate", start.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(headers))
+                .andExpect(MockMvcResultMatchers.status().isInternalServerError())
+                .andDo(this.document.document(
+                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        responseFields(
+                                fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
+                                fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
+                                fieldWithPath("message").type(JsonFieldType.STRING).description("응답 메시지"),
+                                fieldWithPath("data").type(JsonFieldType.NULL).description("운동 기록 목록")
+                        )
+                ));
+
+        BDDMockito.then(exerciseRecordService).should(BDDMockito.never()).findExerciseRecordsByPeriod(BDDMockito.any(), BDDMockito.any());
+    }
+
+
+    @Test
+    @DisplayName("구간별 운동종목 조회 실패 _ 과거 날짜 조회")
+    void findExerciseRecordsByPeriod_FailedPastInput() throws  Exception{
+        //given
+        UUID memberId = UUID.randomUUID();
+        LocalDate start = LocalDate.of(1945,8,14);
+        LocalDate end = LocalDate.of(1945,8,15);
+
+        //when
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-USER-ID", memberId.toString());
+
+        BDDMockito.given(exerciseRecordService.findExerciseRecordsByPeriod(start,end)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
+
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/period")
+                        .param("startDate", start.toString())
+                        .param("endDate", end.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(headers))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                .andDo(this.document.document(
+                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        responseFields(
+                                fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
+                                fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
+                                fieldWithPath("message").type(JsonFieldType.STRING).description("응답 메시지"),
+                                fieldWithPath("data").type(JsonFieldType.NULL).description("운동 기록 목록")
+                        )
+                ));
+
+        BDDMockito.then(exerciseRecordService).should(BDDMockito.times(1)).findExerciseRecordsByPeriod(start,end);
+    }
+
+
+    @Test
+    @DisplayName("구간별 운동종목 조회 실패 _ 미래 날짜 조회")
+    void findExerciseRecordsByPeriod_FailedFutureInput() throws  Exception{
+        //given
+        UUID memberId = UUID.randomUUID();
+        LocalDate start = LocalDate.now();
+        LocalDate end = LocalDate.now().plusDays(1);
+
+        BDDMockito.given(exerciseRecordService.findExerciseRecordsByPeriod(start,end)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
+
+        //when
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-USER-ID", memberId.toString());
+
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/period")
+                        .param("startDate", start.toString())
+                        .param("endDate", end.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(headers))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                .andDo(this.document.document(
+                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        responseFields(
+                                fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
+                                fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
+                                fieldWithPath("message").type(JsonFieldType.STRING).description("응답 메시지"),
+                                fieldWithPath("data").type(JsonFieldType.NULL).description("운동 기록 목록")
+                        )
+                ));
+
+        BDDMockito.then(exerciseRecordService).should(BDDMockito.times(1)).findExerciseRecordsByPeriod(start, end);
+    }
+
+
+    @Test
+    @DisplayName("구간별 운동종목 조회 실패 _ 순서 입력 오류")
+    void findExerciseRecordsByPeriod_FailedOrderInput() throws  Exception{
+        //given
+        UUID memberId = UUID.randomUUID();
+        LocalDate start = LocalDate.now();
+        LocalDate end = LocalDate.now().minusDays(1);
+
+        BDDMockito.given(exerciseRecordService.findExerciseRecordsByPeriod(start,end)).willThrow(new CustomException(ErrorCode.IMPOSSIBLE_INPUT_DATE));
+
+        //when
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-USER-ID", memberId.toString());
+
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/period")
+                        .param("startDate", start.toString())
+                        .param("endDate", end.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(headers))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                .andDo(this.document.document(
+                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        responseFields(
+                                fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
+                                fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
+                                fieldWithPath("message").type(JsonFieldType.STRING).description("응답 메시지"),
+                                fieldWithPath("data").type(JsonFieldType.NULL).description("운동 기록 목록")
+                        )
+                ));
+
+        BDDMockito.then(exerciseRecordService).should(BDDMockito.times(1)).findExerciseRecordsByPeriod(start, end);
+    }
+
+
 }
