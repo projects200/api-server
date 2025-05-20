@@ -470,11 +470,11 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
     @DisplayName("구간별 운동기록 조회_성공")
     void findExerciseRecordsByPeriod() throws Exception{
         UUID memberId = UUID.randomUUID();
-        LocalDate start = LocalDate.now();
+        LocalDate start = LocalDate.now().minusDays(1);
         LocalDate end = LocalDate.now();
 
         List<FindExerciseRecordByPeriodResponseDto> respDtoList = new ArrayList<>();
-        respDtoList.add(new FindExerciseRecordByPeriodResponseDto(LocalDate.now(), 1L));
+        respDtoList.add(new FindExerciseRecordByPeriodResponseDto(LocalDate.now().minusDays(1), 0L));
         respDtoList.add(new FindExerciseRecordByPeriodResponseDto(LocalDate.now(), 2L));
 
         // given
