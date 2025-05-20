@@ -11,7 +11,7 @@ services:
 
   localstack:
     container_name: "${LOCALSTACK_DOCKER_NAME-localstack-main}"
-    image: localstack/localstack:s3-latest
+    image: localstack/localstack:latest
     ports:
       - "127.0.0.1:4566:4566"
     environment:
@@ -20,3 +20,4 @@ services:
     volumes:
       - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./localstack/init-scripts:/etc/localstack/init/ready.d"
