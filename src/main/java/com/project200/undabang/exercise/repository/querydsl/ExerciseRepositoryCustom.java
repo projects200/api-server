@@ -1,5 +1,6 @@
 package com.project200.undabang.exercise.repository.querydsl;
 
+import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseDto;
 
@@ -12,4 +13,5 @@ public interface ExerciseRepositoryCustom {
     boolean existsByRecordIdAndMemberId(UUID memberId, Long recordId);
     FindExerciseRecordResponseDto findExerciseByExerciseId(UUID memberId, Long recordId);
     Optional<List<FindExerciseRecordDateResponseDto>> findExerciseRecordByDate(UUID memberId, LocalDate date);
+    List<FindExerciseRecordByPeriodResponseDto> findExercisesByPeriod(UUID memberId, LocalDate startDate, LocalDate endDate);
 }

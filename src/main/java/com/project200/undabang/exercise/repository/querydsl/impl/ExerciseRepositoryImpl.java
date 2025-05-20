@@ -1,6 +1,7 @@
 package com.project200.undabang.exercise.repository.querydsl.impl;
 
 import com.project200.undabang.common.entity.QPicture;
+import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseDto;
 import com.project200.undabang.exercise.dto.response.PictureDataResponse;
@@ -8,15 +9,17 @@ import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.exercise.entity.QExercise;
 import com.project200.undabang.exercise.entity.QExercisePicture;
 import com.project200.undabang.exercise.repository.querydsl.ExerciseRepositoryCustom;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.NumberPath;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 
 /**
  * Exercise 엔티티에 대한 QueryDSL 기반 커스텀 레포지토리 구현체입니다.
@@ -131,5 +134,62 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
         }else{
             return Optional.of(respDtoList);
         }
+    }
+
+    @Override
+    public List<FindExerciseRecordByPeriodResponseDto> findExercisesByPeriod(UUID memberId, LocalDate startDate, LocalDate endDate) {
+        QExercise exercise = QExercise.exercise;
+
+        long daysBetween = ChronoUnit.DAYS.between(startDate, endDate);
+
+        List<LocalDate> dateList = new ArrayList<>();
+        for (long i = 0; i <= daysBetween; i++) {
+            dateList.add(startDate.plusDays(i));
+        }
+
+        NumberPath<Long> countRecord = Expressions.numberPath(Long.class, "exerciseCount");
+
+        List<Tuple> result = queryFactory
+                .select(exercise.exerciseStartedAt.year(),
+                        exercise.exerciseStartedAt.month(),
+                        exercise.exerciseStartedAt.dayOfMonth(),
+                        exercise.count().as(countRecord))
+                .from(exercise)
+                .where(exercise.member.memberId.eq(memberId),
+                        exercise.exerciseDeletedAt.isNull(),
+                        exercise.exerciseStartedAt.goe(startDate.atStartOfDay()),
+                        exercise.exerciseStartedAt.lt(endDate.plusDays(1).atStartOfDay()))
+                .groupBy(exercise.exerciseStartedAt.year(),
+                        exercise.exerciseStartedAt.month(),
+                        exercise.exerciseStartedAt.dayOfMonth())
+                .fetch();
+
+        Map<LocalDate, Long> dateMap = new HashMap<>();
+
+        for (Tuple tuple : result) {
+            LocalDate date = LocalDate.of(
+                    tuple.get(exercise.exerciseStartedAt.year()),
+                    tuple.get(exercise.exerciseStartedAt.month()),
+                    tuple.get(exercise.exerciseStartedAt.dayOfMonth())
+            );
+            dateMap.put(date, tuple.get(countRecord));
+        }
+
+        List<FindExerciseRecordByPeriodResponseDto> responseDtoList = new ArrayList<>();
+
+        for (LocalDate localDate : dateList) {
+            FindExerciseRecordByPeriodResponseDto dto = new FindExerciseRecordByPeriodResponseDto();
+            dto.setDate(localDate);
+            dto.setExerciseCount(dateMap.get(localDate));
+
+            if(dateMap.containsKey(localDate)){
+                responseDtoList.add(dto);
+            }else{
+                responseDtoList.add(new FindExerciseRecordByPeriodResponseDto(localDate, 0L));
+            }
+        }
+
+
+        return responseDtoList;
     }
 }

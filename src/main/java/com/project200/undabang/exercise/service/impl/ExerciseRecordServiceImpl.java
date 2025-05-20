@@ -3,6 +3,7 @@ package com.project200.undabang.exercise.service.impl;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
+import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseDto;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
@@ -96,6 +97,21 @@ public class ExerciseRecordServiceImpl implements ExerciseRecordService {
         log.debug("날짜별 운동 기록 조회 결과: date={}, count={}", inputDate, responseDtoList.get().size());
 
         return responseDtoList;
+    }
+
+    @Override
+    public List<FindExerciseRecordByPeriodResponseDto> findExerciseRecordsByPeriod(LocalDate startDate, LocalDate endDate) {
+        if(startDate.isBefore(LocalDate.of(1945,8,15)) || endDate.isAfter(LocalDate.now())){
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        if(startDate.isAfter(endDate)){
+            throw new CustomException(ErrorCode.IMPOSSIBLE_INPUT_DATE);
+        }
+
+        UUID memberId = UserContextHolder.getUserId();
+        List<FindExerciseRecordByPeriodResponseDto> responseDto = exerciseRepository.findExercisesByPeriod(memberId, startDate, endDate);
+
+        return responseDto;
     }
 }
 

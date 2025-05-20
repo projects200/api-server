@@ -1,6 +1,7 @@
 package com.project200.undabang.exercise.controller;
 
 import com.project200.undabang.common.web.response.CommonResponse;
+import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseDto;
 import com.project200.undabang.exercise.service.ExerciseRecordService;
@@ -44,6 +45,16 @@ public class ExerciseRestController {
     @GetMapping("/v1/exercises/date")
     public ResponseEntity<CommonResponse<List<FindExerciseRecordDateResponseDto>>> findExerciseRecordByDate(@RequestParam(value = "date") LocalDate inputDate){
         List<FindExerciseRecordDateResponseDto> responseDto = exerciseRecordService.findExerciseRecordByDate(inputDate).orElse(null);
+
+        return ResponseEntity.ok(CommonResponse.success(responseDto));
+    }
+
+    @GetMapping("/v1/exercises/period")
+    public ResponseEntity<CommonResponse<List<FindExerciseRecordByPeriodResponseDto>>> findExerciseRecordByPeriod(@RequestParam(value = "startDate") LocalDate startDate,
+                                                                                                                  @RequestParam(value = "endDate") LocalDate endDate){
+
+
+        List<FindExerciseRecordByPeriodResponseDto> responseDto = exerciseRecordService.findExerciseRecordsByPeriod(startDate, endDate);
 
         return ResponseEntity.ok(CommonResponse.success(responseDto));
     }
