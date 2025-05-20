@@ -38,6 +38,10 @@ public class S3Service {
                 userId, year, month, uuid, originalFilename);
     }
 
+    public String uploadImage(MultipartFile multipartFile, String objectKey) throws IOException {
+        return uploadImage(multipartFile, objectKey, null);
+    }
+
     public String uploadImage(MultipartFile multipartFile, String objectKey, Map<String, String> metadata) throws IOException {
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName) // application-{profile}.yml 에서 주입된 버킷 이름
