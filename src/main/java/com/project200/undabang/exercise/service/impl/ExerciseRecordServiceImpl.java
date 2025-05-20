@@ -84,6 +84,10 @@ public class ExerciseRecordServiceImpl implements ExerciseRecordService {
         return responseDto;
     }
 
+    /**
+     * 특정 날짜에 해당하는 운동 기록 목록을 조회합니다.
+     */
+
     @Override
     public Optional<List<FindExerciseRecordDateResponseDto>>  findExerciseRecordByDate(LocalDate inputDate) {
         if(inputDate.isBefore(LocalDate.of(1945, 8, 15)) || inputDate.isAfter(LocalDate.now())){
@@ -98,6 +102,10 @@ public class ExerciseRecordServiceImpl implements ExerciseRecordService {
 
         return responseDtoList;
     }
+
+    /**
+     * 특정 기간 동안의 날짜별 운동 기록 개수를 조회합니다.
+     */
 
     @Override
     public List<FindExerciseRecordByPeriodResponseDto> findExerciseRecordsByPeriod(LocalDate startDate, LocalDate endDate) {

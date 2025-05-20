@@ -136,6 +136,10 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
         }
     }
 
+    /**
+     * 특정 회원의 기간별 운동 기록 개수를 조회합니다.
+     * 요청한 기간의 모든 날짜에 대해 운동 기록 개수를 반환하며, 기록이 없는 날짜는 0으로 채웁니다.
+     */
     @Override
     public List<FindExerciseRecordByPeriodResponseDto> findExercisesByPeriod(UUID memberId, LocalDate startDate, LocalDate endDate) {
         QExercise exercise = QExercise.exercise;
