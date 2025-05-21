@@ -279,7 +279,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
 
-        String response = this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/dates")
+        String response = this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises")
                 .param("date", testDateTime.toLocalDate().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
@@ -322,7 +322,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
 
-        String response = this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/dates")
+        String response = this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises")
                         .param("date", testDateTime.toLocalDate().toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -356,7 +356,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
 
-        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/dates")
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises")
                 .param("date", date)
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
@@ -386,7 +386,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
 
-        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/dates")
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .headers(headers))
@@ -413,7 +413,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
 
-        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/dates")
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises")
                         .param("date", date.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -446,7 +446,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
 
-        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/dates")
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises")
                         .param("date", date.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -484,7 +484,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
 
-        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises")
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/count")
                 .param("start", start.toString())
                 .param("end", end.toString())
                 .contentType(MediaType.APPLICATION_JSON)
@@ -519,7 +519,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
 
-        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises")
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/count")
                 .param("start", start)
                 .param("end", end.toString())
                 .contentType(MediaType.APPLICATION_JSON)
@@ -552,7 +552,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
 
-        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises")
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/count")
                         .param("start", start.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -586,7 +586,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
 
         BDDMockito.given(exerciseRecordService.findExerciseRecordsByPeriod(start,end)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
 
-        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises")
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/count")
                         .param("start", start.toString())
                         .param("end", end.toString())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -620,7 +620,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
 
-        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises")
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/count")
                         .param("start", start.toString())
                         .param("end", end.toString())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -655,7 +655,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
 
-        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises")
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/count")
                         .param("start", start.toString())
                         .param("end", end.toString())
                         .contentType(MediaType.APPLICATION_JSON)

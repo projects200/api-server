@@ -43,7 +43,7 @@ public class ExerciseRestController {
      * 날짜에 해당하는 운동이 없다면 null을 반환합니다.
      */
 
-    @GetMapping("/v1/exercises/dates")
+    @GetMapping("/v1/exercises")
     public ResponseEntity<CommonResponse<List<FindExerciseRecordDateResponseDto>>> findExerciseRecordByDate(@RequestParam(value = "date") LocalDate inputDate){
         List<FindExerciseRecordDateResponseDto> responseDto = exerciseRecordService.findExerciseRecordByDate(inputDate).orElse(null);
         return ResponseEntity.ok(CommonResponse.success(responseDto));
@@ -53,7 +53,7 @@ public class ExerciseRestController {
      * 특정 기간 동안의 날짜별 운동 기록 개수를 조회합니다.
      */
 
-    @GetMapping("/v1/exercises")
+    @GetMapping("/v1/exercises/count")
     public ResponseEntity<CommonResponse<List<FindExerciseRecordByPeriodResponseDto>>> findExerciseRecordByPeriod(@RequestParam(value = "start") LocalDate startDate,
                                                                                                                   @RequestParam(value = "end") LocalDate endDate){
         List<FindExerciseRecordByPeriodResponseDto> responseDto = exerciseRecordService.findExerciseRecordsByPeriod(startDate, endDate);
