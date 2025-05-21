@@ -31,7 +31,6 @@ public class ExerciseRestController {
     /**
      * 특정 운동 기록 ID로 해당 운동 기록을 상세 조회합니다.
      */
-
     @GetMapping("/v1/exercises/{recordId}")
     public ResponseEntity<CommonResponse<FindExerciseRecordResponseDto>> findMemberExerciseRecord(@PathVariable @Positive(message = "올바른 Record를 다시 입력해주세요") Long recordId){
         FindExerciseRecordResponseDto responseDto = exerciseRecordService.findExerciseRecordByRecordId(recordId);

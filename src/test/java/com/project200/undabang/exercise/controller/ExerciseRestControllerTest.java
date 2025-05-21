@@ -606,7 +606,6 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         BDDMockito.then(exerciseRecordService).should(BDDMockito.times(1)).findExerciseRecordsByPeriod(start,end);
     }
 
-
     @Test
     @DisplayName("구간별 운동종목 조회 실패 _ 미래 날짜 조회")
     void findExerciseRecordsByPeriod_FailedFutureInput() throws  Exception{
