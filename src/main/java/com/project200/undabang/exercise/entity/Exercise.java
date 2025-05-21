@@ -64,8 +64,4 @@ public class Exercise {
 
     @Column(name = "exercise_deleted_at")
     private LocalDateTime exerciseDeletedAt;
-
-    @Column(name = "exercise_location")
-    private String exerciseLocation;
-
 }

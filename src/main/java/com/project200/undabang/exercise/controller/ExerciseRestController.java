@@ -1,19 +1,21 @@
 package com.project200.undabang.exercise.controller;
 
 import com.project200.undabang.common.web.response.CommonResponse;
+import com.project200.undabang.exercise.dto.request.CreateExerciseRequestDto;
+import com.project200.undabang.exercise.dto.response.CreateExerciseResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseDto;
-import com.project200.undabang.exercise.service.ExerciseRecordService;
+import com.project200.undabang.exercise.service.ExerciseQueryService;
+import com.project200.undabang.exercise.service.ExerciseService;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -21,19 +23,24 @@ import java.util.List;
  * 운동 기록 관련 API 엔드포인트를 제공하는 컨트롤러입니다.
  * 사용자의 운동 기록 조회 및 날짜별 운동 기록 조회 기능을 제공합니다.
  */
-
-@Validated
 @RestController
 @RequiredArgsConstructor
 public class ExerciseRestController {
-    private final ExerciseRecordService exerciseRecordService;
+    private final ExerciseQueryService exerciseQueryService;
+    private final ExerciseService exerciseService;
+
+    @PostMapping(path = "/v1/exercises", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public CreateExerciseResponseDto createExercise(@Valid @ModelAttribute CreateExerciseRequestDto requestDto) throws IOException {
+        CreateExerciseResponseDto createExerciseResponseDto = exerciseService.uploadExerciseImages(requestDto);
+        return createExerciseResponseDto;
+    }
 
     /**
      * 특정 운동 기록 ID로 해당 운동 기록을 상세 조회합니다.
      */
     @GetMapping("/v1/exercises/{recordId}")
     public ResponseEntity<CommonResponse<FindExerciseRecordResponseDto>> findMemberExerciseRecord(@PathVariable @Positive(message = "올바른 Record를 다시 입력해주세요") Long recordId){
-        FindExerciseRecordResponseDto responseDto = exerciseRecordService.findExerciseRecordByRecordId(recordId);
+        FindExerciseRecordResponseDto responseDto = exerciseQueryService.findExerciseRecordByRecordId(recordId);
         return ResponseEntity.ok(CommonResponse.success(responseDto));
     }
 
@@ -45,7 +52,7 @@ public class ExerciseRestController {
 
     @GetMapping("/v1/exercises")
     public ResponseEntity<CommonResponse<List<FindExerciseRecordDateResponseDto>>> findExerciseRecordByDate(@RequestParam(value = "date") LocalDate inputDate){
-        List<FindExerciseRecordDateResponseDto> responseDto = exerciseRecordService.findExerciseRecordByDate(inputDate).orElse(null);
+        List<FindExerciseRecordDateResponseDto> responseDto = exerciseQueryService.findExerciseRecordByDate(inputDate).orElse(null);
         return ResponseEntity.ok(CommonResponse.success(responseDto));
     }
 
@@ -56,7 +63,7 @@ public class ExerciseRestController {
     @GetMapping("/v1/exercises/count")
     public ResponseEntity<CommonResponse<List<FindExerciseRecordByPeriodResponseDto>>> findExerciseRecordByPeriod(@RequestParam(value = "start") LocalDate startDate,
                                                                                                                   @RequestParam(value = "end") LocalDate endDate){
-        List<FindExerciseRecordByPeriodResponseDto> responseDto = exerciseRecordService.findExerciseRecordsByPeriod(startDate, endDate);
+        List<FindExerciseRecordByPeriodResponseDto> responseDto = exerciseQueryService.findExerciseRecordsByPeriod(startDate, endDate);
         return ResponseEntity.ok(CommonResponse.success(responseDto));
     }
 }

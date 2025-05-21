@@ -8,8 +8,7 @@ import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseD
 import com.project200.undabang.exercise.dto.response.PictureDataResponse;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.exercise.entity.ExercisePicture;
-import com.project200.undabang.exercise.repository.querydsl.ExerciseRepositoryCustom;
-import com.project200.undabang.exercise.repository.querydsl.impl.ExerciseRepositoryImpl;
+import com.project200.undabang.exercise.repository.impl.ExerciseRepositoryImpl;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.enums.MemberGender;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -44,12 +43,12 @@ class ExerciseRepositoryImplTest {
 
     private ExerciseRepositoryCustom exerciseRepositoryCustom;
 
-    private UUID testUUID = UUID.randomUUID();
-    private String testEmail = "e@mail.com";
+    private final UUID testUUID = UUID.randomUUID();
+    private final String testEmail = "e@mail.com";
     private Long testRecordId;
-    private LocalDate testDate = LocalDate.of(2025,5,1);
-    private LocalDate startDate = LocalDate.of(2025,5,1);
-    private LocalDate endDate = LocalDate.of(2025,5,2);
+    private final LocalDate testDate = LocalDate.of(2025, 5, 1);
+    private final LocalDate startDate = LocalDate.of(2025, 5, 1);
+    private final LocalDate endDate = LocalDate.of(2025, 5, 2);
 
 
     @BeforeEach

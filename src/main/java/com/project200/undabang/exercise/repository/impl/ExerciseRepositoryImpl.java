@@ -1,4 +1,4 @@
-package com.project200.undabang.exercise.repository.querydsl.impl;
+package com.project200.undabang.exercise.repository.impl;
 
 import com.project200.undabang.common.entity.QPicture;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodResponseDto;
@@ -8,7 +8,7 @@ import com.project200.undabang.exercise.dto.response.PictureDataResponse;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.exercise.entity.QExercise;
 import com.project200.undabang.exercise.entity.QExercisePicture;
-import com.project200.undabang.exercise.repository.querydsl.ExerciseRepositoryCustom;
+import com.project200.undabang.exercise.repository.ExerciseRepositoryCustom;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;

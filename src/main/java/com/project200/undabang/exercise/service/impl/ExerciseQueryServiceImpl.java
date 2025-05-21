@@ -7,7 +7,7 @@ import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodR
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseDto;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
-import com.project200.undabang.exercise.service.ExerciseRecordService;
+import com.project200.undabang.exercise.service.ExerciseQueryService;
 import com.project200.undabang.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +28,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class ExerciseRecordServiceImpl implements ExerciseRecordService {
+public class ExerciseQueryServiceImpl implements ExerciseQueryService {
     private final ExerciseRepository exerciseRepository;
     private final MemberRepository memberRepository;
     /**

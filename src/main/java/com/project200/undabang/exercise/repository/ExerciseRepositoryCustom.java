@@ -1,4 +1,4 @@
-package com.project200.undabang.exercise.repository.querydsl;
+package com.project200.undabang.exercise.repository;
 
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;

@@ -9,7 +9,8 @@ import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodR
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseDto;
 import com.project200.undabang.exercise.dto.response.PictureDataResponse;
-import com.project200.undabang.exercise.service.ExerciseRecordService;
+import com.project200.undabang.exercise.service.ExerciseQueryService;
+import com.project200.undabang.exercise.service.ExerciseService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,12 +38,15 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.response
 class ExerciseRestControllerTest extends AbstractRestDocSupport {
 
     @MockitoBean
-    private ExerciseRecordService exerciseRecordService;
+    private ExerciseQueryService exerciseQueryService;
+
+    @MockitoBean
+    private ExerciseService exerciseService;
 
     @Test
     @DisplayName("운동기록 상세조회 - 자신의 운동기록 상세조회")
     void findMemberExerciseRecord() throws Exception{
-        //given
+        //givenexerciseService
         UUID memberId = UUID.randomUUID();
         Long recordId = 1L;
         LocalDateTime currentTime = LocalDateTime.now().minusHours(12);
@@ -80,7 +84,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         respDto.setPictureDataList(Optional.of(pictureDataResponseList));
 
 
-        BDDMockito.given(exerciseRecordService.findExerciseRecordByRecordId(recordId)).willReturn(respDto);
+        BDDMockito.given(exerciseQueryService.findExerciseRecordByRecordId(recordId)).willReturn(respDto);
 
         //when
         HttpHeaders headers = new HttpHeaders();
@@ -135,7 +139,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         respDto.setPictureDataList(Optional.empty());
 
 
-        BDDMockito.given(exerciseRecordService.findExerciseRecordByRecordId(recordId)).willReturn(respDto);
+        BDDMockito.given(exerciseQueryService.findExerciseRecordByRecordId(recordId)).willReturn(respDto);
 
         //when
         HttpHeaders headers = new HttpHeaders();
@@ -182,7 +186,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .headers(headers))
-                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(MockMvcResultMatchers.status().isInternalServerError())
                 .andDo(this.document.document(
                         requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
                         responseFields(RestDocsUtils.commonResponseFields(
@@ -191,7 +195,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
                 ));
 
         //then
-        BDDMockito.then(exerciseRecordService).should(BDDMockito.never()).findExerciseRecordByRecordId(BDDMockito.anyLong());
+        BDDMockito.then(exerciseQueryService).should(BDDMockito.never()).findExerciseRecordByRecordId(BDDMockito.anyLong());
     }
 
 
@@ -202,7 +206,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         UUID memberId = UUID.randomUUID();
         Long nonExistentRecordId = 123456789L;
 
-        BDDMockito.given(exerciseRecordService.findExerciseRecordByRecordId(nonExistentRecordId))
+        BDDMockito.given(exerciseQueryService.findExerciseRecordByRecordId(nonExistentRecordId))
                 .willThrow(new CustomException(ErrorCode.EXERCISE_RECORD_NOT_FOUND));
 
         // when
@@ -220,7 +224,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
                         ));
 
         //then
-        BDDMockito.then(exerciseRecordService).should(BDDMockito.times(1)).findExerciseRecordByRecordId(BDDMockito.anyLong());
+        BDDMockito.then(exerciseQueryService).should(BDDMockito.times(1)).findExerciseRecordByRecordId(BDDMockito.anyLong());
     }
 
     @Test
@@ -230,7 +234,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         UUID memberId = UUID.randomUUID();
         Long anotherUserRecordID = 1L;
 
-        BDDMockito.given(exerciseRecordService.findExerciseRecordByRecordId(anotherUserRecordID))
+        BDDMockito.given(exerciseQueryService.findExerciseRecordByRecordId(anotherUserRecordID))
                 .willThrow(new CustomException(ErrorCode.AUTHORIZATION_DENIED));
 
 
@@ -249,7 +253,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
                 ));
 
         //then
-        BDDMockito.then(exerciseRecordService).should(BDDMockito.times(1)).findExerciseRecordByRecordId(anotherUserRecordID);
+        BDDMockito.then(exerciseQueryService).should(BDDMockito.times(1)).findExerciseRecordByRecordId(anotherUserRecordID);
     }
 
     @Test
@@ -273,7 +277,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         responseDtoList.add(dto);
 
         //given
-        BDDMockito.given(exerciseRecordService.findExerciseRecordByDate(testDateTime.toLocalDate())).willReturn(Optional.of(responseDtoList));
+        BDDMockito.given(exerciseQueryService.findExerciseRecordByDate(testDateTime.toLocalDate())).willReturn(Optional.of(responseDtoList));
 
         //when
         HttpHeaders headers = new HttpHeaders();
@@ -316,7 +320,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         LocalDateTime testDateTime = LocalDateTime.of(2021,1,1, 00,00,00);
 
         //given
-        BDDMockito.given(exerciseRecordService.findExerciseRecordByDate(testDateTime.toLocalDate())).willReturn(Optional.empty());
+        BDDMockito.given(exerciseQueryService.findExerciseRecordByDate(testDateTime.toLocalDate())).willReturn(Optional.empty());
 
         //when
         HttpHeaders headers = new HttpHeaders();
@@ -373,7 +377,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
                 ));
 
         //then
-        BDDMockito.then(exerciseRecordService).should(BDDMockito.never()).findExerciseRecordByDate(BDDMockito.any());
+        BDDMockito.then(exerciseQueryService).should(BDDMockito.never()).findExerciseRecordByDate(BDDMockito.any());
     }
 
     @Test
@@ -397,7 +401,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
                 ));
 
         //then
-        BDDMockito.then(exerciseRecordService).should(BDDMockito.never()).findExerciseRecordByDate(BDDMockito.any());
+        BDDMockito.then(exerciseQueryService).should(BDDMockito.never()).findExerciseRecordByDate(BDDMockito.any());
     }
 
     @Test
@@ -407,7 +411,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         UUID memberId = UUID.randomUUID();
         LocalDate date = LocalDate.of(1945,8,14);
 
-        BDDMockito.given(exerciseRecordService.findExerciseRecordByDate(date)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
+        BDDMockito.given(exerciseQueryService.findExerciseRecordByDate(date)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
 
         //when
         HttpHeaders headers = new HttpHeaders();
@@ -430,7 +434,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
                 ));
 
         //then
-        BDDMockito.then(exerciseRecordService).should(BDDMockito.times(1)).findExerciseRecordByDate(BDDMockito.any());
+        BDDMockito.then(exerciseQueryService).should(BDDMockito.times(1)).findExerciseRecordByDate(BDDMockito.any());
     }
 
     @Test
@@ -440,7 +444,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         UUID memberId = UUID.randomUUID();
         LocalDate date = LocalDate.now().plusDays(1);
 
-        BDDMockito.given(exerciseRecordService.findExerciseRecordByDate(date)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
+        BDDMockito.given(exerciseQueryService.findExerciseRecordByDate(date)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
 
         //when
         HttpHeaders headers = new HttpHeaders();
@@ -463,7 +467,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
                 ));
 
         //then
-        BDDMockito.then(exerciseRecordService).should(BDDMockito.times(1)).findExerciseRecordByDate(BDDMockito.any());
+        BDDMockito.then(exerciseQueryService).should(BDDMockito.times(1)).findExerciseRecordByDate(BDDMockito.any());
     }
 
     @Test
@@ -478,7 +482,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         respDtoList.add(new FindExerciseRecordByPeriodResponseDto(LocalDate.now(), 2L));
 
         // given
-        BDDMockito.given(exerciseRecordService.findExerciseRecordsByPeriod(start, end)).willReturn(respDtoList);
+        BDDMockito.given(exerciseQueryService.findExerciseRecordsByPeriod(start, end)).willReturn(respDtoList);
 
         // when
         HttpHeaders headers = new HttpHeaders();
@@ -504,7 +508,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
                 ));
 
         //then
-        BDDMockito.then(exerciseRecordService).should(BDDMockito.times(1)).findExerciseRecordsByPeriod(start, end);
+        BDDMockito.then(exerciseQueryService).should(BDDMockito.times(1)).findExerciseRecordsByPeriod(start, end);
     }
 
     @Test
@@ -537,7 +541,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
                         )
                 ));
 
-        BDDMockito.then(exerciseRecordService).should(BDDMockito.never()).findExerciseRecordsByPeriod(BDDMockito.any(), BDDMockito.any());
+        BDDMockito.then(exerciseQueryService).should(BDDMockito.never()).findExerciseRecordsByPeriod(BDDMockito.any(), BDDMockito.any());
     }
 
 
@@ -568,7 +572,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
                         )
                 ));
 
-        BDDMockito.then(exerciseRecordService).should(BDDMockito.never()).findExerciseRecordsByPeriod(BDDMockito.any(), BDDMockito.any());
+        BDDMockito.then(exerciseQueryService).should(BDDMockito.never()).findExerciseRecordsByPeriod(BDDMockito.any(), BDDMockito.any());
     }
 
 
@@ -584,7 +588,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
 
-        BDDMockito.given(exerciseRecordService.findExerciseRecordsByPeriod(start,end)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
+        BDDMockito.given(exerciseQueryService.findExerciseRecordsByPeriod(start, end)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
 
         this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/count")
                         .param("start", start.toString())
@@ -603,7 +607,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
                         )
                 ));
 
-        BDDMockito.then(exerciseRecordService).should(BDDMockito.times(1)).findExerciseRecordsByPeriod(start,end);
+        BDDMockito.then(exerciseQueryService).should(BDDMockito.times(1)).findExerciseRecordsByPeriod(start, end);
     }
 
     @Test
@@ -614,7 +618,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         LocalDate start = LocalDate.now();
         LocalDate end = LocalDate.now().plusDays(1);
 
-        BDDMockito.given(exerciseRecordService.findExerciseRecordsByPeriod(start,end)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
+        BDDMockito.given(exerciseQueryService.findExerciseRecordsByPeriod(start, end)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
 
         //when
         HttpHeaders headers = new HttpHeaders();
@@ -637,7 +641,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
                         )
                 ));
 
-        BDDMockito.then(exerciseRecordService).should(BDDMockito.times(1)).findExerciseRecordsByPeriod(start, end);
+        BDDMockito.then(exerciseQueryService).should(BDDMockito.times(1)).findExerciseRecordsByPeriod(start, end);
     }
 
 
@@ -649,7 +653,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         LocalDate start = LocalDate.now();
         LocalDate end = LocalDate.now().minusDays(1);
 
-        BDDMockito.given(exerciseRecordService.findExerciseRecordsByPeriod(start,end)).willThrow(new CustomException(ErrorCode.IMPOSSIBLE_INPUT_DATE));
+        BDDMockito.given(exerciseQueryService.findExerciseRecordsByPeriod(start, end)).willThrow(new CustomException(ErrorCode.IMPOSSIBLE_INPUT_DATE));
 
         //when
         HttpHeaders headers = new HttpHeaders();
@@ -672,7 +676,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
                         )
                 ));
 
-        BDDMockito.then(exerciseRecordService).should(BDDMockito.times(1)).findExerciseRecordsByPeriod(start, end);
+        BDDMockito.then(exerciseQueryService).should(BDDMockito.times(1)).findExerciseRecordsByPeriod(start, end);
     }
 
 

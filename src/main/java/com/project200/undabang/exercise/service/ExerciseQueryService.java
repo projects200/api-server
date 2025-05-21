@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface ExerciseRecordService {
+public interface ExerciseQueryService {
     FindExerciseRecordResponseDto findExerciseRecordByRecordId(Long recordId);
     Optional<List<FindExerciseRecordDateResponseDto>> findExerciseRecordByDate(LocalDate inputDate);
     List<FindExerciseRecordByPeriodResponseDto> findExerciseRecordsByPeriod(LocalDate startDate, LocalDate endDate);
