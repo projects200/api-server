@@ -28,15 +28,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Build Gradle
-        run: |
-          mkdir -p src/main/resources/
-          echo ${{ secrets.APPLICATION_DEV_YML }} | base64 -d > src/main/resources/application-dev.yml
-          chmod +x gradlew
-          ./gradlew build
-        shell: bash
-
-
       - name: Configure AWS credentials
         if: ${{ github.ref == 'refs/heads/develop'}}
         uses: aws-actions/configure-aws-credentials@v4
@@ -44,6 +35,14 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Build Gradle
+        run: |
+          mkdir -p src/main/resources/
+          echo ${{ secrets.APPLICATION_DEV_YML }} | base64 -d > src/main/resources/application-dev.yml
+          chmod +x gradlew
+          ./gradlew build
+        shell: bash
 
       - name: Build and push image to Amazon ECR
         if: ${{ github.ref == 'refs/heads/develop' }}
