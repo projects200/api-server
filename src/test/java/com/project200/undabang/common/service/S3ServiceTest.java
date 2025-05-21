@@ -37,7 +37,7 @@ class S3ServiceTest {
 
     @Container
     static LocalStackContainer localStack = new LocalStackContainer(
-            DockerImageName.parse("localstack/localstack:s3-latest"))
+            DockerImageName.parse("localstack/localstack:latest"))
             .withServices(LocalStackContainer.Service.S3)
             .withEnv("DEFAULT_REGION", "ap-northeast-2");
     @Autowired
