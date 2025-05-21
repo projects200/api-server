@@ -25,17 +25,22 @@ public class S3Service {
 
     /**
      * 사용자 ID와 파일 이름을 기반으로 S3 객체 키를 생성합니다.
-     * 형식: uploads/{userId}/{year}/{month}/images/{uuid}_{originalFilename}
+     * 형식: uploads/{category}/{userId}/{year}/{month}/{uuid}_{originalFilename}
      */
-    public String generateObjectKey(String originalFilename) {
+    public String generateObjectKey(String originalFilename, FileType category) {
         String userId = UserContextHolder.getUserId().toString();
         LocalDate now = LocalDate.now();
         String year = String.valueOf(now.getYear());
         String month = String.format("%02d", now.getMonthValue());
         String uuid = UUID.randomUUID().toString();
 
-        return String.format("uploads/%s/%s/%s/images/%s_%s",
-                userId, year, month, uuid, originalFilename);
+        return String.format("uploads/%s/%s/%s/%s/%s_%s",
+                category.getPath(),
+                userId,
+                year,
+                month,
+                uuid,
+                originalFilename);
     }
 
     public String uploadImage(MultipartFile multipartFile, String objectKey) throws IOException {

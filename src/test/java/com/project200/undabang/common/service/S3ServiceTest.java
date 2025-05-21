@@ -79,13 +79,17 @@ class S3ServiceTest {
         LocalDate now = LocalDate.now(); // 검증을 위해 현재 날짜 사용
         String expectedYear = String.valueOf(now.getYear());
         String expectedMonth = String.format("%02d", now.getMonthValue());
-        String expectedPrefix = String.format("uploads/%s/%s/%s/images/", testUserId, expectedYear, expectedMonth); // testUserId.toString() 사용
+        String expectedPrefix = String.format("uploads/%s/%s/%s/%s/",
+                FileType.EXERCISE.getPath(),
+                testUserId,
+                expectedYear,
+                expectedMonth);
 
         try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
             given(UserContextHolder.getUserId()).willReturn(testUserId);
 
             // When: 테스트 대상 메서드 호출
-            String objectKey = s3Service.generateObjectKey(originalFilename);
+            String objectKey = s3Service.generateObjectKey(originalFilename, FileType.EXERCISE);
 
             // Then: 결과 검증
             // 생성된 객체 키 형식 검증
@@ -94,8 +98,8 @@ class S3ServiceTest {
             assertThat(objectKey).as("Object key suffix mismatch")
                     .endsWith("_" + originalFilename);
 
-            // UUID 부분 추출 및 유효성 검사
-            String pathSegment = objectKey.substring(objectKey.lastIndexOf("/images/") + "/images/".length());
+            // {uuid}_{originalFilename} 부분 추출 및 유효성 검사
+            String pathSegment = objectKey.substring(objectKey.lastIndexOf("/") + 1);
             String uuidPart = pathSegment.substring(0, 36); // UUID는 36자
             assertThatCode(() -> UUID.fromString(uuidPart))
                     .withFailMessage("Object key의 UUID 부분이 유효한 UUID 형식이 아닙니다: " + uuidPart)
@@ -121,7 +125,7 @@ class S3ServiceTest {
 
         try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
             given(UserContextHolder.getUserId()).willReturn(testUserId);
-            String objectKey = s3Service.generateObjectKey(originalFilename);
+            String objectKey = s3Service.generateObjectKey(originalFilename, FileType.EXERCISE);
 
             // When: 이미지 업로드 메서드 호출
             String publicUrl = s3Service.uploadImage(multipartFile, objectKey, metadata);
@@ -168,7 +172,7 @@ class S3ServiceTest {
 
         try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
             given(UserContextHolder.getUserId()).willReturn(testUserId);
-            objectKey = s3Service.generateObjectKey(originalFilename);
+            objectKey = s3Service.generateObjectKey(originalFilename, FileType.EXERCISE);
 
             // When: 메타데이터 없이 이미지 업로드 메서드 호출
             String publicUrl = s3Service.uploadImage(multipartFile, objectKey);
@@ -212,7 +216,7 @@ class S3ServiceTest {
 
         try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
             given(UserContextHolder.getUserId()).willReturn(testUserId);
-            objectKey = s3Service.generateObjectKey(originalFilename);
+            objectKey = s3Service.generateObjectKey(originalFilename, FileType.EXERCISE);
 
             // 파일을 먼저 업로드 (Given의 일부)
             s3Service.uploadImage(multipartFile, objectKey);

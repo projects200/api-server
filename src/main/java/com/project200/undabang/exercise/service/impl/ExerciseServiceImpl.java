@@ -1,5 +1,6 @@
 package com.project200.undabang.exercise.service.impl;
 
+import com.project200.undabang.common.service.FileType;
 import com.project200.undabang.common.service.S3Service;
 import com.project200.undabang.exercise.dto.request.CreateExerciseRequestDto;
 import com.project200.undabang.exercise.dto.response.CreateExerciseResponseDto;
@@ -29,7 +30,7 @@ public class ExerciseServiceImpl implements ExerciseService {
         List<String> imageUrlList = new ArrayList<>();
         for (MultipartFile exercisePicture : exercisePictureList) {
             // S3에 이미지 업로드
-            String objectKey = s3Service.generateObjectKey(exercisePicture.getOriginalFilename());
+            String objectKey = s3Service.generateObjectKey(exercisePicture.getOriginalFilename(), FileType.EXERCISE);
             String imageUrl = s3Service.uploadImage(exercisePicture, objectKey);
             imageUrlList.add(imageUrl);
         }
