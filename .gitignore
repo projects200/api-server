@@ -26,6 +26,13 @@ out/
 !**/src/main/**/out/
 !**/src/test/**/out/
 
+# QueryDSL 생성 파일
+/src/main/generated/
+/target/generated-sources/
+/build/generated/
+/build/generated/querydsl/
+**/Q*.java
+
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
