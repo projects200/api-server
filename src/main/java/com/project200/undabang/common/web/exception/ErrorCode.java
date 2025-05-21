@@ -23,7 +23,11 @@ public enum ErrorCode {
     MEMBER_NICKNAME_DUPLICATED(409, "MEMBER_NICKNAME_DUPLICATED", "이미 사용 중인 닉네임입니다."),
     MEMBER_GENDER_ERROR(409, "MEMBER_GENDER_ERROR", "유효하지 않은 입력 값입니다."),
     MEMBER_BDAY_ERROR(409, "MEMBER_BDAY_ERROR", "유효하지 않은 입력 값입니다."),
-    MEMBER_SAVE_FAILED_ERROR(500, "MEMBER_SAVE_FAILED_ERROR", "모종의 에러로 회원가입에 실패하였습니다.");
+    MEMBER_SAVE_FAILED_ERROR(500, "MEMBER_SAVE_FAILED_ERROR", "모종의 에러로 회원가입에 실패하였습니다."),
+
+    // 운동기록 관련 에러
+    IMPOSSIBLE_INPUT_DATE(400, "IMPOSSIBLE_INPUT_DATE", "검색 기간을 올바로 설정하세요."),
+    EXERCISE_RECORD_NOT_FOUND(404, "EXERCISE_RECORD_NOT_FOUND", "운동 기록을 찾을 수 없습니다.");
 
     private final HttpStatusCode status;
     private final String code;

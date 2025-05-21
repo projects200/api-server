@@ -29,6 +29,27 @@ spring:
   transaction:
     default-timeout: 30s
 
+  test:
+    restdocs:
+      uris:
+        scheme: https
+        host: api.undabang.store
+        port: 443
+
+  cloud:
+    aws:
+      s3:
+        path-style-access-enabled: true
+
+  servlet:
+    multipart:
+      max-file-size: 10MB # 개별 파일 최대 크기
+      max-request-size: 50MB # 총 요청 최대 크기 (여러 파일 업로드 시)
+
+app:
+  s3:
+    bucket-name: my-test-image-bucket
+
 logging:
   level:
     com.project200.undabang: debug

@@ -27,13 +27,14 @@ public class Exercise {
     private Member member;
 
     @NotNull
-    @ColumnDefault("CURRENT_TIMESTAMP")
+//    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "exercise_started_at")
     @Builder.Default
     private LocalDateTime exerciseStartedAt = LocalDateTime.now();
 
     @NotNull
-    @ColumnDefault("((`exercise_started_at` + interval 1 hour))")
+//    @ColumnDefault("((`exercise_started_at` + interval 1 hour))")
+    // H2 DB 저장시 해당 Default값이 Error 생성
     @Column(name = "exercise_ended_at")
     @Builder.Default
     private LocalDateTime exerciseEndedAt = LocalDateTime.now().plusHours(1);
@@ -52,6 +53,9 @@ public class Exercise {
     @Column(name = "exercise_personal_type")
     private String exercisePersonalType;
 
+    @Column(name = "exercise_location")
+    private String exerciseLocation;
+
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "exercise_created_at", nullable = false, updatable = false)
@@ -60,5 +64,4 @@ public class Exercise {
 
     @Column(name = "exercise_deleted_at")
     private LocalDateTime exerciseDeletedAt;
-
 }

@@ -15,6 +15,7 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -179,5 +180,26 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
         CommonResponse<Void> response = CommonResponse.<Void>error(errorCode).message("올바른 값을 입력해 주세요").build();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+
+    /**
+     * RequestParameter에 Long, Int가 아닌 String이 입력되었을때 발생하는 예외를 처리합니다.
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    protected ResponseEntity<CommonResponse<Map<String, String>>> handleMethodArgumentTypeMismatchException(
+            MethodArgumentTypeMismatchException ex) {
+
+        ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
+
+        Map<String, String> errors = new HashMap<>();
+        errors.put(ex.getName(), "올바른 형식으로 입력해주세요.");
+
+        String customMessage = "잘못된 형식의 입력값입니다.";
+
+        CommonResponse<Map<String, String>> response = CommonResponse.<Map<String, String>>error(errorCode)
+                .message(customMessage).data(errors).build();
+
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
 }
