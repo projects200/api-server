@@ -124,26 +124,6 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 다른 모든 처리되지 않은 예외를 처리합니다. (최후의 방어선)
-     *
-     * <p>이 메서드는 애플리케이션에서 명시적으로 처리되지 않은 모든 예외를 포착하여
-     * 내부 서버 오류로 처리합니다. 예외의 자세한 내용은 로그에 기록됩니다.</p>
-     *
-     * <p>이 핸들러는 최후의 방어선 역할을 하여, 예기치 않은 예외가 클라이언트에게
-     * 직접 노출되지 않도록 보호합니다.</p>
-     *
-     * @param ex 처리되지 않은 예외
-     * @return 내부 서버 오류 응답
-     */
-    @ExceptionHandler(Exception.class)
-    protected ResponseEntity<CommonResponse<Void>> handleException(Exception ex) {
-        log.error("처리되지 않은 예외 발생: ", ex);
-        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
-        CommonResponse<Void> response = CommonResponse.<Void>error(errorCode).build();
-        return ResponseEntity.status(errorCode.getStatus()).body(response);
-    }
-
-    /**
      * 데이터베이스 저장 실패와 관련된 예외를 처리합니다.
      *
      * <p>이 메서드는 JPA 및 데이터베이스 저장 작업 중 발생할 수 있는 다양한 예외를
@@ -200,6 +180,26 @@ public class GlobalExceptionHandler {
         CommonResponse<Map<String, String>> response = CommonResponse.<Map<String, String>>error(errorCode)
                 .message(customMessage).data(errors).build();
 
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
+    }
+
+    /**
+     * 다른 모든 처리되지 않은 예외를 처리합니다. (최후의 방어선)
+     *
+     * <p>이 메서드는 애플리케이션에서 명시적으로 처리되지 않은 모든 예외를 포착하여
+     * 내부 서버 오류로 처리합니다. 예외의 자세한 내용은 로그에 기록됩니다.</p>
+     *
+     * <p>이 핸들러는 최후의 방어선 역할을 하여, 예기치 않은 예외가 클라이언트에게
+     * 직접 노출되지 않도록 보호합니다.</p>
+     *
+     * @param ex 처리되지 않은 예외
+     * @return 내부 서버 오류 응답
+     */
+    @ExceptionHandler(Exception.class)
+    protected ResponseEntity<CommonResponse<Void>> handleException(Exception ex) {
+        log.error("처리되지 않은 예외 발생: ", ex);
+        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+        CommonResponse<Void> response = CommonResponse.<Void>error(errorCode).build();
         return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
 }
