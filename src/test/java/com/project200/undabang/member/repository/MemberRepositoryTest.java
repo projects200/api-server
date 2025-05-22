@@ -1,6 +1,6 @@
 package com.project200.undabang.member.repository;
 
-import com.project200.undabang.configuration.TestConfig;
+import com.project200.undabang.configuration.TestQuerydslConfig;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.enums.MemberGender;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DataJpaTest
-@Import(TestConfig.class)
+@Import(TestQuerydslConfig.class)
 class MemberRepositoryTest {
 
     @Autowired

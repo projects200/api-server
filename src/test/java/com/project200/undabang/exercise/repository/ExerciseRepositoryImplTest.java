@@ -1,7 +1,7 @@
 package com.project200.undabang.exercise.repository;
 
 import com.project200.undabang.common.entity.Picture;
-import com.project200.undabang.configuration.TestConfig;
+import com.project200.undabang.configuration.TestQuerydslConfig;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseDto;
@@ -30,7 +30,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@Import(TestConfig.class)
+@Import(TestQuerydslConfig.class)
 class ExerciseRepositoryImplTest {
     @Autowired
     private EntityManager em;

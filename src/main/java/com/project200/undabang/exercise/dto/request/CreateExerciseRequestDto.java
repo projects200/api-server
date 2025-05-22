@@ -1,6 +1,8 @@
 package com.project200.undabang.exercise.dto.request;
 
 import com.project200.undabang.common.validation.AllowedExtensions;
+import com.project200.undabang.exercise.entity.Exercise;
+import com.project200.undabang.member.entity.Member;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -29,4 +31,16 @@ public class CreateExerciseRequestDto {
     @Size(max = 5, message = "최대 5개의 파일만 업로드할 수 있습니다.")
     @AllowedExtensions(extensions = {".jpg", ".jpeg", ".png"})
     private List<MultipartFile> exercisePictureList;
+
+    public Exercise toEntity(Member member) {
+        return Exercise.builder()
+                .member(member)
+                .exerciseTitle(exerciseTitle)
+                .exercisePersonalType(exercisePersonalType)
+                .exerciseLocation(exerciseLocation)
+                .exerciseDetail(exerciseDetail)
+                .exerciseStartedAt(exerciseStartedAt)
+                .exerciseEndedAt(exerciseEndedAt)
+                .build();
+    }
 }
