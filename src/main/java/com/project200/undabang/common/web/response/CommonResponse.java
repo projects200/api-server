@@ -40,7 +40,11 @@ public class CommonResponse<T> {
     }
 
     public static <T> CommonResponse<T> success() {
-        return new CommonResponse<>(true, "SUCCESS", "요청이 성공적으로 처리되었습니다.", null);
+        return new CommonResponse<>(
+                true,
+                "SUCCESS",
+                "요청이 성공적으로 처리되었지만 반환할 데이터가 없습니다.",
+                null);
     }
 
     public static <T> CommonResponse<T> success(SuccessDetails successDetails) {
