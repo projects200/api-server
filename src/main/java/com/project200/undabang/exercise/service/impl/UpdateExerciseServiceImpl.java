@@ -52,23 +52,15 @@ public class UpdateExerciseServiceImpl implements UpdateExerciseService {
         UpdateExerciseContext context =  new UpdateExerciseContext(exercise, requestDto.getDeletePictureIdList());
 
         // 사진은 수정 안하고 문자열 데이터 수정, 사진삭제하는 경우
-        if(requestDto.getExercisePictureList().isEmpty()){
+        if(requestDto.getExercisePictureList() == null || requestDto.getExercisePictureList().isEmpty()){
             exerciseRepository.save(context.getExercise());
 
             // 사진을 삭제만 하는 경우
-            if (!context.getPictureIdListToDelete().isEmpty()) {
-                try {
-                    deletePictures(context.getPictureIdListToDelete());
-
-                } catch (FileProcessingException | S3UploadFailedException e) {
-                    handleS3AndFileException(context);
-                } catch (Exception e) {
-                    handleDBDeleteException(e, context);
-                }
-            }
+            deleteProcessIfListExists(context);
             return new CreateExerciseResponseDto(context.getExercise().getId());
         }
 
+        // 사진 수정시 저장 먼저 진행
         for (MultipartFile file : requestDto.getExercisePictureList()) {
             String objectKey = s3Service.generateObjectKey(file.getOriginalFilename(), FileType.EXERCISE);
             String imageUrl;
@@ -101,23 +93,26 @@ public class UpdateExerciseServiceImpl implements UpdateExerciseService {
         }
 
         // 삭제해야할 사진 처리
-        if(!context.getPictureIdListToDelete().isEmpty()){
-            try{
-                deletePictures(context.getPictureIdListToDelete());
+        deleteProcessIfListExists(context);
 
-            }catch (FileProcessingException | S3UploadFailedException e){
-                // s3에 파일 삭제시 실패하면 롤백 (S3에 올라간 사진 삭제)
-                handleS3AndFileException(context);
-            }catch (Exception e){
-                // 디비 삭제시 에러 나면 처리 (S3에 올라간 사진 삭제)
-                handleDBDeleteException(e, context);
-            }
-        }
         return new CreateExerciseResponseDto(context.getExercise().getId());
     }
 
-    @Override
-    public void deletePictures(List<Long> pictureIdList) throws FileProcessingException, S3UploadFailedException{
+    private void deleteProcessIfListExists(UpdateExerciseContext context){
+        if (!context.getPictureIdListToDelete().isEmpty()) {
+            try {
+                deletePictures(context.getPictureIdListToDelete());
+            } catch (FileProcessingException | S3UploadFailedException e) {
+                // s3에 파일 삭제시 실패하면 롤백
+                handleS3AndFileException(context);
+            } catch (Exception e) {
+                // 디비 삭제시 에러 나면 처리
+                handleDBDeleteException(e, context);
+            }
+        }
+    }
+
+    private void deletePictures(List<Long> pictureIdList) throws FileProcessingException, S3UploadFailedException{
         if (pictureIdList == null || pictureIdList.isEmpty()) {
             return;
         }
