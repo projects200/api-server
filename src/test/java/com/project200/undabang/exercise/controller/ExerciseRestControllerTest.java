@@ -17,11 +17,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.BDDMockito;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -30,9 +28,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static com.project200.undabang.common.RestDocsUtils.HEADER_X_USER_ID;
+import static com.project200.undabang.common.RestDocsUtils.commonResponseFields;
+import static org.mockito.BDDMockito.given;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ExerciseRestController.class)
 class ExerciseRestControllerTest extends AbstractRestDocSupport {
@@ -45,7 +48,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
 
     @Test
     @DisplayName("운동기록 상세조회 - 자신의 운동기록 상세조회")
-    void findMemberExerciseRecord() throws Exception{
+    void findMemberExerciseRecord() throws Exception {
         //givenexerciseService
         UUID memberId = UUID.randomUUID();
         Long recordId = 1L;
@@ -84,20 +87,20 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         respDto.setPictureDataList(Optional.of(pictureDataResponseList));
 
 
-        BDDMockito.given(exerciseQueryService.findExerciseRecordByRecordId(recordId)).willReturn(respDto);
+        given(exerciseQueryService.findExerciseRecordByRecordId(recordId)).willReturn(respDto);
 
         //when
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
 
         String response = this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/{recordId}", recordId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .headers(headers))
-                .andExpectAll(MockMvcResultMatchers.status().isOk())
+                        .contentType(APPLICATION_JSON)
+                        .accept(APPLICATION_JSON)
+                        .headers(headers))
+                .andExpectAll(status().isOk())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
-                        responseFields(RestDocsUtils.commonResponseFields(
+                        requestHeaders(HEADER_X_USER_ID),
+                        responseFields(commonResponseFields(
                                 fieldWithPath("data.exerciseTitle").type(JsonFieldType.STRING).description("운동 제목"),
                                 fieldWithPath("data.exerciseDetail").type(JsonFieldType.STRING).description("운동 내용"),
                                 fieldWithPath("data.exercisePersonalType").type(JsonFieldType.STRING).description("운동 종류"),
@@ -122,7 +125,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
 
     @Test
     @DisplayName("사진 없는 운동기록 상세조회 - 자신의 운동기록 상세조회")
-    void findMemberExerciseRecord_NoPicture() throws Exception{
+    void findMemberExerciseRecord_NoPicture() throws Exception {
         //given
         UUID memberId = UUID.randomUUID();
         Long recordId = 1L;
@@ -139,20 +142,20 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         respDto.setPictureDataList(Optional.empty());
 
 
-        BDDMockito.given(exerciseQueryService.findExerciseRecordByRecordId(recordId)).willReturn(respDto);
+        given(exerciseQueryService.findExerciseRecordByRecordId(recordId)).willReturn(respDto);
 
         //when
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
 
         String response = this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/{recordId}", recordId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(APPLICATION_JSON)
+                        .accept(APPLICATION_JSON)
                         .headers(headers))
-                .andExpectAll(MockMvcResultMatchers.status().isOk())
+                .andExpectAll(status().isOk())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
-                        responseFields(RestDocsUtils.commonResponseFields(
+                        requestHeaders(HEADER_X_USER_ID),
+                        responseFields(commonResponseFields(
                                 fieldWithPath("data.exerciseTitle").type(JsonFieldType.STRING).description("운동 제목"),
                                 fieldWithPath("data.exerciseDetail").type(JsonFieldType.STRING).description("운동 내용"),
                                 fieldWithPath("data.exercisePersonalType").type(JsonFieldType.STRING).description("운동 종류"),
@@ -183,13 +186,13 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         headers.add("X-USER-ID", memberId.toString());
 
         this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/{recordId}", recordId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(APPLICATION_JSON)
+                        .accept(APPLICATION_JSON)
                         .headers(headers))
-                .andExpect(MockMvcResultMatchers.status().isInternalServerError())
+                .andExpect(status().isInternalServerError())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
-                        responseFields(RestDocsUtils.commonResponseFields(
+                        requestHeaders(HEADER_X_USER_ID),
+                        responseFields(commonResponseFields(
                                 fieldWithPath("data['findMemberExerciseRecord.recordId']").type(JsonFieldType.STRING).description("올바른 Record를 다시 입력해주세요")
                         ))
                 ));
@@ -206,7 +209,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         UUID memberId = UUID.randomUUID();
         Long nonExistentRecordId = 123456789L;
 
-        BDDMockito.given(exerciseQueryService.findExerciseRecordByRecordId(nonExistentRecordId))
+        given(exerciseQueryService.findExerciseRecordByRecordId(nonExistentRecordId))
                 .willThrow(new CustomException(ErrorCode.EXERCISE_RECORD_NOT_FOUND));
 
         // when
@@ -214,14 +217,14 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         headers.add("X-USER-ID", memberId.toString());
 
         this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/{recordId}", nonExistentRecordId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(APPLICATION_JSON)
+                        .accept(APPLICATION_JSON)
                         .headers(headers))
-                        .andExpect(MockMvcResultMatchers.status().isNotFound())
-                        .andDo(this.document.document(
-                                requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
-                                responseFields(RestDocsUtils.commonResponseFieldsOnly())
-                        ));
+                .andExpect(status().isNotFound())
+                .andDo(this.document.document(
+                        requestHeaders(HEADER_X_USER_ID),
+                        responseFields(RestDocsUtils.commonResponseFieldsOnly())
+                ));
 
         //then
         BDDMockito.then(exerciseQueryService).should(BDDMockito.times(1)).findExerciseRecordByRecordId(BDDMockito.anyLong());
@@ -234,7 +237,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         UUID memberId = UUID.randomUUID();
         Long anotherUserRecordID = 1L;
 
-        BDDMockito.given(exerciseQueryService.findExerciseRecordByRecordId(anotherUserRecordID))
+        given(exerciseQueryService.findExerciseRecordByRecordId(anotherUserRecordID))
                 .willThrow(new CustomException(ErrorCode.AUTHORIZATION_DENIED));
 
 
@@ -243,12 +246,12 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         headers.add("X-USER-ID", memberId.toString());
 
         this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/{recordId}", anotherUserRecordID)
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .headers(headers))
-                .andExpect(MockMvcResultMatchers.status().isForbidden())
+                        .contentType(APPLICATION_JSON)
+                        .accept(APPLICATION_JSON)
+                        .headers(headers))
+                .andExpect(status().isForbidden())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        requestHeaders(HEADER_X_USER_ID),
                         responseFields(RestDocsUtils.commonResponseFieldsOnly())
                 ));
 
@@ -258,10 +261,10 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
 
     @Test
     @DisplayName("특정 날짜의 운동기록 조회_성공")
-    void findMemberExerciseRecordByDate_Success() throws Exception{
+    void findMemberExerciseRecordByDate_Success() throws Exception {
         //given
         UUID memberId = UUID.randomUUID();
-        LocalDateTime testDateTime = LocalDateTime.of(2021,1,1, 00,00,00);
+        LocalDateTime testDateTime = LocalDateTime.of(2021, 1, 1, 00, 00, 00);
         String picureUrl = "https://s3.urlpage/test/pic1.jpg";
         Long exerciseId = 1L;
 
@@ -277,20 +280,20 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         responseDtoList.add(dto);
 
         //given
-        BDDMockito.given(exerciseQueryService.findExerciseRecordByDate(testDateTime.toLocalDate())).willReturn(Optional.of(responseDtoList));
+        given(exerciseQueryService.findExerciseRecordByDate(testDateTime.toLocalDate())).willReturn(Optional.of(responseDtoList));
 
         //when
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
 
         String response = this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises")
-                .param("date", testDateTime.toLocalDate().toString())
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .headers(headers))
-                .andExpect(MockMvcResultMatchers.status().isOk())
+                        .param("date", testDateTime.toLocalDate().toString())
+                        .contentType(APPLICATION_JSON)
+                        .accept(APPLICATION_JSON)
+                        .headers(headers))
+                .andExpect(status().isOk())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        requestHeaders(HEADER_X_USER_ID),
                         responseFields(
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
@@ -314,13 +317,13 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
 
     @Test
     @DisplayName("특정 날짜 운동기록 조회결과 없음")
-    void findMemberExerciseRecordByDate_NotFound() throws Exception{
+    void findMemberExerciseRecordByDate_NotFound() throws Exception {
         //given
         UUID memberId = UUID.randomUUID();
-        LocalDateTime testDateTime = LocalDateTime.of(2021,1,1, 00,00,00);
+        LocalDateTime testDateTime = LocalDateTime.of(2021, 1, 1, 00, 00, 00);
 
         //given
-        BDDMockito.given(exerciseQueryService.findExerciseRecordByDate(testDateTime.toLocalDate())).willReturn(Optional.empty());
+        given(exerciseQueryService.findExerciseRecordByDate(testDateTime.toLocalDate())).willReturn(Optional.empty());
 
         //when
         HttpHeaders headers = new HttpHeaders();
@@ -328,12 +331,12 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
 
         String response = this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises")
                         .param("date", testDateTime.toLocalDate().toString())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(APPLICATION_JSON)
+                        .accept(APPLICATION_JSON)
                         .headers(headers))
-                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(status().isOk())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        requestHeaders(HEADER_X_USER_ID),
                         responseFields(
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
@@ -351,7 +354,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
 
     @Test
     @DisplayName("날짜 입력 형식 오류")
-    void findMemberRecordByDate_WrongInput() throws Exception{
+    void findMemberRecordByDate_WrongInput() throws Exception {
         //given
         UUID memberId = UUID.randomUUID();
         String date = "20111111";
@@ -361,13 +364,13 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         headers.add("X-USER-ID", memberId.toString());
 
         this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises")
-                .param("date", date)
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .headers(headers))
-                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                        .param("date", date)
+                        .contentType(APPLICATION_JSON)
+                        .accept(APPLICATION_JSON)
+                        .headers(headers))
+                .andExpect(status().isBadRequest())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        requestHeaders(HEADER_X_USER_ID),
                         responseFields(
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
@@ -382,7 +385,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
 
     @Test
     @DisplayName("날짜 입력 누락")
-    void findMemberRecordByDate_EmptyInput() throws Exception{
+    void findMemberRecordByDate_EmptyInput() throws Exception {
         //given
         UUID memberId = UUID.randomUUID();
 
@@ -391,12 +394,12 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         headers.add("X-USER-ID", memberId.toString());
 
         this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(APPLICATION_JSON)
+                        .accept(APPLICATION_JSON)
                         .headers(headers))
-                .andExpect(MockMvcResultMatchers.status().isInternalServerError())
+                .andExpect(status().isInternalServerError())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        requestHeaders(HEADER_X_USER_ID),
                         responseFields(RestDocsUtils.commonResponseFieldsOnly())
                 ));
 
@@ -406,12 +409,12 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
 
     @Test
     @DisplayName("과거 날짜 입력")
-    void findMemberRecordByDate_PastInput() throws Exception{
+    void findMemberRecordByDate_PastInput() throws Exception {
         //given
         UUID memberId = UUID.randomUUID();
-        LocalDate date = LocalDate.of(1945,8,14);
+        LocalDate date = LocalDate.of(1945, 8, 14);
 
-        BDDMockito.given(exerciseQueryService.findExerciseRecordByDate(date)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
+        given(exerciseQueryService.findExerciseRecordByDate(date)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
 
         //when
         HttpHeaders headers = new HttpHeaders();
@@ -419,12 +422,12 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
 
         this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises")
                         .param("date", date.toString())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(APPLICATION_JSON)
+                        .accept(APPLICATION_JSON)
                         .headers(headers))
-                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(status().isBadRequest())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        requestHeaders(HEADER_X_USER_ID),
                         responseFields(
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
@@ -439,12 +442,12 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
 
     @Test
     @DisplayName("미래 날짜 입력")
-    void findMemberRecordByDate_FutureInput() throws Exception{
+    void findMemberRecordByDate_FutureInput() throws Exception {
         //given
         UUID memberId = UUID.randomUUID();
         LocalDate date = LocalDate.now().plusDays(1);
 
-        BDDMockito.given(exerciseQueryService.findExerciseRecordByDate(date)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
+        given(exerciseQueryService.findExerciseRecordByDate(date)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
 
         //when
         HttpHeaders headers = new HttpHeaders();
@@ -452,12 +455,12 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
 
         this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises")
                         .param("date", date.toString())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(APPLICATION_JSON)
+                        .accept(APPLICATION_JSON)
                         .headers(headers))
-                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(status().isBadRequest())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        requestHeaders(HEADER_X_USER_ID),
                         responseFields(
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
@@ -472,7 +475,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
 
     @Test
     @DisplayName("구간별 운동기록 조회_성공")
-    void findExerciseRecordsByPeriod() throws Exception{
+    void findExerciseRecordsByPeriod() throws Exception {
         UUID memberId = UUID.randomUUID();
         LocalDate start = LocalDate.now().minusDays(1);
         LocalDate end = LocalDate.now();
@@ -482,21 +485,21 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         respDtoList.add(new FindExerciseRecordByPeriodResponseDto(LocalDate.now(), 2L));
 
         // given
-        BDDMockito.given(exerciseQueryService.findExerciseRecordsByPeriod(start, end)).willReturn(respDtoList);
+        given(exerciseQueryService.findExerciseRecordsByPeriod(start, end)).willReturn(respDtoList);
 
         // when
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
 
         this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/count")
-                .param("start", start.toString())
-                .param("end", end.toString())
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .headers(headers))
-                .andExpect(MockMvcResultMatchers.status().isOk())
+                        .param("start", start.toString())
+                        .param("end", end.toString())
+                        .contentType(APPLICATION_JSON)
+                        .accept(APPLICATION_JSON)
+                        .headers(headers))
+                .andExpect(status().isOk())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        requestHeaders(HEADER_X_USER_ID),
                         responseFields(
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
@@ -513,7 +516,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
 
     @Test
     @DisplayName("구간별 운동종목 조회 실패 _ 날짜 입력 형식 오류")
-    void findExerciseRecordsByPeriod_FailedInputType() throws  Exception{
+    void findExerciseRecordsByPeriod_FailedInputType() throws Exception {
         //given
         UUID memberId = UUID.randomUUID();
         String start = "20250520";
@@ -524,14 +527,14 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         headers.add("X-USER-ID", memberId.toString());
 
         this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/count")
-                .param("start", start)
-                .param("end", end.toString())
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .headers(headers))
-                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                        .param("start", start)
+                        .param("end", end.toString())
+                        .contentType(APPLICATION_JSON)
+                        .accept(APPLICATION_JSON)
+                        .headers(headers))
+                .andExpect(status().isBadRequest())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        requestHeaders(HEADER_X_USER_ID),
                         responseFields(
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
@@ -547,7 +550,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
 
     @Test
     @DisplayName("구간별 운동종목 조회 실패 _ 날짜 입력 누락")
-    void findExerciseRecordsByPeriod_FailedInputLost() throws  Exception{
+    void findExerciseRecordsByPeriod_FailedInputLost() throws Exception {
         //given
         UUID memberId = UUID.randomUUID();
         LocalDate start = LocalDate.now();
@@ -558,12 +561,12 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
 
         this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/count")
                         .param("start", start.toString())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(APPLICATION_JSON)
+                        .accept(APPLICATION_JSON)
                         .headers(headers))
-                .andExpect(MockMvcResultMatchers.status().isInternalServerError())
+                .andExpect(status().isInternalServerError())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        requestHeaders(HEADER_X_USER_ID),
                         responseFields(
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
@@ -578,27 +581,27 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
 
     @Test
     @DisplayName("구간별 운동종목 조회 실패 _ 과거 날짜 조회")
-    void findExerciseRecordsByPeriod_FailedPastInput() throws  Exception{
+    void findExerciseRecordsByPeriod_FailedPastInput() throws Exception {
         //given
         UUID memberId = UUID.randomUUID();
-        LocalDate start = LocalDate.of(1945,8,14);
-        LocalDate end = LocalDate.of(1945,8,15);
+        LocalDate start = LocalDate.of(1945, 8, 14);
+        LocalDate end = LocalDate.of(1945, 8, 15);
 
         //when
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
 
-        BDDMockito.given(exerciseQueryService.findExerciseRecordsByPeriod(start, end)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
+        given(exerciseQueryService.findExerciseRecordsByPeriod(start, end)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
 
         this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/count")
                         .param("start", start.toString())
                         .param("end", end.toString())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(APPLICATION_JSON)
+                        .accept(APPLICATION_JSON)
                         .headers(headers))
-                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(status().isBadRequest())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        requestHeaders(HEADER_X_USER_ID),
                         responseFields(
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
@@ -612,13 +615,13 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
 
     @Test
     @DisplayName("구간별 운동종목 조회 실패 _ 미래 날짜 조회")
-    void findExerciseRecordsByPeriod_FailedFutureInput() throws  Exception{
+    void findExerciseRecordsByPeriod_FailedFutureInput() throws Exception {
         //given
         UUID memberId = UUID.randomUUID();
         LocalDate start = LocalDate.now();
         LocalDate end = LocalDate.now().plusDays(1);
 
-        BDDMockito.given(exerciseQueryService.findExerciseRecordsByPeriod(start, end)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
+        given(exerciseQueryService.findExerciseRecordsByPeriod(start, end)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
 
         //when
         HttpHeaders headers = new HttpHeaders();
@@ -627,12 +630,12 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/count")
                         .param("start", start.toString())
                         .param("end", end.toString())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(APPLICATION_JSON)
+                        .accept(APPLICATION_JSON)
                         .headers(headers))
-                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(status().isBadRequest())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        requestHeaders(HEADER_X_USER_ID),
                         responseFields(
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
@@ -647,13 +650,13 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
 
     @Test
     @DisplayName("구간별 운동종목 조회 실패 _ 순서 입력 오류")
-    void findExerciseRecordsByPeriod_FailedOrderInput() throws  Exception{
+    void findExerciseRecordsByPeriod_FailedOrderInput() throws Exception {
         //given
         UUID memberId = UUID.randomUUID();
         LocalDate start = LocalDate.now();
         LocalDate end = LocalDate.now().minusDays(1);
 
-        BDDMockito.given(exerciseQueryService.findExerciseRecordsByPeriod(start, end)).willThrow(new CustomException(ErrorCode.IMPOSSIBLE_INPUT_DATE));
+        given(exerciseQueryService.findExerciseRecordsByPeriod(start, end)).willThrow(new CustomException(ErrorCode.IMPOSSIBLE_INPUT_DATE));
 
         //when
         HttpHeaders headers = new HttpHeaders();
@@ -662,12 +665,12 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/exercises/count")
                         .param("start", start.toString())
                         .param("end", end.toString())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(APPLICATION_JSON)
+                        .accept(APPLICATION_JSON)
                         .headers(headers))
-                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(status().isBadRequest())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        requestHeaders(HEADER_X_USER_ID),
                         responseFields(
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
@@ -679,5 +682,183 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
         BDDMockito.then(exerciseQueryService).should(BDDMockito.times(1)).findExerciseRecordsByPeriod(start, end);
     }
 
+    /*
+     *//**
+     * 운동 생성 성공 테스트
+     *//*
+    @Test
+    @DisplayName("운동 생성 - 성공 케이스")
+    void createExercise_Success() throws Exception {
+        // given
+        UUID testUserId = UUID.randomUUID();
+        CreateExerciseRequestDto requestDto = new CreateExerciseRequestDto(
+                "Test Title",
+                "Health",
+                "Gym",
+                "Detailed description",
+                LocalDateTime.now().minusHours(12),
+                LocalDateTime.now().minusHours(10),
+                new ArrayList<>(
+                        List.of(
+                                new MockMultipartFile("exercisePictureList", "test1.jpg", "image/jpeg", "test1".getBytes()),
+                                new MockMultipartFile("exercisePictureList", "test2.jpg", "image/jpeg", "test2".getBytes())
+                        )
+                )
+        );
+        CreateExerciseResponseDto responseDto = new CreateExerciseResponseDto(1L);
 
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-USER-ID", testUserId.toString());
+        headers.add("Authorization", "Bearer dummy-token-for-docs");
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+
+        try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+            given(UserContextHolder.getUserId()).willReturn(testUserId);
+            given(exerciseService.uploadExerciseImages(BDDMockito.any(CreateExerciseRequestDto.class))).willReturn(responseDto);
+
+            // when
+            String response = this.mockMvc.perform(multipart("/v1/exercises")
+                            .file((MockMultipartFile) requestDto.exercisePictureList().get(0))
+                            .file((MockMultipartFile) requestDto.exercisePictureList().get(1))
+                            .param("exerciseTitle", requestDto.exerciseTitle())
+                            .param("exercisePersonalType", requestDto.exercisePersonalType())
+                            .param("exerciseLocation", requestDto.exerciseLocation())
+                            .param("exerciseDetail", requestDto.exerciseDetail())
+                            .param("exerciseStartedAt", requestDto.exerciseStartedAt().format(formatter))
+                            .param("exerciseEndedAt", requestDto.exerciseEndedAt().format(formatter))
+                            .contentType(MULTIPART_FORM_DATA_VALUE)
+                            .accept(APPLICATION_JSON)
+                            .headers(headers))
+                    .andExpect(status().isCreated())
+                    .andDo(this.document.document(
+                            requestHeaders(HEADER_ACCESS_TOKEN),
+                            // .param()으로 보낸 필드들은 requestParameters()로 문서화
+                            formParameters(
+                                    parameterWithName("exerciseTitle").description("운동 제목 (String)"),
+                                    parameterWithName("exercisePersonalType").description("운동 유형 (String)"),
+                                    parameterWithName("exerciseLocation").description("운동 장소(사용자 직접 입력) (String)"),
+                                    parameterWithName("exerciseDetail").description("운동 세부 설명 (String)"),
+                                    parameterWithName("exerciseStartedAt").description("운동 시작 시각 (ISO 8601 DateTime)"),
+                                    parameterWithName("exerciseEndedAt").description("운동 종료 시각(시작 시간보다 이후여야함) (ISO 8601 DateTime)")
+                            ),
+                            // .file()로 보낸 필드들은 requestParts()로 문서화
+                            requestParts(
+                                    partWithName("exercisePictureList").description("업로드할 운동 사진 파일 목록 (List<MultipartFile>)")
+                            ),
+                            responseFields(commonResponseFields(
+                                    fieldWithPath("data.exerciseId").type(JsonFieldType.STRING).description("운동 ID")
+                            ))
+                    ))
+                    .andReturn().getResponse().getContentAsString();
+
+            // then
+            assertThat(response)
+                    .as("운동이 성공적으로 생성되어야 합니다.")
+                    .contains("Test Title");
+            BDDMockito.then(exerciseService).should(BDDMockito.times(1)).uploadExerciseImages(requestDto);
+        }
+    }
+
+    *//**
+     * 잘못된 요청 데이터로 운동 생성 실패 테스트
+     *//*
+    @Test
+    @DisplayName("운동 생성 - 요청 데이터 오류")
+    void createExercise_InvalidRequest() throws Exception {
+        // given
+        UUID testUserId = UUID.randomUUID();
+        CreateExerciseRequestDto invalidRequestDto = new CreateExerciseRequestDto(
+                null, // Title is required
+                "Personal",
+                "Gym",
+                "Detailed description",
+                LocalDateTime.of(2023, 1, 1, 10, 0),
+                LocalDateTime.of(2023, 1, 1, 11, 0),
+                new ArrayList<>()
+        );
+
+
+        // when
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-USER-ID", testUserId.toString());
+
+        try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+            given(UserContextHolder.getUserId()).willReturn(testUserId);
+
+            this.mockMvc.perform(post("/v1/exercises")
+                            .contentType(MULTIPART_FORM_DATA_VALUE)
+                            .accept(APPLICATION_JSON)
+                            .headers(headers)
+                            .flashAttr("requestDto", invalidRequestDto))
+                    .andExpect(status().isBadRequest())
+                    .andDo(this.document.document(
+                            requestHeaders(HEADER_X_USER_ID),
+                            requestFields(
+                                    fieldWithPath("exerciseTitle").type(JsonFieldType.NULL).description("운동 제목 (필수)"),
+                                    fieldWithPath("exercisePersonalType").type(JsonFieldType.STRING).description("운동 유형"),
+                                    fieldWithPath("exerciseLocation").type(JsonFieldType.STRING).description("운동 장소"),
+                                    fieldWithPath("exerciseDetail").type(JsonFieldType.STRING).description("운동 세부 설명"),
+                                    fieldWithPath("exerciseStartedAt").type(JsonFieldType.STRING).description("운동 시작 시각"),
+                                    fieldWithPath("exerciseEndedAt").type(JsonFieldType.STRING).description("운동 종료 시각"),
+                                    fieldWithPath("exercisePictureList").type(JsonFieldType.ARRAY).description("운동 사진 목록")
+                            ),
+                            responseFields(RestDocsUtils.commonResponseFieldsOnly())
+                    ));
+
+            // then
+            BDDMockito.then(exerciseService).shouldHaveNoInteractions();
+        }
+    }
+
+    *//**
+     * 운동안 이미지 업로드 실패
+     *//*
+    @Test
+    @DisplayName("운동 생성 - 이미지 업로드 실패")
+    void createExercise_UploadFailure() throws Exception {
+        // given
+        UUID testUserId = UUID.randomUUID();
+
+        CreateExerciseRequestDto requestDto = new CreateExerciseRequestDto(
+                "Test Title",
+                "Personal",
+                "Gym",
+                "Detailed description",
+                LocalDateTime.of(2023, 1, 1, 10, 0),
+                LocalDateTime.of(2023, 1, 1, 11, 0),
+                new ArrayList<>()
+        );
+
+        try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+            given(UserContextHolder.getUserId()).willReturn(testUserId);
+            given(exerciseService.uploadExerciseImages(requestDto)).willThrow(new CustomException(ErrorCode.EXERCISE_PICTURE_UPLOAD_FAILED));
+
+            // when
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("X-USER-ID", testUserId.toString());
+
+            this.mockMvc.perform(post("/v1/exercises")
+                            .contentType(MULTIPART_FORM_DATA_VALUE)
+                            .accept(APPLICATION_JSON)
+                            .headers(headers)
+                            .flashAttr("requestDto", requestDto))
+                    .andExpect(status().isInternalServerError())
+                    .andDo(this.document.document(
+                            requestHeaders(HEADER_X_USER_ID),
+                            requestFields(
+                                    fieldWithPath("exerciseTitle").type(JsonFieldType.STRING).description("운동 제목"),
+                                    fieldWithPath("exercisePersonalType").type(JsonFieldType.STRING).description("운동 유형"),
+                                    fieldWithPath("exerciseLocation").type(JsonFieldType.STRING).description("운동 장소"),
+                                    fieldWithPath("exerciseDetail").type(JsonFieldType.STRING).description("운동 세부 설명"),
+                                    fieldWithPath("exerciseStartedAt").type(JsonFieldType.STRING).description("운동 시작 시각"),
+                                    fieldWithPath("exerciseEndedAt").type(JsonFieldType.STRING).description("운동 종료 시각"),
+                                    fieldWithPath("exercisePictureList").type(JsonFieldType.ARRAY).description("운동 사진 목록")
+                            ),
+                            responseFields(RestDocsUtils.commonResponseFieldsOnly())
+                    ));
+
+            // then
+            BDDMockito.then(exerciseService).should(BDDMockito.times(1)).uploadExerciseImages(requestDto);
+        }
+    }*/
 }
