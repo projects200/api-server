@@ -12,12 +12,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Builder@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class UpdateExerciseRequestDto {
-    @NotNull(message = "운동기록 식별자를 입력해주세요.")
-    private Long exerciseId;
-
     @NotNull(message = "제목은 필수 입력값 입니다.")
     private String exerciseTitle;
     private String exerciseDetail;
@@ -34,12 +30,13 @@ public class UpdateExerciseRequestDto {
     private List<Long> deletePictureIdList; // 회원이 등록한 운동사진중 수정할 사진의 사진번호를 담고있는 리스트
 
     @Size(max = 5, message = "최대 5개의 파일만 업로드 할 수 있습니다.")
-    @AllowedExtensions(extensions = {".jpg", ".png.", ".jpeg"})
+    @AllowedExtensions(extensions = {".jpg", ".png", ".jpeg"})
     private List<MultipartFile> exercisePictureList;
 
-    public Exercise toExerciseEntity(Member member) {
+    public Exercise toExerciseEntity(Member member, Long exerciseId) {
         return Exercise.builder()
                 .member(member)
+                .id(exerciseId)
                 .exerciseTitle(exerciseTitle)
                 .exercisePersonalType(exercisePersonalType)
                 .exerciseLocation(exerciseLocation)

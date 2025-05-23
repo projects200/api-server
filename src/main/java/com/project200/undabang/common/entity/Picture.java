@@ -64,8 +64,9 @@ public class Picture {
         return fileName.substring(fileName.lastIndexOf("."));
     }
 
-    public void softDelete(){
+    public Picture softDelete(){
         this.pictureDeletedAt = LocalDateTime.now();
+        return this;
     }
 
 }

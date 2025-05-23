@@ -76,9 +76,10 @@ public class ExerciseRestController {
         return ResponseEntity.ok(CommonResponse.success(responseDto));
     }
 
-    @PatchMapping(path = "/v1/exercises/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<CommonResponse<CreateExerciseResponseDto>> updateExerciseRecord(@Valid @ModelAttribute UpdateExerciseRequestDto requestDto) throws IOException{
-        CreateExerciseResponseDto responseDto = exerciseService.updateExerciseImages(requestDto);
+    @PatchMapping(path = "/v1/exercises/{exerciseId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<CommonResponse<CreateExerciseResponseDto>> updateExerciseRecord(@PathVariable Long exerciseId,
+                                                                                          @Valid @ModelAttribute UpdateExerciseRequestDto requestDto) throws IOException{
+        CreateExerciseResponseDto responseDto = exerciseService.updateExerciseImages(exerciseId, requestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.success(responseDto));
     }
 }

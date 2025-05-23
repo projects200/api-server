@@ -42,20 +42,20 @@ public class UpdateExerciseServiceImpl implements UpdateExerciseService {
     private final PictureRepository pictureRepository;
 
     @Override
-    public CreateExerciseResponseDto updateExerciseImages(UpdateExerciseRequestDto requestDto) {
+    public CreateExerciseResponseDto updateExerciseImages(Long exerciseId, UpdateExerciseRequestDto requestDto) {
         Member member = memberRepository.findById(UserContextHolder.getUserId()).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-        checkMemberExerciseId(member.getMemberId(), requestDto.getExerciseId(), requestDto.getDeletePictureIdList());
+        checkMemberExerciseId(member.getMemberId(), exerciseId, requestDto.getDeletePictureIdList());
         checkStartEndDate(requestDto.getExerciseStartedAt(), requestDto.getExerciseEndedAt());
 
-        Exercise exercise = requestDto.toExerciseEntity(member);
-        UpdateExerciseContext context =  new UpdateExerciseContext(exercise, requestDto.getDeletePictureIdList());
+        Exercise exercise = requestDto.toExerciseEntity(member, exerciseId);
+        UpdateExerciseContext context = new UpdateExerciseContext(exercise, requestDto.getDeletePictureIdList());
 
         // 사진은 수정 안하고 문자열 데이터 수정, 사진삭제하는 경우
-        if(requestDto.getExercisePictureList() == null || requestDto.getExercisePictureList().isEmpty()){
+        if (requestDto.getExercisePictureList() == null || requestDto.getExercisePictureList().isEmpty()) {
             exerciseRepository.save(context.getExercise());
 
-            // 사진을 삭제만 하는 경우
+            // 사진을 삭제만 하는 경우 (없으면 바로 return)
             deleteProcessIfListExists(context);
             return new CreateExerciseResponseDto(context.getExercise().getId());
         }
@@ -92,13 +92,13 @@ public class UpdateExerciseServiceImpl implements UpdateExerciseService {
             }
         }
 
-        // 삭제해야할 사진 처리
+        // 새로운 사진 저장 후, 사용자가 삭제한 사진 제거
         deleteProcessIfListExists(context);
 
         return new CreateExerciseResponseDto(context.getExercise().getId());
     }
 
-    private void deleteProcessIfListExists(UpdateExerciseContext context){
+    private void deleteProcessIfListExists(UpdateExerciseContext context) {
         if (!context.getPictureIdListToDelete().isEmpty()) {
             try {
                 deletePictures(context.getPictureIdListToDelete());
@@ -112,14 +112,18 @@ public class UpdateExerciseServiceImpl implements UpdateExerciseService {
         }
     }
 
-    private void deletePictures(List<Long> pictureIdList) throws FileProcessingException, S3UploadFailedException{
+    private void deletePictures(List<Long> pictureIdList) throws FileProcessingException, S3UploadFailedException {
         if (pictureIdList == null || pictureIdList.isEmpty()) {
             return;
         }
 
         //  사진 테이블에서 soft delete 처리
-        List<Picture> softDeletedPictures = pictureRepository.findAllById(pictureIdList);
-        softDeletedPictures.forEach(Picture::softDelete);
+        List<Picture> pictureList = pictureRepository.findAllById(pictureIdList);
+        List<Picture> softDeletedPictures = new ArrayList<>();
+        for (Picture picture : pictureList) {
+            softDeletedPictures.add(picture.softDelete());
+        }
+
         pictureRepository.saveAll(softDeletedPictures);
 
         //  S3에 존재하는 이미지 삭제
@@ -133,8 +137,8 @@ public class UpdateExerciseServiceImpl implements UpdateExerciseService {
      */
     @Override
     public void checkStartEndDate(LocalDateTime startDate, LocalDateTime endDate) {
-        if(startDate.isAfter(endDate) || startDate.isBefore(LocalDate.of(1945,8,15).atStartOfDay()) ||
-                endDate.isAfter(LocalDate.now().plusDays(1).atStartOfDay())){
+        if (startDate.isAfter(endDate) || startDate.isBefore(LocalDate.of(1945, 8, 15).atStartOfDay()) ||
+                endDate.isAfter(LocalDate.now().plusDays(1).atStartOfDay())) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
         }
     }
@@ -143,22 +147,31 @@ public class UpdateExerciseServiceImpl implements UpdateExerciseService {
      * 타인의 운동기록 혹은 사진 접근시 ACCESS DENIED 반환하도록 체크
      */
     @Override
-    public void checkMemberExerciseId(UUID memberId, Long exerciseId, List<Long> pictureList) {
-        if(!exerciseRepository.existsByRecordIdAndMemberId(memberId, exerciseId)){
+    public void checkMemberExerciseId(UUID memberId, Long exerciseId, List<Long> pictureIdDeleteList) {
+        if (!exerciseRepository.existsByRecordIdAndMemberId(memberId, exerciseId)) {
             throw new CustomException(ErrorCode.AUTHORIZATION_DENIED);
         }
-        List<ExercisePicture> exercisePictureList = exercisePictureRepository.findByExercise_Id(exerciseId);
 
+        if (pictureIdDeleteList == null || pictureIdDeleteList.isEmpty()) {
+            return;
+        }
+
+        // 삭제하려는 사진이 자신의 운동 기록에 있는지 검증
+        List<ExercisePicture> exercisePictureList = exercisePictureRepository.findByExercise_Id(exerciseId);
         Set<Long> exercisePictureSet = new HashSet<>();
+
+        // 내용이 있을때만 해당 기능 동작
+        // 저장된 사진이 없으면 추가만 되도록
         for (ExercisePicture picture : exercisePictureList) {
             exercisePictureSet.add(picture.getId());
         }
 
-        for (Long picture : pictureList) {
-            if(!exercisePictureSet.contains(picture)){
+        for (Long picture : pictureIdDeleteList) {
+            if (!exercisePictureSet.contains(picture)) {
                 throw new CustomException(ErrorCode.AUTHORIZATION_DENIED);
             }
         }
+
     }
 
     // 예외 발생 시 S3에서 이미지를 삭제하는 메서드
@@ -184,7 +197,7 @@ public class UpdateExerciseServiceImpl implements UpdateExerciseService {
         throw new CustomException(ErrorCode.EXERCISE_PICTURE_UPLOAD_FAILED);
     }
 
-    private void handleDBDeleteException(Exception ex, UpdateExerciseServiceImpl.UpdateExerciseContext context){
+    private void handleDBDeleteException(Exception ex, UpdateExerciseServiceImpl.UpdateExerciseContext context) {
         log.error("DB 삭제 중 예외 발생: {}", ex.getMessage(), ex);
         // 기존에 저장된 사진들 삭제
         rollbackS3Upload(context.getPictureList());
@@ -192,7 +205,7 @@ public class UpdateExerciseServiceImpl implements UpdateExerciseService {
     }
 
     @Getter
-    public static class UpdateExerciseContext{
+    public static class UpdateExerciseContext {
         private final Exercise exercise;
 
         private final List<Picture> pictureList = new ArrayList<>();
@@ -202,7 +215,7 @@ public class UpdateExerciseServiceImpl implements UpdateExerciseService {
         private final List<Long> pictureIdListToDelete;
 
 
-        public UpdateExerciseContext(Exercise exercise, List<Long> pictureIdListToDelete){
+        public UpdateExerciseContext(Exercise exercise, List<Long> pictureIdListToDelete) {
             this.exercise = exercise;
             this.pictureIdListToDelete = pictureIdListToDelete != null ? pictureIdListToDelete : new ArrayList<>();
         }

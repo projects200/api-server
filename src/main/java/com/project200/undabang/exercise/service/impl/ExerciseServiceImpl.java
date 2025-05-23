@@ -10,8 +10,6 @@ import com.project200.undabang.exercise.service.UpdateExerciseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-
 @RequiredArgsConstructor
 @Service
 public class ExerciseServiceImpl implements ExerciseService {
@@ -25,7 +23,7 @@ public class ExerciseServiceImpl implements ExerciseService {
     }
 
     @Override
-    public CreateExerciseResponseDto updateExerciseImages(UpdateExerciseRequestDto requestDto) throws IOException {
-        return updateExerciseService.updateExerciseImages(requestDto);
+    public CreateExerciseResponseDto updateExerciseImages(Long exerciseId, UpdateExerciseRequestDto requestDto) throws CustomException {
+        return updateExerciseService.updateExerciseImages(exerciseId, requestDto);
     }
 }

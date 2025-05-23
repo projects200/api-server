@@ -1,8 +1,8 @@
 -- 회원 2명 생성 (UUID 사용)
 INSERT INTO members (member_id, member_email, member_gender, member_bday, member_nickname, member_desc)
 VALUES
-    ('550e8400-e29b-41d4-a716-446655440000', 'user11@example.com', 'M', '1990-01-15', '헬스왕', '운동을 사랑하는 30대 남성입니다.'),
-    ('550e8400-e29b-41d4-a716-446655440001', 'user22@example.com', 'F', '1995-06-22', '요가여왕', '요가와 필라테스를 즐기는 20대 여성입니다.');
+    ('550e8400-e29b-41d4-a716-446655440000', 'user11@example.com', 'm', '1990-01-15', '헬스왕', '운동을 사랑하는 30대 남성입니다.'),
+    ('550e8400-e29b-41d4-a716-446655440001', 'user22@example.com', 'f', '1995-06-22', '요가여왕', '요가와 필라테스를 즐기는 20대 여성입니다.');
 
 -- 첫 번째 회원의 운동 기록 5개 생성 (ID: 1-5)
 INSERT INTO exercises (member_id, exercise_started_at, exercise_ended_at, exercise_title, exercise_detail, exercise_personal_type, exercise_location)
