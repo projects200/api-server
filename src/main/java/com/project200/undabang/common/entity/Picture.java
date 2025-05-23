@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Comment;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 
@@ -33,6 +34,7 @@ public class Picture {
     @Column(name = "picture_size")
     private Integer pictureSize;
 
+    @Setter
     @Size(max = 255)
     @Column(name = "picture_url")
     private String pictureUrl;
@@ -45,5 +47,21 @@ public class Picture {
 
     @Column(name = "picture_deleted_at")
     private LocalDateTime pictureDeletedAt;
+
+    public static Picture of(MultipartFile file, String pictureUrl) {
+        return Picture.builder()
+                .pictureName(file.getOriginalFilename())
+                .pictureExtension(getFileExtension(file.getOriginalFilename()))
+                .pictureSize((int) file.getSize())
+                .pictureUrl(pictureUrl)
+                .build();
+    }
+
+    private static String getFileExtension(String fileName) {
+        if (fileName == null || !fileName.contains(".")) {
+            return null;
+        }
+        return fileName.substring(fileName.lastIndexOf("."));
+    }
 
 }

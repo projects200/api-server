@@ -27,12 +27,32 @@ public class CommonResponse<T> {
         return new CommonResponse<>(true,"SUCCESS", "요청이 성공적으로 처리되었습니다.", data);
     }
 
-    public static <T> CommonResponse<T> success(String code, String message) {
-        return new CommonResponse<>(true, code, message, null);
+    public static <T> CommonResponse<T> create(T data) {
+        return new CommonResponse<>(true, "CREATED", "리소스가 성공적으로 생성되었습니다.", data);
     }
 
-    public static <T> CommonResponse<T> success(String code, String message, T data) {
-        return new CommonResponse<>(true, code, message, data);
+    public static <T> CommonResponse<T> update(T data) {
+        return new CommonResponse<>(true, "UPDATED", "리소스가 성공적으로 업데이트되었습니다.", data);
+    }
+
+    public static <T> CommonResponse<T> delete(T data) {
+        return new CommonResponse<>(true, "DELETED", "리소스가 성공적으로 삭제되었습니다.", data);
+    }
+
+    public static <T> CommonResponse<T> success() {
+        return new CommonResponse<>(
+                true,
+                "SUCCESS",
+                "요청이 성공적으로 처리되었지만 반환할 데이터가 없습니다.",
+                null);
+    }
+
+    public static <T> CommonResponse<T> success(SuccessDetails successDetails) {
+        return new CommonResponse<>(true, successDetails.code(), successDetails.message(), null);
+    }
+
+    public static <T> CommonResponse<T> success(SuccessDetails successDetails, T data) {
+        return new CommonResponse<>(true, successDetails.code(), successDetails.message(), data);
     }
 
     /**

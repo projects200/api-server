@@ -22,7 +22,6 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
@@ -110,7 +109,7 @@ class S3ServiceTest {
 
     @Test
     @DisplayName("uploadImage & getPublicUrl (with metadata): 메타데이터와 함께 이미지 업로드 및 공개 URL 반환 테스트")
-    void uploadImageAndGetPublicUrlWithMetadata() throws IOException {
+    void uploadImageAndGetPublicUrlWithMetadata() {
         // Given: 테스트 값 및 모킹 설정
         UUID testUserId = UUID.randomUUID(); // 일관성을 위해 UUID로 변경 (UserContextHolder 모킹과 맞춤)
         String originalFilename = "upload_test_with_meta.jpg";
@@ -157,7 +156,7 @@ class S3ServiceTest {
 
     @Test
     @DisplayName("uploadImage & getPublicUrl (without metadata): 메타데이터 없이 이미지 업로드 및 공개 URL 반환 테스트")
-    void uploadImageAndGetPublicUrlWithoutMetadata() throws IOException {
+    void uploadImageAndGetPublicUrlWithoutMetadata() {
         // Given: 테스트 값 및 모킹 설정
         UUID testUserId = UUID.randomUUID(); // 일관성을 위해 UUID로 변경
         String originalFilename = "upload_test_no_meta.png";
@@ -201,7 +200,7 @@ class S3ServiceTest {
 
     @Test
     @DisplayName("deleteImage: S3에서 이미지 삭제 테스트")
-    void deleteImage_shouldDeleteObjectFromS3() throws IOException {
+    void deleteImage_shouldDeleteObjectFromS3() {
         // Given: 삭제할 파일 준비 및 모킹 설정
         UUID testUserId = UUID.randomUUID(); // 일관성을 위해 UUID로 변경
         String originalFilename = "file_to_delete.jpeg";
@@ -232,5 +231,16 @@ class S3ServiceTest {
             assertThatThrownBy(() -> s3Client.headObject(HeadObjectRequest.builder().bucket(BUCKET_NAME).key(objectKey).build()))
                     .isInstanceOf(NoSuchKeyException.class);
         }
+    }
+
+    @Test
+    @DisplayName("deleteImage: 존재하지 않는 파일 삭제 시 예외 처리")
+    void deleteImage_shouldHandleNonExistentFile() {
+        // Given: 삭제할 파일 키
+        String nonExistentObjectKey = "non_existent_file.jpg";
+
+        // When&Then: 예외가 발생하지 않아야 함
+        assertThatCode(() -> s3Service.deleteImage(nonExistentObjectKey))
+                .doesNotThrowAnyException();
     }
 }
