@@ -2,6 +2,7 @@ package com.project200.undabang.exercise.controller;
 
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.exercise.dto.request.CreateExerciseRequestDto;
+import com.project200.undabang.exercise.dto.request.UpdateExerciseRequestDto;
 import com.project200.undabang.exercise.dto.response.CreateExerciseResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
@@ -73,5 +74,11 @@ public class ExerciseRestController {
                                                                                                                   @RequestParam(value = "end") LocalDate endDate){
         List<FindExerciseRecordByPeriodResponseDto> responseDto = exerciseQueryService.findExerciseRecordsByPeriod(startDate, endDate);
         return ResponseEntity.ok(CommonResponse.success(responseDto));
+    }
+
+    @PatchMapping(path = "/v1/exercises/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<CommonResponse<CreateExerciseResponseDto>> updateExerciseRecord(@Valid @ModelAttribute UpdateExerciseRequestDto requestDto) throws IOException{
+        CreateExerciseResponseDto responseDto = exerciseService.updateExerciseImages(requestDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.success(responseDto));
     }
 }
