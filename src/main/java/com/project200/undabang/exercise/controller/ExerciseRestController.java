@@ -43,7 +43,7 @@ public class ExerciseRestController {
     @PostMapping(path = "/v1/exercises", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CommonResponse<CreateExerciseResponseDto>> createExercise(@Valid @ModelAttribute CreateExerciseRequestDto requestDto) throws IOException {
         CreateExerciseResponseDto createExerciseResponseDto = exerciseService.uploadExerciseImages(requestDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.success(createExerciseResponseDto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(createExerciseResponseDto));
     }
 
     /**
@@ -63,7 +63,7 @@ public class ExerciseRestController {
     @GetMapping("/v1/exercises")
     public ResponseEntity<CommonResponse<List<FindExerciseRecordDateResponseDto>>> findExerciseRecordByDate(@RequestParam(value = "date") LocalDate inputDate){
         List<FindExerciseRecordDateResponseDto> responseDto = exerciseQueryService.findExerciseRecordByDate(inputDate).orElse(null);
-        return ResponseEntity.ok(CommonResponse.success(responseDto));
+        return responseDto != null ? ResponseEntity.ok(CommonResponse.success(responseDto)) : ResponseEntity.ok(CommonResponse.success());
     }
 
     /**
