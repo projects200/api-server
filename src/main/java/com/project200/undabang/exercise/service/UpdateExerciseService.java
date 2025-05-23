@@ -11,4 +11,5 @@ public interface UpdateExerciseService {
     CreateExerciseResponseDto updateExerciseImages(UpdateExerciseRequestDto requestDto);
     void checkStartEndDate(LocalDateTime startDate, LocalDateTime endDate);
     void checkMemberExerciseId(UUID memberId, Long exerciseId, List<Long> pictureList);
+    void deletePictures(List<Long> pictureIdList);
 }

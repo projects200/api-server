@@ -7,6 +7,8 @@ import com.project200.undabang.common.service.FileType;
 import com.project200.undabang.common.service.S3Service;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
+import com.project200.undabang.common.web.exception.FileProcessingException;
+import com.project200.undabang.common.web.exception.S3UploadFailedException;
 import com.project200.undabang.exercise.dto.request.UpdateExerciseRequestDto;
 import com.project200.undabang.exercise.dto.response.CreateExerciseResponseDto;
 import com.project200.undabang.exercise.entity.Exercise;
@@ -47,46 +49,88 @@ public class UpdateExerciseServiceImpl implements UpdateExerciseService {
         checkStartEndDate(requestDto.getExerciseStartedAt(), requestDto.getExerciseEndedAt());
 
         Exercise exercise = requestDto.toExerciseEntity(member);
+        UpdateExerciseContext context =  new UpdateExerciseContext(exercise, requestDto.getDeletePictureIdList());
 
-        List<MultipartFile> fileList = requestDto.getExercisePictureList();
+        // 사진은 수정 안하고 문자열 데이터 수정, 사진삭제하는 경우
+        if(requestDto.getExercisePictureList().isEmpty()){
+            exerciseRepository.save(context.getExercise());
 
-        List<Long> prevPictureList = requestDto.getCurrentPictureIdList();
-        List<Long> deletePictureList = requestDto.getDeletePictureIdList();
+            // 사진을 삭제만 하는 경우
+            if (!context.getPictureIdListToDelete().isEmpty()) {
+                try {
+                    deletePictures(context.getPictureIdListToDelete());
 
-        List<Picture> pictureList = new ArrayList<>();
-        List<ExercisePicture> exercisePictureList = new ArrayList<>();
-
-
-        for (int i = 0; i < fileList.size(); i++) {
-            MultipartFile newImage = fileList.get(0);
-            String objectKey = s3Service.generateObjectKey(newImage.getOriginalFilename(), FileType.EXERCISE);
-            String imageUrl;
-            try {
-                imageUrl = s3Service.uploadImage(newImage, objectKey);
-            } catch (Exception e) { // 이거아님
-                throw new CustomException(ErrorCode.AUTHORIZATION_DENIED);
+                } catch (FileProcessingException | S3UploadFailedException e) {
+                    handleS3AndFileException(context);
+                } catch (Exception e) {
+                    handleDBDeleteException(e, context);
+                }
             }
-
-            Picture picture = Picture.of(newImage, imageUrl);
-            pictureList.add(picture);
-
-            ExercisePicture exercisePicture = ExercisePicture.builder()
-                    .exercise(exercise)
-                    .pictures(picture)
-                    .build();
-            exercisePictureList.add(exercisePicture);
+            return new CreateExerciseResponseDto(context.getExercise().getId());
         }
 
-        try {
-            exerciseRepository.save(exercise);
-            exercisePictureRepository.saveAll(exercisePictureList);
-            pictureRepository.saveAll(pictureList);
-        }catch (Exception e){
-            throw new CustomException(ErrorCode.AUTHORIZATION_DENIED);//이거아님
+        for (MultipartFile file : requestDto.getExercisePictureList()) {
+            String objectKey = s3Service.generateObjectKey(file.getOriginalFilename(), FileType.EXERCISE);
+            String imageUrl;
+
+            try {
+                //새로 저장된 사진 S3에 업로드
+                imageUrl = s3Service.uploadImage(file, objectKey);
+
+                Picture picture = Picture.of(file, imageUrl);
+                context.addPicture(picture);
+
+                ExercisePicture exercisePicture = ExercisePicture.builder()
+                        .exercise(exercise)
+                        .pictures(picture)
+                        .build();
+                context.addExercisePicture(exercisePicture);
+
+                // 그 후 DB에 저장
+                exerciseRepository.save(context.getExercise());
+                exercisePictureRepository.saveAll(context.getExercisePictureList());
+                pictureRepository.saveAll(context.getPictureList());
+
+            } catch (FileProcessingException | S3UploadFailedException ex) {
+                // 이미지 처리 또는 S3 업로드 중 예외 발생 시 S3 업로드 롤백
+                handleS3AndFileException(context);
+            } catch (Exception ex) {
+                // DB 저장 중 예외 발생 시 S3 업로드 롤백
+                handleDBSaveException(ex, context);
+            }
         }
 
+        // 삭제해야할 사진 처리
+        if(!context.getPictureIdListToDelete().isEmpty()){
+            try{
+                deletePictures(context.getPictureIdListToDelete());
 
-        return null;
+            }catch (FileProcessingException | S3UploadFailedException e){
+                // s3에 파일 삭제시 실패하면 롤백 (S3에 올라간 사진 삭제)
+                handleS3AndFileException(context);
+            }catch (Exception e){
+                // 디비 삭제시 에러 나면 처리 (S3에 올라간 사진 삭제)
+                handleDBDeleteException(e, context);
+            }
+        }
+        return new CreateExerciseResponseDto(context.getExercise().getId());
+    }
+
+    @Override
+    public void deletePictures(List<Long> pictureIdList) throws FileProcessingException, S3UploadFailedException{
+        if (pictureIdList == null || pictureIdList.isEmpty()) {
+            return;
+        }
+
+        //  사진 테이블에서 soft delete 처리
+        List<Picture> softDeletedPictures = pictureRepository.findAllById(pictureIdList);
+        softDeletedPictures.forEach(Picture::softDelete);
+        pictureRepository.saveAll(softDeletedPictures);
+
+        //  S3에 존재하는 이미지 삭제
+        for (Picture picture : softDeletedPictures) {
+            s3Service.deleteImage(picture.getPictureUrl());
+        }
     }
 
     /**
@@ -122,6 +166,36 @@ public class UpdateExerciseServiceImpl implements UpdateExerciseService {
         }
     }
 
+    // 예외 발생 시 S3에서 이미지를 삭제하는 메서드
+    private void rollbackS3Upload(List<Picture> pictureList) {
+        for (Picture picture : pictureList) {
+            try {
+                s3Service.deleteImage(picture.getPictureUrl());
+            } catch (S3UploadFailedException ignored) {
+                // 예외는 무시하고 다음 이미지 삭제 시도
+            }
+        }
+    }
+
+    // 예외 처리 메서드들
+    private void handleDBSaveException(Exception ex, UpdateExerciseServiceImpl.UpdateExerciseContext context) {
+        log.error("DB 저장 중 예외 발생: {}", ex.getMessage(), ex);
+        rollbackS3Upload(context.getPictureList());
+        throw new CustomException(ErrorCode.EXERCISE_PICTURE_UPLOAD_FAILED);
+    }
+
+    private void handleS3AndFileException(UpdateExerciseServiceImpl.UpdateExerciseContext context) {
+        rollbackS3Upload(context.getPictureList());
+        throw new CustomException(ErrorCode.EXERCISE_PICTURE_UPLOAD_FAILED);
+    }
+
+    private void handleDBDeleteException(Exception ex, UpdateExerciseServiceImpl.UpdateExerciseContext context){
+        log.error("DB 삭제 중 예외 발생: {}", ex.getMessage(), ex);
+        // 기존에 저장된 사진들 삭제
+        rollbackS3Upload(context.getPictureList());
+        throw new CustomException(ErrorCode.EXERCISE_PICTURE_DELETE_FAILED);
+    }
+
     @Getter
     public static class UpdateExerciseContext{
         private final Exercise exercise;
@@ -132,18 +206,10 @@ public class UpdateExerciseServiceImpl implements UpdateExerciseService {
 
         private final List<Long> pictureIdListToDelete;
 
-        private final List<Long> currentPictureIdList;
 
-        public UpdateExerciseContext(Exercise exercise, List<Long> pictureIdListToDelete, List<Long> currentPictureIdList){
+        public UpdateExerciseContext(Exercise exercise, List<Long> pictureIdListToDelete){
             this.exercise = exercise;
             this.pictureIdListToDelete = pictureIdListToDelete != null ? pictureIdListToDelete : new ArrayList<>();
-            this.currentPictureIdList = currentPictureIdList != null ? currentPictureIdList : new ArrayList<>();
-        }
-
-        public UpdateExerciseContext(Exercise exercise) {
-            this.exercise = exercise;
-            this.pictureIdListToDelete = new ArrayList<>();
-            this.currentPictureIdList = new ArrayList<>();
         }
 
         public void addPicture(Picture picture) {
