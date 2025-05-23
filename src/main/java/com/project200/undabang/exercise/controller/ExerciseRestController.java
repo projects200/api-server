@@ -42,7 +42,7 @@ public class ExerciseRestController {
     @PostMapping(path = "/v1/exercises", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CommonResponse<CreateExerciseResponseDto>> createExercise(@Valid @ModelAttribute CreateExerciseRequestDto requestDto) throws IOException {
         CreateExerciseResponseDto createExerciseResponseDto = exerciseService.uploadExerciseImages(requestDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.success(createExerciseResponseDto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(createExerciseResponseDto));
     }
 
     /**

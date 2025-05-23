@@ -60,7 +60,7 @@ public class CreateExerciseServiceImpl implements CreateExerciseService {
 
         try {
             // 운동 이미지 파일 리스트를 처리
-            processImages(requestDto.getExercisePictureList(), context);
+            processImages(requestDto.exercisePictureList(), context);
 
             // DB에 운동 기록과 이미지 정보를 저장
             saveToDatabase(context);
@@ -129,18 +129,6 @@ public class CreateExerciseServiceImpl implements CreateExerciseService {
         }
     }
 
-    // 예외 처리 메서드들
-    private void handleDBSaveException(Exception ex, CreateExerciseContext context) {
-        log.error("DB 저장 중 예외 발생: {}", ex.getMessage(), ex);
-        rollbackS3Upload(context.getPictureList());
-        throw new CustomException(ErrorCode.EXERCISE_PICTURE_UPLOAD_FAILED);
-    }
-
-    private void handleS3AndFileException(CreateExerciseContext context) {
-        rollbackS3Upload(context.getPictureList());
-        throw new CustomException(ErrorCode.EXERCISE_PICTURE_UPLOAD_FAILED);
-    }
-
     // 컨텍스트 클래스로 관련 데이터를 그룹화
     @Getter
     private static class CreateExerciseContext {
@@ -162,5 +150,17 @@ public class CreateExerciseServiceImpl implements CreateExerciseService {
         public void addExercisePicture(ExercisePicture exercisePicture) {
             exercisePictureList.add(exercisePicture);
         }
+    }
+
+    // 예외 처리 메서드들
+    private void handleDBSaveException(Exception ex, CreateExerciseContext context) {
+        log.error("DB 저장 중 예외 발생: {}", ex.getMessage(), ex);
+        rollbackS3Upload(context.getPictureList());
+        throw new CustomException(ErrorCode.EXERCISE_PICTURE_UPLOAD_FAILED);
+    }
+
+    private void handleS3AndFileException(CreateExerciseContext context) {
+        rollbackS3Upload(context.getPictureList());
+        throw new CustomException(ErrorCode.EXERCISE_PICTURE_UPLOAD_FAILED);
     }
 }

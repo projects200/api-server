@@ -15,6 +15,29 @@ public class RestDocsUtils {
 
 
     /**
+     * Access Token을 나타내는 HTTP 헤더를 정의합니다.
+     * Header의 이름은 "AUTHORIZATION"이며, 값은 "Bearer {accessToken}" 형식입니다.
+     * <p>
+     * 이 헤더는 클라이언트가 인증된 사용자임을 나타내기 위해 사용되며,
+     * 요청 시 Access Token을 포함해야 합니다.
+     */
+    public static final HeaderDescriptor HEADER_ACCESS_TOKEN =
+            headerWithName("AUTHORIZATION")
+                    .description("Bearer {accessToken} 형식의 Access Token");
+
+
+    /**
+     * ID Token을 나타내는 HTTP 헤더를 정의합니다.
+     * Header의 이름은 "ID-TOKEN"이며, 값은 "Bearer {idToken}" 형식입니다.
+     * <p>
+     * 이 헤더는 클라이언트가 인증된 사용자임을 나타내기 위해 사용되며,
+     * 요청 시 ID Token을 포함해야 합니다.
+     */
+    public static final HeaderDescriptor HEADER_ID_TOKEN =
+            headerWithName("ID-TOKEN")
+                    .description("Bearer {idToken} 형식의 ID Token");
+
+    /**
      * 공통적으로 사용되는 X-USER-ID 요청 헤더에 대한 HeaderDescriptor 상수
      */
     public static final HeaderDescriptor HEADER_X_USER_ID =
