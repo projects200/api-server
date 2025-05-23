@@ -344,7 +344,7 @@ class ExerciseRestControllerTest extends AbstractRestDocSupport {
                 .andReturn().getResponse().getContentAsString();
 
         //then
-        CommonResponse<List<FindExerciseRecordDateResponseDto>> expectedData = CommonResponse.success(null);
+        CommonResponse<List<FindExerciseRecordDateResponseDto>> expectedData = CommonResponse.success();
         String expected = objectMapper.writeValueAsString(expectedData);
         Assertions.assertEquals(response, expected);
     }

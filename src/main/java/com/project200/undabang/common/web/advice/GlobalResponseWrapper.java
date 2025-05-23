@@ -1,6 +1,7 @@
 package com.project200.undabang.common.web.advice;
 
 import com.project200.undabang.common.web.response.CommonResponse;
+import com.project200.undabang.common.web.response.SuccessDetails;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -53,39 +54,75 @@ public class GlobalResponseWrapper implements ResponseBodyAdvice<Object> {
 
         // 요청 경로 가져오기
         String path = request.getURI().getPath();
-
-        // Spring Actuator 엔드포인트 응답은 래핑하지 않도록 처리 (경로 기반)
-        if (path.startsWith("/actuator")) {
+        if (isExcludedPath(path)) {
             return body;
         }
 
-        // Spring REST Docs 관련 경로도 래핑하지 않도록 처리
-        // REST Docs HTML 페이지, API 문서, 테스트 보고서 등을 포함
-        if (path.contains("docs") || path.contains("generated-docs") || path.contains("api-documentation") ||
-                path.contains("webjars") || path.contains("reports/tests")) {
-            return body;
-        }
-
-
-
-        // body가 이미 CommonResponse 객체인 경우 (컨트롤러에서 직접 CommonResponse 반환)
+        // body가 이미 CommonResponse 객체인 경우 (예: 예외 처리기에서 직접 CommonResponse 반환)
         if (body instanceof CommonResponse) {
             return body;
         }
 
-        // 위와 중복이지만 재차 점검
-        if (body instanceof ResponseEntity && ((ResponseEntity<?>) body).getBody() instanceof CommonResponse) {
-            return body;
+        // ResponseEntity를 처리하는 경우: 상태 코드와 헤더를 유지하고, 본문만 래핑합니다.
+        if (body instanceof ResponseEntity) {
+            return handleResponseEntity(body);
         }
 
-        // body가 null이고, 메소드 반환 타입이 void가 아닌 경우 (예: Optional.empty() 반환 후 직렬화 결과가 null)
-        // 또는 메소드 반환 타입이 void인 경우 (이때 body는 null)
-        // 이 경우, 성공 응답으로 간주하고 data만 null인 ApiResponse를 생성합니다.
-        if (body == null && returnType.getParameterType().equals(void.class)) {
-            return CommonResponse.success("SUCCESS", "요청이 성공적으로 처리되었지만 반환할 데이터가 없습니다.");
+        // 메소드 반환 타입이 void인 경우 (이때 body는 null)
+        // 이 경우, 성공 응답으로 간주하고 data만 null인 특정 메시지를 포함한 CommonResponse를 생성합니다.
+        if (isVoidReturnType(body, returnType)) {
+            return handleVoidReturnType();
         }
 
-        // 원래 ResponseEntity의 상태 코드와 헤더를 유지하면서 본문만 ApiResponse로 변경된 형태로 반환
+        // 그 외의 경우, 본문을 CommonResponse.success로 래핑합니다.
         return CommonResponse.success(body);
+    }
+
+    // ResponseEntity를 처리하는 메소드
+    // ResponseEntity의 본문이 CommonResponse인 경우, 그대로 반환합니다.
+    private Object handleResponseEntity(Object responseBody) {
+        ResponseEntity<?> responseEntity = (ResponseEntity<?>) responseBody;
+        Object originalResponseEntityBody = responseEntity.getBody();
+
+        // ResponseEntity의 본문이 이미 CommonResponse인 경우, 그대로 반환합니다.
+        if (originalResponseEntityBody instanceof CommonResponse) {
+            return responseEntity;
+        }
+
+        // ResponseEntity의 본문을 CommonResponse로 래핑합니다.
+        // null 본문도 CommonResponse.success(null)로 처리됩니다.
+        CommonResponse<?> wrappedBody = CommonResponse.success(originalResponseEntityBody);
+        return new ResponseEntity<>(wrappedBody, responseEntity.getHeaders(), responseEntity.getStatusCode());
+    }
+
+    // 메소드 반환 타입이 void인 경우, 성공 응답으로 간주하고 data만 null인 특정 메시지를 포함한 CommonResponse를 생성합니다.
+    private boolean isVoidReturnType(Object body, MethodParameter returnType) {
+        return body == null && returnType.getParameterType().equals(void.class);
+    }
+
+    // void 반환 타입에 대한 성공 응답을 생성합니다.
+    private CommonResponse<?> handleVoidReturnType() {
+        return CommonResponse.success(
+                new SuccessDetails(
+                        "SUCCESS",
+                        "요청이 성공적으로 처리되었지만 반환할 데이터가 없습니다."));
+    }
+
+    // 특정 경로를 제외하는 메소드
+    // Spring Actuator 엔드포인트 및 Spring REST Docs 관련 경로를 제외합니다.
+    // 이 메소드는 경로가 null인 경우 false를 반환합니다.
+    private boolean isExcludedPath(String path) {
+        // 경로가 null인 경우 false 반환
+        if (path == null) {
+            return false;
+        }
+        // Spring Actuator 엔드포인트
+        if (path.startsWith("/actuator")) {
+            return true;
+        }
+
+        // Spring REST Docs 관련 경로
+        return path.contains("docs") || path.contains("generated-docs") || path.contains("api-documentation") ||
+                path.contains("webjars") || path.contains("reports/tests");
     }
 }
