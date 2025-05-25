@@ -26,6 +26,7 @@ public enum ErrorCode {
     MEMBER_SAVE_FAILED_ERROR(500, "MEMBER_SAVE_FAILED_ERROR", "모종의 에러로 회원가입에 실패하였습니다."),
 
     // 운동기록 관련 에러
+    EXERCISE_NOT_FOUND(404, "EXERCISE_NOT_FOUND", "운동 기록을 찾을 수 없습니다."),
     IMPOSSIBLE_INPUT_DATE(400, "IMPOSSIBLE_INPUT_DATE", "검색 기간을 올바로 설정하세요."),
     EXERCISE_RECORD_NOT_FOUND(404, "EXERCISE_RECORD_NOT_FOUND", "운동 기록을 찾을 수 없습니다."),
     EXERCISE_PICTURE_UPLOAD_FAILED(500, "EXERCISE_PICTURE_UPLOAD_FAILED", "운동 이미지 업로드에 실패했습니다."),

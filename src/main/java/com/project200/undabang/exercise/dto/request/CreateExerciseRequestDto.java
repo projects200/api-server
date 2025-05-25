@@ -1,32 +1,39 @@
 package com.project200.undabang.exercise.dto.request;
 
-import com.project200.undabang.common.validation.AllowedExtensions;
+import com.project200.undabang.common.validation.StartBeforeEnd;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.member.entity.Member;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Size;
-import org.springframework.web.multipart.MultipartFile;
+import lombok.Builder;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
-public record CreateExerciseRequestDto(
-        @NotNull(message = "제목은 필수 입력값입니다.")
-        String exerciseTitle,
-        String exercisePersonalType,
-        String exerciseLocation,
-        String exerciseDetail,
+@Getter
+@Builder
+@StartBeforeEnd(startTimeFieldName = "exerciseStartedAt", endTimeFieldName = "exerciseEndedAt")
+public class CreateExerciseRequestDto {
+    @Size(max = 255)
+    @NotNull(message = "제목은 필수 입력값입니다.")
+    private String exerciseTitle;
 
-        @NotNull(message = "시작 시간은 필수 입력값입니다.")
-        LocalDateTime exerciseStartedAt,
+    @Size(max = 255)
+    private String exercisePersonalType;
 
-        @NotNull(message = "종료 시간은 필수 입력값입니다.")
-        LocalDateTime exerciseEndedAt,
+    @Size(max = 255)
+    private String exerciseLocation;
+    private String exerciseDetail;
 
-        @Size(max = 5, message = "최대 5개의 파일만 업로드할 수 있습니다.")
-        @AllowedExtensions(extensions = {".jpg", ".jpeg", ".png"})
-        List<MultipartFile> exercisePictureList
-) {
+    @NotNull(message = "시작 일시는 필수 입력값입니다.")
+    @Past(message = "시작 일시는 현재 시간 이전이어야 합니다.")
+    private LocalDateTime exerciseStartedAt;
+
+    @NotNull(message = "종료 일시는 필수 입력값입니다.")
+    @Past(message = "종료 일시는 현재 시간 이전이어야 합니다.")
+    private LocalDateTime exerciseEndedAt;
+
     public Exercise toEntity(Member member) {
         return Exercise.builder()
                 .member(member)

@@ -1,4 +1,4 @@
-package com.project200.undabang.common;
+package com.project200.undabang.configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;

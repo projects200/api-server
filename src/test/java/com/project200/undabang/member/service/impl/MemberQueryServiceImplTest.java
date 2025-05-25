@@ -6,6 +6,7 @@ import com.project200.undabang.member.repository.MemberRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -15,7 +16,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mockStatic;
 
 @ExtendWith(MockitoExtension.class)
 class MemberQueryServiceImplTest {
@@ -34,7 +34,7 @@ class MemberQueryServiceImplTest {
     void getRegistrationStatus_RegisteredMember_ReturnsTrue() {
         UUID testUserId = UUID.randomUUID();
 
-        try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+        try (MockedStatic<UserContextHolder> ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
             // given
             given(UserContextHolder.getUserId()).willReturn(testUserId);
             given(memberRepository.existsByMemberId(testUserId)).willReturn(true);
@@ -56,7 +56,7 @@ class MemberQueryServiceImplTest {
     void getRegistrationStatus_UnregisteredMember_ReturnsFalse() {
         UUID testUserId = UUID.randomUUID();
 
-        try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+        try (MockedStatic<UserContextHolder> ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
             // given
             given(UserContextHolder.getUserId()).willReturn(testUserId);
             given(memberRepository.existsByMemberId(testUserId)).willReturn(false);

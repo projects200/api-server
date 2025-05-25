@@ -123,19 +123,19 @@ class ExerciseRepositoryImplTest {
         em.persist(picture3);
 
         ExercisePicture exercisePicture = ExercisePicture.builder()
-                .pictures(picture)
+                .picture(picture)
                 .exercise(exercise)
                 .build();
         em.persist(exercisePicture);
 
         ExercisePicture exercisePicture2 = ExercisePicture.builder()
-                .pictures(picture2)
+                .picture(picture2)
                 .exercise(exercise)
                 .build();
         em.persist(exercisePicture2);
 
         ExercisePicture exercisePicture3 = ExercisePicture.builder()
-                .pictures(picture3)
+                .picture(picture3)
                 .exercise(exercise)
                 .build();
         em.persist(exercisePicture3);

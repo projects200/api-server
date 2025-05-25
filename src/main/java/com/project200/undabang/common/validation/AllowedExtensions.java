@@ -7,7 +7,7 @@ import java.lang.annotation.*;
 
 @Documented
 @Constraint(validatedBy = AllowedExtensionsValidator.class)
-@Target({ ElementType.FIELD })
+@Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AllowedExtensions {
     String message() default "허용되지 않은 파일 확장자입니다.";

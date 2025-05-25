@@ -85,7 +85,7 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
                             picture.pictureName,
                             picture.pictureExtension))
                     .from(exercisePicture)
-                    .join(exercisePicture.pictures, picture)
+                    .join(exercisePicture.picture, picture)
                     .where(exercisePicture.exercise.id.eq(recordId)
                             .and(picture.pictureDeletedAt.isNull()))
                     .fetch();
@@ -119,7 +119,7 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
                         exercise.exerciseEndedAt,
                         picture.pictureUrl.as("pictureUrl")))
                 .from(exercise).leftJoin(exercisePicture).on(exercisePicture.exercise.eq(exercise))
-                .leftJoin(picture).on(exercisePicture.pictures.eq(picture)
+                .leftJoin(picture).on(exercisePicture.picture.eq(picture)
                         .and(picture.pictureDeletedAt.isNull()))
                 .where(
                         exercise.member.memberId.eq(memberId),
