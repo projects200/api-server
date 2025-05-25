@@ -30,7 +30,7 @@ public enum ErrorCode {
     IMPOSSIBLE_INPUT_DATE(400, "IMPOSSIBLE_INPUT_DATE", "검색 기간을 올바로 설정하세요."),
     EXERCISE_RECORD_NOT_FOUND(404, "EXERCISE_RECORD_NOT_FOUND", "운동 기록을 찾을 수 없습니다."),
     EXERCISE_PICTURE_UPLOAD_FAILED(500, "EXERCISE_PICTURE_UPLOAD_FAILED", "운동 이미지 업로드에 실패했습니다."),
-    EXERCISE_PICTURE_DELETE_FAILED(500, "EXERCISE_PICTURE_DELETE_FAILED", "운동 이미지 수정에 실패했습니다.");
+    EXERCISE_PICTURE_DELETE_FAILED(500, "EXERCISE_PICTURE_DELETE_FAILED", "운동 이미지 삭제에 실패했습니다.");
 
     private final HttpStatusCode status;
     private final String code;

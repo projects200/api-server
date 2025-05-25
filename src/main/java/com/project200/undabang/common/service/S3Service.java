@@ -19,6 +19,7 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 @Slf4j
@@ -48,6 +49,23 @@ public class S3Service {
                 month,
                 uuid,
                 originalFilename);
+    }
+
+    /**
+     * DB에 저장된 URL에서 ObjectKey 추출하는 기능을 가진 메소드
+     */
+    public String extractObjectKeyFromUrl(String url){
+        if(Objects.isNull(url) || url.isEmpty()){
+            return null;
+        }
+
+        int bucketEndIndex = url.indexOf(bucketName) + bucketName.length() + 1; // (bucketName/) 포함
+
+        if(bucketEndIndex > 0 && bucketEndIndex < url.length()){
+            return url.substring(bucketEndIndex);
+        }
+
+        return url;
     }
 
     /**

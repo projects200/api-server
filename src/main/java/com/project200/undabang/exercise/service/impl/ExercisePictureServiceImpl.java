@@ -24,8 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Validated
 @Slf4j
@@ -70,6 +69,49 @@ public class ExercisePictureServiceImpl implements ExercisePictureService {
             handleDBSaveException(ex, context);
         }
         return null; // 이 줄은 실제로 도달하지 않음
+    }
+
+    @Override
+    @Transactional
+    public void deleteExercisePictures(UUID memberId, Long exerciseId, List<Long> deletePictureIdList) {
+        checkMemberExerciseId(memberId, exerciseId, deletePictureIdList);
+
+        Exercise exercise = exerciseRepository.findById(exerciseId).get();
+        List<ExercisePicture> exercisePictureList = exercisePictureRepository.findAllById(deletePictureIdList);
+        List<Picture> pictureListForDelete = new ArrayList<>();
+
+        for (ExercisePicture picture : exercisePictureList) {
+            pictureListForDelete.add(picture.getPicture());
+        }
+
+        CreateExerciseContext context = new CreateExerciseContext(exercise);
+        context.getPictureList().addAll(pictureListForDelete);
+
+        try {
+            // s3, db에서 데이터 삭제 시도
+            deletePictures(pictureListForDelete);
+
+        } catch (S3UploadFailedException e) {
+            // 혹시 삭제 실패시 삭제 재시도
+            handleS3AndFileException(context);
+
+        } catch (Exception e) {
+            // 디비 삭제시 에러 나면 처리
+            handleDBDeleteException(e);
+        }
+    }
+
+    private void deletePictures(List<Picture> pictureList) throws S3UploadFailedException{
+        for (Picture picture : pictureList) {
+            // S3에서 데이터 삭제
+            String s3Url = s3Service.extractObjectKeyFromUrl(picture.getPictureUrl());
+            s3Service.deleteImage(s3Url);
+        }
+
+        for (Picture picture : pictureList) {
+            // 그 후 db에서 soft delete 진행
+            picture.softDelete();
+        }
     }
 
     // 운동 이미지 파일 리스트를 S3에 업로드하고 Picture, ExercisePicture 엔티티를 생성하는 메서드
@@ -148,8 +190,41 @@ public class ExercisePictureServiceImpl implements ExercisePictureService {
         throw new CustomException(ErrorCode.EXERCISE_PICTURE_UPLOAD_FAILED);
     }
 
+    private void handleDBDeleteException(Exception e){
+        log.error("DB softDelete 처리중 에러 발생 {}", e.getMessage(), e);
+        throw new CustomException(ErrorCode.EXERCISE_PICTURE_DELETE_FAILED);
+    }
+
+
     private void handleS3AndFileException(CreateExerciseContext context) {
         rollbackS3Upload(context.getPictureList());
         throw new CustomException(ErrorCode.EXERCISE_PICTURE_UPLOAD_FAILED);
+    }
+
+    private void checkMemberExerciseId(UUID memberId, Long exerciseId, List<Long> pictureIdDeleteList) {
+        if (!exerciseRepository.existsByRecordIdAndMemberId(memberId, exerciseId)) {
+            throw new CustomException(ErrorCode.AUTHORIZATION_DENIED);
+        }
+
+        if (pictureIdDeleteList == null || pictureIdDeleteList.isEmpty()) {
+            return;
+        }
+
+        // 삭제하려는 사진이 자신의 운동 기록에 있는지 검증
+        List<ExercisePicture> exercisePictureList = exercisePictureRepository.findByExercise_Id(exerciseId);
+        Set<Long> exercisePictureSet = new HashSet<>();
+
+        // 내용이 있을때만 해당 기능 동작
+        // 저장된 사진이 없으면 추가만 되도록
+        for (ExercisePicture picture : exercisePictureList) {
+            exercisePictureSet.add(picture.getId());
+        }
+
+        for (Long picture : pictureIdDeleteList) {
+            if (!exercisePictureSet.contains(picture)) {
+                throw new CustomException(ErrorCode.AUTHORIZATION_DENIED);
+            }
+        }
+
     }
 }
