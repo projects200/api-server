@@ -1,10 +1,10 @@
 package com.project200.undabang.member.controller;
 
-import com.project200.undabang.common.AbstractRestDocSupport;
-import com.project200.undabang.common.RestDocsUtils;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.response.CommonResponse;
+import com.project200.undabang.configuration.AbstractRestDocSupport;
+import com.project200.undabang.configuration.RestDocsUtils;
 import com.project200.undabang.member.dto.request.SignUpRequestDto;
 import com.project200.undabang.member.dto.response.SignUpResponseDto;
 import com.project200.undabang.member.enums.MemberGender;

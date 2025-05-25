@@ -1,4 +1,4 @@
-package com.project200.undabang.common;
+package com.project200.undabang.configuration;
 
 import org.springframework.restdocs.headers.HeaderDescriptor;
 import org.springframework.restdocs.payload.FieldDescriptor;

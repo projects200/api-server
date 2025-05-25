@@ -1,22 +1,18 @@
 package com.project200.undabang.exercise.controller;
 
 import com.project200.undabang.common.web.response.CommonResponse;
-import com.project200.undabang.exercise.dto.request.CreateExerciseRequestDto;
-import com.project200.undabang.exercise.dto.response.CreateExerciseResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseDto;
 import com.project200.undabang.exercise.service.ExerciseQueryService;
-import com.project200.undabang.exercise.service.ExerciseService;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -26,30 +22,14 @@ import java.util.List;
  */
 @RestController
 @RequiredArgsConstructor
-public class ExerciseRestController {
+public class ExerciseQueryController {
     private final ExerciseQueryService exerciseQueryService;
-    private final ExerciseService exerciseService;
-
-    /**
-     * 새로운 운동 기록을 생성하기 위한 메서드입니다. 전달받은 요청 데이터를 바탕으로 운동 기록 이미지를 업로드하고, 업로드 결과를 반환합니다.
-     *
-     * @param requestDto 운동 기록 생성 요청 데이터를 포함한 객체입니다.
-     *                   이 객체는 유효성 검증(Validation)을 거쳐야 하며, 운동 관련 정보와 업로드할 이미지 파일 목록을 포함하고 있습니다.
-     * @return 생성된 운동 기록과 관련된 응답 데이터를 포함한 객체입니다.
-     * 업로드된 이미지 URL 목록을 포함하여 반환됩니다.
-     * @throws IOException 이미지 업로드 중 파일 처리 과정에서 발생할 수 있는 IO 예외를 나타냅니다.
-     */
-    @PostMapping(path = "/v1/exercises", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<CommonResponse<CreateExerciseResponseDto>> createExercise(@Valid @ModelAttribute CreateExerciseRequestDto requestDto) throws IOException {
-        CreateExerciseResponseDto createExerciseResponseDto = exerciseService.uploadExerciseImages(requestDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(createExerciseResponseDto));
-    }
 
     /**
      * 특정 운동 기록 ID로 해당 운동 기록을 상세 조회합니다.
      */
     @GetMapping("/v1/exercises/{recordId}")
-    public ResponseEntity<CommonResponse<FindExerciseRecordResponseDto>> findMemberExerciseRecord(@PathVariable @Positive(message = "올바른 Record를 다시 입력해주세요") Long recordId){
+    public ResponseEntity<CommonResponse<FindExerciseRecordResponseDto>> findMemberExerciseRecord(@PathVariable @Positive(message = "올바른 Record를 다시 입력해주세요") Long recordId) {
         FindExerciseRecordResponseDto responseDto = exerciseQueryService.findExerciseRecordByRecordId(recordId);
         return ResponseEntity.ok(CommonResponse.success(responseDto));
     }
@@ -60,7 +40,7 @@ public class ExerciseRestController {
      * 날짜에 해당하는 운동이 없다면 null을 반환합니다.
      */
     @GetMapping("/v1/exercises")
-    public ResponseEntity<CommonResponse<List<FindExerciseRecordDateResponseDto>>> findExerciseRecordByDate(@RequestParam(value = "date") LocalDate inputDate){
+    public ResponseEntity<CommonResponse<List<FindExerciseRecordDateResponseDto>>> findExerciseRecordByDate(@RequestParam(value = "date") LocalDate inputDate) {
         List<FindExerciseRecordDateResponseDto> responseDto = exerciseQueryService.findExerciseRecordByDate(inputDate).orElse(null);
         return responseDto != null ? ResponseEntity.ok(CommonResponse.success(responseDto)) : ResponseEntity.ok(CommonResponse.success());
     }
@@ -70,7 +50,7 @@ public class ExerciseRestController {
      */
     @GetMapping("/v1/exercises/count")
     public ResponseEntity<CommonResponse<List<FindExerciseRecordByPeriodResponseDto>>> findExerciseRecordByPeriod(@RequestParam(value = "start") LocalDate startDate,
-                                                                                                                  @RequestParam(value = "end") LocalDate endDate){
+                                                                                                                  @RequestParam(value = "end") LocalDate endDate) {
         List<FindExerciseRecordByPeriodResponseDto> responseDto = exerciseQueryService.findExerciseRecordsByPeriod(startDate, endDate);
         return ResponseEntity.ok(CommonResponse.success(responseDto));
     }

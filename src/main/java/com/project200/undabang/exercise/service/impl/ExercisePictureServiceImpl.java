@@ -9,15 +9,12 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.exception.FileProcessingException;
 import com.project200.undabang.common.web.exception.S3UploadFailedException;
-import com.project200.undabang.exercise.dto.request.CreateExerciseRequestDto;
-import com.project200.undabang.exercise.dto.response.CreateExerciseResponseDto;
+import com.project200.undabang.exercise.dto.response.ExerciseIdResponseDto;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.exercise.entity.ExercisePicture;
 import com.project200.undabang.exercise.repository.ExercisePictureRepository;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
-import com.project200.undabang.exercise.service.CreateExerciseService;
-import com.project200.undabang.member.entity.Member;
-import com.project200.undabang.member.repository.MemberRepository;
+import com.project200.undabang.exercise.service.ExercisePictureService;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -33,39 +30,38 @@ import java.util.List;
 @Validated
 @Slf4j
 @RequiredArgsConstructor
-@Transactional
 @Service
-public class CreateExerciseServiceImpl implements CreateExerciseService {
+public class ExercisePictureServiceImpl implements ExercisePictureService {
 
     private final ExerciseRepository exerciseRepository;
-    private final MemberRepository memberRepository;
     private final PictureRepository pictureRepository;
     private final ExercisePictureRepository exercisePictureRepository;
     private final S3Service s3Service;
 
-    /**
-     * 주어진 운동 이미지 데이터를 처리하고 저장한 후, 운동 데이터의 식별자를 반환하는 메서드.
-     *
-     * @param requestDto 운동 이미지와 관련 데이터를 포함하는 요청 DTO
-     * @return 처리된 운동 데이터의 식별자를 포함한 응답 DTO
-     * @throws CustomException 운동 이미지 업로드 또는 데이터 저장 실패 시 예외를 발생
-     */
     @Override
-    public CreateExerciseResponseDto uploadExerciseImages(CreateExerciseRequestDto requestDto) {
-        Member member = findMember();
-        Exercise exercise = requestDto.toEntity(member);
+    @Transactional
+    public ExerciseIdResponseDto uploadExercisePictures(Long exerciseId, List<MultipartFile> exercisePictureList) throws CustomException {
+        // 운동 ID로 운동 엔티티 조회
+        // 운동이 존재하지 않으면 예외 발생
+        Exercise exercise = exerciseRepository.findById(exerciseId)
+                .orElseThrow(() -> new CustomException(ErrorCode.EXERCISE_NOT_FOUND));
+
+        // 권한 검증
+        if (!exercise.isOwnedBy(UserContextHolder.getUserId())) {
+            throw new CustomException(ErrorCode.AUTHORIZATION_DENIED);
+        }
 
         // 운동 이미지와 관련된 데이터를 처리하기 위한 컨텍스트 객체 생성
         CreateExerciseContext context = new CreateExerciseContext(exercise);
 
         try {
-            // 운동 이미지 파일 리스트를 처리
-            processImages(requestDto.exercisePictureList(), context);
+            // 운동 이미지 파일 리스트를 S3에 업로드하고 Picture, ExercisePicture 엔티티 생성
+            processImages(exercisePictureList, context);
 
-            // DB에 운동 기록과 이미지 정보를 저장
+            // DB에 이미지 정보(Picture, ExercisePicture 엔티티)를 저장
             saveToDatabase(context);
 
-            return new CreateExerciseResponseDto(exercise.getId());
+            return new ExerciseIdResponseDto(exercise.getId());
         } catch (FileProcessingException | S3UploadFailedException ex) {
             // 이미지 처리 또는 S3 업로드 중 예외 발생 시 S3 업로드 롤백
             handleS3AndFileException(context);
@@ -76,13 +72,7 @@ public class CreateExerciseServiceImpl implements CreateExerciseService {
         return null; // 이 줄은 실제로 도달하지 않음
     }
 
-    // 회원 정보를 조회하고 검증하는 메서드
-    private Member findMember() {
-        return memberRepository.findById(UserContextHolder.getUserId())
-                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-    }
-
-    // 이미지 파일 리스트를 처리하는 메서드
+    // 운동 이미지 파일 리스트를 S3에 업로드하고 Picture, ExercisePicture 엔티티를 생성하는 메서드
     private void processImages(List<MultipartFile> fileList, CreateExerciseContext context)
             throws FileProcessingException, S3UploadFailedException {
         for (MultipartFile file : fileList) {
@@ -95,7 +85,7 @@ public class CreateExerciseServiceImpl implements CreateExerciseService {
             // ExercisePicture 엔티티 생성
             ExercisePicture exercisePicture = ExercisePicture.builder()
                     .exercise(context.getExercise())
-                    .pictures(picture)
+                    .picture(picture)
                     .build();
             context.addExercisePicture(exercisePicture);
         }
@@ -111,9 +101,8 @@ public class CreateExerciseServiceImpl implements CreateExerciseService {
         return s3Service.uploadImage(file, objectKey);
     }
 
-    // DB에 운동 기록과 이미지 정보를 저장하는 메서드
+    // DB에 이미지 정보를 저장하는 메서드
     private void saveToDatabase(CreateExerciseContext context) {
-        exerciseRepository.save(context.getExercise());
         pictureRepository.saveAll(context.getPictureList());
         exercisePictureRepository.saveAll(context.getExercisePictureList());
     }

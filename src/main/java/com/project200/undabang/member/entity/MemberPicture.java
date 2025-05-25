@@ -23,7 +23,7 @@ public class MemberPicture {
     @MapsId
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "picture_id", nullable = false)
-    private Picture pictures;
+    private Picture picture;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

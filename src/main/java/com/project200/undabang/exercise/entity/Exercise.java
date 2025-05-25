@@ -8,6 +8,7 @@ import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder
@@ -53,6 +54,7 @@ public class Exercise {
     @Column(name = "exercise_personal_type")
     private String exercisePersonalType;
 
+    @Size(max = 255)
     @Column(name = "exercise_location")
     private String exerciseLocation;
 
@@ -64,4 +66,8 @@ public class Exercise {
 
     @Column(name = "exercise_deleted_at")
     private LocalDateTime exerciseDeletedAt;
+
+    public boolean isOwnedBy(UUID memberId) {
+        return this.member.getMemberId().equals(memberId);
+    }
 }

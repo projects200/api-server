@@ -1,4 +1,4 @@
-package com.project200.undabang.common;
+package com.project200.undabang.configuration;
 
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
