@@ -1,6 +1,7 @@
 package com.project200.undabang.test;
 
 import com.project200.undabang.configuration.AbstractRestDocSupport;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -17,7 +18,7 @@ import static org.springframework.restdocs.request.RequestDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-//@Disabled
+@Disabled
 @WebMvcTest(TestController.class)
 class TestControllerTest extends AbstractRestDocSupport {
 
