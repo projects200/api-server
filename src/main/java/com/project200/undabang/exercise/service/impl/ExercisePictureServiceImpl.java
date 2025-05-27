@@ -15,6 +15,7 @@ import com.project200.undabang.exercise.entity.ExercisePicture;
 import com.project200.undabang.exercise.repository.ExercisePictureRepository;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
 import com.project200.undabang.exercise.service.ExercisePictureService;
+import io.awspring.cloud.s3.S3Exception;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.exception.SdkException;
 
 import java.util.*;
 
@@ -73,10 +75,21 @@ public class ExercisePictureServiceImpl implements ExercisePictureService {
 
     @Override
     @Transactional
+    public List<Long> getAllImagesFromExercise(UUID memberId, Long exerciseId) {
+        Exercise exercise = exerciseRepository.findById(exerciseId).orElseThrow(() -> new CustomException(ErrorCode.EXERCISE_NOT_FOUND));
+
+        if(!exercise.isOwnedBy(memberId)){
+            throw new CustomException(ErrorCode.AUTHORIZATION_DENIED);
+        }
+
+        return exercisePictureRepository.findByExercise_Id(exerciseId).stream().map(ExercisePicture::getId).toList();
+    }
+
+    @Override
+    @Transactional
     public void deleteExercisePictures(UUID memberId, Long exerciseId, List<Long> deletePictureIdList) {
         checkMemberExerciseId(memberId, exerciseId, deletePictureIdList);
 
-        Exercise exercise = exerciseRepository.findById(exerciseId).get();
         List<ExercisePicture> exercisePictureList = exercisePictureRepository.findAllById(deletePictureIdList);
         List<Picture> pictureListForDelete = new ArrayList<>();
 
@@ -84,20 +97,17 @@ public class ExercisePictureServiceImpl implements ExercisePictureService {
             pictureListForDelete.add(picture.getPicture());
         }
 
-        CreateExerciseContext context = new CreateExerciseContext(exercise);
-        context.getPictureList().addAll(pictureListForDelete);
-
         try {
             // s3, db에서 데이터 삭제 시도
             deletePictures(pictureListForDelete);
 
-        } catch (S3UploadFailedException e) {
-            // 혹시 삭제 실패시 삭제 재시도
-            handleS3AndFileException(context);
+        } catch (S3Exception | SdkException ex) {
+            // 클라이언트 레벨 에러 및 Sdk 에러 처리
+            log.error("S3 Exception: {}", ex.getMessage());
 
         } catch (Exception e) {
-            // 디비 삭제시 에러 나면 처리
-            handleDBDeleteException(e);
+            log.error("이미지 삭제 처리중 에러 발생 {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.EXERCISE_PICTURE_DELETE_FAILED);
         }
     }
 
@@ -189,12 +199,6 @@ public class ExercisePictureServiceImpl implements ExercisePictureService {
         rollbackS3Upload(context.getPictureList());
         throw new CustomException(ErrorCode.EXERCISE_PICTURE_UPLOAD_FAILED);
     }
-
-    private void handleDBDeleteException(Exception e){
-        log.error("DB softDelete 처리중 에러 발생 {}", e.getMessage(), e);
-        throw new CustomException(ErrorCode.EXERCISE_PICTURE_DELETE_FAILED);
-    }
-
 
     private void handleS3AndFileException(CreateExerciseContext context) {
         rollbackS3Upload(context.getPictureList());

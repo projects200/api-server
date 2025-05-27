@@ -10,4 +10,5 @@ public interface ExercisePictureService {
 
     ExerciseIdResponseDto uploadExercisePictures(Long exerciseId, List<MultipartFile> exercisePictureList);
     void deleteExercisePictures(UUID memberId, Long exerciseId, List<Long> pictureIds);
+    List<Long> getAllImagesFromExercise(UUID memberId, Long exerciseId);
 }
