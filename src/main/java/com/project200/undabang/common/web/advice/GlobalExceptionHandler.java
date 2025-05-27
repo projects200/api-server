@@ -15,6 +15,7 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.HashMap;
@@ -85,6 +86,42 @@ public class GlobalExceptionHandler {
 
         // 전체 오류 메시지 구성
         String customMessage = "입력값 검증에 실패했습니다.";
+
+        // 상세 오류 정보를 data 필드에 포함
+        CommonResponse<Map<String, String>> response = CommonResponse.<Map<String, String>>error(errorCode)
+                .message(customMessage).data(errors).build();
+
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
+    }
+
+    /**
+     * 컨트롤러 메서드의 파라미터 검증 실패 예외를 처리합니다.
+     *
+     * <p>이 메서드는 {@link HandlerMethodValidationException} 타입의 예외를 처리하며,
+     * Spring 6.1부터 도입된 파라미터 레벨 검증 실패 시 발생하는 예외를 처리합니다.
+     * 유효성 검사에 실패한 파라미터와 오류 메시지를 수집하여 클라이언트에 상세 정보를 제공합니다.</p>
+     *
+     * @param ex 처리할 파라미터 유효성 검증 예외
+     * @return 파라미터별 오류 메시지를 포함한 응답
+     */
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    protected ResponseEntity<CommonResponse<Map<String, String>>> handleMethodValidationException(
+            HandlerMethodValidationException ex) {
+
+        ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
+
+        // 필드별 오류 메시지 수집
+        Map<String, String> errors = new HashMap<>();
+        ex.getParameterValidationResults().forEach(result -> {
+            String paramName = result.getMethodParameter().getParameterName();
+            result.getResolvableErrors().forEach(error ->
+                    errors.put(paramName != null ? paramName : "param", error.getDefaultMessage())
+            );
+        });
+
+        // 전체 오류 메시지 구성
+        String customMessage = "입력값 검증중 실패했습니다.";
 
         // 상세 오류 정보를 data 필드에 포함
         CommonResponse<Map<String, String>> response = CommonResponse.<Map<String, String>>error(errorCode)

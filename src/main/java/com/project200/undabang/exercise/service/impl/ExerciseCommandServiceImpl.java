@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -76,21 +77,33 @@ public class ExerciseCommandServiceImpl implements ExerciseCommandService {
         return new ExerciseIdResponseDto(exerciseId);
     }
 
-    @Transactional
     @Override
-    public void deleteExercise(Long exerciseId) {
+    @Transactional
+    public void deleteExercise(Long exerciseId){
         Member member = findMember();
         checkMemberIdAndExerciseId(member.getMemberId(), exerciseId);
 
+        List<Long> exercisePictureIdList = exercisePictureService.getAllImagesFromExercise(member.getMemberId(), exerciseId);
+
+        // 지울 사진이 있는 경우
+        if(!Objects.isNull(exercisePictureIdList)){
+            // 이미지 제거
+            exercisePictureService.deleteExercisePictures(member.getMemberId(), exerciseId, exercisePictureIdList);
+        }
+
+        // 데이터베이스 제거
         Exercise exercise = exerciseRepository.findById(exerciseId).orElseThrow(() -> new CustomException(ErrorCode.EXERCISE_RECORD_NOT_FOUND));
         // 더티 체킹 적용
         exercise.deleteExercise();
     }
 
     @Override
-    public void deleteExerciseImages(Long exerciseId, List<Long> pictureIds) {
+    @Transactional
+    public void deleteImages(Long exerciseId, List<Long> pictureIds) {
         Member member = findMember();
         checkMemberIdAndExerciseId(member.getMemberId(), exerciseId);
+
+        // 이미지 제거
         exercisePictureService.deleteExercisePictures(member.getMemberId(), exerciseId, pictureIds);
     }
 
