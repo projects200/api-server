@@ -98,7 +98,7 @@ public class ExerciseQueryServiceImpl implements ExerciseQueryService {
 
         log.debug("날짜별 운동 기록 조회 요청: date={}", inputDate);
         Optional<List<FindExerciseRecordDateResponseDto>> responseDtoList = exerciseRepository.findExerciseRecordByDate(memberId, inputDate);
-        log.debug("날짜별 운동 기록 조회 결과: date={}, count={}", inputDate, responseDtoList.get().size());
+        log.debug("날짜별 운동 기록 조회 결과: date={}, count={}", inputDate, responseDtoList.map(List::size).orElse(0));
 
         return responseDtoList;
     }
