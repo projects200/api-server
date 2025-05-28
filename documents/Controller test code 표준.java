@@ -12,6 +12,7 @@ public class JUnit5ExampleTests extended AbstractRestDocSupport {
         // when
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
+        headers.add("Authorization", "Bearer dummy-access-token-for-docs");
 
         String response = this.mockMvc.perform(MockMvcRequestBuilders.get("/api/items/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -28,7 +29,7 @@ public class JUnit5ExampleTests extended AbstractRestDocSupport {
                     ...
                 ),
                 requestHeaders(
-                    RestDocsUtils.HEADER_X_USER_ID,
+                    RestDocsUtils.HEADER_ACCESS_TOKEN,
                     headerWithName("email").description("사용자 이메일"),
                             ...
                 ),

@@ -16,12 +16,13 @@ public class JUnit5ExampleTests extended AbstractRestDocSupport {
     @DisplayName("한국어로 입력")
     public void testExample() extends Exception {
         // given
-        BDDMockito.given(mock.mock_method()).willReturn(...);    // 정상 반환 시
+        BDDMockito.given(mock.mock_method()).willReturn(...)// 정상 반환 시
         BDDMockito.given(mock.mock_method()).willThrow(...);     // 에러 발생 시
 
         // when
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
+        headers.add("Authorization", "Bearer dummy-access-token-for-docs");
 
         String response = this.mockMvc.perform(MockMvcRequestBuilders.get("/api/items/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -38,7 +39,7 @@ public class JUnit5ExampleTests extended AbstractRestDocSupport {
                     ...
                 ),
                 requestHeaders(
-                    RestDocsUtils.HEADER_X_USER_ID,
+                    RestDocsUtils.HEADER_ACCESS_TOKEN,
                     headerWithName("email").description("사용자 이메일"),
                             ...
                 ),
@@ -74,7 +75,5 @@ public class JUnit5ExampleTests extended AbstractRestDocSupport {
         BDDMockito.then(mock).should().mock_method()
         BDDMockito.then(mock).should(BDDMockito.times(1)).mock_method()
         BDDMockito.then(mock).shouldHaveNoMoreInteractions();
-        BDDMockito.then(mock).shouldHaveNoInteractions();
-    }
-}
+        BDDMockito.then(mock).shouldHaveNoInteractions
 ```

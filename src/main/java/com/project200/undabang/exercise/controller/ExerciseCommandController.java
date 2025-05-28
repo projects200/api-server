@@ -23,7 +23,6 @@ import java.util.List;
 public class ExerciseCommandController {
     private final ExerciseCommandService exerciseCommandService;
 
-    // TODO: 운동기록 생성 api 한 번 점검
     @PostMapping(path = "/v1/exercises")
     public ResponseEntity<CommonResponse<ExerciseIdResponseDto>> createExercise(@Valid @RequestBody CreateExerciseRequestDto requestDto) {
         ExerciseIdResponseDto responseData = exerciseCommandService.createExercise(requestDto);

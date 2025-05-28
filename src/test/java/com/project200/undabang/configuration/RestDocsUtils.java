@@ -16,13 +16,13 @@ public class RestDocsUtils {
 
     /**
      * Access Token을 나타내는 HTTP 헤더를 정의합니다.
-     * Header의 이름은 "AUTHORIZATION"이며, 값은 "Bearer {accessToken}" 형식입니다.
+     * Header의 이름은 "Authorization"이며, 값은 "Bearer {accessToken}" 형식입니다.
      * <p>
      * 이 헤더는 클라이언트가 인증된 사용자임을 나타내기 위해 사용되며,
      * 요청 시 Access Token을 포함해야 합니다.
      */
     public static final HeaderDescriptor HEADER_ACCESS_TOKEN =
-            headerWithName("AUTHORIZATION")
+            headerWithName("Authorization")
                     .description("Bearer {accessToken} 형식의 Access Token");
 
 

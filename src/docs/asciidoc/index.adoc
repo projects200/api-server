@@ -13,6 +13,8 @@
 :operation-request-headers-title: 요청 헤더
 :operation-response-fields-title: 응답 필드
 
+* xref:exercise.html[운동 API]
+
 [[overview]]
 == 개요
 

@@ -1,0 +1,19 @@
+= 운동 API
+:doctype: book
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 2
+:seclinks:
+
+:operation-curl-request-title: Curl 요청 예시
+:operation-http-request-title: HTTP 요청 예시
+:operation-http-response-title: HTTP 응답 예시
+:operation-httpie-request-title: HTTPie 요청 예시
+:operation-request-body-title: 요청 본문 예시
+:operation-request-fields-title: 요청 필드
+:operation-request-headers-title: 요청 헤더
+:operation-response-body-title: 응답 본문 예시
+:operation-response-fields-title: 응답 필드
+
+include::exercise/create-exercise.adoc[]
+
