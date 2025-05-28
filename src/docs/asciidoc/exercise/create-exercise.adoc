@@ -28,7 +28,7 @@ operation::exercise-command-controller-test/create-exercise-success[snippets="cu
 ==== 응답 상태 코드
 
 |===
-|상태 코드|설명
-|201|Created
-|401|Unauthorized
+|상태 코드|성공여부|코드|메시지
+|201|true|CREATED|리소스가 성공적으로 생성되었습니다.
+|400|false|INVALID_INPUT_VALUE|입력값 검증에 실패했습니다.
 |===
