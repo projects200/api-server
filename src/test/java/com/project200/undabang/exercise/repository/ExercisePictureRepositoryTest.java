@@ -40,10 +40,10 @@ class ExercisePictureRepositoryTest {
 
     @Test
     @DisplayName("운동기록ID에 관련된 모든 데이터 조회 확인")
-    void findByExercise_Id() {
+    void findAllByExercise_Id() {
         long exerciseId = exercise.getId();
 
-        List<ExercisePicture> exercisePictureList = exercisePictureRepository.findByExercise_Id(exerciseId);
+        List<ExercisePicture> exercisePictureList = exercisePictureRepository.findAllByExercise_Id(exerciseId);
 
         Assertions.assertThat(exercisePictureList)
                 .isNotNull()
@@ -52,10 +52,10 @@ class ExercisePictureRepositoryTest {
 
     @Test
     @DisplayName("운동기록 없을시 데이터 조회 상황 확인")
-    void findByExercise_Id_Failed(){
+    void findAllByExercise_Id_Failed(){
         long exerciseId = 123456789L;
 
-        List<ExercisePicture> list = exercisePictureRepository.findByExercise_Id(exerciseId);
+        List<ExercisePicture> list = exercisePictureRepository.findAllByExercise_Id(exerciseId);
 
         Assertions.assertThat(list)
                 .isNullOrEmpty();

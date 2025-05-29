@@ -4,6 +4,7 @@ import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
 import com.project200.undabang.configuration.RestDocsUtils;
 import com.project200.undabang.exercise.dto.request.CreateExerciseRequestDto;
+import com.project200.undabang.exercise.dto.request.UpdateExerciseRequestDto;
 import com.project200.undabang.exercise.dto.response.ExerciseIdResponseDto;
 import com.project200.undabang.exercise.service.ExerciseCommandService;
 import org.junit.jupiter.api.DisplayName;
@@ -23,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ExerciseCommandController.class)
@@ -30,206 +32,6 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
 
     @MockitoBean
     private ExerciseCommandService exerciseCommandService;
-
-    /*
-    @Test
-    @DisplayName("운동 생성 - 성공 케이스")
-    void createExercise_Success() throws Exception {
-        // given
-        MockMultipartFile mockFile1 = new MockMultipartFile(
-                "exercisePictureList",
-                "test1.jpg",
-                MediaType.IMAGE_JPEG_VALUE,
-                "test image content".getBytes(StandardCharsets.UTF_8));
-        MockMultipartFile mockFile2 = new MockMultipartFile(
-                "exercisePictureList",
-                "test2.jpg",
-                MediaType.IMAGE_JPEG_VALUE,
-                "test image content".getBytes(StandardCharsets.UTF_8));
-        UUID testUserId = UUID.randomUUID();
-        CreateExerciseRequestDto requestDto = new CreateExerciseRequestDto(
-                "Test Title",
-                "Personal",
-                "Gym",
-                "Detailed description",
-                LocalDateTime.of(2025, 5, 20, 10, 0),
-                LocalDateTime.of(2025, 5, 22, 11, 0),
-                List.of(mockFile1, mockFile2)
-        );
-
-        CreateExerciseResponseDto responseDto = new CreateExerciseResponseDto(1L);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", testUserId.toString());
-        headers.add("Authorization", "Bearer dummy-token-for-docs");
-
-        given(exerciseService.uploadExerciseImages(BDDMockito.any(CreateExerciseRequestDto.class))).willReturn(responseDto);
-
-        MultiValueMap<String, String> params = getParams(requestDto);
-
-        // when
-//        String response = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/v1/exercises")
-//                        .file((MockMultipartFile) requestDto.getExercisePictureList().get(0))
-//                        .file((MockMultipartFile) requestDto.getExercisePictureList().get(1))
-//                        .params(queryParams)
-////                        .with(request -> {
-////                            request.setMethod("POST");
-////                            request.setContentType(MediaType.MULTIPART_FORM_DATA_VALUE);
-////                            return request;
-////                        })
-//                        .headers(headers)
-//                        .accept(MediaType.APPLICATION_JSON)
-//                        .contentType(MediaType.MULTIPART_FORM_DATA))
-////                        .content(objectMapper.writeValueAsString(requestDto))
-
-        String requestJson = """
-                {
-                    "exerciseTitle": "Test Title",
-                    "exercisePersonalType": "Personal",
-                    "exerciseLocation": "Gym",
-                    "exerciseDetail": "Detailed description",
-                    "exerciseStartedAt": "2025-05-20T10:00:00",
-                    "exerciseEndedAt": "2025-05-22T11:00:00"
-                }
-                """;
-
-        String response = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/v1/exercises")
-                        .file(mockFile1)
-                        .file(mockFile2)
-                        .contentType(MediaType.MULTIPART_FORM_DATA)
-                        .headers(headers)
-                        .accept(MediaType.APPLICATION_JSON)
-                        .params(params))
-                .andExpect(status().isCreated())
-                .andDo(this.document.document(
-                        requestHeaders(HEADER_ACCESS_TOKEN),
-                        // .file()로 보낸 필드들은 requestParts()로 문서화
-                        requestParts(
-                                partWithName("exercisePictureList").description("업로드할 운동 사진 파일 목록 (List<MultipartFile>)")
-                        ),
-                        // .queryParams()로 보낸 필드들은 queryParameters()로 문서화
-                        formParameters(
-                                parameterWithName("exerciseTitle").description("운동 제목 (String)"),
-                                parameterWithName("exercisePersonalType").description("운동 유형 (String)"),
-                                parameterWithName("exerciseLocation").description("운동 장소(사용자 직접 입력) (String)"),
-                                parameterWithName("exerciseDetail").description("운동 세부 설명 (String)"),
-                                parameterWithName("exerciseStartedAt").description("운동 시작 시각 (ISO 8601 DateTime)"),
-                                parameterWithName("exerciseEndedAt").description("운동 종료 시각(시작 시간보다 이후여야함) (ISO 8601 DateTime)")
-                        ),
-                        responseFields(commonResponseFields(
-                                fieldWithPath("data.exerciseId").type(JsonFieldType.NUMBER).description("운동 ID")
-                        ))
-                ))
-                .andReturn().getResponse().getContentAsString();
-
-        // then
-        assertThat(response).isEqualTo(objectMapper.writeValueAsString(CommonResponse.create(responseDto)));
-        BDDMockito.then(exerciseService).should(BDDMockito.times(1))
-                .uploadExerciseImages(BDDMockito.any(CreateExerciseRequestDto.class));
-    }
-
-    private static @NotNull MultiValueMap<String, String> getParams(CreateExerciseRequestDto requestDto) {
-        MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
-        queryParams.add("exerciseTitle", requestDto.getExerciseTitle());
-        queryParams.add("exercisePersonalType", requestDto.getExercisePersonalType());
-        queryParams.add("exerciseLocation", requestDto.getExerciseLocation());
-        queryParams.add("exerciseDetail", requestDto.getExerciseDetail());
-        queryParams.add("exerciseStartedAt", requestDto.getExerciseStartedAt().toString());
-        queryParams.add("exerciseEndedAt", requestDto.getExerciseEndedAt().toString());
-        return queryParams;
-    }*/
-
-    /*
-    @Test
-    @DisplayName("허용되지 않은 확장자 파일이 포함되면 유효성 검사 실패")
-    void ValidationFailureWhenInvalidFileExtension() {
-        // given
-        MultipartFile validFile = new MockMultipartFile("file", "test.jpg", "image/jpeg", "test image".getBytes());
-        MultipartFile invalidFile = new MockMultipartFile("file", "test.txt", "text/plain", "test text".getBytes());
-        List<MultipartFile> files = Arrays.asList(validFile, invalidFile);
-
-        CreateExerciseRequestDto dto = new CreateExerciseRequestDto(
-                "운동 제목",
-                "개인",
-                "운동 장소",
-                "운동 상세",
-                LocalDateTime.of(2023, 10, 10, 9, 0),
-                LocalDateTime.of(2023, 10, 10, 10, 0),
-                files
-        );
-
-        // when
-        Set<ConstraintViolation<CreateExerciseRequestDto>> violations = validator.validate(dto);
-
-        // then
-        assertThat(violations).isNotEmpty();
-        assertThat(violations.iterator().next().getMessage()).isEqualTo("허용되지 않은 파일 확장자입니다.");
-    }
-
-    @Test
-    @DisplayName("허용된 확장자 파일만 포함되면 유효성 검사 성공")
-    void ValidationSuccessWhenValidFileExtensions() {
-        // given
-        MultipartFile file1 = new MockMultipartFile("file", "test1.jpg", "image/jpeg", "test image1".getBytes());
-        MultipartFile file2 = new MockMultipartFile("file", "test2.png", "image/png", "test image2".getBytes());
-        List<MultipartFile> files = Arrays.asList(file1, file2);
-
-        CreateExerciseRequestDto dto = new CreateExerciseRequestDto(
-                "운동 제목",
-                "개인",
-                "운동 장소",
-                "운동 상세",
-                LocalDateTime.of(2023, 10, 10, 9, 0),
-                LocalDateTime.of(2023, 10, 10, 10, 0)
-        );
-
-        // when
-        Set<ConstraintViolation<CreateExerciseRequestDto>> violations = validator.validate(dto);
-
-        // then
-        assertThat(violations).isEmpty();
-    }
-
-    @Test
-    @DisplayName("파일 목록이 null이면 유효성 검사 성공")
-    void ValidationSuccessWhenFileListIsNull() {
-        // given
-        CreateExerciseRequestDto dto = new CreateExerciseRequestDto(
-                "운동 제목",
-                "개인",
-                "운동 장소",
-                "운동 상세",
-                LocalDateTime.of(2023, 10, 10, 9, 0),
-                LocalDateTime.of(2023, 10, 10, 10, 0)
-        );
-
-        // when
-        Set<ConstraintViolation<CreateExerciseRequestDto>> violations = validator.validate(dto);
-
-        // then
-        assertThat(violations).isEmpty();
-    }
-
-    @Test
-    @DisplayName("파일 목록이 비어있으면 유효성 검사 성공")
-    void ValidationSuccessWhenFileListIsEmpty() {
-        // given
-        CreateExerciseRequestDto dto = new CreateExerciseRequestDto(
-                "운동 제목",
-                "개인",
-                "운동 장소",
-                "운동 상세",
-                LocalDateTime.of(2023, 10, 10, 9, 0),
-                LocalDateTime.of(2023, 10, 10, 10, 0),
-        );
-
-        // when
-        Set<ConstraintViolation<CreateExerciseRequestDto>> violations = validator.validate(dto);
-
-        // then
-        assertThat(violations).isEmpty();
-    }
-     */
 
     @Test
     @DisplayName("운동 생성 - 성공 케이스")
@@ -291,128 +93,159 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1))
                 .createExercise(BDDMockito.any(CreateExerciseRequestDto.class));
     }
- /*
+
     @Test
-    @DisplayName("운동 생성 - 잘못된 입력")
-    void createExerciseInvalidInput() throws Exception {
+    @DisplayName("운동기록 변경 테스트 _ 성공")
+    void exerciseUpdate_Success() throws Exception {
         // given
-        UUID testUserId = UUID.randomUUID();
-        try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-            given(UserContextHolder.getUserId()).willReturn(testUserId);
+        UUID memberId = UUID.randomUUID();
+        Long exerciseId = 1L;
+        UpdateExerciseRequestDto requestDto = UpdateExerciseRequestDto.builder()
+                .exerciseTitle("운동제목")
+                .exerciseDetail("운동내용")
+                .exerciseLocation("운동위치")
+                .exercisePersonalType("운동종류")
+                .exerciseStartedAt(LocalDateTime.of(2025, 5, 1, 0, 0, 0))
+                .exerciseEndedAt(LocalDateTime.of(2025, 5, 1, 1, 0, 0))
+                .build();
 
-            CreateExerciseRequestDto invalidRequestDto = new CreateExerciseRequestDto(
-                    "",  // 빈 제목
-                    LocalDateTime.now().plusDays(1),  // 미래 시작 시간
-                    LocalDateTime.now().plusDays(1).plusHours(1)
-            );
+        ExerciseIdResponseDto responseDto = new ExerciseIdResponseDto(1L);
 
-            // when
-            HttpHeaders headers = new HttpHeaders();
-            headers.add("X-USER-ID", testUserId.toString());
+        BDDMockito.given(exerciseCommandService.updateExercise(exerciseId, requestDto)).willReturn(responseDto);
 
-            this.mockMvc.perform(MockMvcRequestBuilders.post("/v1/exercises")
-                            .content(objectMapper.writeValueAsString(invalidRequestDto))
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .accept(MediaType.APPLICATION_JSON)
-                            .headers(headers))
-                    .andExpect(status().isBadRequest())
-                    .andDo(this.document.document(
-                            requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
-                            requestFields(
-                                    fieldWithPath("exerciseTitle").type(JsonFieldType.STRING).description("운동 제목"),
-                                    fieldWithPath("exerciseStartedAt").type(JsonFieldType.STRING).description("운동 시작 시간"),
-                                    fieldWithPath("exerciseEndedAt").type(JsonFieldType.STRING).description("운동 종료 시간")
-                            ),
-                            responseFields(RestDocsUtils.commonResponseFieldsOnly())
-                    ));
+        // when
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-USER-ID", memberId.toString());
+        headers.add("Authorization", "Bearer {AccessToken}");
 
-            // then
-            BDDMockito.then(exerciseCommandService).shouldHaveNoInteractions();
-        }
+        this.mockMvc.perform(MockMvcRequestBuilders.patch("/v1/exercises/{exerciseId}", exerciseId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(headers)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
+                .andDo(this.document.document(
+                        requestHeaders(RestDocsUtils.HEADER_ACCESS_TOKEN),
+                        requestFields(
+                                fieldWithPath("exerciseTitle").type(JsonFieldType.STRING)
+                                        .description("운동 제목입니다. 최대 255자까지 입력 가능합니다."),
+                                fieldWithPath("exercisePersonalType").type(JsonFieldType.STRING).optional()
+                                        .description("운동 종류입니다. 사용자가 입력하는 값이며 최대 255자까지 입력 가능합니다."),
+                                fieldWithPath("exerciseLocation").type(JsonFieldType.STRING).optional()
+                                        .description("운동 장소 입니다. 최대 255자까지 입력 가능합니다."),
+                                fieldWithPath("exerciseDetail").type(JsonFieldType.STRING).optional()
+                                        .description("운동에 대한 상세 내용입니다. 최대 65,535byte 까지 입력 가능합니다. 글자 수 기준이 아닙니다."),
+                                fieldWithPath("exerciseStartedAt").type("Datetime")
+                                        .description("시작일시 입니다. ISO 8601 형식으로 입력 받으며 오늘 이전 일시여야 합니다."),
+                                fieldWithPath("exerciseEndedAt").type("Datetime")
+                                        .description("종료일시 입니다.ISO 8601 형식으로 입력 받습니다. 오늘 이전 일시여야 하며 시작 일시 이후여야 합니다.")
+                        ),
+                        responseFields(RestDocsUtils.commonResponseFields(
+                                    fieldWithPath("data.exerciseId").type(JsonFieldType.NUMBER)
+                                            .description("운동 ID 입니다. 이미지 업로드 시 사용 가능합니다.")
+                                )
+                        )
+                ))
+                .andReturn().getResponse().getContentAsString();
+
+        // then
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1))
+                .updateExercise(BDDMockito.eq(exerciseId), BDDMockito.any(UpdateExerciseRequestDto.class));
     }
 
     @Test
-    @DisplayName("운동 생성 - 업로드 파일 갯수 초과")
-    void createExerciseFailFilesExceeded() throws Exception {
+    @DisplayName("운동 기록 수정 - 실패 (exerciseId 음수)")
+    void updateExercise_Fail_NegativeExerciseId() throws Exception {
         // given
+        long invalidExerciseId = -1L;
         UUID testUserId = UUID.randomUUID();
-        try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-            given(UserContextHolder.getUserId()).willReturn(testUserId);
+        UpdateExerciseRequestDto requestDto = UpdateExerciseRequestDto.builder()
+                .exerciseTitle("수정된 운동 제목")
+                .exerciseStartedAt(LocalDateTime.now().minusHours(2))
+                .exerciseEndedAt(LocalDateTime.now().minusHours(1))
+                .build();
 
-            CreateExerciseRequestDto requestDto = new CreateExerciseRequestDto(
-                    "운동 테스트 제목",
-                    LocalDateTime.now().minusHours(3),
-                    LocalDateTime.now()
-            );
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-USER-ID", testUserId.toString());
+        headers.add("Authorization", "Bearer dummy-access-token-for-docs");
 
-            List<MockMultipartFile> files = List.of(
-                    new MockMultipartFile("pictures", "file1.jpg", MediaType.IMAGE_JPEG_VALUE, "test-content".getBytes()),
-                    new MockMultipartFile("pictures", "file2.jpg", MediaType.IMAGE_JPEG_VALUE, "test-content".getBytes()),
-                    new MockMultipartFile("pictures", "file3.jpg", MediaType.IMAGE_JPEG_VALUE, "test-content".getBytes()),
-                    new MockMultipartFile("pictures", "file4.jpg", MediaType.IMAGE_JPEG_VALUE, "test-content".getBytes()),
-                    new MockMultipartFile("pictures", "file5.jpg", MediaType.IMAGE_JPEG_VALUE, "test-content".getBytes()),
-                    new MockMultipartFile("pictures", "file6.jpg", MediaType.IMAGE_JPEG_VALUE, "test-content".getBytes())
-            );
+        // when & then
+        this.mockMvc.perform(MockMvcRequestBuilders.patch("/v1/exercises/{exerciseId}", invalidExerciseId)
+                        .content(objectMapper.writeValueAsString(requestDto))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(headers))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("succeed").value(false))
+                .andExpect(jsonPath("message").value("입력값 검증중 실패했습니다."));
 
-            // when
-            HttpHeaders headers = new HttpHeaders();
-            headers.add("X-USER-ID", testUserId.toString());
-
-            this.mockMvc.perform(MockMvcRequestBuilders.multipart("/v1/exercises/{exerciseId}/pictures", 1L)
-                            .file(files.get(0))
-                            .file(files.get(1))
-                            .file(files.get(2))
-                            .file(files.get(3))
-                            .file(files.get(4))
-                            .file(files.get(5))
-                            .contentType(MediaType.MULTIPART_FORM_DATA)
-                            .accept(MediaType.APPLICATION_JSON)
-                            .headers(headers))
-                    .andExpect(status().isBadRequest())
-                    .andDo(this.document.document(
-                            requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
-                            requestParts(
-                                    partWithName("pictures").description("운동 사진 파일들 (최대 5개)")
-                            ),
-                            responseFields(RestDocsUtils.commonResponseFieldsOnly())
-                    ));
-
-            // then
-            BDDMockito.then(exerciseCommandService).shouldHaveNoInteractions();
-        }
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.never())
+                .updateExercise(BDDMockito.anyLong(), BDDMockito.any(UpdateExerciseRequestDto.class));
     }
 
     @Test
-    @DisplayName("운동 생성 - 잘못된 파일 확장자")
-    void createExerciseFailInvalidFileExtension() throws Exception {
+    @DisplayName("운동 기록 수정 - 실패 (요청 DTO 유효성 위반 - 제목 공백)")
+    void exerciseUpdate_validateFailed_BlankTitle() throws Exception{
         // given
+        long exerciseId = 1L;
         UUID testUserId = UUID.randomUUID();
-        try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-            given(UserContextHolder.getUserId()).willReturn(testUserId);
+        UpdateExerciseRequestDto requestDto = UpdateExerciseRequestDto.builder()
+                .exerciseTitle(" ") // 유효성 위반: 제목 공백
+                .exerciseStartedAt(LocalDateTime.now().minusHours(2))
+                .exerciseEndedAt(LocalDateTime.now().minusHours(1))
+                .exerciseLocation("운동 장소")
+                .exercisePersonalType("운동 종류")
+                .exerciseDetail("운동 상세")
+                .build();
 
-            MockMultipartFile invalidFile = new MockMultipartFile("pictures", "test.exe", MediaType.APPLICATION_OCTET_STREAM_VALUE, "test-content".getBytes());
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-USER-ID", testUserId.toString());
+        headers.add("Authorization", "Bearer dummy-access-token-for-docs");
 
-            // when
-            HttpHeaders headers = new HttpHeaders();
-            headers.add("X-USER-ID", testUserId.toString());
+        // when & then
+        this.mockMvc.perform(MockMvcRequestBuilders.patch("/v1/exercises/{exerciseId}", exerciseId)
+                        .content(objectMapper.writeValueAsString(requestDto))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(headers))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("succeed").value(false))
+                .andExpect(jsonPath("message").isNotEmpty());
 
-            this.mockMvc.perform(MockMvcRequestBuilders.multipart("/v1/exercises/{exerciseId}/pictures", 1L)
-                            .file(invalidFile)
-                            .contentType(MediaType.MULTIPART_FORM_DATA)
-                            .accept(MediaType.APPLICATION_JSON)
-                            .headers(headers))
-                    .andExpect(status().isBadRequest())
-                    .andDo(this.document.document(
-                            requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
-                            requestParts(
-                                    partWithName("pictures").description("운동 사진 파일들 (허용된 확장자: .jpg, .jpeg, .png)")
-                            ),
-                            responseFields(RestDocsUtils.commonResponseFieldsOnly())
-                    ));
-
-            // then
-            BDDMockito.then(exerciseCommandService).shouldHaveNoInteractions();
-        }
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.never())
+                .updateExercise(BDDMockito.anyLong(), BDDMockito.any(UpdateExerciseRequestDto.class));
     }
- */
+
+    @Test
+    @DisplayName("운동 기록 수정 - 실패 (요청 DTO 유효성 위반 - 시작 시간이 종료 시간 이후)")
+    void exerciseUpdate_validateFailed_InvalidStartEndTime() throws Exception{
+        // given
+        long exerciseId = 1L;
+        UUID testUserId = UUID.randomUUID();
+        UpdateExerciseRequestDto requestDto = UpdateExerciseRequestDto.builder()
+                .exerciseTitle("유효한 제목")
+                .exerciseStartedAt(LocalDateTime.now().minusHours(1)) // 시작 시간이 종료 시간보다 이후
+                .exerciseEndedAt(LocalDateTime.now().minusHours(2))
+                .exerciseLocation("운동 장소")
+                .exercisePersonalType("운동 종류")
+                .exerciseDetail("운동 상세")
+                .build();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-USER-ID", testUserId.toString());
+        headers.add("Authorization", "Bearer dummy-access-token-for-docs");
+
+        // when & then
+        this.mockMvc.perform(MockMvcRequestBuilders.patch("/v1/exercises/{exerciseId}", exerciseId)
+                        .content(objectMapper.writeValueAsString(requestDto))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(headers))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("succeed").value(false))
+                .andExpect(jsonPath("message").isNotEmpty());
+
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.never())
+                .updateExercise(BDDMockito.anyLong(), BDDMockito.any(UpdateExerciseRequestDto.class));
+    }
 }

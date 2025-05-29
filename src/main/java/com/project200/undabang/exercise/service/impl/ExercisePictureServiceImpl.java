@@ -82,7 +82,7 @@ public class ExercisePictureServiceImpl implements ExercisePictureService {
             throw new CustomException(ErrorCode.AUTHORIZATION_DENIED);
         }
 
-        return exercisePictureRepository.findByExercise_Id(exerciseId).stream().map(ExercisePicture::getId).toList();
+        return exercisePictureRepository.findAllByExercise_Id(exerciseId).stream().map(ExercisePicture::getId).toList();
     }
 
     @Override
@@ -215,7 +215,7 @@ public class ExercisePictureServiceImpl implements ExercisePictureService {
         }
 
         // 삭제하려는 사진이 자신의 운동 기록에 있는지 검증
-        List<ExercisePicture> exercisePictureList = exercisePictureRepository.findByExercise_Id(exerciseId);
+        List<ExercisePicture> exercisePictureList = exercisePictureRepository.findAllByExercise_Id(exerciseId);
         Set<Long> exercisePictureSet = new HashSet<>();
 
         // 내용이 있을때만 해당 기능 동작

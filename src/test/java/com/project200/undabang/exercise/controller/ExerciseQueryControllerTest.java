@@ -189,11 +189,11 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .headers(headers))
-                .andExpect(status().isInternalServerError())
+                .andExpect(status().isBadRequest())
                 .andDo(this.document.document(
                         requestHeaders(HEADER_X_USER_ID),
                         responseFields(commonResponseFields(
-                                fieldWithPath("data['findMemberExerciseRecord.recordId']").type(JsonFieldType.STRING).description("올바른 Record를 다시 입력해주세요")
+                                fieldWithPath("data['recordId']").type(JsonFieldType.STRING).description("올바른 Record를 다시 입력해주세요")
                         ))
                 ));
 
