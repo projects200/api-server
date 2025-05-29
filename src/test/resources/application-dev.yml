@@ -1,0 +1,5 @@
+restdocs:
+  uris:
+    scheme: https
+    host: api.undabang.store/dev
+    port: 443
