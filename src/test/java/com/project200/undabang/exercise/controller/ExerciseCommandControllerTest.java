@@ -393,7 +393,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                         .headers(headers))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("succeed").value(false))
-                .andExpect(jsonPath("message").value("입력값 검증중 실패했습니다."));
+                .andExpect(jsonPath("message").value("요청 파라미터 유효성 검증에 실패했습니다."));
 
         BDDMockito.then(exerciseCommandService).should(BDDMockito.never())
                 .updateExercise(BDDMockito.anyLong(), BDDMockito.any(UpdateExerciseRequestDto.class));
