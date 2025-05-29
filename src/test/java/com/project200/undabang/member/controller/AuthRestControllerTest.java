@@ -68,7 +68,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         httpHeaders.add("X-USER-ID", memberTestId.toString());
         httpHeaders.add("X-USER-EMAIL", memberTestEmail);
 
-        String response = this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/sign-up/v1")
+        String response = this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(reqDto))
@@ -116,7 +116,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add("X-USER-EMAIL", memberTestEmail);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/sign-up/v1")
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(reqDto))
@@ -157,7 +157,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         httpHeaders.add("X-USER-ID", memberTestId.toString());
         httpHeaders.add("X-USER-EMAIL", memberTestEmail);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/sign-up/v1")
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(reqDto))
@@ -197,7 +197,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add("X-USER-ID", memberTestId.toString());
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/sign-up/v1")
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(reqDto))
@@ -238,7 +238,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         headers.add("X-USER-ID", memberTestId.toString());
         headers.add("X-USER-EMAIL", memberTestEmail);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/sign-up/v1")
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .headers(headers)
@@ -279,7 +279,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         headers.add("X-USER-ID", memberTestId.toString());
         headers.add("X-USER-EMAIL", memberTestEmail);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/sign-up/v1")
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .headers(headers)
@@ -320,7 +320,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         headers.add("X-USER-ID", memberTestId.toString());
         headers.add("X-USER-EMAIL", memberTestEmail);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/sign-up/v1")
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .headers(headers)
@@ -357,7 +357,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         headers.add("X-USER-ID", memberTestId.toString());
         headers.add("X-USER-EMAIL", memberTestEmail);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/sign-up/v1")
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .headers(headers)
@@ -401,7 +401,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         headers.add("X-USER-ID", memberTestId.toString());
         headers.add("X-USER-EMAIL", memberTestEmail);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/sign-up/v1")
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .headers(headers)
@@ -448,7 +448,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         headers.add("X-USER-ID", memberTestId.toString());
         headers.add("X-USER-EMAIL", memberTestEmail);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/sign-up/v1")
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .headers(headers)

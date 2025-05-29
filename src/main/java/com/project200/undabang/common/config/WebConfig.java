@@ -40,17 +40,7 @@ public class WebConfig implements WebMvcConfigurer {
      */
     @Override
     public void addInterceptors(final InterceptorRegistry registry) {
-        registry.addInterceptor(xUserIdCheckInterceptor())
-                .excludePathPatterns(
-                        "/docs/**",
-                        "/generated-docs/**",
-                        "/api-documentation/**",
-                        "/webjars/**",
-                        "/build/**",
-                        "/reports/**",
-                        "/favicon.ico"
-                )
-                .addPathPatterns("/**");
+        registry.addInterceptor(xUserIdCheckInterceptor()).addPathPatterns("/api/**", "/auth/**");
 
         registry.addInterceptor(xUserEmailCheckInterceptor()).addPathPatterns("/auth/**");
     }

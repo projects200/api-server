@@ -48,7 +48,7 @@ class MemberRestControllerTest extends AbstractRestDocSupport {
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
 
-        String response = this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/members/me/registration-status")
+        String response = this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/members/me/registration-status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .headers(headers))

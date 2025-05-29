@@ -41,7 +41,7 @@ jobs:
           mkdir -p src/main/resources/
           echo ${{ secrets.APPLICATION_DEV_YML }} | base64 -d > src/main/resources/application-dev.yml
           chmod +x gradlew
-          ./gradlew build
+          ./gradlew build -Dspring.profiles.active=dev
         shell: bash
 
       - name: Build and push image to Amazon ECR
