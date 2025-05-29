@@ -51,6 +51,12 @@ public class ExercisePictureServiceImpl implements ExercisePictureService {
             throw new CustomException(ErrorCode.AUTHORIZATION_DENIED);
         }
 
+        // 이미 있는 운동 사진 개수 + 새로 올라온 사진 개수 < 5 검증
+        long pictureCountOfExercise = exercisePictureRepository.countByExercise_Id(exerciseId);
+        if (pictureCountOfExercise + exercisePictureList.size() > 5) {
+            throw new CustomException(ErrorCode.EXERCISE_PICTURE_COUNT_EXCEEDED);
+        }
+
         // 운동 이미지와 관련된 데이터를 처리하기 위한 컨텍스트 객체 생성
         CreateExerciseContext context = new CreateExerciseContext(exercise);
 
@@ -66,8 +72,8 @@ public class ExercisePictureServiceImpl implements ExercisePictureService {
             // 이미지 처리 또는 S3 업로드 중 예외 발생 시 S3 업로드 롤백
             handleS3AndFileException(context);
         } catch (Exception ex) {
-            // DB 저장 중 예외 발생 시 S3 업로드 롤백
-            handleDBSaveException(ex, context);
+            // 그 외 예외 발생 시 S3 업로드 롤백
+            handleException(ex, context);
         }
         return null; // 이 줄은 실제로 도달하지 않음
     }
@@ -142,8 +148,8 @@ public class ExercisePictureServiceImpl implements ExercisePictureService {
     }
 
     // 예외 처리 메서드들
-    private void handleDBSaveException(Exception ex, CreateExerciseContext context) {
-        log.error("DB 저장 중 예외 발생: {}", ex.getMessage(), ex);
+    private void handleException(Exception ex, CreateExerciseContext context) {
+        log.error("예외 발생: {}", ex.getMessage(), ex);
         rollbackS3Upload(context.getPictureList());
         throw new CustomException(ErrorCode.EXERCISE_PICTURE_UPLOAD_FAILED);
     }

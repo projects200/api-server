@@ -29,13 +29,6 @@ spring:
   transaction:
     default-timeout: 30s
 
-  test:
-    restdocs:
-      uris:
-        scheme: https
-        host: api.undabang.store
-        port: 443
-
   cloud:
     aws:
       s3:
@@ -58,3 +51,9 @@ logging:
 
 cors:
   allowed-origins: http://localhost:3000
+
+restdocs:
+  uris:
+    scheme: https
+    host: api.undabang.store
+    port: 443
