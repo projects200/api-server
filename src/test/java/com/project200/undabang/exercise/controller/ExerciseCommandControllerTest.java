@@ -334,7 +334,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         headers.add("X-USER-ID", memberId.toString());
         headers.add("Authorization", "Bearer {AccessToken}");
 
-        this.mockMvc.perform(MockMvcRequestBuilders.patch("/v1/exercises/{exerciseId}", exerciseId)
+        this.mockMvc.perform(MockMvcRequestBuilders.patch("/api/v1/exercises/{exerciseId}", exerciseId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .headers(headers)
@@ -386,7 +386,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         headers.add("Authorization", "Bearer dummy-access-token-for-docs");
 
         // when & then
-        this.mockMvc.perform(MockMvcRequestBuilders.patch("/v1/exercises/{exerciseId}", invalidExerciseId)
+        this.mockMvc.perform(MockMvcRequestBuilders.patch("/api/v1/exercises/{exerciseId}", invalidExerciseId)
                         .content(objectMapper.writeValueAsString(requestDto))
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -419,7 +419,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         headers.add("Authorization", "Bearer dummy-access-token-for-docs");
 
         // when & then
-        this.mockMvc.perform(MockMvcRequestBuilders.patch("/v1/exercises/{exerciseId}", exerciseId)
+        this.mockMvc.perform(MockMvcRequestBuilders.patch("/api/v1/exercises/{exerciseId}", exerciseId)
                         .content(objectMapper.writeValueAsString(requestDto))
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -452,7 +452,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         headers.add("Authorization", "Bearer dummy-access-token-for-docs");
 
         // when & then
-        this.mockMvc.perform(MockMvcRequestBuilders.patch("/v1/exercises/{exerciseId}", exerciseId)
+        this.mockMvc.perform(MockMvcRequestBuilders.patch("/api/v1/exercises/{exerciseId}", exerciseId)
                         .content(objectMapper.writeValueAsString(requestDto))
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
