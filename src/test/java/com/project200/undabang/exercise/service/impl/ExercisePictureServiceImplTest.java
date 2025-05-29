@@ -19,6 +19,7 @@ import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -56,8 +57,8 @@ public class ExercisePictureServiceImplTest {
         Exercise testExercise = Exercise.builder().id(testExerciseId).member(testMember).build();
 
         List<MultipartFile> testFiles = List.of(
-                new MockMultipartFile("file1.jpg", "file1.jpg", "image/jpeg", new byte[0]),
-                new MockMultipartFile("file2.png", "file2.png", "image/png", new byte[0])
+                new MockMultipartFile("file1.jpg", "file1.jpg", MediaType.IMAGE_JPEG_VALUE, new byte[0]),
+                new MockMultipartFile("file2.png", "file2.png", MediaType.IMAGE_PNG_VALUE, new byte[0])
         );
 
         try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
@@ -104,8 +105,8 @@ public class ExercisePictureServiceImplTest {
         Exercise testExercise = Exercise.builder().id(testExerciseId).member(differentTestMember).build();
 
         List<MultipartFile> testFiles = List.of(
-                new MockMultipartFile("file1.jpg", "file1.jpg", "image/jpeg", new byte[0]),
-                new MockMultipartFile("file2.png", "file2.png", "image/png", new byte[0])
+                new MockMultipartFile("file1.jpg", "file1.jpg", MediaType.IMAGE_JPEG_VALUE, new byte[0]),
+                new MockMultipartFile("file2.png", "file2.png", MediaType.IMAGE_PNG_VALUE, new byte[0])
         );
 
         try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
@@ -130,9 +131,9 @@ public class ExercisePictureServiceImplTest {
         Exercise testExercise = Exercise.builder().id(testExerciseId).member(testMember).build();
 
         List<MultipartFile> testFiles = List.of(
-                new MockMultipartFile("file1.jpg", "file1.jpg", "image/jpeg", new byte[0]),
-                new MockMultipartFile("file2.png", "file2.png", "image/png", new byte[0]),
-                new MockMultipartFile("file3.jpeg", "file2.jpeg", "image/jpeg", new byte[0])
+                new MockMultipartFile("file1.jpg", "file1.jpg", MediaType.IMAGE_JPEG_VALUE, new byte[0]),
+                new MockMultipartFile("file2.png", "file2.png", MediaType.IMAGE_PNG_VALUE, new byte[0]),
+                new MockMultipartFile("file3.jpeg", "file2.jpeg", MediaType.IMAGE_JPEG_VALUE, new byte[0])
         );
 
         try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
@@ -158,9 +159,9 @@ public class ExercisePictureServiceImplTest {
         Exercise testExercise = Exercise.builder().id(testExerciseId).member(testMember).build();
 
         List<MultipartFile> testFiles = List.of(
-                new MockMultipartFile("file1.jpg", "file1.jpg", "image/jpeg", new byte[0]),
-                new MockMultipartFile("file2.png", "file2.png", "image/png", new byte[0]),
-                new MockMultipartFile("file3.jpeg", "file2.jpeg", "image/jpeg", new byte[0])
+                new MockMultipartFile("file1.jpg", "file1.jpg", MediaType.IMAGE_JPEG_VALUE, new byte[0]),
+                new MockMultipartFile("file2.png", "file2.png", MediaType.IMAGE_PNG_VALUE, new byte[0]),
+                new MockMultipartFile("file3.jpeg", "file2.jpeg", MediaType.IMAGE_JPEG_VALUE, new byte[0])
         );
 
         try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
@@ -191,9 +192,9 @@ public class ExercisePictureServiceImplTest {
         Exercise testExercise = Exercise.builder().id(testExerciseId).member(testMember).build();
 
         List<MultipartFile> testFiles = List.of(
-                new MockMultipartFile("file1.jpg", "file1.jpg", "image/jpeg", new byte[0]),
-                new MockMultipartFile("file2.png", "file2.png", "image/png", new byte[0]),
-                new MockMultipartFile("file3.jpeg", "file2.jpeg", "image/jpeg", new byte[0])
+                new MockMultipartFile("file1.jpg", "file1.jpg", MediaType.IMAGE_JPEG_VALUE, new byte[0]),
+                new MockMultipartFile("file2.png", "file2.png", MediaType.IMAGE_PNG_VALUE, new byte[0]),
+                new MockMultipartFile("file3.jpeg", "file2.jpeg", MediaType.IMAGE_JPEG_VALUE, new byte[0])
         );
 
         try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {

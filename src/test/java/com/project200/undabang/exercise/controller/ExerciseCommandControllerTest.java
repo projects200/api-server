@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.RestDocumentationContextProvider;
 import org.springframework.restdocs.mockmvc.MockMvcRestDocumentation;
 import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
@@ -25,6 +26,8 @@ import org.springframework.restdocs.operation.preprocess.UriModifyingOperationPr
 import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -33,8 +36,10 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import static com.project200.undabang.configuration.DocumentFormatGenerator.getTypeFormat;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
+import static org.springframework.restdocs.request.RequestDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -130,15 +135,22 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                                 RestDocsUtils.HEADER_ACCESS_TOKEN
                         ),
                         requestFields(
-                                fieldWithPath("exerciseTitle").type(JsonFieldType.STRING).description("운동 제목: 최대 255자"),
-                                fieldWithPath("exercisePersonalType").type(JsonFieldType.STRING).optional().description("운동 종류(사용자 입력): 최대 255자"),
-                                fieldWithPath("exerciseLocation").type(JsonFieldType.STRING).optional().description("운동 장소: 최대 255자"),
-                                fieldWithPath("exerciseDetail").type(JsonFieldType.STRING).optional().description("운동 상세 내용: 최대 65,535byte"),
-                                fieldWithPath("exerciseStartedAt").type(JsonFieldType.STRING).description("운동 시작 일시: 오늘 이전"),
-                                fieldWithPath("exerciseEndedAt").type(JsonFieldType.STRING).description("운동 종료 일시: 오늘 이전, 시작 일시 이후")
+                                fieldWithPath("exerciseTitle").type(JsonFieldType.STRING)
+                                        .description("운동 제목입니다. 최대 255자까지 입력 가능합니다."),
+                                fieldWithPath("exercisePersonalType").type(JsonFieldType.STRING).optional()
+                                        .description("운동 종류입니다. 사용자가 입력하는 값이며 최대 255자까지 입력 가능합니다."),
+                                fieldWithPath("exerciseLocation").type(JsonFieldType.STRING).optional()
+                                        .description("운동 장소 입니다. 최대 255자까지 입력 가능합니다."),
+                                fieldWithPath("exerciseDetail").type(JsonFieldType.STRING).optional()
+                                        .description("운동에 대한 상세 내용입니다. 최대 65,535byte 까지 입력 가능합니다. 글자 수 기준이 아닙니다."),
+                                fieldWithPath("exerciseStartedAt").type("Datetime")
+                                        .description("시작일시 입니다. ISO 8601 형식으로 입력 받으며 오늘 이전 일시여야 합니다."),
+                                fieldWithPath("exerciseEndedAt").type("Datetime")
+                                        .description("종료일시 입니다.ISO 8601 형식으로 입력 받습니다. 오늘 이전 일시여야 하며 시작 일시 이후여야 합니다.")
                         ),
                         responseFields(RestDocsUtils.commonResponseFields(
-                                fieldWithPath("data.exerciseId").type(JsonFieldType.NUMBER).description("운동 ID: 이미지 업로드 시 사용")
+                                fieldWithPath("data.exerciseId").type(JsonFieldType.NUMBER)
+                                        .description("운동 ID입니다. 이미지 업로드 시 사용 가능합니다.")
                         ))
                 ))
                 .andReturn().getResponse().getContentAsString();
@@ -149,6 +161,150 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         ));
         BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1))
                 .createExercise(BDDMockito.any(CreateExerciseRequestDto.class));
+        BDDMockito.then(exerciseCommandService).shouldHaveNoMoreInteractions();
+    }
+
+    // uploadExerciseImages 성공 테스트
+    @Test
+    @DisplayName("운동 이미지 업로드가 성공하면 201 상태 코드와 응답 데이터를 반환한다")
+    void uploadExerciseImagesSuccess() throws Exception {
+        // given
+        UUID testUserId = UUID.randomUUID();
+        Long exerciseId = 1L;
+
+        MockMultipartFile file1 = new MockMultipartFile(
+                "pictures",
+                "image1.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "DummyImage1".getBytes()
+        );
+        MockMultipartFile file2 = new MockMultipartFile(
+                "pictures",
+                "image2.png",
+                MediaType.IMAGE_PNG_VALUE,
+                "DummyImage2".getBytes()
+        );
+
+        ExerciseIdResponseDto responseDto = new ExerciseIdResponseDto(exerciseId);
+        BDDMockito.given(exerciseCommandService.uploadExerciseImages(BDDMockito.eq(exerciseId), BDDMockito.anyList()))
+                .willReturn(responseDto);
+
+        // when
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-USER-ID", testUserId.toString());
+        headers.add("Authorization", "Bearer dummy-access-token-for-docs");
+
+        String response = this.mockMvc.perform(MockMvcRequestBuilders
+                        .multipart("/v1/exercises/{exerciseId}/pictures", exerciseId)
+                        .file(file1)
+                        .file(file2)
+                        .contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(headers))
+                .andExpectAll(
+                        status().isCreated()
+                )
+                .andDo(this.document.document(
+                        pathParameters(
+                                parameterWithName("exerciseId").attributes(getTypeFormat(JsonFieldType.NUMBER))
+                                        .description("운동 ID입니다. 이미지 업로드 시 사용 가능합니다.")
+                        ),
+                        requestHeaders(
+                                RestDocsUtils.HEADER_ACCESS_TOKEN
+                        ),
+                        requestParts(
+                                partWithName("pictures").attributes(getTypeFormat("FILE"))
+                                        .description("운동 이미지 파일들입니다. " +
+                                                "운동 이미지는 최대 5개까지 업로드 가능합니다. " +
+                                                "각 파일 크기는 10MB 이하여야 합니다. " +
+                                                "파일의 확장자는 .jpg, .jpeg, .png만 허용됩니다.")
+                        ),
+                        responseFields(RestDocsUtils.commonResponseFields(
+                                fieldWithPath("data.exerciseId").type(JsonFieldType.NUMBER)
+                                        .description("이미지가 업로드 된 운동 ID입니다.")
+                        ))
+                ))
+                .andReturn().getResponse().getContentAsString();
+
+        // then
+        Assertions.assertThat(response).isEqualTo(objectMapper.writeValueAsString(
+                CommonResponse.create(new ExerciseIdResponseDto(exerciseId))
+        ));
+        BDDMockito.then(exerciseCommandService).should()
+                .uploadExerciseImages(BDDMockito.eq(exerciseId), BDDMockito.anyList());
+        BDDMockito.then(exerciseCommandService).shouldHaveNoMoreInteractions();
+    }
+
+    // uploadExerciseImages 실패 테스트
+    @Test
+    @DisplayName("지원하지 않는 파일 확장자 업로드 시 에러 발생")
+    void uploadExerciseImagesUnsupportedFileExtension() throws Exception {
+        // given
+        UUID testUserId = UUID.randomUUID();
+        Long exerciseId = 1L;
+
+        MockMultipartFile firstFile = new MockMultipartFile("pictures", "invalid_file.exe", MediaType.APPLICATION_OCTET_STREAM_VALUE, "InvalidContent".getBytes());
+        MockMultipartFile secondFile = new MockMultipartFile("pictures", "image2.png", MediaType.IMAGE_PNG_VALUE, "DummyImage2".getBytes());
+
+        // when
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-USER-ID", testUserId.toString());
+        headers.add("Authorization", "Bearer dummy-access-token-for-docs");
+
+        String response = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/v1/exercises/{exerciseId}/pictures", exerciseId)
+                        .file(firstFile)
+                        .file(secondFile)
+                        .contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(headers))
+                .andExpectAll(
+                        status().isBadRequest() // 상태 코드 400 확인
+                )
+                .andReturn().getResponse().getContentAsString();
+
+        // then
+        Assertions.assertThat(response).contains("허용되지 않은 파일 확장자입니다.");
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.never())
+                .uploadExerciseImages(BDDMockito.eq(exerciseId), BDDMockito.anyList());
+        BDDMockito.then(exerciseCommandService).shouldHaveNoMoreInteractions();
+    }
+
+    @Test
+    @DisplayName("파일이 5개를 초과할 경우 에러 발생")
+    void uploadExerciseImagesExceedFileLimit() throws Exception {
+        // given
+        UUID testUserId = UUID.randomUUID();
+        Long exerciseId = 1L;
+
+        MockMultipartFile[] files = new MockMultipartFile[6];
+        for (int i = 0; i < 6; i++) {
+            files[i] = new MockMultipartFile("pictures", "image" + (i + 1) + ".jpg", MediaType.IMAGE_JPEG_VALUE, ("DummyImage" + (i + 1)).getBytes());
+        }
+
+        // when
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-USER-ID", testUserId.toString());
+        headers.add("Authorization", "Bearer dummy-access-token-for-docs");
+
+        MockMultipartHttpServletRequestBuilder requestBuilder = MockMvcRequestBuilders.multipart("/v1/exercises/{exerciseId}/pictures", exerciseId);
+        for (MockMultipartFile file : files) {
+            requestBuilder.file(file);
+        }
+
+        String response = this.mockMvc.perform(requestBuilder
+                        .contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(headers))
+                .andExpectAll(
+                        status().isBadRequest() // 상태 코드 400 확인
+                )
+                .andReturn().getResponse().getContentAsString();
+
+
+        // then
+        Assertions.assertThat(response).contains("최대 5개의 파일만 업로드할 수 있습니다.");
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.never())
+                .uploadExerciseImages(BDDMockito.eq(exerciseId), BDDMockito.anyList());
         BDDMockito.then(exerciseCommandService).shouldHaveNoMoreInteractions();
     }
 }

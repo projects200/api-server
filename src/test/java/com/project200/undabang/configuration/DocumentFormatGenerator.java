@@ -5,7 +5,11 @@ import org.springframework.restdocs.snippet.Attributes;
 
 public interface DocumentFormatGenerator {
 
-    static Attributes.Attribute getTypeFormat(JsonFieldType jsonFieldType) { // (2)
+    static Attributes.Attribute getTypeFormat(JsonFieldType jsonFieldType) {
         return Attributes.key("type").value(jsonFieldType);
+    }
+
+    static Attributes.Attribute getTypeFormat(String value) {
+        return Attributes.key("type").value(value);
     }
 }

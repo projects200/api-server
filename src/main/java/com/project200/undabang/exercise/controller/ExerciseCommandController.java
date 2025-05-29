@@ -46,7 +46,7 @@ public class ExerciseCommandController {
         return ResponseEntity.ok(CommonResponse.success());
     }
 
-    // TODO: 이미 있는 운동 사진 개수 + 새로 올라온 사진 개수 < 5 검증
+
     @PostMapping(path = "/v1/exercises/{exerciseId}/pictures", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CommonResponse<ExerciseIdResponseDto>> uploadExerciseImages(
             @PathVariable @Positive(message = "올바른 Exercise ID를 입력해주세요") Long exerciseId,

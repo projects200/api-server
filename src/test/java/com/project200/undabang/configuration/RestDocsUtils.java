@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.project200.undabang.configuration.DocumentFormatGenerator.getTypeFormat;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 
@@ -23,7 +24,8 @@ public class RestDocsUtils {
      */
     public static final HeaderDescriptor HEADER_ACCESS_TOKEN =
             headerWithName("Authorization")
-                    .description("Bearer {accessToken} 형식의 Access Token");
+                    .attributes(getTypeFormat(JsonFieldType.STRING))
+                    .description("Bearer {accessToken} 형식의 Access Token입니다. 사용자 인증 시 사용됩니다.");
 
 
     /**
@@ -34,20 +36,22 @@ public class RestDocsUtils {
      * 요청 시 ID Token을 포함해야 합니다.
      */
     public static final HeaderDescriptor HEADER_ID_TOKEN =
-            headerWithName("ID-TOKEN")
-                    .description("Bearer {idToken} 형식의 ID Token");
+            headerWithName("ID-TOKEN").attributes(getTypeFormat(JsonFieldType.STRING))
+                    .description("Bearer {idToken} 형식의 ID Token입니다. 회원가입 시 사용됩니다.");
 
     /**
      * 공통적으로 사용되는 X-USER-ID 요청 헤더에 대한 HeaderDescriptor 상수
      */
     public static final HeaderDescriptor HEADER_X_USER_ID =
-            headerWithName("X-USER-ID").description("사용자 식별자 (UUID 형식)");
+            headerWithName("X-USER-ID").attributes(getTypeFormat(JsonFieldType.STRING))
+                    .description(" UUID 형식의 사용자 식별자입니다.");
 
     /**
      * 회원가입 진행시 사용되는 X-USER-EMAIL 요청에 대한 HeaderDescriptor 상수
      */
     public static final HeaderDescriptor HEADER_X_USER_EMAIL =
-            headerWithName("X-USER-EMAIL").description("사용자 이메일");
+            headerWithName("X-USER-EMAIL").attributes(getTypeFormat(JsonFieldType.STRING))
+                    .description("사용자 이메일입니다. 회원가입 시 사용됩니다. 중복된 이메일은 허용되지 않습니다.");
 
 
     /**
@@ -58,11 +62,15 @@ public class RestDocsUtils {
     public static FieldDescriptor[] commonResponseFields(FieldDescriptor... dataFields) {
         // 공통 응답 필드 정의
         List<FieldDescriptor> commonFields = new ArrayList<>(Arrays.asList(
-                fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("API 호출 성공 여부 (true/false)"),
-                fieldWithPath("code").type(JsonFieldType.STRING).description("API 결과 코드"),
-                fieldWithPath("message").type(JsonFieldType.STRING).description("API 결과 메시지"),
+                fieldWithPath("succeed").type(JsonFieldType.BOOLEAN)
+                        .description("API 호출 성공 여부입니다. 성공시 true, 실패시 false입니다."),
+                fieldWithPath("code").type(JsonFieldType.STRING)
+                        .description("API 결과 코드입니다. 예: SUCCESS, CREATED, UPDATED, DELETED 등"),
+                fieldWithPath("message").type(JsonFieldType.STRING)
+                        .description("API 결과 메시지입니다. 성공/실패에 대한 설명을 포함합니다."),
                 // 'data' 필드 자체에 대한 설명 (타입은 보통 OBJECT 또는 VARIES)
-                fieldWithPath("data").type(JsonFieldType.OBJECT).description("실제 응답 데이터 객체 (성공 시). 실패 시 보통 null.").optional() // 성공 시에만 데이터가 있을 수 있으므로 optional() 추가 고려
+                fieldWithPath("data").type(JsonFieldType.OBJECT).optional()
+                        .description("실제 응답 데이터입니다. 성공 시 포함되며, 실패 시 null이거나 관련 오류 메시지를 포함할 수 있습니다.")
         ));
 
         // 'data' 내부의 구체적인 필드들 추가
