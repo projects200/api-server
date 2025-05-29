@@ -1,3 +1,13 @@
+- Controller test는 @WebMvcTest, Service test는 @ExtendWith(MockitoExtension.class), Repository test는 @DataJpaTest 어노테이션을 사용해
+- 주석, DisplayName 등의 설명을 한국어로 작성해
+- given, when, then 구조로 작성해
+- BDDMockito, AssertJ를 사용해
+- AssertJ에서 as에 한국어로 테스트 실패 시 나타낼 메시지를 지정해
+- assertThat이 여러개인데 독립적이라면 Soft assertions을 사용해. 이때, SoftAssertions.assertSoftly(softAssertions -> { ... }); 방식처럼 람다 방식으로 사용해
+- UserContextHolder의 메소드는 전부 정적 메소드이므로 정적 메소드 모킹이 필요해. 다음 코드를 사용해 `import com.project200.undabang.common.context.UserContextHolder; try (MockedStatic<UserContextHolder> ignored = BDDMockito.mockStatic(UserContextHolder.class)) { BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId); ... }` 이 때, testUserId는 UUID야
+
+- Controller test는 다음 코드를 참고해
+```java
 @WebMvcTest(Controller.class)
 public class JUnit5ExampleTests extended AbstractRestDocSupport {
 
@@ -6,7 +16,7 @@ public class JUnit5ExampleTests extended AbstractRestDocSupport {
     @DisplayName("한국어로 입력")
     public void testExample() extends Exception {
         // given
-        BDDMockito.given(mock.mock_method()).willReturn(...);    // 정상 반환 시
+        BDDMockito.given(mock.mock_method()).willReturn(...)// 정상 반환 시
         BDDMockito.given(mock.mock_method()).willThrow(...);     // 에러 발생 시
 
         // when
@@ -65,6 +75,5 @@ public class JUnit5ExampleTests extended AbstractRestDocSupport {
         BDDMockito.then(mock).should().mock_method()
         BDDMockito.then(mock).should(BDDMockito.times(1)).mock_method()
         BDDMockito.then(mock).shouldHaveNoMoreInteractions();
-        BDDMockito.then(mock).shouldHaveNoInteractions();
-    }
-}
+        BDDMockito.then(mock).shouldHaveNoInteractions
+```

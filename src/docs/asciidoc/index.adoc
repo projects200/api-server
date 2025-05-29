@@ -13,6 +13,8 @@
 :operation-request-headers-title: 요청 헤더
 :operation-response-fields-title: 응답 필드
 
+* xref:exercise.html[운동 API]
+
 [[overview]]
 == 개요
 
@@ -52,8 +54,8 @@ Undabang API 서비스에 대한 문서입니다.
 |===
 | 헤더 | 설명
 
-| `X-USER-ID`
-| 사용자 식별자 (UUID 형식)
+| `Authorization`
+| Bearer {accessToken} 형식의 Access Token입니다. 사용자 인증 시 사용됩니다.
 
 | `Content-Type: application/json`
 | JSON 형식의 요청 본문
@@ -68,9 +70,9 @@ Undabang API 서비스에 대한 문서입니다.
 [source,json]
 ----
 {
-  "success": "boolean",
-  "code": "string",
-  "message": "string",
+  "success": true,
+  "code": "SUCCESS",
+  "message": "요청이 성공적으로 처리되었습니다.",
   "data": {
     // 응답 데이터
   }

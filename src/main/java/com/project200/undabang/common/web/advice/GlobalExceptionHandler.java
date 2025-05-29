@@ -6,6 +6,7 @@ import com.project200.undabang.common.web.response.CommonResponse;
 import jakarta.persistence.PersistenceException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.MethodParameter;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -73,6 +75,7 @@ public class GlobalExceptionHandler {
      * @return 필드별 오류 메시지를 포함한 응답
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     protected ResponseEntity<CommonResponse<Map<String, String>>> handleMethodArgumentNotValidException(
             MethodArgumentNotValidException ex) {
 
@@ -141,6 +144,7 @@ public class GlobalExceptionHandler {
      * @return 유효성 검증 실패 데이터를 포함한 오류 응답
      */
     @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     protected ResponseEntity<CommonResponse<Map<String, String>>> handleConstraintViolationException(
             ConstraintViolationException ex) {
 
@@ -160,6 +164,53 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
 
+
+    /**
+     * HandlerMethodValidationException 예외를 처리하는 메서드입니다.
+     * <p>
+     * 이 메서드는 컨트롤러에서 메서드 파라미터 유효성 검증 실패로 인해 발생하는
+     * HandlerMethodValidationException 예외를 처리하고, 유효성 검증 오류 정보를 클라이언트에 반환합니다.
+     * 해당 정보에는 유효성 검증에 실패한 파라미터 이름과 관련 오류 메시지가 포함됩니다.
+     *
+     * @param ex 처리할 HandlerMethodValidationException 예외
+     * @return 필드별 오류 메시지를 포함한 응답
+     */
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<CommonResponse<Map<String, String>>> handleValidationExceptions(
+            HandlerMethodValidationException ex) {
+        ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
+        Map<String, String> errors = new HashMap<>();
+
+        ex.getParameterValidationResults().forEach(parameterResult -> {
+            MethodParameter methodParameter = parameterResult.getMethodParameter();
+            String parameterName = methodParameter.getParameterName();
+
+            // 파라미터 이름을 가져올 수 없는 경우 (예: 컴파일 시 -parameters 옵션 누락) 대체 이름 사용
+            if (parameterName == null) {
+                parameterName = "param" + methodParameter.getParameterIndex();
+            }
+
+            final String finalParameterName = parameterName; // effectively final for lambda
+            parameterResult.getResolvableErrors().forEach(error -> {
+                // 동일 파라미터에 여러 오류가 있을 경우, 첫 번째 오류만 표시
+                if (!errors.containsKey(finalParameterName)) {
+                    errors.put(finalParameterName, error.getDefaultMessage());
+                }
+            });
+        });
+
+        String customMessage = "요청 파라미터 유효성 검증에 실패했습니다.";
+        CommonResponse<Map<String, String>> response = CommonResponse.<Map<String, String>>error(errorCode)
+                .message(customMessage)
+                .data(errors)
+                .build();
+
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
+
+    }
+
+
     /**
      * 데이터베이스 저장 실패와 관련된 예외를 처리합니다.
      *
@@ -175,6 +226,7 @@ public class GlobalExceptionHandler {
             PersistenceException.class,
             OptimisticLockingFailureException.class
     })
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     protected ResponseEntity<CommonResponse<Void>> handleDatabaseException(Exception ex) {
         log.error("데이터베이스 저장 실패: ", ex);
         ErrorCode errorCode = ErrorCode.MEMBER_SAVE_FAILED_ERROR;
@@ -192,6 +244,7 @@ public class GlobalExceptionHandler {
      * @return 유효하지 않은 요청에 대한 오류 응답
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     protected ResponseEntity<CommonResponse<Void>> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
         log.warn("HttpMessageNotReadableException 발생: ", ex);
         ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
@@ -204,9 +257,10 @@ public class GlobalExceptionHandler {
      * RequestParameter에 Long, Int가 아닌 String이 입력되었을때 발생하는 예외를 처리합니다.
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     protected ResponseEntity<CommonResponse<Map<String, String>>> handleMethodArgumentTypeMismatchException(
             MethodArgumentTypeMismatchException ex) {
-
+        log.warn("MethodArgumentTypeMismatchException 발생: ", ex);
         ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
 
         Map<String, String> errors = new HashMap<>();

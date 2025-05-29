@@ -1,11 +1,9 @@
-    |===
-        |파트 이름|타입|필수 여부|설명
+{{#requestParts}}
 
-    {{#requestParts}}
-        |{{name}}
-        |{{type}}
-        |{{#optional}}선택{{/optional}}{{^optional}}필수{{/optional}}
-        |{{description}}
+`{{name}}` _{{type}}_{{#optional}}{{/optional}}{{^optional}}#필수#{{/optional}}
 
-    {{/requestParts}}
-        |===
+{{description}}
+
+---
+
+{{/requestParts}}
