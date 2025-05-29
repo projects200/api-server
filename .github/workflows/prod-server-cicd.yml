@@ -33,7 +33,7 @@ jobs:
           mkdir -p src/main/resources/
           echo ${{ secrets.APPLICATION_PROD_YML }} | base64 -d > src/main/resources/application-prod.yml
           chmod +x gradlew
-          ./gradlew build
+          ./gradlew build -Dspring.profiles.active=prod
         shell: bash
 
       - name: Configure AWS credentials
