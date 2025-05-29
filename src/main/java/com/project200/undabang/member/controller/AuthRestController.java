@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthRestController {
     private final MemberService memberService;
 
-    @PostMapping("/auth/sign-up/v1")
+    @PostMapping("/auth/v1/sign-up")
     public CommonResponse<SignUpResponseDto> signUpMember(@Valid @RequestBody SignUpRequestDto signUpRequestDto){
         SignUpResponseDto responseDto = memberService.memberSignUp(signUpRequestDto);
         return CommonResponse.success(responseDto);

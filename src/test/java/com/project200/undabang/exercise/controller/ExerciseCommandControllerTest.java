@@ -122,7 +122,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         headers.add("X-USER-ID", testUserId.toString());
         headers.add("Authorization", "Bearer dummy-access-token-for-docs");
 
-        String response = this.mockMvc.perform(post("/v1/exercises")
+        String response = this.mockMvc.perform(post("/api/v1/exercises")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .headers(headers)
@@ -195,7 +195,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         headers.add("Authorization", "Bearer dummy-access-token-for-docs");
 
         String response = this.mockMvc.perform(MockMvcRequestBuilders
-                        .multipart("/v1/exercises/{exerciseId}/pictures", exerciseId)
+                        .multipart("/api/v1/exercises/{exerciseId}/pictures", exerciseId)
                         .file(file1)
                         .file(file2)
                         .contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -251,7 +251,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         headers.add("X-USER-ID", testUserId.toString());
         headers.add("Authorization", "Bearer dummy-access-token-for-docs");
 
-        String response = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/v1/exercises/{exerciseId}/pictures", exerciseId)
+        String response = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/exercises/{exerciseId}/pictures", exerciseId)
                         .file(firstFile)
                         .file(secondFile)
                         .contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -286,7 +286,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         headers.add("X-USER-ID", testUserId.toString());
         headers.add("Authorization", "Bearer dummy-access-token-for-docs");
 
-        MockMultipartHttpServletRequestBuilder requestBuilder = MockMvcRequestBuilders.multipart("/v1/exercises/{exerciseId}/pictures", exerciseId);
+        MockMultipartHttpServletRequestBuilder requestBuilder = MockMvcRequestBuilders.multipart("/api/v1/exercises/{exerciseId}/pictures", exerciseId);
         for (MockMultipartFile file : files) {
             requestBuilder.file(file);
         }
