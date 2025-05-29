@@ -44,6 +44,7 @@ import static org.springframework.restdocs.request.RequestDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static com.project200.undabang.configuration.DocumentTokenGenerator.getAccessToken;
 
 @WebMvcTest(ExerciseCommandController.class)
 class ExerciseCommandControllerTest extends AbstractRestDocSupport {
@@ -122,7 +123,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         // when
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", testUserId.toString());
-        headers.add("Authorization", "Bearer dummy-access-token-for-docs");
+        headers.add("Authorization", getAccessToken());
 
         String response = this.mockMvc.perform(post("/api/v1/exercises")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -194,7 +195,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         // when
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", testUserId.toString());
-        headers.add("Authorization", "Bearer dummy-access-token-for-docs");
+        headers.add("Authorization", getAccessToken());
 
         String response = this.mockMvc.perform(MockMvcRequestBuilders
                         .multipart("/api/v1/exercises/{exerciseId}/pictures", exerciseId)
@@ -251,7 +252,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         // when
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", testUserId.toString());
-        headers.add("Authorization", "Bearer dummy-access-token-for-docs");
+        headers.add("Authorization", getAccessToken());
 
         String response = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/exercises/{exerciseId}/pictures", exerciseId)
                         .file(firstFile)
@@ -286,7 +287,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         // when
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", testUserId.toString());
-        headers.add("Authorization", "Bearer dummy-access-token-for-docs");
+        headers.add("Authorization", getAccessToken());
 
         MockMultipartHttpServletRequestBuilder requestBuilder = MockMvcRequestBuilders.multipart("/api/v1/exercises/{exerciseId}/pictures", exerciseId);
         for (MockMultipartFile file : files) {
@@ -332,7 +333,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         // when
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
-        headers.add("Authorization", "Bearer {AccessToken}");
+        headers.add("Authorization", getAccessToken());
 
         this.mockMvc.perform(MockMvcRequestBuilders.patch("/api/v1/exercises/{exerciseId}", exerciseId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -341,6 +342,10 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isOk())
                 .andDo(this.document.document(
+                        pathParameters(
+                                parameterWithName("exerciseId").attributes(getTypeFormat(JsonFieldType.NUMBER))
+                                        .description("운동 ID입니다. 수정할 운동 기록 ID를 입력하시면 됩니다.")
+                        ),
                         requestHeaders(RestDocsUtils.HEADER_ACCESS_TOKEN),
                         requestFields(
                                 fieldWithPath("exerciseTitle").type(JsonFieldType.STRING)
@@ -383,7 +388,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", testUserId.toString());
-        headers.add("Authorization", "Bearer dummy-access-token-for-docs");
+        headers.add("Authorization", getAccessToken());
 
         // when & then
         this.mockMvc.perform(MockMvcRequestBuilders.patch("/api/v1/exercises/{exerciseId}", invalidExerciseId)
@@ -416,7 +421,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", testUserId.toString());
-        headers.add("Authorization", "Bearer dummy-access-token-for-docs");
+        headers.add("Authorization", getAccessToken());
 
         // when & then
         this.mockMvc.perform(MockMvcRequestBuilders.patch("/api/v1/exercises/{exerciseId}", exerciseId)
@@ -449,7 +454,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", testUserId.toString());
-        headers.add("Authorization", "Bearer dummy-access-token-for-docs");
+        headers.add("Authorization", getAccessToken());
 
         // when & then
         this.mockMvc.perform(MockMvcRequestBuilders.patch("/api/v1/exercises/{exerciseId}", exerciseId)

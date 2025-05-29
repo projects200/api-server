@@ -18,3 +18,5 @@
 include::exercise/create-exercise.adoc[]
 
 include::exercise/upload-pictures.adoc[]
+
+include::exercise/update-exercise.adoc[]
