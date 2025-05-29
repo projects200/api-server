@@ -1,4 +1,4 @@
-package com.project200.undabang.exercise.service;
+package com.project200.undabang.exercise.service.impl;
 
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
@@ -7,7 +7,6 @@ import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodR
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseDto;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
-import com.project200.undabang.exercise.service.impl.ExerciseQueryServiceImpl;
 import com.project200.undabang.member.repository.MemberRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
