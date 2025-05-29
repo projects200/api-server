@@ -11,22 +11,10 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.HashMap;
 import java.util.Map;
 
-@RestController
 @SpringBootApplication
 public class UndabangApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(UndabangApplication.class, args);
-    }
-
-    @GetMapping("/")
-    public ResponseEntity<Map<String, String>> testEndpoint(@RequestHeader HttpHeaders headers) {
-        Map<String, String> headersMap = new HashMap<>();
-
-        headers.forEach((key, value) -> headersMap.put(key, value.getFirst()));
-
-        return ResponseEntity.ok(headersMap);
-
-
     }
 }

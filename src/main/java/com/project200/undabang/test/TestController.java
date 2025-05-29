@@ -1,14 +1,15 @@
 package com.project200.undabang.test;
 
 import com.project200.undabang.common.web.response.CommonResponse;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 public class TestController {
@@ -30,5 +31,16 @@ public class TestController {
     public CommonResponse<String> handleFormSubmit3(@RequestPart TestDto2 testDto,
                                                     @RequestPart List<MultipartFile> files) {
         return CommonResponse.success("success");
+    }
+
+    @GetMapping("/test4")
+    public ResponseEntity<Map<String, String>> testEndpoint(@RequestHeader HttpHeaders headers) {
+        Map<String, String> headersMap = new HashMap<>();
+
+        headers.forEach((key, value) -> headersMap.put(key, value.getFirst()));
+
+        return ResponseEntity.ok(headersMap);
+
+
     }
 }
