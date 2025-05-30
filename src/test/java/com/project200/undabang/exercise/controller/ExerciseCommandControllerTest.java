@@ -123,7 +123,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         // when
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", testUserId.toString());
-        headers.add("Authorization", getAccessToken());
+        headers.addAll(getAccessToken());
 
         String response = this.mockMvc.perform(post("/api/v1/exercises")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -139,7 +139,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                         ),
                         requestFields(
                                 fieldWithPath("exerciseTitle").type(JsonFieldType.STRING)
-                                        .description("운동 제목입니다. 최대 255자까지 입력 가능합니다."),
+                                        .description("운동 제목입니다. 최대 255자까지 입력 가능합니다. null, 빈 문자열, 공백을 받지 않습니다"),
                                 fieldWithPath("exercisePersonalType").type(JsonFieldType.STRING).optional()
                                         .description("운동 종류입니다. 사용자가 입력하는 값이며 최대 255자까지 입력 가능합니다."),
                                 fieldWithPath("exerciseLocation").type(JsonFieldType.STRING).optional()
@@ -195,7 +195,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         // when
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", testUserId.toString());
-        headers.add("Authorization", getAccessToken());
+        headers.addAll(getAccessToken());
 
         String response = this.mockMvc.perform(MockMvcRequestBuilders
                         .multipart("/api/v1/exercises/{exerciseId}/pictures", exerciseId)
@@ -252,7 +252,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         // when
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", testUserId.toString());
-        headers.add("Authorization", getAccessToken());
+        headers.addAll(getAccessToken());
 
         String response = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/exercises/{exerciseId}/pictures", exerciseId)
                         .file(firstFile)
@@ -287,7 +287,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         // when
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", testUserId.toString());
-        headers.add("Authorization", getAccessToken());
+        headers.addAll(getAccessToken());
 
         MockMultipartHttpServletRequestBuilder requestBuilder = MockMvcRequestBuilders.multipart("/api/v1/exercises/{exerciseId}/pictures", exerciseId);
         for (MockMultipartFile file : files) {
@@ -333,7 +333,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         // when
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", memberId.toString());
-        headers.add("Authorization", getAccessToken());
+        headers.addAll(getAccessToken());
 
         this.mockMvc.perform(MockMvcRequestBuilders.patch("/api/v1/exercises/{exerciseId}", exerciseId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -349,7 +349,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                         requestHeaders(RestDocsUtils.HEADER_ACCESS_TOKEN),
                         requestFields(
                                 fieldWithPath("exerciseTitle").type(JsonFieldType.STRING)
-                                        .description("운동 제목입니다. 최대 255자까지 입력 가능합니다."),
+                                        .description("운동 제목입니다. 최대 255자까지 입력 가능합니다. null, 빈 문자열, 공백을 받지 않습니다"),
                                 fieldWithPath("exercisePersonalType").type(JsonFieldType.STRING).optional()
                                         .description("운동 종류입니다. 사용자가 입력하는 값이며 최대 255자까지 입력 가능합니다."),
                                 fieldWithPath("exerciseLocation").type(JsonFieldType.STRING).optional()
@@ -388,7 +388,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", testUserId.toString());
-        headers.add("Authorization", getAccessToken());
+        headers.addAll(getAccessToken());
 
         // when & then
         this.mockMvc.perform(MockMvcRequestBuilders.patch("/api/v1/exercises/{exerciseId}", invalidExerciseId)
@@ -421,7 +421,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", testUserId.toString());
-        headers.add("Authorization", getAccessToken());
+        headers.addAll(getAccessToken());
 
         // when & then
         this.mockMvc.perform(MockMvcRequestBuilders.patch("/api/v1/exercises/{exerciseId}", exerciseId)
@@ -454,7 +454,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-USER-ID", testUserId.toString());
-        headers.add("Authorization", getAccessToken());
+        headers.addAll(getAccessToken());
 
         // when & then
         this.mockMvc.perform(MockMvcRequestBuilders.patch("/api/v1/exercises/{exerciseId}", exerciseId)

@@ -20,9 +20,10 @@
 === 코드 샘플
 
 operation::exercise-command-controller-test/exercise-update_-success[snippets="curl-request,http-request,http-response"]
+
 === 매개 변수
 
-operation::exercise-command-controller-test/exercise-update_-success[snippets="request-headers,request-fields,response-fields"]
+operation::exercise-command-controller-test/exercise-update_-success[snippets="request-headers,path-parameters,request-fields,response-fields"]
 
 ==== 응답 상태 코드
 

@@ -59,7 +59,8 @@ public class S3Service {
             return null;
         }
 
-        int bucketEndIndex = url.indexOf(bucketName) + bucketName.length() + 1; // (bucketName/) 포함
+        // (bucketName + '/') 포함
+        int bucketEndIndex = url.indexOf(bucketName) + bucketName.length() + 1;
 
         if(bucketEndIndex > 0 && bucketEndIndex < url.length()){
             return url.substring(bucketEndIndex);
