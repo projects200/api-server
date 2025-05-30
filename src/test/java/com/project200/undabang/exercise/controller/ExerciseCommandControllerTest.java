@@ -34,6 +34,7 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static com.project200.undabang.configuration.DocumentFormatGenerator.getTypeFormat;
@@ -381,7 +382,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
 
     @Test
     @DisplayName("운동 기록 수정 - 실패 (요청 DTO 유효성 위반 - 제목 공백)")
-    void exerciseUpdate_validateFailed_BlankTitle() throws Exception{
+    void exerciseUpdate_validateFailed_BlankTitle() throws Exception {
         // given
         long exerciseId = 1L;
         UUID testMemberId = UUID.randomUUID();
@@ -410,7 +411,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
 
     @Test
     @DisplayName("운동 기록 수정 - 실패 (요청 DTO 유효성 위반 - 시작 시간이 종료 시간 이후)")
-    void exerciseUpdate_validateFailed_InvalidStartEndTime() throws Exception{
+    void exerciseUpdate_validateFailed_InvalidStartEndTime() throws Exception {
         // given
         long exerciseId = 1L;
         UUID testMemberId = UUID.randomUUID();
@@ -435,5 +436,41 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
 
         BDDMockito.then(exerciseCommandService).should(BDDMockito.never())
                 .updateExercise(BDDMockito.anyLong(), BDDMockito.any(UpdateExerciseRequestDto.class));
+    }
+
+    @Test
+    @DisplayName("운동기록 이미지 삭제 성공 케이스")
+    void deleteExerciseImages() throws Exception {
+        // given
+        Long testExerciseId = 1L;
+        List<Long> pictureIds = List.of(1L, 2L, 3L);
+        UUID testMemberID = UUID.randomUUID();
+
+        String[] pictureIdsToStringArr = pictureIds.stream().map(String::valueOf).toArray(String[]::new);
+
+        // void 니까 willDoNothing()
+        BDDMockito.willDoNothing().given(exerciseCommandService).deleteImages(testExerciseId, pictureIds);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}/pictures", testExerciseId)
+                        .queryParam("pictureIds", pictureIdsToStringArr)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(getCommonApiHeaders(testMemberID)))
+                .andExpect(status().isOk())
+                .andDo(this.document.document(
+                        pathParameters(
+                                parameterWithName("exerciseId").attributes(getTypeFormat(JsonFieldType.NUMBER))
+                                        .description("운동 ID입니다. 수정할 운동 기록 ID를 입력하시면 됩니다.")
+                        ),
+                        queryParameters(
+                                parameterWithName("pictureIds").attributes(getTypeFormat(JsonFieldType.STRING))
+                                        .description("사진 ID 리스트 입니다. 삭제할 사진 ID 리스트를 입력하시면 됩니다.")
+                        ),
+                        requestHeaders(RestDocsUtils.HEADER_ACCESS_TOKEN),
+                        responseFields(RestDocsUtils.commonResponseFieldsOnly())
+                ))
+                .andReturn().getResponse().getContentAsString();
+
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteImages(testExerciseId,pictureIds);
     }
 }
