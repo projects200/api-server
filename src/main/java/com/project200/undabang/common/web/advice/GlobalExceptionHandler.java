@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -215,6 +216,27 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+    /**
+     * 필수 요청 파라미터가 누락되었을 때 발생하는 예외를 처리합니다.
+     *
+     * <p>이 메서드는 {@link MissingServletRequestParameterException} 타입의 예외를 처리하며,
+     * 누락된 파라미터 정보를 포함한 메시지를 클라이언트에 전달합니다.</p>
+     *
+     * @param ex 처리할 {@link MissingServletRequestParameterException} 예외
+     * @return 누락된 파라미터 정보를 포함한 오류 응답
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    protected ResponseEntity<CommonResponse<Void>> handleMissingServletRequestParameterException(
+            MissingServletRequestParameterException ex) {
+        log.warn("필수 파라미터 누락: {}", ex.getMessage());
+        ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE; // 또는 ErrorCode.REQUIRED_PARAMETER_MISSING 와 같이 더 구체적인 코드 사용 가능
+
+        CommonResponse<Void> response = CommonResponse.<Void>error(errorCode)
+                .message("필수 파라미터를 입력해주세요.")
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
 
     /**
      * RequestParameter에 Long, Int가 아닌 String이 입력되었을때 발생하는 예외를 처리합니다.
