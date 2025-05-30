@@ -397,7 +397,7 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .headers(headers))
-                .andExpect(status().isInternalServerError())
+                .andExpect(status().isBadRequest())
                 .andDo(this.document.document(
                         requestHeaders(HEADER_X_USER_ID),
                         responseFields(RestDocsUtils.commonResponseFieldsOnly())
@@ -564,7 +564,7 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .headers(headers))
-                .andExpect(status().isInternalServerError())
+                .andExpect(status().isBadRequest())
                 .andDo(this.document.document(
                         requestHeaders(HEADER_X_USER_ID),
                         responseFields(
