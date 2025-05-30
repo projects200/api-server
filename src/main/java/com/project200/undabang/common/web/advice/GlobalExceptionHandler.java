@@ -97,7 +97,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
 
-
     /**
      * ConstraintViolationException 예외를 처리합니다.
      * 이 메서드는 서비스 계층에서 @Validated 사용 시 메서드 파라미터 유효성 검증 실패로 인해 발생된

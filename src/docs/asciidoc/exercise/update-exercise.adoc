@@ -1,0 +1,37 @@
+== 운동 기록 문자데이터 변경 API
+
+
+=== 설명
+
+- #PATCH# `/api/v1/exercises/{exerciseId}`
+- 운동 기록 문자데이터를 수정하는 API입니다.
+이 API를 통해 사용자는 자신의 운동 기록을 수정할 수 있습니다.
+- 사용자는 운동 제목, 종류, 장소, 상세 내용, 시작 시간, 종료 시간을 포함하여 운동 기록을 작성할 수 있습니다.
+- 수정하지 않은 데이터는 변하지 않습니다.
+
+=== 개발 참고사항
+
+- 요청 헤더에 Authorization이 있다면 이 API는 회원 인증을 요구합니다.
+- 요청의 필수 여부는 요청 필드의 필수 여부를 참고하세요.
+- 요청에 대한 검증은 요청 필드의 설명을 참고하세요.
+- Datetime은 ISO 8601 형식(예: `2023-10-01T10:00:00Z`)으로 입력해야 합니다.
+- API 성공, 실패 시 상태 코드는 `응답 상태 코드`를 참고하세요.
+
+=== 코드 샘플
+
+operation::exercise-command-controller-test/exercise-update_-success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+
+operation::exercise-command-controller-test/exercise-update_-success[snippets="request-headers,path-parameters,request-fields,response-fields"]
+
+==== 응답 상태 코드
+
+|===
+|상태 코드|설명
+|201|운동 기록이 성공적으로 생성되었습니다.
+|400|입력값 검증에 실패했습니다.
+|403|운동 기록에 접근 권한이 없습니다
+|404|운동 기록이나 회원이 존재하지 않습니다.
+|===
+

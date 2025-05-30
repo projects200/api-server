@@ -17,5 +17,5 @@ public interface ExerciseCommandService {
 
     void deleteExercise(Long exerciseId);
 
-    void deleteExerciseImages(Long exerciseId, List<Long> pictureIds);
+    void deleteImages(Long exerciseId, List<Long> pictureIds);
 }

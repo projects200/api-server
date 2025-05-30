@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -16,6 +17,7 @@ import java.util.UUID;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "exercises")
+@DynamicUpdate // 변경된 필드만 수정
 public class Exercise {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -69,5 +71,25 @@ public class Exercise {
 
     public boolean isOwnedBy(UUID memberId) {
         return this.member.getMemberId().equals(memberId);
+    }
+
+    public void updateExercise(
+            String exerciseTitle,
+            String exerciseDetail,
+            String exercisePersonalType,
+            String exerciseLocation,
+            LocalDateTime exerciseStartedAt,
+            LocalDateTime exerciseEndedAt) {
+
+        this.exerciseTitle = exerciseTitle;
+        this.exerciseDetail = exerciseDetail;
+        this.exercisePersonalType = exercisePersonalType;
+        this.exerciseLocation = exerciseLocation;
+        this.exerciseStartedAt = exerciseStartedAt;
+        this.exerciseEndedAt = exerciseEndedAt;
+    }
+
+    public void deleteExercise(){
+        this.exerciseDeletedAt = LocalDateTime.now();
     }
 }

@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface ExercisePictureRepository extends JpaRepository<ExercisePicture, Long> {
 
-    List<ExercisePicture> findByExercise_Id(Long exerciseId);
+    List<ExercisePicture> findAllByExercise_Id(Long exerciseId);
 
     long countByExercise_Id(Long id);
 }

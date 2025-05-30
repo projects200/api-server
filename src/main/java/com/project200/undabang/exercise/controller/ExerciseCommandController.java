@@ -30,24 +30,6 @@ public class ExerciseCommandController {
         return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(responseData));
     }
 
-    // TODO: 운동기록 수정 api
-    @PatchMapping(path = "/v1/exercises/{exerciseId}")
-    public ResponseEntity<CommonResponse<ExerciseIdResponseDto>> updateExercise(
-            @PathVariable @Positive(message = "올바른 Exercise ID를 입력해주세요") Long exerciseId,
-            @Valid @RequestBody UpdateExerciseRequestDto requestDto) {
-        ExerciseIdResponseDto responseData = exerciseCommandService.updateExercise(exerciseId, requestDto);
-        return ResponseEntity.ok(CommonResponse.update(responseData));
-    }
-
-    // TODO: 운동기록 삭제 api
-    @DeleteMapping(path = "/v1/exercises/{exerciseId}")
-    public ResponseEntity<CommonResponse<Void>> deleteExercise(
-            @PathVariable @Positive(message = "올바른 Exercise ID를 입력해주세요") Long exerciseId) {
-        exerciseCommandService.deleteExercise(exerciseId);
-        return ResponseEntity.ok(CommonResponse.success());
-    }
-
-
     @PostMapping(path = "/v1/exercises/{exerciseId}/pictures", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CommonResponse<ExerciseIdResponseDto>> uploadExerciseImages(
             @PathVariable @Positive(message = "올바른 Exercise ID를 입력해주세요") Long exerciseId,
@@ -58,12 +40,26 @@ public class ExerciseCommandController {
         return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(responseData));
     }
 
-    // TODO: 업로드한 파일 리스트로 삭제 api
+    @PatchMapping(path = "/v1/exercises/{exerciseId}")
+    public ResponseEntity<CommonResponse<ExerciseIdResponseDto>> updateExercise(
+            @PathVariable @Positive(message = "올바른 Exercise ID를 입력해주세요") Long exerciseId,
+            @Valid @RequestBody UpdateExerciseRequestDto requestDto) {
+        ExerciseIdResponseDto responseData = exerciseCommandService.updateExercise(exerciseId, requestDto);
+        return ResponseEntity.ok(CommonResponse.update(responseData));
+    }
+
     @DeleteMapping(path = "/v1/exercises/{exerciseId}/pictures")
     public ResponseEntity<CommonResponse<Void>> deleteExerciseImages(
             @PathVariable @Positive(message = "올바른 Exercise ID를 입력해주세요") Long exerciseId,
             @RequestParam("pictureIds") List<Long> pictureIds) {
-        exerciseCommandService.deleteExerciseImages(exerciseId, pictureIds);
+        exerciseCommandService.deleteImages(exerciseId, pictureIds);
+        return ResponseEntity.ok(CommonResponse.success());
+    }
+
+    @DeleteMapping(path = "/v1/exercises/{exerciseId}")
+    public ResponseEntity<CommonResponse<Void>> deleteExercise(
+            @PathVariable @Positive(message = "올바른 Exercise ID를 입력해주세요") Long exerciseId) {
+        exerciseCommandService.deleteExercise(exerciseId);
         return ResponseEntity.ok(CommonResponse.success());
     }
 }

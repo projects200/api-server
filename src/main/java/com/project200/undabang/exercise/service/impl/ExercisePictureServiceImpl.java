@@ -15,6 +15,7 @@ import com.project200.undabang.exercise.entity.ExercisePicture;
 import com.project200.undabang.exercise.repository.ExercisePictureRepository;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
 import com.project200.undabang.exercise.service.ExercisePictureService;
+import io.awspring.cloud.s3.S3Exception;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -23,9 +24,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.exception.SdkException;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Validated
 @Slf4j
@@ -76,6 +77,57 @@ public class ExercisePictureServiceImpl implements ExercisePictureService {
             handleException(ex, context);
         }
         return null; // 이 줄은 실제로 도달하지 않음
+    }
+
+    @Override
+    @Transactional
+    public List<Long> getAllImagesFromExercise(UUID memberId, Long exerciseId) {
+        Exercise exercise = exerciseRepository.findById(exerciseId).orElseThrow(() -> new CustomException(ErrorCode.EXERCISE_NOT_FOUND));
+
+        if(!exercise.isOwnedBy(memberId)){
+            throw new CustomException(ErrorCode.AUTHORIZATION_DENIED);
+        }
+
+        return exercisePictureRepository.findAllByExercise_Id(exerciseId).stream().map(ExercisePicture::getId).toList();
+    }
+
+    @Override
+    @Transactional
+    public void deleteExercisePictures(UUID memberId, Long exerciseId, List<Long> deletePictureIdList) {
+        checkMemberExerciseId(memberId, exerciseId, deletePictureIdList);
+
+        List<ExercisePicture> exercisePictureList = exercisePictureRepository.findAllById(deletePictureIdList);
+        List<Picture> pictureListForDelete = new ArrayList<>();
+
+        for (ExercisePicture picture : exercisePictureList) {
+            pictureListForDelete.add(picture.getPicture());
+        }
+
+        try {
+            // s3, db에서 데이터 삭제 시도
+            deletePictures(pictureListForDelete);
+
+        } catch (S3Exception | SdkException ex) {
+            // 클라이언트 레벨 에러 및 Sdk 에러 처리
+            log.error("S3 Exception: {}", ex.getMessage());
+
+        } catch (Exception e) {
+            log.error("이미지 삭제 처리중 에러 발생 {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.EXERCISE_PICTURE_DELETE_FAILED);
+        }
+    }
+
+    private void deletePictures(List<Picture> pictureList) throws S3UploadFailedException{
+        for (Picture picture : pictureList) {
+            // S3에서 데이터 삭제
+            String s3Url = s3Service.extractObjectKeyFromUrl(picture.getPictureUrl());
+            s3Service.deleteImage(s3Url);
+        }
+
+        for (Picture picture : pictureList) {
+            // 그 후 db에서 soft delete 진행
+            picture.softDelete();
+        }
     }
 
     // 운동 이미지 파일 리스트를 S3에 업로드하고 Picture, ExercisePicture 엔티티를 생성하는 메서드
@@ -157,5 +209,32 @@ public class ExercisePictureServiceImpl implements ExercisePictureService {
     private void handleS3AndFileException(CreateExerciseContext context) {
         rollbackS3Upload(context.getPictureList());
         throw new CustomException(ErrorCode.EXERCISE_PICTURE_UPLOAD_FAILED);
+    }
+
+    private void checkMemberExerciseId(UUID memberId, Long exerciseId, List<Long> pictureIdDeleteList) {
+        if (!exerciseRepository.existsByRecordIdAndMemberId(memberId, exerciseId)) {
+            throw new CustomException(ErrorCode.AUTHORIZATION_DENIED);
+        }
+
+        if (pictureIdDeleteList == null || pictureIdDeleteList.isEmpty()) {
+            return;
+        }
+
+        // 삭제하려는 사진이 자신의 운동 기록에 있는지 검증
+        List<ExercisePicture> exercisePictureList = exercisePictureRepository.findAllByExercise_Id(exerciseId);
+        Set<Long> exercisePictureSet = new HashSet<>();
+
+        // 내용이 있을때만 해당 기능 동작
+        // 저장된 사진이 없으면 추가만 되도록
+        for (ExercisePicture picture : exercisePictureList) {
+            exercisePictureSet.add(picture.getId());
+        }
+
+        for (Long picture : pictureIdDeleteList) {
+            if (!exercisePictureSet.contains(picture)) {
+                throw new CustomException(ErrorCode.AUTHORIZATION_DENIED);
+            }
+        }
+
     }
 }
