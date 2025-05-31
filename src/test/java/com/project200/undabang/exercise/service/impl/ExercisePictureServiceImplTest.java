@@ -26,6 +26,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -365,5 +366,110 @@ public class ExercisePictureServiceImplTest {
         BDDMockito.then(s3Service).should(BDDMockito.times(1)).deleteImage("key1.png");
         // DB 저장된 softDelete 내용 롤백되었는지 확인
         Assertions.assertThat(picture.getPictureDeletedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("운동기록과 연계된 이미지 조회 성공케이스")
+    void getAllImagesFromExercise(){
+        UUID testMemberId = UUID.randomUUID();
+        Long testExerciseId = 1L;
+
+        Member member = Member.builder().memberId(testMemberId).build();
+        Exercise exercise = Exercise.builder().id(testExerciseId).member(member).build();
+
+        Picture picture1 = Picture.builder().id(1L).pictureUrl("s3://bucket/uploads/key1.png").build();
+        Picture picture2 = Picture.builder().id(1L).pictureUrl("s3://bucket/uploads/key2.png").build();
+
+        ExercisePicture exercisePicture1 = ExercisePicture.builder()
+                .id(picture1.getId())
+                .exercise(exercise)
+                .picture(picture1)
+                .build();
+
+        ExercisePicture exercisePicture2 = ExercisePicture.builder()
+                .id(picture2.getId())
+                .exercise(exercise)
+                .picture(picture2)
+                .build();
+
+        List<ExercisePicture> testExercisePictures = List.of(exercisePicture1, exercisePicture2);
+        List<Long> testPictureIds = testExercisePictures.stream().map(ExercisePicture::getId).toList();
+
+        BDDMockito.given(exerciseRepository.findById(testExerciseId)).willReturn(Optional.of(exercise));
+        BDDMockito.given(exercisePictureRepository.findAllByExercise_Id(testExerciseId)).willReturn(testExercisePictures);
+
+        // when
+        List<Long> pictureIds = exercisePictureService.getAllImagesFromExercise(testMemberId,testExerciseId);
+
+        // then
+        Assertions.assertThat(pictureIds.size()).isEqualTo(testPictureIds.size());
+        Assertions.assertThat(pictureIds.containsAll(testExercisePictures));
+
+        BDDMockito.then(exerciseRepository).should(BDDMockito.times(1)).findById(testExerciseId);
+        BDDMockito.then(exercisePictureRepository).should(BDDMockito.times(1)).findAllByExercise_Id(testExerciseId);
+    }
+
+    @Test
+    @DisplayName("운동기록과 연계된 이미지 조회 실패 _ 운동기록 없음")
+    void getAllImagesFromExercise_NoExerciseExist(){
+        UUID testMemberId = UUID.randomUUID();
+        Long testExerciseId = 1L;
+
+        BDDMockito.given(exerciseRepository.findById(testExerciseId)).willThrow(new CustomException(ErrorCode.EXERCISE_NOT_FOUND));
+
+        Assertions.assertThatThrownBy(() ->
+                exercisePictureService.getAllImagesFromExercise(testMemberId,testExerciseId))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.EXERCISE_NOT_FOUND);
+
+        BDDMockito.then(exercisePictureRepository).should(BDDMockito.never()).findAllByExercise_Id(testExerciseId);
+    }
+
+    @Test
+    @DisplayName("운동기록과 연계된 이미지 조회 실패 _  운동 기록이 회원의 것이 아닌 경우")
+    void getAllImagesFromExercise_NotRelatedMemberExercise(){
+        // given
+        UUID testMemberId = UUID.randomUUID();
+        Long testExerciseId = 1L;
+
+        Member member = Member.builder().memberId(testMemberId).build();
+        Exercise exercise = Exercise.builder().id(testExerciseId).member(member).build();
+
+        BDDMockito.given(exerciseRepository.findById(testExerciseId)).willReturn(Optional.of(exercise));
+
+        // 운동기록과 연관되지 않은
+        Assertions.assertThatThrownBy(() ->
+                exercisePictureService.getAllImagesFromExercise(UUID.randomUUID(), testExerciseId))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.AUTHORIZATION_DENIED);
+
+        BDDMockito.then(exerciseRepository).should(BDDMockito.times(1)).findById(testExerciseId);
+        BDDMockito.then(exercisePictureRepository).should(BDDMockito.never()).findAllByExercise_Id(testExerciseId);
+    }
+
+    @Test
+    @DisplayName("운동기록과 연계된 이미지 조회 실패 _ 운동 기록이 없는 경우 빈 리스트 발생")
+    void getAllImagesFromExercise_SucceedNoExercisePicture(){
+        // given
+        UUID testMemberId = UUID.randomUUID();
+        Long testExerciseId = 1L;
+
+        Member member = Member.builder().memberId(testMemberId).build();
+        Exercise exercise = Exercise.builder().id(testExerciseId).member(member).build();
+
+        BDDMockito.given(exerciseRepository.findById(testExerciseId)).willReturn(Optional.of(exercise));
+        // 빈 리스트 반환
+        BDDMockito.given(exercisePictureRepository.findAllByExercise_Id(testExerciseId)).willReturn(Collections.emptyList());
+
+        // when
+        List<Long> testPictureIds = exercisePictureService.getAllImagesFromExercise(testMemberId,testExerciseId);
+
+        // then
+        Assertions.assertThat(testPictureIds).isNotNull();
+        Assertions.assertThat(testPictureIds).isEmpty();
+
+        BDDMockito.then(exerciseRepository).should(BDDMockito.times(1)).findById(testExerciseId);
+        BDDMockito.then(exercisePictureRepository).should(BDDMockito.times(1)).findAllByExercise_Id(testExerciseId);
+
     }
 }

@@ -448,13 +448,13 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         List<Long> pictureIds = List.of(1L, 2L, 3L);
         UUID testMemberID = UUID.randomUUID();
 
-        String[] pictureIdsToStringArr = pictureIds.stream().map(String::valueOf).toArray(String[]::new);
+        String[] queryParamPictureIdArr = pictureIds.stream().map(String::valueOf).toArray(String[]::new);
 
         // void 니까 willDoNothing()
         BDDMockito.willDoNothing().given(exerciseCommandService).deleteImages(testExerciseId, pictureIds);
 
         this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}/pictures", testExerciseId)
-                        .queryParam("pictureIds", pictureIdsToStringArr)
+                        .queryParam("pictureIds", queryParamPictureIdArr)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .headers(getCommonApiHeaders(testMemberID)))
@@ -483,11 +483,11 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         long invalidExerciseId = -1L;
         List<Long> pictureIds = List.of(1L, 2L, 3L);
         UUID testMemberID = UUID.randomUUID();
-        String[] pictureIdsToStringArr = pictureIds.stream().map(String::valueOf).toArray(String[]::new);
+        String[] queryParamPictureIdArr = pictureIds.stream().map(String::valueOf).toArray(String[]::new);
 
         // when & then
         this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}/pictures", invalidExerciseId)
-                        .queryParam("pictureIds", pictureIdsToStringArr)
+                        .queryParam("pictureIds", queryParamPictureIdArr)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .headers(getCommonApiHeaders(testMemberID)))
@@ -527,14 +527,14 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         Long testExerciseId = 1L;
         List<Long> pictureIds = List.of(1L, 2L, 3L);
         UUID testMemberID = UUID.randomUUID();
-        String[] pictureIdsToStringArr = pictureIds.stream().map(String::valueOf).toArray(String[]::new);
+        String[] queryParamPictureIdArr = pictureIds.stream().map(String::valueOf).toArray(String[]::new);
 
         BDDMockito.willThrow(new CustomException(ErrorCode.AUTHORIZATION_DENIED))
                 .given(exerciseCommandService).deleteImages(testExerciseId, pictureIds);
 
         // when & then
         this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}/pictures", testExerciseId)
-                        .queryParam("pictureIds", pictureIdsToStringArr)
+                        .queryParam("pictureIds", queryParamPictureIdArr)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .headers(getCommonApiHeaders(testMemberID)))
@@ -553,14 +553,14 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         Long testExerciseId = 1L;
         List<Long> pictureIds = List.of(1L, 2L, 3L);
         UUID testMemberID = UUID.randomUUID(); // 이 ID로 사용자를 찾을 수 없다고 가정
-        String[] pictureIdsToStringArr = pictureIds.stream().map(String::valueOf).toArray(String[]::new);
+        String[] queryParamPictureIdArr = pictureIds.stream().map(String::valueOf).toArray(String[]::new);
 
         BDDMockito.willThrow(new CustomException(ErrorCode.MEMBER_NOT_FOUND))
                 .given(exerciseCommandService).deleteImages(testExerciseId, pictureIds);
 
         // when & then
         this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}/pictures", testExerciseId)
-                        .queryParam("pictureIds", pictureIdsToStringArr)
+                        .queryParam("pictureIds", queryParamPictureIdArr)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .headers(getCommonApiHeaders(testMemberID))) // UserContextHolder가 이 ID를 사용한다고 가정
