@@ -22,3 +22,5 @@ include::exercise/upload-pictures.adoc[]
 include::exercise/update-exercise.adoc[]
 
 include::exercise/delete-exercise-images.adoc[]
+
+include::exercise/delete-exercise.adoc[]
