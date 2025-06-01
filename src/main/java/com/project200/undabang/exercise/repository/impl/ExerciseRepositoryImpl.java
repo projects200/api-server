@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Exercise 엔티티에 대한 QueryDSL 기반 커스텀 레포지토리 구현체입니다.
@@ -27,13 +28,15 @@ import java.util.*;
  */
 public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements ExerciseRepositoryCustom {
     private final JPAQueryFactory queryFactory;
+
     /**
      * QueryDSL 쿼리 팩토리를 주입받는 생성자입니다.
      */
-    public ExerciseRepositoryImpl(JPAQueryFactory queryFactory){
+    public ExerciseRepositoryImpl(JPAQueryFactory queryFactory) {
         super(Exercise.class);
         this.queryFactory = queryFactory;
     }
+
     /**
      * 특정 회원이 소유한 운동 기록이 존재하는지 확인합니다.
      */
@@ -52,6 +55,7 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
 
         return fetchOne != null;
     }
+
     /**
      * 특정 회원의 특정 운동 기록 상세 정보를 조회합니다.
      * 운동 기본 정보는 join을 통해 한 번에 조회하고, 관련 이미지 URL은 별도 쿼리로 조회합니다.
@@ -77,7 +81,7 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
                 .orderBy(exercise.id.asc())
                 .fetchOne();
 
-        if(respDto != null){
+        if (respDto != null) {
             List<PictureDataResponse> urlList = queryFactory
                     .select(Projections.fields(PictureDataResponse.class,
                             picture.id.as("pictureId"),
@@ -95,14 +99,14 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
 
         return respDto;
     }
+
     /**
      * 특정 회원의 특정 날짜에 해당하는 운동 기록을 조회합니다.
      * 해당 날짜의 자정(00:00:00)부터 다음 날 자정 직전까지의 운동 기록을 검색합니다.
-     *
      * 썸네일이 없을수도 있으니 LeftJoin을 사용하였습니다.
      */
     @Override
-    public Optional<List<FindExerciseRecordDateResponseDto>> findExerciseRecordByDate(UUID memberId, LocalDate date) {
+    public List<FindExerciseRecordDateResponseDto> findExerciseRecordByDate(UUID memberId, LocalDate date) {
         QExercise exercise = QExercise.exercise;
         QExercisePicture exercisePicture = QExercisePicture.exercisePicture;
         QPicture picture = QPicture.picture;
@@ -110,30 +114,64 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
         LocalDateTime startDate = date.atStartOfDay();
         LocalDateTime endDate = startDate.plusDays(1);
 
-        List<FindExerciseRecordDateResponseDto> respDtoList = queryFactory
-                .select(Projections.fields(FindExerciseRecordDateResponseDto.class,
-                        exercise.id.as("exerciseId"),
+        // 특정 날짜의 멤버id 기준으로 운동정보 조회
+        List<Tuple> exercises = queryFactory
+                .select(exercise.id,
                         exercise.exerciseTitle,
                         exercise.exercisePersonalType,
                         exercise.exerciseStartedAt,
-                        exercise.exerciseEndedAt,
-                        picture.pictureUrl.as("pictureUrl")))
-                .from(exercise).leftJoin(exercisePicture).on(exercisePicture.exercise.eq(exercise))
-                .leftJoin(picture).on(exercisePicture.picture.eq(picture)
-                        .and(picture.pictureDeletedAt.isNull()))
+                        exercise.exerciseEndedAt)
+                .from(exercise)
                 .where(
                         exercise.member.memberId.eq(memberId),
                         exercise.exerciseStartedAt.goe(startDate).and(exercise.exerciseStartedAt.lt(endDate)),
-                        exercise.exerciseDeletedAt.isNull())
-                .distinct() // 현재 대표사진이 없으므로 일단 distinct() 적용, 랜덤으로 1장의 사진 적용
+                        exercise.exerciseDeletedAt.isNull()
+                )
+                .orderBy(exercise.exerciseStartedAt.asc())
                 .fetch();
 
-
-        if(respDtoList.isEmpty()){
-            return Optional.empty();
-        }else{
-            return Optional.of(respDtoList);
+        if(exercises.isEmpty()){
+            return Collections.emptyList();
         }
+
+        List<Long> exerciseIds = exercises.stream()
+                .map(tuple -> tuple.get(exercise.id))
+                .collect(Collectors.toList());
+
+        // 조회된 운동 ID 들에 해당하는 사진 URL들을 조회하여 MAP으로 그룹화
+        Map<Long, List<String>> picturesMap = Collections.emptyMap();
+        if (!exerciseIds.isEmpty()) {
+            picturesMap = queryFactory
+                    .select(exercisePicture.exercise.id, picture.pictureUrl)
+                    .from(exercisePicture)
+                    .join(exercisePicture.picture, picture)
+                    .where(exercisePicture.exercise.id.in(exerciseIds)
+                            .and(picture.pictureDeletedAt.isNull()))
+                    .orderBy(picture.id.asc()) // 사진 ID 순으로 정렬 (선택 사항)
+                    .stream()
+                    .collect(Collectors.groupingBy(
+                            t -> t.get(exercisePicture.exercise.id),
+                            Collectors.mapping(t -> t.get(picture.pictureUrl), Collectors.toList())
+                    ));
+        }
+
+        // 운동정보와 사진 url 목록을 조합하여 DTO 생성
+        List<FindExerciseRecordDateResponseDto> responseDtoList = new ArrayList<>();
+        for (Tuple exTuple : exercises) {
+            Long currentExerciseId = exTuple.get(exercise.id);
+            List<String> urlList = picturesMap.getOrDefault(currentExerciseId, Collections.emptyList());
+
+            responseDtoList.add(new FindExerciseRecordDateResponseDto(
+                    currentExerciseId,
+                    exTuple.get(exercise.exerciseTitle),
+                    exTuple.get(exercise.exercisePersonalType),
+                    exTuple.get(exercise.exerciseStartedAt),
+                    exTuple.get(exercise.exerciseEndedAt),
+                    urlList
+            ));
+        }
+
+        return responseDtoList;
     }
 
     /**
@@ -186,9 +224,9 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
             dto.setDate(localDate);
             dto.setExerciseCount(dateMap.get(localDate));
 
-            if(dateMap.containsKey(localDate)){
+            if (dateMap.containsKey(localDate)) {
                 responseDtoList.add(dto);
-            }else{
+            } else {
                 responseDtoList.add(new FindExerciseRecordByPeriodResponseDto(localDate, 0L));
             }
         }
