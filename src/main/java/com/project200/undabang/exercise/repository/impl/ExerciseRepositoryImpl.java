@@ -102,8 +102,22 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
 
     /**
      * 특정 회원의 특정 날짜에 해당하는 운동 기록을 조회합니다.
-     * 해당 날짜의 자정(00:00:00)부터 다음 날 자정 직전까지의 운동 기록을 검색합니다.
-     * 썸네일이 없을수도 있으니 LeftJoin을 사용하였습니다.
+     *
+     * <p>이 메서드는 다음과 같은 단계로 동작합니다:</p>
+     * <ol>
+     *   <li>주어진 날짜의 00:00:00부터 다음 날 00:00:00 직전까지의 시간 범위를 설정</li>
+     *   <li>해당 시간 범위 내에 시작된 운동 기록 데이터를 조회</li>
+     *   <li>조회된 운동 ID에 해당하는 사진 URL 정보를 별도 쿼리로 조회</li>
+     *   <li>두 결과를 결합하여 최종 응답 DTO 생성</li>
+     * </ol>
+     *
+     * <p>사진이 없는 운동 기록의 경우 빈 리스트가 포함됩니다.</p>
+     * <p>조회 결과는 운동 시작 시간 기준으로 오름차순 정렬됩니다.</p>
+     *
+     * @param memberId 조회할 회원의 고유 식별자 UUID
+     * @param date 조회할 날짜 (해당 날짜의 모든 운동 기록이 반환됨)
+     * @return 해당 날짜의 운동 기록과 관련 사진 URL을 포함한 응답 DTO 리스트.
+     *         조회 결과가 없을 경우 빈 리스트 반환.
      */
     @Override
     public List<FindExerciseRecordDateResponseDto> findExerciseRecordByDate(UUID memberId, LocalDate date) {
