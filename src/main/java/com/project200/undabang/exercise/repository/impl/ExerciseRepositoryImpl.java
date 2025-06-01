@@ -144,10 +144,12 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
                 .orderBy(exercise.exerciseStartedAt.asc())
                 .fetch();
 
+        // 운동기록이 없는경우 빈 리스트 반환
         if(exercises.isEmpty()){
             return Collections.emptyList();
         }
 
+        // 운동 ID 추출
         List<Long> exerciseIds = exercises.stream()
                 .map(tuple -> tuple.get(exercise.id))
                 .collect(Collectors.toList());
@@ -159,28 +161,28 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
                     .select(exercisePicture.exercise.id, picture.pictureUrl)
                     .from(exercisePicture)
                     .join(exercisePicture.picture, picture)
-                    .where(exercisePicture.exercise.id.in(exerciseIds)
+                    .where(exercisePicture.exercise.id.in(exerciseIds) // in 절을 사용해서 여러 운동 Id에 대한 사진 한번에 조회
                             .and(picture.pictureDeletedAt.isNull()))
                     .orderBy(picture.id.asc()) // 사진 ID 순으로 정렬 (선택 사항)
                     .stream()
                     .collect(Collectors.groupingBy(
-                            t -> t.get(exercisePicture.exercise.id),
+                            tuple -> tuple.get(exercisePicture.exercise.id),
                             Collectors.mapping(t -> t.get(picture.pictureUrl), Collectors.toList())
                     ));
         }
 
         // 운동정보와 사진 url 목록을 조합하여 DTO 생성
         List<FindExerciseRecordDateResponseDto> responseDtoList = new ArrayList<>();
-        for (Tuple exTuple : exercises) {
-            Long currentExerciseId = exTuple.get(exercise.id);
+        for (Tuple tuple : exercises) {
+            Long currentExerciseId = tuple.get(exercise.id);
             List<String> urlList = picturesMap.getOrDefault(currentExerciseId, Collections.emptyList());
 
             responseDtoList.add(new FindExerciseRecordDateResponseDto(
                     currentExerciseId,
-                    exTuple.get(exercise.exerciseTitle),
-                    exTuple.get(exercise.exercisePersonalType),
-                    exTuple.get(exercise.exerciseStartedAt),
-                    exTuple.get(exercise.exerciseEndedAt),
+                    tuple.get(exercise.exerciseTitle),
+                    tuple.get(exercise.exercisePersonalType),
+                    tuple.get(exercise.exerciseStartedAt),
+                    tuple.get(exercise.exerciseEndedAt),
                     urlList
             ));
         }
