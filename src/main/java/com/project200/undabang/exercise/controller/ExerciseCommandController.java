@@ -24,7 +24,7 @@ import java.util.List;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/")
+@RequestMapping("/api")
 public class ExerciseCommandController {
     private final ExerciseCommandService exerciseCommandService;
 
@@ -34,7 +34,7 @@ public class ExerciseCommandController {
      * @param requestDto 운동 기록 생성 요청 DTO
      * @return 생성된 운동 기록 ID를 포함하는 응답
      */
-    @PostMapping(path = "exercises")
+    @PostMapping(path = "/v1/exercises")
     public ResponseEntity<CommonResponse<ExerciseIdResponseDto>> createExercise(@Valid @RequestBody CreateExerciseRequestDto requestDto) {
         ExerciseIdResponseDto responseData = exerciseCommandService.createExercise(requestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(responseData));
@@ -47,7 +47,7 @@ public class ExerciseCommandController {
      * @param exercisePictureList 업로드할 이미지 파일 목록
      * @return 이미지가 업로드된 운동 기록 ID를 포함하는 응답
      */
-    @PostMapping(path = "exercises/{exerciseId}/pictures", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(path = "/v1/exercises/{exerciseId}/pictures", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CommonResponse<ExerciseIdResponseDto>> uploadExerciseImages(
             @PathVariable @Positive(message = "올바른 Exercise ID를 입력해주세요") Long exerciseId,
             @Size(max = 5, message = "최대 5개의 파일만 업로드할 수 있습니다.")
@@ -64,7 +64,7 @@ public class ExerciseCommandController {
      * @param requestDto 운동 기록 수정 요청 DTO
      * @return 수정된 운동 기록 ID를 포함하는 응답
      */
-    @PatchMapping(path = "exercises/{exerciseId}")
+    @PatchMapping(path = "/v1/exercises/{exerciseId}")
     public ResponseEntity<CommonResponse<ExerciseIdResponseDto>> updateExercise(
             @PathVariable @Positive(message = "올바른 Exercise ID를 입력해주세요") Long exerciseId,
             @Valid @RequestBody UpdateExerciseRequestDto requestDto) {
@@ -79,7 +79,7 @@ public class ExerciseCommandController {
      * @param pictureIds 삭제할 이미지 ID 목록
      * @return 성공 응답
      */
-    @DeleteMapping(path = "exercises/{exerciseId}/pictures")
+    @DeleteMapping(path = "/v1/exercises/{exerciseId}/pictures")
     public ResponseEntity<CommonResponse<Void>> deleteExerciseImages(
             @PathVariable @Positive(message = "올바른 Exercise ID를 입력해주세요") Long exerciseId,
             @RequestParam("pictureIds") List<Long> pictureIds) {
@@ -93,7 +93,7 @@ public class ExerciseCommandController {
      * @param exerciseId 삭제할 운동 기록 ID
      * @return 성공 응답
      */
-    @DeleteMapping(path = "exercises/{exerciseId}")
+    @DeleteMapping(path = "/v1/exercises/{exerciseId}")
     public ResponseEntity<CommonResponse<Void>> deleteExercise(
             @PathVariable @Positive(message = "올바른 Exercise ID를 입력해주세요") Long exerciseId) {
         exerciseCommandService.deleteExercise(exerciseId);

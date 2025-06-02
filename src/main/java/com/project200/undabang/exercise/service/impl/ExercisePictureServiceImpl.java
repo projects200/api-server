@@ -95,7 +95,7 @@ public class ExercisePictureServiceImpl implements ExercisePictureService {
     @Override
     @Transactional
     public void deleteExercisePictures(UUID memberId, Long exerciseId, List<Long> deletePictureIdList) {
-        checkMemberExerciseId(memberId, exerciseId, deletePictureIdList);
+        validateExerciseOwnerAndPictureExistence(memberId, exerciseId, deletePictureIdList);
 
         List<ExercisePicture> exercisePictureList = exercisePictureRepository.findAllById(deletePictureIdList);
         List<Picture> pictureListForDelete = new ArrayList<>();
@@ -213,7 +213,7 @@ public class ExercisePictureServiceImpl implements ExercisePictureService {
         throw new CustomException(ErrorCode.EXERCISE_PICTURE_UPLOAD_FAILED);
     }
 
-    private void checkMemberExerciseId(UUID memberId, Long exerciseId, List<Long> pictureIdDeleteList) {
+    private void validateExerciseOwnerAndPictureExistence(UUID memberId, Long exerciseId, List<Long> pictureIdDeleteList) {
         if (!exerciseRepository.existsByRecordIdAndMemberId(memberId, exerciseId)) {
             throw new CustomException(ErrorCode.AUTHORIZATION_DENIED);
         }

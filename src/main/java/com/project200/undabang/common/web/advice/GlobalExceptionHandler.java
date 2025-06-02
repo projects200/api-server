@@ -227,15 +227,21 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(MissingServletRequestParameterException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    protected ResponseEntity<CommonResponse<Void>> handleMissingServletRequestParameterException(
+    protected ResponseEntity<CommonResponse<Map<String, String>>> handleMissingServletRequestParameterException(
             MissingServletRequestParameterException ex) {
         log.warn("필수 파라미터 누락: {}", ex.getMessage());
         ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE; // 또는 ErrorCode.REQUIRED_PARAMETER_MISSING 와 같이 더 구체적인 코드 사용 가능
 
-        CommonResponse<Void> response = CommonResponse.<Void>error(errorCode)
-                .message("필수 파라미터를 입력해주세요.")
+        Map<String, String> errors = new HashMap<>();
+        errors.put(ex.getParameterName(), "필수 파라미터가 누락되었습니다");
+
+        String customMessage = "필수 파라미터를 입력해주세요";
+
+        CommonResponse<Map<String, String>> response = CommonResponse.<Map<String,String>>error(errorCode)
+                .message(customMessage)
+                .data(errors)
                 .build();
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
 
     /**
