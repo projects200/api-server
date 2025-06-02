@@ -338,13 +338,13 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
                                 fieldWithPath("message").type(JsonFieldType.STRING).description("응답 메시지"),
-                                fieldWithPath("data").type(JsonFieldType.NULL).description("운동 기록 목록")
+                                fieldWithPath("data").type(JsonFieldType.ARRAY).description("운동 기록 목록")
                         )
                 ))
                 .andReturn().getResponse().getContentAsString();
 
         //then
-        CommonResponse<List<FindExerciseRecordDateResponseDto>> expectedData = CommonResponse.success();
+        CommonResponse<List<FindExerciseRecordDateResponseDto>> expectedData = CommonResponse.success(Collections.emptyList());
         String expected = objectMapper.writeValueAsString(expectedData);
         Assertions.assertEquals(response, expected);
     }

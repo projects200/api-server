@@ -5,7 +5,6 @@ import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodR
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordDateResponseDto;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseDto;
 import com.project200.undabang.exercise.dto.response.PictureDataResponse;
-import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.exercise.entity.QExercise;
 import com.project200.undabang.exercise.entity.QExercisePicture;
 import com.project200.undabang.exercise.repository.ExerciseRepositoryCustom;
@@ -14,7 +13,6 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberPath;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,14 +24,13 @@ import java.util.stream.Collectors;
  * Exercise 엔티티에 대한 QueryDSL 기반 커스텀 레포지토리 구현체입니다.
  * 운동 기록 조회와 관련된 복잡한 쿼리를 처리합니다.
  */
-public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements ExerciseRepositoryCustom {
+public class ExerciseRepositoryImpl implements ExerciseRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     /**
      * QueryDSL 쿼리 팩토리를 주입받는 생성자입니다.
      */
     public ExerciseRepositoryImpl(JPAQueryFactory queryFactory) {
-        super(Exercise.class);
         this.queryFactory = queryFactory;
     }
 
@@ -115,9 +112,9 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
      * <p>조회 결과는 운동 시작 시간 기준으로 오름차순 정렬됩니다.</p>
      *
      * @param memberId 조회할 회원의 고유 식별자 UUID
-     * @param date 조회할 날짜 (해당 날짜의 모든 운동 기록이 반환됨)
+     * @param date     조회할 날짜 (해당 날짜의 모든 운동 기록이 반환됨)
      * @return 해당 날짜의 운동 기록과 관련 사진 URL을 포함한 응답 DTO 리스트.
-     *         조회 결과가 없을 경우 빈 리스트 반환.
+     * 조회 결과가 없을 경우 빈 리스트 반환.
      */
     @Override
     public List<FindExerciseRecordDateResponseDto> findExerciseRecordByDate(UUID memberId, LocalDate date) {
@@ -125,27 +122,11 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
         QExercisePicture exercisePicture = QExercisePicture.exercisePicture;
         QPicture picture = QPicture.picture;
 
-        LocalDateTime startDate = date.atStartOfDay();
-        LocalDateTime endDate = startDate.plusDays(1);
-
         // 특정 날짜의 멤버id 기준으로 운동정보 조회
-        List<Tuple> exercises = queryFactory
-                .select(exercise.id,
-                        exercise.exerciseTitle,
-                        exercise.exercisePersonalType,
-                        exercise.exerciseStartedAt,
-                        exercise.exerciseEndedAt)
-                .from(exercise)
-                .where(
-                        exercise.member.memberId.eq(memberId),
-                        exercise.exerciseStartedAt.goe(startDate).and(exercise.exerciseStartedAt.lt(endDate)),
-                        exercise.exerciseDeletedAt.isNull()
-                )
-                .orderBy(exercise.exerciseStartedAt.asc())
-                .fetch();
+        List<Tuple> exercises = findExercisesByMemberIdAndDate(exercise, memberId, date);
 
         // 운동기록이 없는경우 빈 리스트 반환
-        if(exercises.isEmpty()){
+        if (exercises.isEmpty()) {
             return Collections.emptyList();
         }
 
@@ -157,21 +138,19 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
         // 조회된 운동 ID 들에 해당하는 사진 URL들을 조회하여 MAP으로 그룹화
         Map<Long, List<String>> picturesMap = Collections.emptyMap();
         if (!exerciseIds.isEmpty()) {
-            picturesMap = queryFactory
-                    .select(exercisePicture.exercise.id, picture.pictureUrl)
-                    .from(exercisePicture)
-                    .join(exercisePicture.picture, picture)
-                    .where(exercisePicture.exercise.id.in(exerciseIds) // in 절을 사용해서 여러 운동 Id에 대한 사진 한번에 조회
-                            .and(picture.pictureDeletedAt.isNull()))
-                    .orderBy(picture.id.asc()) // 사진 ID 순으로 정렬 (선택 사항)
-                    .stream()
-                    .collect(Collectors.groupingBy(
-                            tuple -> tuple.get(exercisePicture.exercise.id),
-                            Collectors.mapping(t -> t.get(picture.pictureUrl), Collectors.toList())
-                    ));
+            picturesMap = findPictureUrlsByExerciseId(exercisePicture, picture, exerciseIds);
         }
 
-        // 운동정보와 사진 url 목록을 조합하여 DTO 생성
+        // 운동정보와 사진 url 목록을 조합하여 DTO 생성 후 반환
+        return createExerciseResponseDtoList(exercises, exercise, picturesMap);
+    }
+
+    /**
+     * 운동 기록 데이터와 사진 URL 목록을 조합하여 응답 DTO 리스트를 생성합니다.
+     * QueryDSL 조회 결과인 Tuple 목록과 사진 URL 맵을 입력받아
+     * 클라이언트에 반환될 최종 응답 DTO 리스트를 생성합니다.
+     */
+    private List<FindExerciseRecordDateResponseDto> createExerciseResponseDtoList(List<Tuple> exercises, QExercise exercise, Map<Long, List<String>> picturesMap){
         List<FindExerciseRecordDateResponseDto> responseDtoList = new ArrayList<>();
         for (Tuple tuple : exercises) {
             Long currentExerciseId = tuple.get(exercise.id);
@@ -188,6 +167,52 @@ public class ExerciseRepositoryImpl extends QuerydslRepositorySupport implements
         }
 
         return responseDtoList;
+    }
+
+    /**
+     * 특정 회원의 특정 날짜 범위에 해당하는 운동 정보를 조회합니다.
+     * 회원 ID와 시작/종료 날짜를 기준으로 운동 기록을 조회합니다.
+     * 조회 결과는 운동 시작 시간 기준으로 오름차순 정렬됩니다.
+     */
+    private List<Tuple> findExercisesByMemberIdAndDate(QExercise exercise, UUID memberId, LocalDate date) {
+        LocalDateTime startDate = date.atStartOfDay();
+        LocalDateTime endDate = startDate.plusDays(1);
+
+        return queryFactory
+                .select(exercise.id,
+                        exercise.exerciseTitle,
+                        exercise.exercisePersonalType,
+                        exercise.exerciseStartedAt,
+                        exercise.exerciseEndedAt)
+                .from(exercise)
+                .where(
+                        exercise.member.memberId.eq(memberId),
+                        exercise.exerciseStartedAt.goe(startDate).and(exercise.exerciseStartedAt.lt(endDate)),
+                        exercise.exerciseDeletedAt.isNull()
+                )
+                .orderBy(exercise.exerciseStartedAt.asc())
+                .fetch();
+    }
+
+    /**
+     * 운동 ID 목록에 연결된 사진 URL 정보를 조회합니다.
+     * 여러 운동 ID에 대한 사진 정보를 한 번의 쿼리로 조회하여
+     * 운동 ID를 키로 하는 Map으로 그룹화하여 반환합니다.
+     * 결과는 사진 ID 기준으로 오름차순 정렬됩니다.
+     */
+    private Map<Long, List<String>> findPictureUrlsByExerciseId(QExercisePicture exercisePicture, QPicture picture, List<Long> exerciseIds) {
+        return queryFactory
+                .select(exercisePicture.exercise.id, picture.pictureUrl)
+                .from(exercisePicture)
+                .join(exercisePicture.picture, picture)
+                .where(exercisePicture.exercise.id.in(exerciseIds) // in 절을 사용해서 여러 운동 Id에 대한 사진 한번에 조회
+                        .and(picture.pictureDeletedAt.isNull()))
+                .orderBy(picture.id.asc()) // 사진 ID 순으로 정렬 (선택 사항)
+                .stream()
+                .collect(Collectors.groupingBy(
+                        tuple -> tuple.get(exercisePicture.exercise.id),
+                        Collectors.mapping(t -> t.get(picture.pictureUrl), Collectors.toList())
+                ));
     }
 
     /**
