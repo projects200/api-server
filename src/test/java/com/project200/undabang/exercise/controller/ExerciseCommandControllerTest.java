@@ -1,6 +1,8 @@
 package com.project200.undabang.exercise.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.project200.undabang.common.web.exception.CustomException;
+import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
 import com.project200.undabang.configuration.RestDocsUtils;
@@ -34,6 +36,7 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static com.project200.undabang.configuration.DocumentFormatGenerator.getTypeFormat;
@@ -381,7 +384,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
 
     @Test
     @DisplayName("운동 기록 수정 - 실패 (요청 DTO 유효성 위반 - 제목 공백)")
-    void exerciseUpdate_validateFailed_BlankTitle() throws Exception{
+    void exerciseUpdate_validateFailed_BlankTitle() throws Exception {
         // given
         long exerciseId = 1L;
         UUID testMemberId = UUID.randomUUID();
@@ -410,7 +413,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
 
     @Test
     @DisplayName("운동 기록 수정 - 실패 (요청 DTO 유효성 위반 - 시작 시간이 종료 시간 이후)")
-    void exerciseUpdate_validateFailed_InvalidStartEndTime() throws Exception{
+    void exerciseUpdate_validateFailed_InvalidStartEndTime() throws Exception {
         // given
         long exerciseId = 1L;
         UUID testMemberId = UUID.randomUUID();
@@ -435,5 +438,271 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
 
         BDDMockito.then(exerciseCommandService).should(BDDMockito.never())
                 .updateExercise(BDDMockito.anyLong(), BDDMockito.any(UpdateExerciseRequestDto.class));
+    }
+
+    @Test
+    @DisplayName("운동기록 이미지 삭제 성공 케이스")
+    void deleteExerciseImages() throws Exception {
+        // given
+        Long testExerciseId = 1L;
+        List<Long> pictureIds = List.of(1L, 2L, 3L);
+        UUID testMemberID = UUID.randomUUID();
+
+        String[] queryParamPictureIdArr = pictureIds.stream().map(String::valueOf).toArray(String[]::new);
+
+        // void 니까 willDoNothing()
+        BDDMockito.willDoNothing().given(exerciseCommandService).deleteImages(testExerciseId, pictureIds);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}/pictures", testExerciseId)
+                        .queryParam("pictureIds", queryParamPictureIdArr)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(getCommonApiHeaders(testMemberID)))
+                .andExpect(status().isOk())
+                .andDo(this.document.document(
+                        pathParameters(
+                                parameterWithName("exerciseId").attributes(getTypeFormat(JsonFieldType.NUMBER))
+                                        .description("운동 ID입니다. 수정할 운동 기록 ID를 입력하시면 됩니다.")
+                        ),
+                        queryParameters(
+                                parameterWithName("pictureIds").attributes(getTypeFormat(JsonFieldType.STRING))
+                                        .description("사진 ID 리스트 입니다. 삭제할 사진 ID 리스트를 입력하시면 됩니다.")
+                        ),
+                        requestHeaders(RestDocsUtils.HEADER_ACCESS_TOKEN),
+                        responseFields(RestDocsUtils.commonResponseFieldsOnly())
+                ))
+                .andReturn().getResponse().getContentAsString();
+
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteImages(testExerciseId, pictureIds);
+    }
+
+    @Test
+    @DisplayName("운동기록 이미지 삭제 - 실패 (exerciseId 음수)")
+    void deleteExerciseImages_Fail_NegativeExerciseId() throws Exception {
+        // given
+        long invalidExerciseId = -1L;
+        List<Long> pictureIds = List.of(1L, 2L, 3L);
+        UUID testMemberID = UUID.randomUUID();
+        String[] queryParamPictureIdArr = pictureIds.stream().map(String::valueOf).toArray(String[]::new);
+
+        // when & then
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}/pictures", invalidExerciseId)
+                        .queryParam("pictureIds", queryParamPictureIdArr)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(getCommonApiHeaders(testMemberID)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("succeed").value(false))
+                .andExpect(jsonPath("message").value("요청 파라미터 유효성 검증에 실패했습니다."));
+
+
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.never()).deleteImages(BDDMockito.anyLong(), BDDMockito.anyList());
+    }
+
+    @Test
+    @DisplayName("운동기록 이미지 삭제 - 실패 (pictureIds 파라미터 누락)")
+    void deleteExerciseImages_Fail_MissingPictureIds() throws Exception {
+        // given
+        Long testExerciseId = 1L;
+        UUID testMemberID = UUID.randomUUID();
+
+        // when & then
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}/pictures", testExerciseId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(getCommonApiHeaders(testMemberID)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("succeed").value(false))
+                .andExpect(jsonPath("code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
+                .andExpect(jsonPath("message").value("필수 파라미터를 입력해주세요."));
+
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.never()).deleteImages(BDDMockito.anyLong(), BDDMockito.anyList());
+    }
+
+
+    @Test
+    @DisplayName("운동기록 이미지 삭제 - 실패 (권한 없음)")
+    void deleteExerciseImages_Fail_AuthorizationDenied() throws Exception {
+        // given
+        Long testExerciseId = 1L;
+        List<Long> pictureIds = List.of(1L, 2L, 3L);
+        UUID testMemberID = UUID.randomUUID();
+        String[] queryParamPictureIdArr = pictureIds.stream().map(String::valueOf).toArray(String[]::new);
+
+        BDDMockito.willThrow(new CustomException(ErrorCode.AUTHORIZATION_DENIED))
+                .given(exerciseCommandService).deleteImages(testExerciseId, pictureIds);
+
+        // when & then
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}/pictures", testExerciseId)
+                        .queryParam("pictureIds", queryParamPictureIdArr)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(getCommonApiHeaders(testMemberID)))
+                .andExpect(status().isForbidden()) // 403
+                .andExpect(jsonPath("succeed").value(false))
+                .andExpect(jsonPath("code").value(ErrorCode.AUTHORIZATION_DENIED.getCode()))
+                .andExpect(jsonPath("message").value(ErrorCode.AUTHORIZATION_DENIED.getMessage()));
+
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteImages(testExerciseId, pictureIds);
+    }
+
+    @Test
+    @DisplayName("운동기록 이미지 삭제 - 실패 (사용자 없음)")
+    void deleteExerciseImages_Fail_MemberNotFound() throws Exception {
+        // given
+        Long testExerciseId = 1L;
+        List<Long> pictureIds = List.of(1L, 2L, 3L);
+        UUID testMemberID = UUID.randomUUID(); // 이 ID로 사용자를 찾을 수 없다고 가정
+        String[] queryParamPictureIdArr = pictureIds.stream().map(String::valueOf).toArray(String[]::new);
+
+        BDDMockito.willThrow(new CustomException(ErrorCode.MEMBER_NOT_FOUND))
+                .given(exerciseCommandService).deleteImages(testExerciseId, pictureIds);
+
+        // when & then
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}/pictures", testExerciseId)
+                        .queryParam("pictureIds", queryParamPictureIdArr)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(getCommonApiHeaders(testMemberID))) // UserContextHolder가 이 ID를 사용한다고 가정
+                .andExpect(status().isNotFound()) // 404
+                .andExpect(jsonPath("succeed").value(false))
+                .andExpect(jsonPath("code").value(ErrorCode.MEMBER_NOT_FOUND.getCode()))
+                .andExpect(jsonPath("message").value(ErrorCode.MEMBER_NOT_FOUND.getMessage()));
+
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteImages(testExerciseId, pictureIds);
+    }
+
+    @Test
+    @DisplayName("운동기록 삭제 _ 성공케이스")
+    void deleteExercise() throws Exception {
+        // given
+        Long testExerciseId = 1L;
+        UUID testMemberId = UUID.randomUUID();
+
+        BDDMockito.willDoNothing().given(exerciseCommandService).deleteExercise(testExerciseId);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}", testExerciseId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(getCommonApiHeaders(testMemberId)))
+                .andExpect(status().isOk())
+                .andDo(this.document.document(
+                        pathParameters(
+                                parameterWithName("exerciseId").attributes(getTypeFormat(JsonFieldType.NUMBER))
+                                        .description("운동 ID입니다. 운동기록 삭제시 사용 가능합니다.")
+                        ),
+                        requestHeaders(
+                                RestDocsUtils.HEADER_ACCESS_TOKEN
+                        ),
+                        responseFields(
+                                RestDocsUtils.commonResponseFieldsOnly()
+                        )
+                )).andReturn().getResponse().getContentAsString();
+
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteExercise(testExerciseId);
+    }
+
+    @Test
+    @DisplayName("운동기록 삭제실패 _ exerciseId 음수입력")
+    void deleteExerciseFailed_negativePathVariable() throws Exception {
+        Long testExerciseId = -1L;
+        UUID testMemberId = UUID.randomUUID();
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}", testExerciseId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(getCommonApiHeaders(testMemberId)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("succeed").value(false))
+                .andExpect(jsonPath("message").value("요청 파라미터 유효성 검증에 실패했습니다."))
+                .andExpect(jsonPath("code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
+                .andReturn().getResponse().getContentAsString();
+
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.never()).deleteExercise(testExerciseId);
+    }
+
+    @Test
+    @DisplayName("운동기록 삭제실패 _ 권한없는 사용자의 삭제요청")
+    void deleteExerciseFailed_AuthorizationFailed() throws Exception {
+        Long testExerciseId = 1L;
+        UUID testMemberId = UUID.randomUUID();
+
+        BDDMockito.willThrow(new CustomException(ErrorCode.AUTHORIZATION_DENIED)).given(exerciseCommandService).deleteExercise(testExerciseId);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}", testExerciseId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(getCommonApiHeaders(testMemberId)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("succeed").value(false))
+                .andExpect(jsonPath("code").value(ErrorCode.AUTHORIZATION_DENIED.getCode()))
+                .andExpect(jsonPath("message").value(ErrorCode.AUTHORIZATION_DENIED.getMessage()))
+                .andReturn().getResponse().getContentAsString();
+
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteExercise(testExerciseId);
+    }
+
+    @Test
+    @DisplayName("운동기록 삭제실패 _ 회원정보 없음")
+    void deleteExerciseFailed_NoMemberExist() throws Exception {
+        Long testExerciseId = 1L;
+        UUID testMemberId = UUID.randomUUID();
+
+        BDDMockito.willThrow(new CustomException(ErrorCode.MEMBER_NOT_FOUND)).given(exerciseCommandService).deleteExercise(testExerciseId);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}", testExerciseId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(getCommonApiHeaders(testMemberId)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("succeed").value(false))
+                .andExpect(jsonPath("code").value(ErrorCode.MEMBER_NOT_FOUND.getCode()))
+                .andExpect(jsonPath("message").value(ErrorCode.MEMBER_NOT_FOUND.getMessage()))
+                .andReturn().getResponse().getContentAsString();
+
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteExercise(testExerciseId);
+    }
+
+    @Test
+    @DisplayName("운동기록 삭제실패 _ 운동기록 없음")
+    void deleteExerciseFailed_NoExerciseRecordExist() throws Exception {
+        Long testExerciseId = 1L;
+        UUID testMemberId = UUID.randomUUID();
+
+        BDDMockito.willThrow(new CustomException(ErrorCode.EXERCISE_RECORD_NOT_FOUND)).given(exerciseCommandService).deleteExercise(testExerciseId);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}", testExerciseId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(getCommonApiHeaders(testMemberId)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("succeed").value(false))
+                .andExpect(jsonPath("code").value(ErrorCode.EXERCISE_RECORD_NOT_FOUND.getCode()))
+                .andExpect(jsonPath("message").value(ErrorCode.EXERCISE_RECORD_NOT_FOUND.getMessage()))
+                .andReturn().getResponse().getContentAsString();
+
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteExercise(testExerciseId);
+    }
+
+    @Test
+    @DisplayName("운동기록 삭제실패 _ 이미지 삭제 실패")
+    void deleteExerciseFailed_ImageDeletionFailed() throws Exception {
+        Long testExerciseId = 1L;
+        UUID testMemberId = UUID.randomUUID();
+
+        BDDMockito.willThrow(new CustomException(ErrorCode.EXERCISE_PICTURE_DELETE_FAILED))
+                .given(exerciseCommandService).deleteExercise(testExerciseId);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}", testExerciseId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .headers(getCommonApiHeaders(testMemberId)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("succeed").value(false))
+                .andExpect(jsonPath("code").value(ErrorCode.EXERCISE_PICTURE_DELETE_FAILED.getCode()))
+                .andExpect(jsonPath("message").value(ErrorCode.EXERCISE_PICTURE_DELETE_FAILED.getMessage()))
+                .andReturn().getResponse().getContentAsString();
+
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteExercise(testExerciseId);
     }
 }
