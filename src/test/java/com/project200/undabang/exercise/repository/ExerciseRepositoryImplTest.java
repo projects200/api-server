@@ -13,6 +13,7 @@ import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.enums.MemberGender;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,7 +25,6 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -52,12 +52,12 @@ class ExerciseRepositoryImplTest {
 
 
     @BeforeEach
-    void setUp(){
+    void setUp() {
         exerciseRepositoryCustom = new ExerciseRepositoryImpl(jpaQueryFactory);
 
         String testNickname = "테스트닉네임";
         MemberGender testMemberGender = MemberGender.M;
-        LocalDate memberBday = LocalDate.of(2010,1,1);
+        LocalDate memberBday = LocalDate.of(2010, 1, 1);
 
         Member member = Member.builder()
                 .memberId(testUUID)
@@ -74,8 +74,8 @@ class ExerciseRepositoryImplTest {
                 .exerciseTitle("테스트 운동 제목")
                 .exerciseDetail("테스트 운동 설명")
                 .exercisePersonalType("대충 어떤 운동 종류")
-                .exerciseStartedAt(testDate.atTime(10,0))
-                .exerciseEndedAt(testDate.atTime(11,0))
+                .exerciseStartedAt(testDate.atTime(10, 0))
+                .exerciseEndedAt(testDate.atTime(11, 0))
                 .exerciseLocation("테스트장소명")
                 .build();
 
@@ -87,8 +87,8 @@ class ExerciseRepositoryImplTest {
                 .exerciseTitle("테스트 운동 제목2")
                 .exerciseDetail("테스트 운동 설명2")
                 .exercisePersonalType("대충 어떤 운동 종류2")
-                .exerciseStartedAt(testDate.atTime(4,0))
-                .exerciseEndedAt(testDate.atTime(5,0))
+                .exerciseStartedAt(testDate.atTime(4, 0))
+                .exerciseEndedAt(testDate.atTime(5, 0))
                 .exerciseLocation("테스트장소명")
                 .build();
 
@@ -213,32 +213,36 @@ class ExerciseRepositoryImplTest {
 
     @Test
     @DisplayName("특정 날짜에 해당하는 운동기록 조회_성공")
-    void findExerciseRecordByDate_Success(){
-        Optional<List<FindExerciseRecordDateResponseDto>> optionalList = exerciseRepositoryCustom.findExerciseRecordByDate(testUUID, testDate);
+    void findExerciseRecordByDate_Success() {
+        List<FindExerciseRecordDateResponseDto> responseDtoList = exerciseRepositoryCustom.findExerciseRecordByDate(testUUID, testDate);
 
-        assertThat(optionalList).isPresent();
+        Assertions.assertThat(responseDtoList).isNotNull();
+        Assertions.assertThat(responseDtoList).isNotEmpty();
+        Assertions.assertThat(responseDtoList).hasSize(2);
 
-        List<FindExerciseRecordDateResponseDto> result = optionalList.get();
+        FindExerciseRecordDateResponseDto responseDto = responseDtoList.stream()
+                .filter(dto -> dto.getExerciseId().equals(testRecordId))
+                .findFirst()
+                .orElse(null);
 
-        //then
-        assertThat(result).isNotEmpty();
-
-        FindExerciseRecordDateResponseDto firstRecord = result.get(0);
-        assertThat(firstRecord.getExerciseId()).isEqualTo(testRecordId);
-        assertThat(firstRecord.getExerciseTitle()).isEqualTo("테스트 운동 제목");
-        assertThat(firstRecord.getExercisePersonalType()).isEqualTo("대충 어떤 운동 종류");
-        assertThat(firstRecord.getExerciseStartedAt().toLocalDate()).isEqualTo(testDate);
-        assertThat(firstRecord.getExerciseEndedAt().toLocalDate()).isEqualTo(testDate);
-        assertThat(firstRecord.getPictureUrl()).isNotNull();
+        Assertions.assertThat(responseDto).isNotNull();
+        Assertions.assertThat(responseDto.getExerciseId()).isEqualTo(testRecordId);
+        Assertions.assertThat(responseDto.getExerciseTitle()).isEqualTo("테스트 운동 제목");
+        Assertions.assertThat(responseDto.getExercisePersonalType()).isEqualTo("대충 어떤 운동 종류");
+        Assertions.assertThat(responseDto.getExerciseStartedAt().toLocalDate()).isEqualTo(testDate);
+        Assertions.assertThat(responseDto.getExerciseEndedAt().toLocalDate()).isEqualTo(testDate);
+        Assertions.assertThat(responseDto.getPictureUrl()).isNotNull();
+        Assertions.assertThat(responseDto.getPictureUrl()).hasSize(3);
+        Assertions.assertThat(responseDto.getPictureUrl()).containsExactlyInAnyOrder("https://s3-aws/test.jpg", "https://s3-aws/test2.jpg", "https://s3-aws/test3.jpg");
     }
 
     @Test
     @DisplayName("특정 날짜에 해당하는 운동 기록 없음")
-    void findExerciseRecordByDate_Failed_RecordNotExist(){
-        Optional<List<FindExerciseRecordDateResponseDto>> result = exerciseRepositoryCustom.findExerciseRecordByDate(testUUID, LocalDate.of(2011,1,1));
+    void findExerciseRecordByDate_Failed_RecordNotExist() {
+        List<FindExerciseRecordDateResponseDto> result = exerciseRepositoryCustom.findExerciseRecordByDate(testUUID, LocalDate.of(2011, 1, 1));
 
         assertThat(result).isEmpty();
-        assertThat(result.orElse(null)).isNull();
+        assertThat(result).isNotNull();
     }
 
     @Test
@@ -246,15 +250,15 @@ class ExerciseRepositoryImplTest {
     void findExerciseRecordByDate_WrongMember() {
         UUID randomUUID = UUID.randomUUID();
 
-        Optional<List<FindExerciseRecordDateResponseDto>> result = exerciseRepositoryCustom.findExerciseRecordByDate(randomUUID, testDate);
+        List<FindExerciseRecordDateResponseDto> result = exerciseRepositoryCustom.findExerciseRecordByDate(randomUUID, testDate);
 
         assertThat(result).isEmpty();
-        assertThat(result.orElse(null)).isNull();
+        assertThat(result).isNotNull();
     }
 
     @Test
     @DisplayName("특정 기간동안의 운동기록 조회_성공")
-    void findExerciseRecordsByPeriod(){
+    void findExerciseRecordsByPeriod() {
         // when
         List<FindExerciseRecordByPeriodResponseDto> result = exerciseRepositoryCustom.findExercisesByPeriod(testUUID, startDate, endDate);
 
@@ -270,11 +274,11 @@ class ExerciseRepositoryImplTest {
 
         for (FindExerciseRecordByPeriodResponseDto dto : result) {
             Long count = dto.getExerciseCount();
-            if(count > 0){
+            if (count > 0) {
                 nonZero = true;
             }
-            if(count == 0){
-               zero = true;
+            if (count == 0) {
+                zero = true;
             }
         }
 

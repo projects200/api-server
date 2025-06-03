@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -15,5 +16,5 @@ public class FindExerciseRecordDateResponseDto {
     private String exercisePersonalType;
     private LocalDateTime exerciseStartedAt;
     private LocalDateTime exerciseEndedAt;
-    private String pictureUrl;
+    private List<String> pictureUrl;
 }

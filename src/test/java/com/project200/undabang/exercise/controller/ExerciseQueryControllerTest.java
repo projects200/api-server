@@ -24,10 +24,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static com.project200.undabang.configuration.RestDocsUtils.HEADER_X_USER_ID;
 import static com.project200.undabang.configuration.RestDocsUtils.commonResponseFields;
@@ -265,7 +262,7 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
         //given
         UUID memberId = UUID.randomUUID();
         LocalDateTime testDateTime = LocalDateTime.of(2021, 1, 1, 00, 00, 00);
-        String picureUrl = "https://s3.urlpage/test/pic1.jpg";
+        List<String> picureUrl = List.of("https://s3.urlpage/test/pic1.jpg");
         Long exerciseId = 1L;
 
         List<FindExerciseRecordDateResponseDto> responseDtoList = new ArrayList<>();
@@ -280,7 +277,7 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
         responseDtoList.add(dto);
 
         //given
-        given(exerciseQueryService.findExerciseRecordByDate(testDateTime.toLocalDate())).willReturn(Optional.of(responseDtoList));
+        given(exerciseQueryService.findExerciseRecordByDate(testDateTime.toLocalDate())).willReturn(responseDtoList);
 
         //when
         HttpHeaders headers = new HttpHeaders();
@@ -304,7 +301,7 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
                                 fieldWithPath("data[].exercisePersonalType").type(JsonFieldType.STRING).description("운동 종류"),
                                 fieldWithPath("data[].exerciseStartedAt").type(JsonFieldType.STRING).description("운동 시작시간"),
                                 fieldWithPath("data[].exerciseEndedAt").type(JsonFieldType.STRING).description("운동 종료시간"),
-                                fieldWithPath("data[].pictureUrl").type(JsonFieldType.STRING).description("운동 사진 URL")
+                                fieldWithPath("data[].pictureUrl").type(JsonFieldType.ARRAY).description("운동 사진 URL 목록")
                         )
                 ))
                 .andReturn().getResponse().getContentAsString();
@@ -323,7 +320,7 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
         LocalDateTime testDateTime = LocalDateTime.of(2021, 1, 1, 00, 00, 00);
 
         //given
-        given(exerciseQueryService.findExerciseRecordByDate(testDateTime.toLocalDate())).willReturn(Optional.empty());
+        given(exerciseQueryService.findExerciseRecordByDate(testDateTime.toLocalDate())).willReturn(Collections.emptyList());
 
         //when
         HttpHeaders headers = new HttpHeaders();
@@ -341,13 +338,13 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
                                 fieldWithPath("message").type(JsonFieldType.STRING).description("응답 메시지"),
-                                fieldWithPath("data").type(JsonFieldType.NULL).description("운동 기록 목록")
+                                fieldWithPath("data").type(JsonFieldType.ARRAY).description("운동 기록 목록")
                         )
                 ))
                 .andReturn().getResponse().getContentAsString();
 
         //then
-        CommonResponse<List<FindExerciseRecordDateResponseDto>> expectedData = CommonResponse.success();
+        CommonResponse<List<FindExerciseRecordDateResponseDto>> expectedData = CommonResponse.success(Collections.emptyList());
         String expected = objectMapper.writeValueAsString(expectedData);
         Assertions.assertEquals(response, expected);
     }
