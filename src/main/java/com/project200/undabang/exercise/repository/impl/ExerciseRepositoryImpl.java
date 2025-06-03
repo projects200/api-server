@@ -265,9 +265,9 @@ public class ExerciseRepositoryImpl implements ExerciseRepositoryCustom {
             dto.setDate(localDate);
             dto.setExerciseCount(dateMap.get(localDate));
 
-            if (dateMap.containsKey(localDate)) {
+            if(dateMap.containsKey(localDate)){
                 responseDtoList.add(dto);
-            } else {
+            }else{
                 responseDtoList.add(new FindExerciseRecordByPeriodResponseDto(localDate, 0L));
             }
         }
