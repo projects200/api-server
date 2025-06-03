@@ -397,7 +397,12 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
                 .andExpect(status().isBadRequest())
                 .andDo(this.document.document(
                         requestHeaders(HEADER_X_USER_ID),
-                        responseFields(RestDocsUtils.commonResponseFieldsOnly())
+                        responseFields(
+                                fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
+                                fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
+                                fieldWithPath("message").type(JsonFieldType.STRING).description("응답 메시지"),
+                                fieldWithPath("data.date").type(JsonFieldType.STRING).description("필수 파라미터 누락 메시지")
+                        )
                 ));
 
         //then
@@ -568,7 +573,7 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
                                 fieldWithPath("message").type(JsonFieldType.STRING).description("응답 메시지"),
-                                fieldWithPath("data").type(JsonFieldType.NULL).description("운동 기록 목록")
+                                fieldWithPath("data.end").type(JsonFieldType.STRING).description("필수 파라미터 누락 메시지")
                         )
                 ));
 

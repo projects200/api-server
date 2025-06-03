@@ -514,7 +514,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("succeed").value(false))
                 .andExpect(jsonPath("code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
-                .andExpect(jsonPath("message").value("필수 파라미터를 입력해주세요."));
+                .andExpect(jsonPath("message").value("필수 파라미터를 입력해주세요"));
 
         BDDMockito.then(exerciseCommandService).should(BDDMockito.never()).deleteImages(BDDMockito.anyLong(), BDDMockito.anyList());
     }
