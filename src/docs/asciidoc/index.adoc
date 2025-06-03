@@ -19,7 +19,11 @@
 
 - 운동 이미지 업로드 API #POST# `v1/exercises/{exerciseId}/pictures`
 
+- 운동 이미지 삭제 API #DELETE# `v1/exercises/{exerciseId}/pictures`
+
 - 운동 기록 데이터 수정 API #PATCH# `v1/exercises/{exerciseId}`
+
+- 운동 기록 데이터 삭제 API #DELETE# `v1/exercises/{exerciseId}`
 
 [[overview]]
 == 개요

@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -58,7 +57,6 @@ public class ExerciseQueryServiceImpl implements ExerciseQueryService {
      * 특정 운동 기록의 상세 정보를 조회합니다.
      * 현재 인증된 사용자가 해당 운동 기록에 접근 권한이 있는지 검증합니다.
      */
-
     @Override
     public FindExerciseRecordResponseDto findExerciseRecordByRecordId(Long recordId) {
         UUID memberId = UserContextHolder.getUserId();
@@ -87,9 +85,8 @@ public class ExerciseQueryServiceImpl implements ExerciseQueryService {
     /**
      * 특정 날짜에 해당하는 운동 기록 목록을 조회합니다.
      */
-
     @Override
-    public Optional<List<FindExerciseRecordDateResponseDto>>  findExerciseRecordByDate(LocalDate inputDate) {
+    public List<FindExerciseRecordDateResponseDto>  findExerciseRecordByDate(LocalDate inputDate) {
         if(inputDate.isBefore(LocalDate.of(1945, 8, 15)) || inputDate.isAfter(LocalDate.now())){
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
         }
@@ -97,16 +94,12 @@ public class ExerciseQueryServiceImpl implements ExerciseQueryService {
         UUID memberId = UserContextHolder.getUserId();
 
         log.debug("날짜별 운동 기록 조회 요청: date={}", inputDate);
-        Optional<List<FindExerciseRecordDateResponseDto>> responseDtoList = exerciseRepository.findExerciseRecordByDate(memberId, inputDate);
-        log.debug("날짜별 운동 기록 조회 결과: date={}, count={}", inputDate, responseDtoList.map(List::size).orElse(0));
-
-        return responseDtoList;
+        return exerciseRepository.findExerciseRecordByDate(memberId, inputDate);
     }
 
     /**
      * 특정 기간 동안의 날짜별 운동 기록 개수를 조회합니다.
      */
-
     @Override
     public List<FindExerciseRecordByPeriodResponseDto> findExerciseRecordsByPeriod(LocalDate startDate, LocalDate endDate) {
         if(startDate.isBefore(LocalDate.of(1945,8,15)) || endDate.isAfter(LocalDate.now())){
@@ -117,9 +110,7 @@ public class ExerciseQueryServiceImpl implements ExerciseQueryService {
         }
 
         UUID memberId = UserContextHolder.getUserId();
-        List<FindExerciseRecordByPeriodResponseDto> responseDto = exerciseRepository.findExercisesByPeriod(memberId, startDate, endDate);
-
-        return responseDto;
+        return exerciseRepository.findExercisesByPeriod(memberId, startDate, endDate);
     }
 }
 

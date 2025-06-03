@@ -6,12 +6,11 @@ import com.project200.undabang.exercise.dto.response.FindExerciseRecordResponseD
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 public interface ExerciseQueryService {
     FindExerciseRecordResponseDto findExerciseRecordByRecordId(Long recordId);
-    Optional<List<FindExerciseRecordDateResponseDto>> findExerciseRecordByDate(LocalDate inputDate);
+    List<FindExerciseRecordDateResponseDto> findExerciseRecordByDate(LocalDate inputDate);
     List<FindExerciseRecordByPeriodResponseDto> findExerciseRecordsByPeriod(LocalDate startDate, LocalDate endDate);
     boolean checkMemberId(UUID memberId);
     boolean checkExerciseRecordId(Long recordId);

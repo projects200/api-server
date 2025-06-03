@@ -54,7 +54,7 @@ public class ExerciseCommandServiceImpl implements ExerciseCommandService {
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
     }
 
-    // 운동 기록 (문자데이터) 수정 메서드
+    // 운동 기록 (문자 데이터) 수정 메서드
     @Transactional
     @Override
     public ExerciseIdResponseDto updateExercise(Long exerciseId, UpdateExerciseRequestDto requestDto) {
@@ -114,9 +114,7 @@ public class ExerciseCommandServiceImpl implements ExerciseCommandService {
         }
     }
 
-    /**
-     * 타인의 운동기록 혹은 사진 접근시 ACCESS DENIED 반환하도록 체크
-     */
+    // 타인의 운동기록 혹은 사진 접근시 ACCESS DENIED 반환하도록 체크
     private void checkMemberIdAndExerciseId(UUID memberId, Long exerciseId) {
         if (!exerciseRepository.existsByRecordIdAndMemberId(memberId, exerciseId)) {
             throw new CustomException(ErrorCode.AUTHORIZATION_DENIED);
