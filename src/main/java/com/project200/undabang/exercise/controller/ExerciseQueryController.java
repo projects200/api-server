@@ -39,8 +39,8 @@ public class ExerciseQueryController {
      */
     @GetMapping("/v1/exercises")
     public ResponseEntity<CommonResponse<List<FindExerciseRecordDateResponseDto>>> findExerciseRecordByDate(@RequestParam(value = "date") LocalDate inputDate) {
-        List<FindExerciseRecordDateResponseDto> responseDto = exerciseQueryService.findExerciseRecordByDate(inputDate).orElse(null);
-        return responseDto != null ? ResponseEntity.ok(CommonResponse.success(responseDto)) : ResponseEntity.ok(CommonResponse.success());
+        List<FindExerciseRecordDateResponseDto> responseDto = exerciseQueryService.findExerciseRecordByDate(inputDate);
+        return ResponseEntity.ok(CommonResponse.success(responseDto));
     }
 
     /**

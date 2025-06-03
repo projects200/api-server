@@ -20,7 +20,6 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
@@ -160,19 +159,19 @@ class ExerciseQueryServiceImplTest {
         LocalDate testDate = LocalDate.of(2020,1,1);
         List<FindExerciseRecordDateResponseDto> mockedListDto = new ArrayList<>();
         mockedListDto.add(new FindExerciseRecordDateResponseDto());
-        Optional<List<FindExerciseRecordDateResponseDto>> optionalList = Optional.of(mockedListDto);
 
         try(MockedStatic<UserContextHolder> mockedStatic = mockStatic(UserContextHolder.class)){
             mockedStatic.when(UserContextHolder::getUserId).thenReturn(testUserId);
 
-            given(exerciseRepository.findExerciseRecordByDate(testUserId, testDate)).willReturn(optionalList);
+            given(exerciseRepository.findExerciseRecordByDate(testUserId, testDate)).willReturn(mockedListDto);
 
             //when
-            Optional<List<FindExerciseRecordDateResponseDto>> result = service.findExerciseRecordByDate(testDate);
+            List<FindExerciseRecordDateResponseDto> result = service.findExerciseRecordByDate(testDate);
 
             //then
-            assertTrue(result.isPresent());
-            assertEquals(1, result.get().size());
+            assertNotNull(result);
+            assertTrue(!result.isEmpty());
+            assertEquals(1, result.size());
             then(exerciseRepository).should().findExerciseRecordByDate(testUserId, testDate);
         }
     }
@@ -184,17 +183,15 @@ class ExerciseQueryServiceImplTest {
         LocalDate testDate = LocalDate.of(1900,1,1);
         List<FindExerciseRecordDateResponseDto> mockedListDto = new ArrayList<>();
         mockedListDto.add(new FindExerciseRecordDateResponseDto());
-        Optional<List<FindExerciseRecordDateResponseDto>> optionalList = Optional.of(mockedListDto);
 
         try(MockedStatic<UserContextHolder> mockedStatic = mockStatic(UserContextHolder.class)){
             mockedStatic.when(UserContextHolder::getUserId).thenReturn(testUserId);
 
-
             CustomException exception = assertThrows(CustomException.class,
                     () -> service.findExerciseRecordByDate(testDate));
+
             assertEquals(ErrorCode.INVALID_INPUT_VALUE, exception.getErrorCode());
         }
-
     }
 
     @Test
@@ -204,17 +201,14 @@ class ExerciseQueryServiceImplTest {
         LocalDate testDate = LocalDate.now().plusDays(1);
         List<FindExerciseRecordDateResponseDto> mockedListDto = new ArrayList<>();
         mockedListDto.add(new FindExerciseRecordDateResponseDto());
-        Optional<List<FindExerciseRecordDateResponseDto>> optionalList = Optional.of(mockedListDto);
 
         try(MockedStatic<UserContextHolder> mockedStatic = mockStatic(UserContextHolder.class)){
             mockedStatic.when(UserContextHolder::getUserId).thenReturn(testUserId);
-
 
             CustomException exception = assertThrows(CustomException.class,
                     () -> service.findExerciseRecordByDate(testDate));
             assertEquals(ErrorCode.INVALID_INPUT_VALUE, exception.getErrorCode());
         }
-
     }
 
     @Test
