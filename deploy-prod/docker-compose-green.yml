@@ -1,0 +1,36 @@
+version: "3.8"
+
+services:
+  server-prod-green:
+    image: "825773631552.dkr.ecr.ap-northeast-2.amazonaws.com/undabang/prod-server-repository:${IMAGE_TAG:-latest}"
+    restart: unless-stopped
+    container_name: "server-prod-green"
+    ports:
+      - "8081:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SERVER_PORT=8080
+      - DEPLOYMENT_ENV=green
+    networks:
+      - server-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/system-monitor/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "awslogs"
+      options:
+        awslogs-group: "/aws/ec2/docker/undabang"
+        awslogs-region: "ap-northeast-2"
+        awslogs-stream: "server-prod-green"
+    labels:
+      - "deployment.environment=green"
+      - "deployment.port=8081"
+      - "service.name=undabang-server"
+
+networks:
+  server-network:
+    driver: bridge
+    name: undabang-network

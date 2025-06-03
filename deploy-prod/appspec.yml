@@ -4,15 +4,46 @@ files:
   - source: /
     destination: /home/ec2-user/deploy/prod/zip/
     overwrite: yes
-
+file_exists_behavior: OVERWRITE
 permissions:
-  - object: /
-    pattern: "**"
+  - object: /home/ec2-user/deploy/prod/zip/
     owner: ec2-user
     group: ec2-user
-
+    mode: 755
+    type:
+      - directory
+  - object: /home/ec2-user/deploy/prod/zip/scripts
+    owner: ec2-user
+    group: ec2-user
+    mode: 755
+    type:
+      - directory
+  - object: /home/ec2-user/deploy/prod/zip/scripts/*
+    owner: ec2-user
+    group: ec2-user
+    mode: 755
+    type:
+      - file
+  - object: /home/ec2-user/deploy/prod/zip/docker-compose-*.yml
+    owner: ec2-user
+    group: ec2-user
+    mode: 644
+    type:
+      - file
 hooks:
-  ApplicationStart:
-    - location: deploy.sh
+  BeforeInstall:
+    - location: scripts/before_install.sh
       timeout: 60
+      runas: ec2-user
+  ApplicationStart:
+    - location: scripts/blue_green_deploy_compose.sh
+      timeout: 300
+      runas: ec2-user
+  ApplicationStop:
+    - location: scripts/stop_old_container.sh
+      timeout: 60
+      runas: ec2-user
+  ValidateService:
+    - location: scripts/health_check_compose.sh
+      timeout: 300
       runas: ec2-user
