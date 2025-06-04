@@ -19,11 +19,6 @@ echo "IMAGE_TAG :  $IMAGE_TAG"
 CURRENT_BLUE=$(docker ps --filter "name=server-prod-blue" --format "{{.Names}}" 2>/dev/null)
 CURRENT_GREEN=$(docker ps --filter "name=server-prod-green" --format "{{.Names}}" 2>/dev/null)
 
-
-# 현재 실행 중인 환경 확인
-CURRENT_BLUE=$(docker ps --filter "name=server-prod-blue" --format "{{.Names}}" 2>/dev/null)
-CURRENT_GREEN=$(docker ps --filter "name=server-prod-green" --format "{{.Names}}" 2>/dev/null)
-
 # 현재 상태 판단
 if [ ! -z "$CURRENT_BLUE" ] && [ -z "$CURRENT_GREEN" ]; then
     CURRENT_ENV="blue"

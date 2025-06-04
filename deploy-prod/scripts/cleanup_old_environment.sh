@@ -74,7 +74,7 @@ docker container prune -f
 
 # 사용하지 않는 이미지 정리 (최신 2개 태그는 유지)
 echo "Cleaning up old images (keeping latest 2 versions)..."
-docker images 825773631552.dkr.ecr.ap-northeast-2.amazonaws.com/undabang/prod-server-repository --format "table {{.Tag}}\t{{.ID}}" | tail -n +4 | awk '{print $2}' | xargs -r docker rmi 2>/dev/null || true
+docker images $ECR_REGISTRY/$ECR_REPOSITORY --format "table {{.Tag}}\t{{.ID}}" | tail -n +4 | awk '{print $2}' | xargs -r docker rmi 2>/dev/null || true
 
 # 사용하지 않는 네트워크 정리
 docker network prune -f
