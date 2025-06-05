@@ -60,28 +60,32 @@ while [ $RETRY_COUNT -lt $MAX_HEALTH_RETRIES ]; do
             # 그 다음 스크립트 호출
             /home/ec2-user/deploy/prod/zip/scripts/switch_nginx.sh $CURRENT_PORT
 
-            # 성공적인 배포 확인 후 이전 환경 정리 (Graceful shutdown)
-            echo "Cleaning up old environment..."
-
-            # 권한이 없을시 권한 부여
-            if [ ! -x "/home/ec2-user/deploy/prod/zip/scripts/cleanup_old_environment.sh" ]; then
-              sudo chmod +x /home/ec2-user/deploy/prod/zip/scripts/cleanup_old_environment.sh
-            fi
-
-            /home/ec2-user/deploy/prod/zip/scripts/cleanup_old_environment.sh $CURRENT_ENV
-
+            # 새로운 방식: 이전 환경을 정리하지 않음
+            echo "Blue-Green rotation deployment - NOT cleaning up old environment"
             echo "🎉 Blue-Green Deployment completed successfully!"
             echo "✅ Active: $CURRENT_ENV environment on port $CURRENT_PORT"
 
             # 배포 완료 로그
             echo "$(date): Deployment completed - $CURRENT_ENV:$CURRENT_PORT" >> /home/ec2-user/deploy/prod/deployment.log
 
+            # 배포 카운트 확인
+            DEPLOYMENT_COUNT=$(cat deployment_count.txt 2>/dev/null || echo "1")
+            if [ "$DEPLOYMENT_COUNT" -ge "2" ]; then
+                echo "Activating both environments as per rotation policy"
+                OTHER_ENV=$([ "$CURRENT_ENV" = "blue" ] && echo "green" || echo "blue")
+                OTHER_PORT=$([ "$CURRENT_ENV" = "blue" ] && echo "$GREEN_PORT" || echo "$BLUE_PORT")
+                OTHER_COMPOSE_FILE="docker-compose-$OTHER_ENV.yml"
+
+                echo "Starting $OTHER_ENV environment on port $OTHER_PORT"
+                docker-compose -f $OTHER_COMPOSE_FILE up -d
+            fi
+
             exit 0
         else
             echo "⚠️  Application status: $APP_STATUS (HTTP: $HTTP_STATUS)"
         fi
     else
-        echo "⏳ Health check failed - HTTP: $HTTP_STATUS, Docker: $HEALTH_STATUS ($((RETRY_COUNT + 1))/$MAX_HEALTH_RETRIES)"
+            echo "⏳ Health check failed - HTTP: $HTTP_STATUS, Docker: $HEALTH_STATUS ($((RETRY_COUNT + 1))/$MAX_HEALTH_RETRIES)"
     fi
 
     sleep 10

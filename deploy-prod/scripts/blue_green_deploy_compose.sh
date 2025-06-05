@@ -10,7 +10,6 @@ echo "=== Starting Blue-Green Deployment with Docker Compose ==="
 cd $DEPLOY_DIR
 
 # 최신 이미지 태그 가져오기
-#IMAGE_TAG=$(cat image_tag.txt 2>/dev/null || echo "latest")
 IMAGE_TAG="latest"
 export IMAGE_TAG
 
@@ -39,10 +38,39 @@ elif [ -z "$CURRENT_BLUE" ] && [ -z "$CURRENT_GREEN" ]; then
     NEW_COMPOSE_FILE="docker-compose-blue.yml"
     echo "First deployment → Starting: Blue (8080)"
 else
-    echo "❌ Both Blue and Green are running! Manual intervention required."
-    echo "Blue: $CURRENT_BLUE"
-    echo "Green: $CURRENT_GREEN"
-    exit 1
+    # 이미 모두 운영 중인 경우, 이전 배포 기록 확인하여 교체할 환경 결정
+    if [ -f last_deployed_env.txt ]; then
+        LAST_ENV=$(cat last_deployed_env.txt)
+        if [ "$LAST_ENV" = "blue" ]; then
+            # 이전에 Blue를 배포했으므로 이번엔 Green 배포
+            CURRENT_ENV="blue"
+            NEW_ENV="green"
+            NEW_PORT=$GREEN_PORT
+            NEW_COMPOSE_FILE="docker-compose-green.yml"
+            echo "Last deployment: Blue → Now deploying: Green (8081)"
+            # Blue는 중단
+            docker-compose -f docker-compose-blue.yml stop
+            echo "Stopping Blue environment for this deployment cycle"
+        else
+            # 이전에 Green을 배포했으므로 이번엔 Blue 배포
+            CURRENT_ENV="green"
+            NEW_ENV="blue"
+            NEW_PORT=$BLUE_PORT
+            NEW_COMPOSE_FILE="docker-compose-blue.yml"
+            echo "Last deployment: Green → Now deploying: Blue (8080)"
+            # Green은 중단
+            docker-compose -f docker-compose-green.yml stop
+            echo "Stopping Green environment for this deployment cycle"
+        fi
+    else
+        # 기록이 없는 경우 Blue 중단, Green 배포
+        CURRENT_ENV="blue"
+        NEW_ENV="green"
+        NEW_PORT=$GREEN_PORT
+        NEW_COMPOSE_FILE="docker-compose-green.yml"
+        echo "Both environments running, no last record → Stopping Blue, deploying Green"
+        docker-compose -f docker-compose-blue.yml stop
+    fi
 fi
 
 # ECR 로그인
@@ -73,6 +101,21 @@ if docker ps --filter "name=$NEW_CONTAINER" --filter "status=running" --format "
     echo $NEW_COMPOSE_FILE > current_compose_file.txt
 
     echo "🎉 $NEW_ENV environment started successfully on port $NEW_PORT"
+
+    # 마지막 배포 이후 3번째 배포인지 확인하여 양쪽 모두 운영할지 결정
+    DEPLOYMENT_COUNT=$(cat deployment_count.txt 2>/dev/null || echo "1")
+    if [ "$DEPLOYMENT_COUNT" -ge "2" ]; then
+        echo "This is the third or later deployment - activating both environments"
+        # Blue와 Green 모두 활성화
+        docker-compose -f docker-compose-blue.yml up -d
+        docker-compose -f docker-compose-green.yml up -d
+        echo "✅ Both Blue and Green environments are now running"
+        # 카운터 리셋
+        echo "1" > deployment_count.txt
+    else
+        # 배포 카운트 증가
+        echo "$((DEPLOYMENT_COUNT + 1))" > deployment_count.txt
+    fi
 else
     echo "❌ Failed to start $NEW_CONTAINER"
 
@@ -81,7 +124,6 @@ else
     docker-compose -f $NEW_COMPOSE_FILE logs
 
     # 정리
-    docker-compose -f $NEW_COMPOSE_FILE down
     exit 1
 fi
 

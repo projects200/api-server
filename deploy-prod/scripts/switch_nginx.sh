@@ -15,8 +15,16 @@ echo "Switching nginx to port: $NEW_PORT"
 # Nginx 설정 파일 백업
 sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.backup.$(date +%Y%m%d_%H%M%S)
 
-# Nginx 설정 파일 업데이트 (ec2-user 권한으로 임시 파일 생성 후 이동)
-cat > /tmp/nginx_default << EOF
+# 배포 이후 두 환경을 모두 사용하는지 확인
+DEPLOYMENT_COUNT=$(cat $DEPLOY_DIR/deployment_count.txt 2>/dev/null || echo "1")
+if [ "$DEPLOYMENT_COUNT" -ge "2" ]; then
+    # Nginx 로드 밸런싱 설정 (두 환경 모두 활성화)
+    cat > /tmp/nginx_default << EOF
+upstream spring_servers {
+    server localhost:8080 weight=1 max_fails=2 fail_timeout=20s;
+    server localhost:8081 weight=1 max_fails=2 fail_timeout=20s;
+}
+
 server {
     listen 80;
     server_name _;
@@ -27,8 +35,56 @@ server {
 
     # 프록시 버퍼링 설정
     proxy_buffering on;
-    proxy_buffer_size 4k;
-    proxy_buffers 8 4k;
+    proxy_buffer_size 8k;
+    proxy_buffers 16 8k;
+    proxy_busy_buffers_size 16k;
+
+    # 메인 애플리케이션 프록시
+    location / {
+        proxy_pass http://spring_servers;
+
+        # 헤더 설정
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+
+        # 타임아웃 설정
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # 헬스체크 엔드포인트
+    location /system-monitor/health {
+        allow 127.0.0.1;
+        allow 172.17.0.0/16;
+        deny all;
+
+        proxy_pass http://spring_servers/system-monitor/health;
+        proxy_set_header Host \$host;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 5s;
+        access_log off;
+    }
+}
+EOF
+else
+    # 단일 환경으로 설정
+    cat > /tmp/nginx_default << EOF
+server {
+    listen 80;
+    server_name _;
+
+    # 로그 설정
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log;
+
+    # 프록시 버퍼링 설정
+    proxy_buffering on;
+    proxy_buffer_size 8k;
+    proxy_buffers 16 8k;
+    proxy_busy_buffers_size 16k;
 
     location / {
         proxy_pass http://localhost:$NEW_PORT;
@@ -41,18 +97,13 @@ server {
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;
         proxy_read_timeout 60s;
-
-        # 프록시 헤더 버퍼 설정
-        proxy_busy_buffers_size 8k;
-        proxy_temp_file_write_size 8k;
     }
 
-    # 헬스체크 엔드포인트 - 내부 접근만 허용
+    # 헬스체크 엔드포인트
     location /system-monitor/health {
-        # 내부 접근만 허용
-        allow 127.0.0.1;  # 로컬호스트
-        allow 172.16.0.0/12;  # Docker 네트워크
-        deny all;  # 나머지 모든 접근 차단
+        allow 127.0.0.1;
+        allow 172.17.0.0/16;
+        deny all;
 
         proxy_pass http://localhost:$NEW_PORT/system-monitor/health;
         proxy_set_header Host \$host;
@@ -60,16 +111,9 @@ server {
         proxy_read_timeout 5s;
         access_log off;
     }
-
-    # 정적 파일 캐싱 (선택적)
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
-        proxy_pass http://localhost:$NEW_PORT;
-        proxy_set_header Host \$host;
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
 }
 EOF
+fi
 
 # 파일 권한 설정 후 이동
 sudo mv /tmp/nginx_default /etc/nginx/sites-available/default
@@ -86,7 +130,11 @@ if [ $? -eq 0 ]; then
     # 설정 확인
     sleep 2
     if sudo systemctl is-active --quiet nginx; then
-        echo "✅ Nginx successfully switched to port: $NEW_PORT"
+        if [ "$DEPLOYMENT_COUNT" -ge "2" ]; then
+            echo "✅ Nginx successfully configured for load balancing between both environments"
+        else
+            echo "✅ Nginx successfully switched to port: $NEW_PORT"
+        fi
     else
         echo "❌ Nginx reload failed, restoring backup..."
         sudo cp /etc/nginx/sites-available/default.backup.* /etc/nginx/sites-available/default
