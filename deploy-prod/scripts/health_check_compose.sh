@@ -51,6 +51,13 @@ while [ $RETRY_COUNT -lt $MAX_HEALTH_RETRIES ]; do
 
             # 로드밸런서 트래픽 스위칭
             echo "Switching traffic to new environment..."
+
+            # switch_nginx.sh를 호출하기 전에 추가
+            if [ ! -x "/home/ec2-user/deploy/prod/zip/scripts/switch_nginx.sh" ]; then
+              sudo chmod +x /home/ec2-user/deploy/prod/zip/scripts/switch_nginx.sh
+            fi
+
+            # 그 다음 스크립트 호출
             /home/ec2-user/deploy/prod/zip/scripts/switch_nginx.sh $CURRENT_PORT
 
             # 성공적인 배포 확인 후 이전 환경 정리 (Graceful shutdown)
