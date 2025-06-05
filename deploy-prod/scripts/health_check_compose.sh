@@ -10,8 +10,6 @@ echo "=== Health Check and Traffic Switch (Docker Compose) ==="
 # 작업 디렉토리 설정
 cd $DEPLOY_DIR
 
-chmod +x /home/ec2-user/deploy/prod/zip/scripts/*.sh
-
 # 현재 배포된 환경 정보 읽기
 CURRENT_PORT=$(cat current_port.txt 2>/dev/null || echo "$BLUE_PORT")
 CURRENT_ENV=$(cat current_env.txt 2>/dev/null || echo "blue")
