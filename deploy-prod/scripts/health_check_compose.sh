@@ -62,6 +62,12 @@ while [ $RETRY_COUNT -lt $MAX_HEALTH_RETRIES ]; do
 
             # 성공적인 배포 확인 후 이전 환경 정리 (Graceful shutdown)
             echo "Cleaning up old environment..."
+
+            # 권한이 없을시 권한 부여
+            if [ ! -x "/home/ec2-user/deploy/prod/zip/scripts/cleanup_old_environment.sh" ]; then
+              sudo chmod +x /home/ec2-user/deploy/prod/zip/scripts/cleanup_old_environment.sh
+            fi
+
             /home/ec2-user/deploy/prod/zip/scripts/cleanup_old_environment.sh $CURRENT_ENV
 
             echo "🎉 Blue-Green Deployment completed successfully!"
