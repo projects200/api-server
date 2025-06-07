@@ -4,15 +4,50 @@ files:
   - source: /
     destination: /home/ec2-user/deploy/prod/zip/
     overwrite: yes
-
+file_exists_behavior: OVERWRITE
 permissions:
-  - object: /
-    pattern: "**"
+  - object: /home/ec2-user/deploy/prod/zip/
     owner: ec2-user
     group: ec2-user
+    mode: 755
+    type:
+      - directory
+  - object: /home/ec2-user/deploy/prod/zip/scripts
+    owner: ec2-user
+    group: ec2-user
+    mode: 755
+    type:
+      - directory
+  - object: /home/ec2-user/deploy/prod/zip/scripts/*.sh
+    pattern: "*.sh"
+    owner: ec2-user
+    group: ec2-user
+    mode: 755
+    type:
+      - file
+  - object: /home/ec2-user/deploy/prod/zip/docker-compose.yml
+    owner: ec2-user
+    group: ec2-user
+    mode: 644
+    type:
+      - file
+  - object: /home/ec2-user/deploy/prod/zip/docker-compose-sub.yml
+    owner: ec2-user
+    group: ec2-user
+    mode: 644
+    type:
+      - file
 
 hooks:
+  BeforeInstall:
+    - location: scripts/before_install.sh
+      timeout: 180
+      runas: ec2-user
   ApplicationStart:
-    - location: deploy.sh
-      timeout: 60
+    - location: scripts/start_sub_container.sh
+      timeout: 300
+      runas: ec2-user
+  ValidateService:
+    - location: scripts/validate_and_switch.sh
+      timeout: 600 # 헬스체크 및 Nginx 전환에 충분한 시간 부여
       runas: ec2-user
