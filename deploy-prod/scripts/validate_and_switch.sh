@@ -12,7 +12,7 @@ echo "--- Stage 1: Validating server-prod-sub on SUB_PORT ($SUB_PORT) ---"
 if ! check_health "server-prod-sub" "$SUB_PORT" "docker-compose-sub.yml"; then
     echo "ERROR: Health check failed for server-prod-sub on SUB_PORT."
     echo "Cleaning up server-prod-sub due to health check failure..."
-    docker-compose -f docker-compose-sub.yml down --remove-orphans
+    clean_specific_containers "server-prod-sub"
     exit 1 # 배포 실패
 fi
 
@@ -20,17 +20,17 @@ echo "Switching Nginx traffic to server-prod-sub (Port: $SUB_PORT)..."
 if ! switch_nginx_traffic $SUB_PORT; then
     echo "ERROR: Failed to switch Nginx traffic to SUB_PORT."
     echo "Cleaning up server-prod-sub..."
-    docker-compose -f docker-compose-sub.yml down --remove-orphans
+    clean_specific_containers "server-prod-sub"
     exit 1 # 배포 실패
 fi
 
 # --- 단계 2: MAIN_PORT (server-prod) 기존 컨테이너 중지 및 새 버전 배포 ---
 echo "--- Stage 2: Updating server-prod on MAIN_PORT ($MAIN_PORT) ---"
 echo "Stopping and removing old server-prod container (if any)..."
-docker-compose -f docker-compose.yml down --remove-orphans 2>/dev/null || true
+clean_specific_containers "server-prod"
 
 echo "Starting new version of server-prod on MAIN_PORT ($MAIN_PORT)..."
-docker-compose -f docker-compose.yml up -d --remove-orphans server-prod
+docker-compose -f docker-compose.yml up -d server-prod
 
 echo "Waiting briefly for server-prod to initialize..."
 sleep 15 # 애플리케이션 시작 시간에 따라 조절
@@ -49,7 +49,7 @@ if ! check_health "server-prod" "$MAIN_PORT" "docker-compose.yml"; then
     echo "ERROR: Health check failed for server-prod on MAIN_PORT."
     echo "Traffic remains on server-prod-sub (Port: $SUB_PORT) due to server-prod health check failure."
     echo "Cleaning up failed server-prod..."
-    docker-compose -f docker-compose.yml down --remove-orphans
+    clean_specific_containers "server-prod"
     # 이 시점에서 배포는 실패로 간주. SUB_PORT가 계속 서비스 중.
     exit 1 # 배포 실패
 fi
@@ -65,7 +65,7 @@ fi
 # --- 단계 4: SUB_PORT (server-prod-sub) 임시 컨테이너 정리 ---
 echo "--- Stage 4: Cleaning up temporary server-prod-sub container ---"
 echo "Stopping and removing server-prod-sub container on SUB_PORT ($SUB_PORT)..."
-docker-compose -f docker-compose-sub.yml down --remove-orphans
+clean_specific_containers "server-prod-sub"
 
 echo "🎉 Zero-downtime deployment completed successfully! Traffic is on MAIN_PORT ($MAIN_PORT)."
 echo "ValidateService completed."

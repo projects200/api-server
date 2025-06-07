@@ -13,7 +13,7 @@ fi
 
 echo "Starting new application (server-prod-sub) on SUB_PORT ($SUB_PORT) using docker-compose-sub.yml..."
 export MAIN_PORT SUB_PORT ECR_REGISTRY ECR_REPOSITORY IMAGE_TAG # docker-compose에서 변수 사용
-docker-compose -f docker-compose-sub.yml up -d --remove-orphans server-prod-sub
+docker-compose -f docker-compose-sub.yml up -d server-prod-sub
 
 # 간단한 시작 확인 (본격적인 헬스체크는 Validate Service에서 수행)
 echo "Waiting briefly for server-prod-sub to initialize..."

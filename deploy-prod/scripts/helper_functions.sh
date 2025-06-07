@@ -53,3 +53,15 @@ switch_nginx_traffic() {
     fi
     return 0
 }
+
+# 함수: 특정 포트 관련 컨테이너만 정리
+clean_specific_containers() {
+    local container_name=$1
+    echo "Cleaning up only container: $container_name"
+
+    # 지정된 컨테이너만 중지 및 제거
+    docker stop $container_name 2>/dev/null || true
+    docker rm $container_name 2>/dev/null || true
+
+    echo "Cleanup of $container_name completed."
+}

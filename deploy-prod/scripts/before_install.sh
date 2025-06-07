@@ -1,6 +1,7 @@
 #!/bin/bash
 # 설정 로드
 source /home/ec2-user/deploy/prod/zip/scripts/config.sh
+source /home/ec2-user/deploy/prod/zip/scripts/helper_functions.sh
 
 echo "=== Before Install: Preparing for Custom Deployment ==="
 cd $DEPLOY_DIR || exit 1
@@ -17,6 +18,6 @@ docker images --format "{{.Repository}}:{{.Tag}} {{.CreatedAt}}" | grep "${ECR_R
 echo "Cleaning up any orphaned 'server-prod-sub' container from previous (possibly failed) deployments..."
 # MAIN_PORT, SUB_PORT 등을 export하여 docker-compose가 변수를 인식하도록 함
 export MAIN_PORT SUB_PORT ECR_REGISTRY ECR_REPOSITORY IMAGE_TAG
-docker-compose -f docker-compose-sub.yml down --remove-orphans 2>/dev/null || true
+clean_specific_containers "server-prod-sub"
 
 echo "Before install completed."
