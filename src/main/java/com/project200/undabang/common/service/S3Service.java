@@ -59,13 +59,25 @@ public class S3Service {
             return null;
         }
 
-        // (bucketName + '/') 포함
-        int bucketEndIndex = url.indexOf(bucketName) + bucketName.length() + 1;
+        // "uploads/"로 시작하는 부분을 찾아서 그 부분부터 끝까지를 객체 키로 반환
+        int uploadsIndex = url.indexOf("uploads/");
+        if (uploadsIndex >= 0) {
+            return url.substring(uploadsIndex);
+        }
 
-        if(bucketEndIndex > 0 && bucketEndIndex < url.length()){
+        // "uploads/"를 찾을 수 없는 경우 기존 방식 시도
+        int bucketEndIndex = url.indexOf(bucketName);
+        if (bucketEndIndex >= 0) {
+            bucketEndIndex += bucketName.length();
+            // URL에 버킷 이름 다음에 / 문자가 있는지 확인
+            if (bucketEndIndex < url.length() && url.charAt(bucketEndIndex) == '/') {
+                bucketEndIndex += 1;
+            }
             return url.substring(bucketEndIndex);
         }
 
+        log.warn("객체 키를 추출할 수 없습니다: {}", url);
+        // 추출 실패시 원래 url 반환
         return url;
     }
 
