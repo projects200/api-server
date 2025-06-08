@@ -112,7 +112,7 @@ public class RestDocsUtils {
     public static FieldDescriptor[] commonResponseFieldsOnly() {
         return new FieldDescriptor[]{
                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN)
-                        .description("API 호출 성공 여부입니다. 성공시 true, 실패시 false입니다."),
+                        .description("API 호출 성공 여부입니다. 성공 시 true, 실패 시 false입니다."),
                 fieldWithPath("code").type(JsonFieldType.STRING)
                         .description("API 결과 코드입니다. 예: SUCCESS, CREATED, UPDATED, DELETED 등"),
                 fieldWithPath("message").type(JsonFieldType.STRING)
