@@ -119,7 +119,7 @@ public class RestDocsUtils {
                         .description("API 결과 메시지입니다. 성공/실패에 대한 설명을 포함합니다."),
                 // 'data' 필드가 없거나 null임을 명시
                 fieldWithPath("data").type(JsonFieldType.NULL)
-                        .description("실제 응답 데이터가 없거나 null인 경우에 사용됩니다."). optional()
+                        .description("실제 응답 데이터가 없거나 null인 경우에 사용됩니다.").optional()
         };
     }
 }
