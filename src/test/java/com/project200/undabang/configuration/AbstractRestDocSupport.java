@@ -60,7 +60,7 @@ public class AbstractRestDocSupport {
                                 .operationPreprocessors()
                                 .withRequestDefaults(
                                         uriPreprocessor, // 포트 443은 HTTPS 기본 포트
-//                                Preprocessors.modifyHeaders().remove("X-USER-ID"), // X-USER-ID 헤더 제거
+                                        Preprocessors.modifyHeaders().remove("X-USER-ID"), // X-USER-ID 헤더 제거
                                         Preprocessors.prettyPrint()
                                 )
                                 .withResponseDefaults(Preprocessors.prettyPrint())

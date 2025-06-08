@@ -54,53 +54,6 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
     @MockitoBean
     private ExerciseCommandService exerciseCommandService;
 
-    protected MockMvc mockMvc;
-
-    @Autowired
-    protected ObjectMapper objectMapper;
-
-    @Autowired
-    protected RestDocumentationResultHandler document;
-
-    @Value("${restdocs.uris.scheme}")
-    private String scheme;
-
-    @Value("${restdocs.uris.host}")
-    private String host;
-
-    @Value("${restdocs.uris.port}")
-    private int port;
-
-    @BeforeEach
-    void setUp(WebApplicationContext webApplicationContext, RestDocumentationContextProvider restDocumentation) {
-        boolean removePort = (scheme.equals("https") && port == 443) || (scheme.equals("http") && port == 80);
-
-        UriModifyingOperationPreprocessor uriPreprocessor = Preprocessors.modifyUris()
-                .scheme(scheme)
-                .host(host);
-
-        if (removePort) {
-            uriPreprocessor = uriPreprocessor.removePort();
-        } else {
-            uriPreprocessor = uriPreprocessor.port(port);
-        }
-
-        this.mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
-                .apply(MockMvcRestDocumentation.documentationConfiguration(restDocumentation)
-                        .operationPreprocessors()
-                        .withRequestDefaults(
-                                uriPreprocessor, // 포트 443은 HTTPS 기본 포트
-                                Preprocessors.modifyHeaders().remove("X-USER-ID"), // X-USER-ID 헤더 제거
-                                Preprocessors.prettyPrint()
-                        )
-                        .withResponseDefaults(Preprocessors.prettyPrint())
-                )
-                .alwaysDo(MockMvcResultHandlers.print()) // 콘솔에 요청/응답 출력
-                .alwaysDo(document)
-                .addFilters(new CharacterEncodingFilter("UTF-8", true)) // 한글 깨짐 방지
-                .build();
-    }
-
     // createExercise 성공 테스트
     @Test
     @DisplayName("운동 정보를 성공적으로 생성하면 201 상태 코드와 응답 데이터를 반환한다")
@@ -466,7 +419,8 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                         ),
                         queryParameters(
                                 parameterWithName("pictureIds").attributes(getTypeFormat(JsonFieldType.STRING))
-                                        .description("사진 ID 리스트 입니다. 삭제할 사진 ID 리스트를 입력하시면 됩니다.")
+                                        .description("사진 ID 리스트 입니다. 삭제할 사진 ID 리스트를 입력하시면 됩니다. " +
+                                                "여러장의 이미지를 삭제할 때는 형식의 PathParameter(예: `pictureIds=1,2,3`)로 요청하면 됩니다.")
                         ),
                         requestHeaders(RestDocsUtils.HEADER_ACCESS_TOKEN),
                         responseFields(RestDocsUtils.commonResponseFieldsOnly())

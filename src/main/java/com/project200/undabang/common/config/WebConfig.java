@@ -51,7 +51,7 @@ public class WebConfig implements WebMvcConfigurer {
         // build reports를 위한 리소스 핸들러
         registry.addResourceHandler("/build/reports/**")
                 .addResourceLocations("classpath:/static/", "file:./build/reports/")
-                .setCachePeriod(3600)
+                .setCachePeriod(3600) 
                 .resourceChain(true);
 
         // REST Docs 문서를 위한 리소스 핸들러

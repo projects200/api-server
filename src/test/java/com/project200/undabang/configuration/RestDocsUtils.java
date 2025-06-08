@@ -25,7 +25,7 @@ public class RestDocsUtils {
     public static final HeaderDescriptor HEADER_ACCESS_TOKEN =
             headerWithName("Authorization")
                     .attributes(getTypeFormat(JsonFieldType.STRING))
-                    .description("Bearer {accessToken} 형식의 Access Token입니다. 사용자 인증 시 사용됩니다.");
+                    .description("Bearer {accessToken} 형식의 Access Token입니다. /api로 시작하는 api의 사용자 인증 시 사용됩니다.");
 
 
     /**
@@ -36,8 +36,9 @@ public class RestDocsUtils {
      * 요청 시 ID Token을 포함해야 합니다.
      */
     public static final HeaderDescriptor HEADER_ID_TOKEN =
-            headerWithName("ID-TOKEN").attributes(getTypeFormat(JsonFieldType.STRING))
-                    .description("Bearer {idToken} 형식의 ID Token입니다. 회원가입 시 사용됩니다.");
+            headerWithName("Authorization")
+                    .attributes(getTypeFormat(JsonFieldType.STRING))
+                    .description("Bearer {idToken} 형식의 ID Token입니다. /auth로 시작하는 api의 인증 시 사용됩니다.");
 
     /**
      * 공통적으로 사용되는 X-USER-ID 요청 헤더에 대한 HeaderDescriptor 상수
@@ -86,11 +87,16 @@ public class RestDocsUtils {
      */
     public static FieldDescriptor[] commonResponseFieldsForList(FieldDescriptor... dataListItemFields) {
         List<FieldDescriptor> commonFields = new ArrayList<>(Arrays.asList(
-                fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("API 호출 성공 여부 (true/false)"),
-                fieldWithPath("code").type(JsonFieldType.STRING).description("API 결과 코드"),
-                fieldWithPath("message").type(JsonFieldType.STRING).description("API 결과 메시지"),
+                fieldWithPath("succeed").type(JsonFieldType.BOOLEAN)
+                        .description("API 호출 성공 여부입니다. 성공시 true, 실패시 false입니다."),
+                fieldWithPath("code").type(JsonFieldType.STRING)
+                        .description("API 결과 코드입니다. 예: SUCCESS, CREATED, UPDATED, DELETED 등"),
+                fieldWithPath("message").type(JsonFieldType.STRING)
+                        .description("API 결과 메시지입니다. 성공/실패에 대한 설명을 포함합니다."),
                 // 'data' 필드가 리스트임을 명시
-                fieldWithPath("data[]").type(JsonFieldType.ARRAY).description("실제 응답 데이터 리스트 (성공 시). 실패 시 보통 null.").optional()
+                fieldWithPath("data[]").type(JsonFieldType.ARRAY).description("실제 응답 데이터 배열입니다. " +
+                        "성공 시 포함되며, 실패 시 빈 배열 []이거나 관련 오류 메시지를 포함할 수 있습니다. " +
+                        "각 항목은 'data[].필드명' 형태로 정의됩니다.")
         ));
 
         // 'data[]' 내부의 구체적인 필드들 추가
@@ -105,11 +111,15 @@ public class RestDocsUtils {
      */
     public static FieldDescriptor[] commonResponseFieldsOnly() {
         return new FieldDescriptor[]{
-                fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("API 호출 성공 여부 (true/false)"),
-                fieldWithPath("code").type(JsonFieldType.STRING).description("API 결과 코드"),
-                fieldWithPath("message").type(JsonFieldType.STRING).description("API 결과 메시지"),
+                fieldWithPath("succeed").type(JsonFieldType.BOOLEAN)
+                        .description("API 호출 성공 여부입니다. 성공시 true, 실패시 false입니다."),
+                fieldWithPath("code").type(JsonFieldType.STRING)
+                        .description("API 결과 코드입니다. 예: SUCCESS, CREATED, UPDATED, DELETED 등"),
+                fieldWithPath("message").type(JsonFieldType.STRING)
+                        .description("API 결과 메시지입니다. 성공/실패에 대한 설명을 포함합니다."),
                 // 'data' 필드가 없거나 null임을 명시
-                fieldWithPath("data").type(JsonFieldType.NULL).description("응답 데이터 (이 응답에서는 null)").optional()
+                fieldWithPath("data").type(JsonFieldType.NULL)
+                        .description("실제 응답 데이터가 없거나 null인 경우에 사용됩니다."). optional()
         };
     }
 }
