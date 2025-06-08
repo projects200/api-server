@@ -3,34 +3,37 @@ package com.project200.undabang.chat.entity;
 import com.project200.undabang.member.entity.Member;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 
 @Getter
-@Setter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "chatrooms")
 public class Chatroom {
     @Id
-    @Column(name = "chatroom_id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "chatroom_id", updatable = false, nullable = false)
     private Long id;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "sender_id", nullable = false)
+    @JoinColumn(name = "sender_id", nullable = false, updatable = false)
     private Member sender;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "receiver_id", nullable = false)
+    @JoinColumn(name = "receiver_id", nullable = false, updatable = false)
     private Member receiver;
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "chatroom_created_at", nullable = false)
+    @Column(name = "chatroom_created_at", nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime chatroomCreatedAt = LocalDateTime.now();
 
     @Column(name = "chatroom_deleted_at")

@@ -1,0 +1,28 @@
+== 운동 이미지 업로드 API
+
+=== 설명
+- #POST# `/api/v1/exercises/{exerciseId}/pictures`
+- 운동 기록에 이미지를 업로드하는 API입니다.
+- 이 API를 통해 사용자는 운동 기록에 관련된 사진을 첨부할 수 있습니다.
+- 사용자는 운동 기록 ID와 함께 이미지 파일을 업로드할 수 있으며, 이 API는 여러 이미지를 동시에 처리할 수 있습니다.
+
+=== 개발 참고 사항
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+- 이 API는 multipart/form-data 형식으로 이미지를 업로드합니다.
+- 요청의 필수 여부는 요청 파트(Form Data)의 필수 여부를 참고하세요.
+- 요청에 대한 검증은 요청 파트(Form Data)의 설명을 참고하세요.
+
+=== 코드 샘플
+operation::exercise-command-controller-test/upload-exercise-images-success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+operation::exercise-command-controller-test/upload-exercise-images-success[snippets="request-headers,path-parameters,request-parts,response-fields"]
+
+==== 응답 상태 코드
+|===
+|상태 코드|설명
+|201|운동 기록이 성공적으로 생성되었습니다.
+|400|입력값 검증에 실패했습니다. 파일이 5개를 초과하거나 지원하는 확장자가 아닙니다.
+|403|운동 기록이 회원의 운동 기록이 아닙니다.
+|500|이미지 업로드 중 서버 오류가 발생했습니다.
+|===

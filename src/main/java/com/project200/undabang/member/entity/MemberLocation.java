@@ -3,24 +3,26 @@ package com.project200.undabang.member.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 
 @Getter
-@Setter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "member_locations")
 public class MemberLocation {
     @Id
-    @Column(name = "member_location_id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "member_location_id", nullable = false, updatable = false)
     private Long id;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "member_id", nullable = false)
+    @JoinColumn(name = "member_id", nullable = false, updatable = false)
     private Member member;
 
     @Size(max = 255)
@@ -49,7 +51,8 @@ public class MemberLocation {
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "member_location_created_at", nullable = false)
+    @Column(name = "member_location_created_at", nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime memberLocationCreatedAt = LocalDateTime.now();
 
     @Column(name = "member_location_deleted_at")

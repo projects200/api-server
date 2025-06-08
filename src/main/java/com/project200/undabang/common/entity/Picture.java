@@ -1,25 +1,25 @@
 package com.project200.undabang.common.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Comment;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 
 @Getter
-@Setter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "pictures")
 public class Picture {
     @Id
-    @Column(name = "picture_id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "picture_id", nullable = false, updatable = false)
     private Long id;
 
     @Size(max = 255)
@@ -34,16 +34,39 @@ public class Picture {
     @Column(name = "picture_size")
     private Integer pictureSize;
 
+    @Setter
     @Size(max = 255)
     @Column(name = "picture_url")
     private String pictureUrl;
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "picture_created_at", nullable = false)
+    @Column(name = "picture_created_at", nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime pictureCreatedAt = LocalDateTime.now();
 
     @Column(name = "picture_deleted_at")
     private LocalDateTime pictureDeletedAt;
+
+    public static Picture of(MultipartFile file, String pictureUrl) {
+        return Picture.builder()
+                .pictureName(file.getOriginalFilename())
+                .pictureExtension(getFileExtension(file.getOriginalFilename()))
+                .pictureSize((int) file.getSize())
+                .pictureUrl(pictureUrl)
+                .build();
+    }
+
+    private static String getFileExtension(String fileName) {
+        if (fileName == null || !fileName.contains(".")) {
+            return null;
+        }
+        return fileName.substring(fileName.lastIndexOf("."));
+    }
+
+    public Picture softDelete(){
+        this.pictureDeletedAt = LocalDateTime.now();
+        return this;
+    }
 
 }

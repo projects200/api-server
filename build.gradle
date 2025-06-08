@@ -1,79 +1,134 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.4.5'
-	id 'io.spring.dependency-management' version '1.1.7'
-	id 'org.asciidoctor.jvm.convert' version '3.3.2'
+    id 'java'
+    id 'org.springframework.boot' version '3.4.5'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.asciidoctor.jvm.convert' version '3.3.2'
 }
 
 group = 'com.project200'
 version = '0.0.1-SNAPSHOT'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
 
-	asciidoctorExt
-	mockitoAgent
+    asciidoctorExt
+    mockitoAgent
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
 ext {
-	set('snippetsDir', file("build/generated-snippets"))
-	springRestDocsVersion = '3.0.3'
+    set('snippetsDir', file("build/generated-snippets"))
+    set('springRestDocsVersion', "3.0.3")
+    set('springCloudAwsVersion', "3.3.0")
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-validation'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	compileOnly 'org.projectlombok:lombok'
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
-	runtimeOnly 'com.h2database:h2'
-	runtimeOnly 'com.mysql:mysql-connector-j'
-	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	asciidoctorExt "org.springframework.restdocs:spring-restdocs-asciidoctor:${springRestDocsVersion}"
+    // Spring Cloud AWS BOM (Bill of Materials)
+    implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:${springCloudAwsVersion}")
 
-	mockitoAgent('org.mockito:mockito-core') {
-		transitive = false
-	}
+    // Spring Boot 의존성
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
 
+    implementation 'com.querydsl:querydsl-core:5.1.0'
+    implementation "com.querydsl:querydsl-jpa:5.1.0:jakarta"
+    annotationProcessor "com.querydsl:querydsl-apt:5.1.0:jakarta"
+    annotationProcessor "jakarta.annotation:jakarta.annotation-api"
+    annotationProcessor "jakarta.persistence:jakarta.persistence-api:3.1.0"
+
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    compileOnly 'org.projectlombok:lombok'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+
+    // 데이터베이스
+    runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    // AWS 관련
+    implementation "io.awspring.cloud:spring-cloud-aws-starter-s3"    // Spring Cloud AWS S3 Starter
+
+    // 테스트 의존성
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    asciidoctorExt "org.springframework.restdocs:spring-restdocs-asciidoctor:${springRestDocsVersion}"
+    testImplementation 'io.awspring.cloud:spring-cloud-aws-testcontainers'
+    testImplementation 'org.testcontainers:localstack'
+    testImplementation 'org.testcontainers:junit-jupiter'
+
+    // Mockito 설정
+    mockitoAgent('org.mockito:mockito-core') {
+        transitive = false
+    }
 }
 
 tasks.named('test') {
-	outputs.dir snippetsDir
-	useJUnitPlatform()
-	jvmArgs("-javaagent:${configurations.mockitoAgent.asPath}")
+    outputs.dir snippetsDir
+    useJUnitPlatform()
+    systemProperty("spring.profiles.active", System.getProperty("spring.profiles.active", "local"))
+    jvmArgs("-javaagent:${configurations.mockitoAgent.asPath}")
 }
 
 tasks.named('asciidoctor') {
-	configurations 'asciidoctorExt'
-	inputs.dir snippetsDir
-	sourceDir file('src/docs/asciidoc')
-	attributes([
-			'snippets': snippetsDir
-	])
-	dependsOn tasks.named('test')
+    dependsOn tasks.named('test')
+    configurations 'asciidoctorExt'
+    inputs.dir snippetsDir
+
+    sourceDir file('src/docs/asciidoc') // 소스 디렉토리 설정
+
+    // 처리할 소스 파일을 명시적으로 지정합니다.
+    sources {
+        include '*.adoc' // sourceDir 바로 아래의 .adoc 파일만 포함합니다.
+        // 하위 디렉토리는 포함하지 않습니다.
+    }
+
+    baseDirFollowsSourceDir()
+
+    attributes([
+            'snippets': snippetsDir
+    ])
 }
 
 // 생성된 문서를 JAR에 포함시키기
-bootJar {
-	dependsOn tasks.named('asciidoctor') // asciidoctor 작업이 먼저 실행되도록 보장
-	from("${tasks.named('asciidoctor').get().outputDir}") { // AsciidoctorTask의 outputDir 사용
-		into 'static/docs'
-	}
+tasks.named('bootJar') {
+    dependsOn tasks.named('asciidoctor') // asciidoctor 작업이 먼저 실행되도록 보장
+    from("${tasks.named('asciidoctor').get().outputDir}") { // AsciidoctorTask의 outputDir 사용
+        into 'static/docs'
+    }
+}
+
+// Q클래스 생성 경로 설정
+def querydslSrcDir = 'src/main/generated'
+sourceSets {
+    main.java.srcDirs += [querydslSrcDir]
+}
+
+tasks.withType(JavaCompile) {
+    options.annotationProcessorGeneratedSourcesDirectory = file(querydslSrcDir)
+}
+
+// 생성된 Q클래스 소스 삭제
+clean {
+    delete file(querydslSrcDir)
 }

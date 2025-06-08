@@ -4,14 +4,15 @@ import com.project200.undabang.common.entity.Picture;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 
 @Getter
-@Setter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "member_pictures")
 public class MemberPicture {
@@ -22,11 +23,11 @@ public class MemberPicture {
     @MapsId
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "picture_id", nullable = false)
-    private Picture pictures;
+    private Picture picture;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "member_id", nullable = false)
+    @JoinColumn(name = "member_id", nullable = false, updatable = false)
     private Member member;
 
     @Size(max = 255)
@@ -43,7 +44,8 @@ public class MemberPicture {
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "member_pictures_created_at", nullable = false)
+    @Column(name = "member_pictures_created_at", nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime memberPicturesCreatedAt = LocalDateTime.now();
 
     @Column(name = "member_pictures_deleted_at")

@@ -1,0 +1,22 @@
+== 회원 등록 상태 조회 API
+
+=== 설명
+- #GET# `/api/v1/registration-status`
+- 회원의 등록 상태를 조회하는 API입니다.
+- 이 API는 회원의 등록 상태를 반환합니다. 등록 상태는 회원이 등록되어 있는지 여부를 나타냅니다. 만약 회원이 등록되어 있다면 `true`를 반환하고, 등록되어 있지 않다면 `false`를 반환합니다.
+
+=== 개발 참고 사항
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+operation::member-rest-controller-test/get-registration-status_-success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+operation::member-rest-controller-test/get-registration-status_-success[snippets="request-headers,response-fields"]
+
+==== 응답 상태 코드
+|===
+|상태 코드|설명
+|200|요청이 성공적으로 처리되었습니다. 회원의 등록 상태를 반환합니다.
+|===
+

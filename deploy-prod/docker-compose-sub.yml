@@ -1,0 +1,19 @@
+version: "3.3"
+
+services:
+  server-prod-sub:
+    image: "825773631552.dkr.ecr.ap-northeast-2.amazonaws.com/undabang/prod-server-repository:latest"
+    container_name: "server-prod-sub"
+    ports:
+      - "8081:8080"
+    networks:
+      - server-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/system-monitor/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  server-network:
+    driver: bridge

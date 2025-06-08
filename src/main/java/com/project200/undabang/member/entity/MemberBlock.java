@@ -2,24 +2,26 @@ package com.project200.undabang.member.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 
 @Getter
-@Setter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "member_blocks")
 public class MemberBlock {
     @Id
-    @Column(name = "member_block_id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "member_block_id", nullable = false, updatable = false)
     private Long id;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "blocker_id", nullable = false)
+    @JoinColumn(name = "blocker_id", nullable = false, updatable = false)
     private Member blocker;
 
     @NotNull
@@ -29,7 +31,8 @@ public class MemberBlock {
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "member_block_created_at", nullable = false)
+    @Column(name = "member_block_created_at", nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime memberBlockCreatedAt = LocalDateTime.now();
 
     @Column(name = "member_block_deleted_at")

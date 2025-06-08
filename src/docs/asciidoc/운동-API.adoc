@@ -1,0 +1,29 @@
+= 운동 API
+:doctype: book
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 3
+:seclinks:
+
+:operation-request-headers-title: 요청 헤더
+:operation-path-parameters-title: 경로 매개 변수
+:operation-request-parts-title: 요청 파트(Form Data)
+:operation-request-fields-title: 요청 필드
+:operation-response-fields-title: 응답 필드
+:operation-curl-request-title: Curl 요청 예시
+:operation-http-request-title: HTTP 요청 예시
+:operation-http-response-title: HTTP 응답 예시
+
+[[공통-개발-참고-사항]]
+== 공통 개발 참고 사항
+include::overview/공통-개발-참고-사항.adoc[]
+
+include::exercise/운동-기록-생성-API.adoc[]
+
+include::exercise/운동-이미지-업로드-API.adoc[]
+
+include::exercise/운동-기록-수정-API.adoc[]
+
+include::exercise/운동-기록-이미지-삭제-API.adoc[]
+
+include::exercise/운동-기록-삭제-API.adoc[]

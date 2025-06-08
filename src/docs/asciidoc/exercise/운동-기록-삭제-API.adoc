@@ -1,0 +1,25 @@
+== 운동 기록 삭제 API
+
+=== 설명
+- #DELETE# `/api/v1/exercises/{exerciseId}`
+- 운동 기록 데이터를 삭제하는 API입니다.
+- 이 API를 통해 사용자는 자신이 생성한 운동 기록을 삭제할 수 있습니다.
+
+=== 개발 참고 사항
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+operation::exercise-command-controller-test/delete-exercise[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+operation::exercise-command-controller-test/delete-exercise[snippets="request-headers,path-parameters,response-fields"]
+
+==== 응답 상태 코드
+|===
+|상태 코드|설명
+|200|요청이 성공적으로 처리되었지만 반환할 데이터가 없습니다.
+|400|입력값 검증에 실패했습니다.
+|403|운동 기록에 접근 권한이 없습니다
+|404|운동 기록이나 회원이 존재하지 않습니다.
+|===
+

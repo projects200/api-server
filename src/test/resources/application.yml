@@ -1,4 +1,10 @@
 spring:
+  application:
+    name: undabang
+
+  profiles:
+    active: local
+
   datasource:
     url: jdbc:h2:mem:testdb;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1
     username: sa
@@ -29,8 +35,31 @@ spring:
   transaction:
     default-timeout: 30s
 
+  cloud:
+    aws:
+      s3:
+        path-style-access-enabled: true
+
+  servlet:
+    multipart:
+      max-file-size: 10MB # 개별 파일 최대 크기
+      max-request-size: 50MB # 총 요청 최대 크기 (여러 파일 업로드 시)
+
+app:
+  s3:
+    bucket-name: my-test-image-bucket
+
 logging:
   level:
     com.project200.undabang: debug
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace
+
+cors:
+  allowed-origins: http://localhost:3000
+
+restdocs:
+  uris:
+    scheme: https
+    host: api.undabang.store
+    port: 443

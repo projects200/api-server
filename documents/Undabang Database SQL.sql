@@ -59,6 +59,7 @@ create table members
     member_warned_count tinyint  default 0                 not null comment '관리자 처리 신고 누적',
     member_created_at   datetime default CURRENT_TIMESTAMP not null,
     member_deleted_at   datetime                           null comment '탈퇴 시 삭제 일시 기록',
+    constraint check_member_gender check (member_gender in ('M', 'F', 'U')),
     constraint member_email
         unique (member_email),
     constraint member_nickname
@@ -118,6 +119,7 @@ create table exercises
     exercise_personal_type varchar(255)                                             null comment '시스템이 아닌 개인 등록',
     exercise_created_at    datetime default CURRENT_TIMESTAMP                       not null,
     exercise_deleted_at    datetime                                                 null,
+    exercise_location      varchar(255)                                             null,
     constraint FK_ex_member
         foreign key (member_id) references members (member_id)
 );
