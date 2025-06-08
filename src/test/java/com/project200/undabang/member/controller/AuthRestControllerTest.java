@@ -25,6 +25,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import static com.project200.undabang.configuration.HeadersGenerator.getCommonAuthHeaders;
+import static com.project200.undabang.configuration.RestDocsUtils.HEADER_ID_TOKEN;
+import static com.project200.undabang.configuration.RestDocsUtils.commonResponseFields;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 
@@ -64,29 +67,29 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         BDDMockito.given(memberService.memberSignUp(BDDMockito.any(SignUpRequestDto.class))).willReturn(respDto);
 
         // when
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("X-USER-ID", memberTestId.toString());
-        httpHeaders.add("X-USER-EMAIL", memberTestEmail);
-
         String response = this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(reqDto))
-                .headers(httpHeaders))
+                .headers(getCommonAuthHeaders(memberTestId, memberTestEmail)))
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID, RestDocsUtils.HEADER_X_USER_EMAIL),
+                        requestHeaders(HEADER_ID_TOKEN),
                             requestFields(
-                                    fieldWithPath("memberNickname").type(JsonFieldType.STRING).description("회원 닉네임"),
-                                    fieldWithPath("memberGender").type(JsonFieldType.STRING).description("회원 성별 (M,F,U)"),
-                                    fieldWithPath("memberBday").type(JsonFieldType.STRING).description("회원 생년월일")
+                                    fieldWithPath("memberNickname").type(JsonFieldType.STRING)
+                                            .description("회원 닉네임입니다. 최대 30자 이내로 한글, 영문, 숫자만 사용 가능합니다. " +
+                                                    "닉네임은 공백일 수 없으며 중복될 수 없습니다."),
+                                    fieldWithPath("memberGender").type(JsonFieldType.STRING)
+                                            .description("회원 성별입니다. 회원 성별은 M(남성), F(여성), U(알수없음) 중 하나로 입력해주세요."),
+                                    fieldWithPath("memberBday").type("Date")
+                                            .description("회원 생년월일 입니다. ISO 8601 형식으로 입력해주세요. 예: 2025-01-01")
                             ),
-                            responseFields(RestDocsUtils.commonResponseFields(
+                            responseFields(commonResponseFields(
                                 fieldWithPath("data.memberId").type(JsonFieldType.STRING).description("회원 식별자"),
                                 fieldWithPath("data.memberEmail").type(JsonFieldType.STRING).description("회원 이메일"),
                                 fieldWithPath("data.memberNickname").type(JsonFieldType.STRING).description("회원 닉네임"),
                                 fieldWithPath("data.memberGender").type(JsonFieldType.STRING).description("회원 성별 M,F,U"),
                                 fieldWithPath("data.memberBday").type(JsonFieldType.STRING).description("회원 생년 월일"),
-                                fieldWithPath("data.memberDesc").type(JsonFieldType.STRING).description("회원 자기 소개").optional(),
+                                fieldWithPath("data.memberDesc").type(JsonFieldType.STRING).description("회원 자기 소개"),
                                 fieldWithPath("data.memberScore").type(JsonFieldType.NUMBER).description("회원 점수"),
                                 fieldWithPath("data.memberCreatedAt").type(JsonFieldType.STRING).description("회원 가입 일시"))
                             )
@@ -113,21 +116,18 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 .willThrow(new CustomException(ErrorCode.USER_ID_HEADER_MISSING));
 
         // when
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("X-USER-EMAIL", memberTestEmail);
-
         this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(reqDto))
-                        .headers(httpHeaders))
+                        .headers(getCommonAuthHeaders(null, memberTestEmail)))
                 .andExpect(MockMvcResultMatchers.status().isUnauthorized())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.succeed").value(false))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.code").value("USER_ID_HEADER_MISSING"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data").doesNotExist())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_EMAIL),
+                        requestHeaders(HEADER_ID_TOKEN),
                         requestFields(
                                 fieldWithPath("memberNickname").type(JsonFieldType.STRING).description("회원 닉네임"),
                                 fieldWithPath("memberGender").type(JsonFieldType.STRING).description("회원 성별 (M,F,U)"),
@@ -153,22 +153,18 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         BDDMockito.given(memberService.memberSignUp(BDDMockito.any())).willThrow(new CustomException(ErrorCode.MEMBER_EMAIL_DUPLICATED));
 
         //when
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("X-USER-ID", memberTestId.toString());
-        httpHeaders.add("X-USER-EMAIL", memberTestEmail);
-
         this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(reqDto))
-                .headers(httpHeaders))
+                .headers(getCommonAuthHeaders(memberTestId, memberTestEmail)))
                 .andExpect(MockMvcResultMatchers.status().isConflict())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.succeed").value(false))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.code").value("MEMBER_EMAIL_DUPLICATED"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data").doesNotExist())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID, RestDocsUtils.HEADER_X_USER_EMAIL),
+                        requestHeaders(HEADER_ID_TOKEN),
                         requestFields(
                                 fieldWithPath("memberNickname").type(JsonFieldType.STRING).description("회원 닉네임"),
                                 fieldWithPath("memberGender").type(JsonFieldType.STRING).description("회원 성별 (M,F,U)"),
@@ -194,21 +190,18 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         BDDMockito.given(memberService.memberSignUp(BDDMockito.any(SignUpRequestDto.class))).willThrow(new CustomException(ErrorCode.USER_EMAIL_HEADER_MISSING));
 
         //when
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("X-USER-ID", memberTestId.toString());
-
         this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(reqDto))
-                .headers(httpHeaders))
+                .headers(getCommonAuthHeaders(memberTestId, null)))
                 .andExpect(MockMvcResultMatchers.status().isUnauthorized())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.succeed").value(false))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.code").value("USER_EMAIL_HEADER_MISSING"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data").doesNotExist())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        requestHeaders(HEADER_ID_TOKEN),
                         requestFields(
                                 fieldWithPath("memberNickname").type(JsonFieldType.STRING).description("회원 닉네임"),
                                 fieldWithPath("memberGender").type(JsonFieldType.STRING).description("회원 성별 (M,F,U)"),
@@ -234,14 +227,10 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         BDDMockito.given(memberService.memberSignUp(BDDMockito.any(SignUpRequestDto.class))).willThrow(new CustomException(ErrorCode.MEMBER_NICKNAME_DUPLICATED));
 
         //when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberTestId.toString());
-        headers.add("X-USER-EMAIL", memberTestEmail);
-
         this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
-                .headers(headers)
+                .headers(getCommonAuthHeaders(memberTestId, memberTestEmail))
                 .content(objectMapper.writeValueAsString(reqDto)))
                 .andExpect(MockMvcResultMatchers.status().isConflict())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.succeed").value(false))
@@ -249,7 +238,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data").doesNotExist())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID, RestDocsUtils.HEADER_X_USER_EMAIL),
+                        requestHeaders(HEADER_ID_TOKEN),
                         requestFields(
                                 fieldWithPath("memberNickname").type(JsonFieldType.STRING).description("회원 닉네임"),
                                 fieldWithPath("memberGender").type(JsonFieldType.STRING).description("회원 성별 (M,F,U)"),
@@ -275,14 +264,10 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         BDDMockito.given(memberService.memberSignUp(BDDMockito.any(SignUpRequestDto.class))).willThrow(new CustomException(ErrorCode.MEMBER_BDAY_ERROR));
 
         //when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberTestId.toString());
-        headers.add("X-USER-EMAIL", memberTestEmail);
-
         this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
-                .headers(headers)
+                .headers(getCommonAuthHeaders(memberTestId, memberTestEmail))
                 .content(objectMapper.writeValueAsString(reqDto)))
                 .andExpect(MockMvcResultMatchers.status().isConflict())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.succeed").value(false))
@@ -290,7 +275,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data").doesNotExist())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID, RestDocsUtils.HEADER_X_USER_EMAIL),
+                        requestHeaders(HEADER_ID_TOKEN),
                         requestFields(
                                 fieldWithPath("memberNickname").type(JsonFieldType.STRING).description("회원 닉네임"),
                                 fieldWithPath("memberGender").type(JsonFieldType.STRING).description("회원 성별 (M,F,U)"),
@@ -316,14 +301,10 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         BDDMockito.given(memberService.memberSignUp(BDDMockito.any(SignUpRequestDto.class))).willThrow(new CustomException(ErrorCode.MEMBER_GENDER_ERROR));
 
         //when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberTestId.toString());
-        headers.add("X-USER-EMAIL", memberTestEmail);
-
         this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
-                .headers(headers)
+                .headers(getCommonAuthHeaders(memberTestId, memberTestEmail))
                 .content(objectMapper.writeValueAsString(reqDto)))
                 .andExpect(MockMvcResultMatchers.status().isConflict())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.succeed").value(false))
@@ -331,7 +312,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data").doesNotExist())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID, RestDocsUtils.HEADER_X_USER_EMAIL),
+                        requestHeaders(HEADER_ID_TOKEN),
                         requestFields(
                                 fieldWithPath("memberNickname").type(JsonFieldType.STRING).description("회원 닉네임"),
                                 fieldWithPath("memberGender").type(JsonFieldType.STRING).description("회원 성별 (M,F,U)"),
@@ -353,14 +334,10 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 .build();
 
         // when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberTestId.toString());
-        headers.add("X-USER-EMAIL", memberTestEmail);
-
         this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
-                .headers(headers)
+                .headers(getCommonAuthHeaders(memberTestId, memberTestEmail))
                 .content(objectMapper.writeValueAsString(reqDto)))
                 .andExpect(MockMvcResultMatchers.status().isBadRequest())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.succeed").value(false))
@@ -368,7 +345,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data").exists())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID, RestDocsUtils.HEADER_X_USER_EMAIL),
+                        requestHeaders(HEADER_ID_TOKEN),
                         requestFields(
                                 fieldWithPath("memberNickname").type(JsonFieldType.NULL).description("회원 닉네임"),
                                 fieldWithPath("memberGender").type(JsonFieldType.STRING).description("회원 성별 (M,F,U)"),
@@ -397,14 +374,10 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 .memberGender(MemberGender.M)
                 .build();
         // when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberTestId.toString());
-        headers.add("X-USER-EMAIL", memberTestEmail);
-
         this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
-                .headers(headers)
+                .headers(getCommonAuthHeaders(memberTestId, memberTestEmail))
                 .content(objectMapper.writeValueAsString(reqDto)))
                 .andExpect(MockMvcResultMatchers.status().isBadRequest())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.succeed").value(false))
@@ -412,7 +385,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data").exists())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID, RestDocsUtils.HEADER_X_USER_EMAIL),
+                        requestHeaders(HEADER_ID_TOKEN),
                         requestFields(
                                 fieldWithPath("memberNickname").type(JsonFieldType.STRING).description("회원 닉네임"),
                                 fieldWithPath("memberGender").type(JsonFieldType.STRING).description("회원 성별 (M,F,U)"),
@@ -444,14 +417,10 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 .willThrow(new CustomException(ErrorCode.MEMBER_SAVE_FAILED_ERROR));
 
         // when & then
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberTestId.toString());
-        headers.add("X-USER-EMAIL", memberTestEmail);
-
         this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
-                .headers(headers)
+                .headers(getCommonAuthHeaders(memberTestId, memberTestEmail))
                 .content(objectMapper.writeValueAsString(reqDto)))
                 .andExpect(MockMvcResultMatchers.status().isInternalServerError())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.succeed").value(false))
@@ -459,7 +428,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data").doesNotExist())
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID, RestDocsUtils.HEADER_X_USER_EMAIL),
+                        requestHeaders(HEADER_ID_TOKEN),
                         requestFields(
                                 fieldWithPath("memberNickname").type(JsonFieldType.STRING).description("회원 닉네임"),
                                 fieldWithPath("memberGender").type(JsonFieldType.STRING).description("회원 성별 (M,F,U)"),

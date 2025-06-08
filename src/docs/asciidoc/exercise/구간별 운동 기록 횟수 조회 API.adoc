@@ -1,0 +1,25 @@
+== 구간별 운동 기록 횟수 조회 API
+
+=== 설명
+- #GET# `api/v1/exercises/count?start={startDate}&end={endDate}`
+- 날짜별 운동 기록을 조회하는 API입니다. 사용자가 특정 날짜에 수행한 운동 기록의 목록을 반환합니다.
+
+=== 개발 참고 사항
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+- `date`는 쿼리 매개 변수로 전달되며, ISO 8601 형식(예: `2025-10-01`)으로 지정되어야 합니다.
+- 여러개의 운동 기록이 있는 경우, 해당 날짜에 수행한 모든 운동 기록을 리스트로 반환합니다.
+- 이미지 url은 배열로 반환되며 생성 시 저장된 순서로 정렬되어 반환됩니다.
+
+=== 코드 샘플
+operation::exercise-query-controller-test/find-exercise-records-by-period[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+operation::exercise-query-controller-test/find-exercise-records-by-period[snippets="request-headers,query-parameters,response-fields"]
+
+==== 응답 상태 코드
+|===
+|상태 코드|설명
+|200|운동 기록이 성공적으로 생성되었습니다.
+|400|입력값 검증에 실패했습니다. start와 end의 DATA 형식이 잘못되었거나 누락된 경우, start가 광복 이전인 경우, end가 start보다 이전인 경우, end가 오늘 이후인 경우입니다.
+|===
+

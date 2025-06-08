@@ -1,31 +1,21 @@
 == 운동 기록 생성 API
 
-
 === 설명
-
-- #POST# `v1/exercises`
+- #POST# `/api/v1/exercises`
 - 운동 기록을 생성하는 API입니다.
 이 API를 통해 사용자는 자신의 운동 활동을 기록하고 관리할 수 있습니다.
 - 사용자는 운동 제목, 종류, 장소, 상세 내용, 시작 시간, 종료 시간을 포함하여 운동 기록을 작성할 수 있습니다.
 
-=== 개발 참고사항
-
-- 요청 헤더에 Authorization이 있다면 이 API는 회원 인증을 요구합니다.
-- 요청의 필수 여부는 요청 필드의 필수 여부를 참고하세요.
-- 요청에 대한 검증은 요청 필드의 설명을 참고하세요.
-- Datetime은 ISO 8601 형식(예: `2023-10-01T10:00:00Z`)으로 입력해야 합니다.
-- API 성공, 실패 시 상태 코드는 응답 상태 코드를 참고하세요.
+=== 개발 참고 사항
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
 
 === 코드 샘플
-
 operation::exercise-command-controller-test/create-exercise-success[snippets="curl-request,http-request,http-response"]
 
 === 매개 변수
-
 operation::exercise-command-controller-test/create-exercise-success[snippets="request-headers,request-fields,response-fields"]
 
 ==== 응답 상태 코드
-
 |===
 |상태 코드|설명
 |201|운동 기록이 성공적으로 생성되었습니다.

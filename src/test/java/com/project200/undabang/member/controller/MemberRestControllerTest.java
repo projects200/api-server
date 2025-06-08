@@ -19,6 +19,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.util.UUID;
 
+import static com.project200.undabang.configuration.HeadersGenerator.getCommonApiHeaders;
+import static com.project200.undabang.configuration.RestDocsUtils.HEADER_ACCESS_TOKEN;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
@@ -45,22 +47,22 @@ class MemberRestControllerTest extends AbstractRestDocSupport {
         BDDMockito.given(memberQueryService.getRegistrationStatus()).willReturn(responseDto);
 
         // when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberId.toString());
-
         String response = this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/members/me/registration-status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .headers(headers))
+                        .headers(getCommonApiHeaders(memberId)))
                 .andExpectAll(
                         MockMvcResultMatchers.status().isOk()
                 )
                 // rest docs 문서화
                 .andDo(this.document.document(
-                        requestHeaders(RestDocsUtils.HEADER_X_USER_ID),
+                        requestHeaders(HEADER_ACCESS_TOKEN),
                         responseFields(RestDocsUtils.commonResponseFields(
-                                fieldWithPath("data.memberId").type(JsonFieldType.STRING).description("회원 식별자"),
-                                fieldWithPath("data.isRegistered").type(JsonFieldType.BOOLEAN).description("회원 등록 상태")
+                                fieldWithPath("data.memberId").type(JsonFieldType.STRING)
+                                        .description("조회하기 위해 입력한 토큰에 포함된 회원 식별자입니다. " +
+                                                "요청 헤더에 포함된 값을 반환하는 것이므로 이 값의 유무로 판단하지 마세요."),
+                                fieldWithPath("data.isRegistered").type(JsonFieldType.BOOLEAN)
+                                        .description("회원 등록 상태입니다. true면 회원이 등록되어 있고, false면 등록되지 않은 상태입니다.")
                         ))
                 ))
                 .andReturn().getResponse().getContentAsString();

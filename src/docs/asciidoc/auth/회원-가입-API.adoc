@@ -1,0 +1,45 @@
+== 회원 가입 API
+
+=== 설명
+
+- #POST# `/auth/v1/signup`
+- 회원 가입을 위한 API입니다.
+
+=== 개발 참고 사항
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+operation::auth-rest-controller-test/sign-up-member_-succeed[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+operation::auth-rest-controller-test/sign-up-member_-succeed[snippets="request-headers,request-fields,response-fields"]
+
+==== 응답 상태 코드
+|===
+|상태 코드|설명
+|200|요청이 성공적으로 처리되었습니다. 회원 가입이 완료되었습니다.
+|400|입력값 검증에 실패했습니다. 회원 가입에 필요한 필수 정보가 누락되었거나 잘못되었습니다.
+|401|인증되지 않은 요청입니다. Id Token이 없거나 유효하지 않습니다.
+|409|회원 가입에 실패했습니다. 다음과 같은 이유로 실패할 수 있습니다: 사용자 Email 중복, 사용자 Nickname 중복, 사용자 생년월일 입력 오류, 사용자 성별 입력 오류인 경우입니다.
+|500|서버 오류가 발생했습니다. 회원 가입에 실패했습니다.
+|===
+
+==== 오류 응답
+- 중복되는 이메일이 있을 경우 다음과 같은 응답을 반환합니다.
+```java
+{
+    "succeed" : false,
+    "code" : "MEMBER_EMAIL_DUPLICATED",
+    "message" : "이미 사용 중인 이메일입니다.",
+    "data" : null
+}
+```
+- 중복되는 닉네임이 있을 경우 다음과 같은 응답을 반환합니다.
+```java
+{
+    "succeed" : false,
+    "code" : "MEMBER_NICKNAME_DUPLICATED",
+    "message" : "이미 사용 중인 닉네임입니다.",
+    "data" : null
+}
+```

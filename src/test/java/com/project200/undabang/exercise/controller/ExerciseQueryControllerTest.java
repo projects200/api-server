@@ -26,12 +26,15 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
-import static com.project200.undabang.configuration.RestDocsUtils.HEADER_X_USER_ID;
-import static com.project200.undabang.configuration.RestDocsUtils.commonResponseFields;
+import static com.project200.undabang.configuration.DocumentFormatGenerator.getTypeFormat;
+import static com.project200.undabang.configuration.HeadersGenerator.getCommonApiHeaders;
+import static com.project200.undabang.configuration.RestDocsUtils.*;
+import static com.project200.undabang.configuration.RestDocsUtils.commonResponseFieldsForList;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.request.RequestDocumentation.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ExerciseQueryController.class)
@@ -87,28 +90,42 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
         given(exerciseQueryService.findExerciseRecordByRecordId(recordId)).willReturn(respDto);
 
         //when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberId.toString());
 
-        String response = this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/exercises/{recordId}", recordId)
+        String response = this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/exercises/{exerciseId}", recordId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .headers(headers))
+                        .headers(getCommonApiHeaders(memberId)))
                 .andExpectAll(status().isOk())
                 .andDo(this.document.document(
-                        requestHeaders(HEADER_X_USER_ID),
+                        requestHeaders(HEADER_ACCESS_TOKEN),
+                        pathParameters(
+                                parameterWithName("exerciseId").attributes(getTypeFormat(JsonFieldType.NUMBER))
+                                        .description("운동 ID입니다. 조회할 운동 기록 ID를 입력하시면 됩니다.")
+                        ),
                         responseFields(commonResponseFields(
-                                fieldWithPath("data.exerciseTitle").type(JsonFieldType.STRING).description("운동 제목"),
-                                fieldWithPath("data.exerciseDetail").type(JsonFieldType.STRING).description("운동 내용"),
-                                fieldWithPath("data.exercisePersonalType").type(JsonFieldType.STRING).description("운동 종류"),
-                                fieldWithPath("data.exerciseStartedAt").type(JsonFieldType.STRING).description("운동 시작 시간"),
-                                fieldWithPath("data.exerciseEndedAt").type(JsonFieldType.STRING).description("운동 종료 시간"),
-                                fieldWithPath("data.exerciseLocation").type(JsonFieldType.STRING).description("운동 장소 제목"),
-                                fieldWithPath("data.pictureDataList").type(JsonFieldType.ARRAY).description("운동 사진 관련 필드"),
-                                fieldWithPath("data.pictureDataList[].pictureId").type(JsonFieldType.NUMBER).description("사진 식별자 ID"),
-                                fieldWithPath("data.pictureDataList[].pictureUrl").type(JsonFieldType.STRING).description("사진 URL"),
-                                fieldWithPath("data.pictureDataList[].pictureName").type(JsonFieldType.STRING).description("사진 이름"),
-                                fieldWithPath("data.pictureDataList[].pictureExtension").type(JsonFieldType.STRING).description("사진 확장자")
+                                fieldWithPath("data.exerciseTitle").type(JsonFieldType.STRING)
+                                        .description("운동 제목입니다."),
+                                fieldWithPath("data.exerciseDetail").type(JsonFieldType.STRING)
+                                        .description("운동 내용입니다."),
+                                fieldWithPath("data.exercisePersonalType").type(JsonFieldType.STRING)
+                                        .description("운동 종류입니다."),
+                                fieldWithPath("data.exerciseStartedAt").type(JsonFieldType.STRING)
+                                        .description("운동 시작 시간입니다."),
+                                fieldWithPath("data.exerciseEndedAt").type(JsonFieldType.STRING)
+                                        .description("운동 종료 시간입니다."),
+                                fieldWithPath("data.exerciseLocation").type(JsonFieldType.STRING)
+                                        .description("운동 장소 제목입니다."),
+                                fieldWithPath("data.pictureDataList[]").type(JsonFieldType.ARRAY)
+                                        .description("운동 사진 리스트입니다. 사진이 없으면 null로 반환됩니다. " +
+                                                "사진은 이미지 업로드할 때, 저장된 순서로 반환됩니다."),
+                                fieldWithPath("data.pictureDataList[].pictureId").type(JsonFieldType.NUMBER)
+                                        .description("사진 식별자 ID입니다. 삭제할 때 사용 가능합니다."),
+                                fieldWithPath("data.pictureDataList[].pictureUrl").type(JsonFieldType.STRING)
+                                        .description("사진 URL입니다."),
+                                fieldWithPath("data.pictureDataList[].pictureName").type(JsonFieldType.STRING)
+                                        .description("사진 이름입니다."),
+                                fieldWithPath("data.pictureDataList[].pictureExtension").type(JsonFieldType.STRING)
+                                        .description("사진 확장자입니다.")
                         ))
                 ))
                 .andReturn().getResponse().getContentAsString();
@@ -142,16 +159,13 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
         given(exerciseQueryService.findExerciseRecordByRecordId(recordId)).willReturn(respDto);
 
         //when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberId.toString());
-
         String response = this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/exercises/{recordId}", recordId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .headers(headers))
+                        .headers(getCommonApiHeaders(memberId)))
                 .andExpectAll(status().isOk())
                 .andDo(this.document.document(
-                        requestHeaders(HEADER_X_USER_ID),
+                        requestHeaders(HEADER_ACCESS_TOKEN),
                         responseFields(commonResponseFields(
                                 fieldWithPath("data.exerciseTitle").type(JsonFieldType.STRING).description("운동 제목"),
                                 fieldWithPath("data.exerciseDetail").type(JsonFieldType.STRING).description("운동 내용"),
@@ -179,16 +193,13 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
         Long recordId = -1L;
 
         // when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberId.toString());
-
         this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/exercises/{recordId}", recordId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .headers(headers))
+                        .headers(getCommonApiHeaders(memberId)))
                 .andExpect(status().isBadRequest())
                 .andDo(this.document.document(
-                        requestHeaders(HEADER_X_USER_ID),
+                        requestHeaders(HEADER_ACCESS_TOKEN),
                         responseFields(commonResponseFields(
                                 fieldWithPath("data['recordId']").type(JsonFieldType.STRING).description("올바른 Record를 다시 입력해주세요")
                         ))
@@ -210,16 +221,13 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
                 .willThrow(new CustomException(ErrorCode.EXERCISE_RECORD_NOT_FOUND));
 
         // when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberId.toString());
-
         this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/exercises/{recordId}", nonExistentRecordId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .headers(headers))
+                        .headers(getCommonApiHeaders(memberId)))
                 .andExpect(status().isNotFound())
                 .andDo(this.document.document(
-                        requestHeaders(HEADER_X_USER_ID),
+                        requestHeaders(HEADER_ACCESS_TOKEN),
                         responseFields(RestDocsUtils.commonResponseFieldsOnly())
                 ));
 
@@ -239,17 +247,14 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
 
 
         //when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberId.toString());
-
         this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/exercises/{recordId}", anotherUserRecordID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .headers(headers))
+                        .headers(getCommonApiHeaders(memberId)))
                 .andExpect(status().isForbidden())
                 .andDo(this.document.document(
-                        requestHeaders(HEADER_X_USER_ID),
-                        responseFields(RestDocsUtils.commonResponseFieldsOnly())
+                        requestHeaders(HEADER_ACCESS_TOKEN),
+                        responseFields(commonResponseFieldsOnly())
                 ));
 
         //then
@@ -280,28 +285,34 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
         given(exerciseQueryService.findExerciseRecordByDate(testDateTime.toLocalDate())).willReturn(responseDtoList);
 
         //when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberId.toString());
-
         String response = this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/exercises")
-                        .param("date", testDateTime.toLocalDate().toString())
+                        .queryParam("date", testDateTime.toLocalDate().toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .headers(headers))
+                        .headers(getCommonApiHeaders(memberId)))
                 .andExpect(status().isOk())
                 .andDo(this.document.document(
-                        requestHeaders(HEADER_X_USER_ID),
+                        requestHeaders(HEADER_ACCESS_TOKEN),
+                        queryParameters(
+                                parameterWithName("date")
+                                        .attributes(getTypeFormat("Date"))
+                                        .description("운동 기록을 조회할 날짜입니다. 형식은 ISO 8601 (YYYY-MM-DD)입니다.")
+                        ),
                         responseFields(
-                                fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
-                                fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
-                                fieldWithPath("message").type(JsonFieldType.STRING).description("응답 메시지"),
-                                fieldWithPath("data").type(JsonFieldType.ARRAY).description("운동 기록 목록"),
-                                fieldWithPath("data[].exerciseId").type(JsonFieldType.NUMBER).description("운동 ID"),
-                                fieldWithPath("data[].exerciseTitle").type(JsonFieldType.STRING).description("운동 제목"),
-                                fieldWithPath("data[].exercisePersonalType").type(JsonFieldType.STRING).description("운동 종류"),
-                                fieldWithPath("data[].exerciseStartedAt").type(JsonFieldType.STRING).description("운동 시작시간"),
-                                fieldWithPath("data[].exerciseEndedAt").type(JsonFieldType.STRING).description("운동 종료시간"),
-                                fieldWithPath("data[].pictureUrl").type(JsonFieldType.ARRAY).description("운동 사진 URL 목록")
+                                commonResponseFieldsForList(
+                                    fieldWithPath("data[].exerciseId").type(JsonFieldType.NUMBER)
+                                            .description("운동 ID입니다."),
+                                    fieldWithPath("data[].exerciseTitle").type(JsonFieldType.STRING)
+                                            .description("운동 제목입니다."),
+                                    fieldWithPath("data[].exercisePersonalType").type(JsonFieldType.STRING)
+                                            .description("사용자가 입력한 운동 종류입니다."),
+                                    fieldWithPath("data[].exerciseStartedAt").type(JsonFieldType.STRING)
+                                            .description("운동 시작시간입니다."),
+                                    fieldWithPath("data[].exerciseEndedAt").type(JsonFieldType.STRING)
+                                            .description("운동 종료시간입니다."),
+                                    fieldWithPath("data[].pictureUrl").type(JsonFieldType.ARRAY)
+                                            .description("운동 사진 URL 목록입니다. 사진은 저장된 순서로 반환됩니다.")
+                                )
                         )
                 ))
                 .andReturn().getResponse().getContentAsString();
@@ -323,22 +334,16 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
         given(exerciseQueryService.findExerciseRecordByDate(testDateTime.toLocalDate())).willReturn(Collections.emptyList());
 
         //when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberId.toString());
-
         String response = this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/exercises")
-                        .param("date", testDateTime.toLocalDate().toString())
+                        .queryParam("date", testDateTime.toLocalDate().toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .headers(headers))
+                        .headers(getCommonApiHeaders(memberId)))
                 .andExpect(status().isOk())
                 .andDo(this.document.document(
-                        requestHeaders(HEADER_X_USER_ID),
+                        requestHeaders(HEADER_ACCESS_TOKEN),
                         responseFields(
-                                fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
-                                fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
-                                fieldWithPath("message").type(JsonFieldType.STRING).description("응답 메시지"),
-                                fieldWithPath("data").type(JsonFieldType.ARRAY).description("운동 기록 목록")
+                                commonResponseFieldsForList()
                         )
                 ))
                 .andReturn().getResponse().getContentAsString();
@@ -357,17 +362,14 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
         String date = "20111111";
 
         //when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberId.toString());
-
         this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/exercises")
-                        .param("date", date)
+                        .queryParam("date", date)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .headers(headers))
+                        .headers(getCommonApiHeaders(memberId)))
                 .andExpect(status().isBadRequest())
                 .andDo(this.document.document(
-                        requestHeaders(HEADER_X_USER_ID),
+                        requestHeaders(HEADER_ACCESS_TOKEN),
                         responseFields(
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
@@ -387,16 +389,13 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
         UUID memberId = UUID.randomUUID();
 
         //when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberId.toString());
-
         this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/exercises")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .headers(headers))
+                        .headers(getCommonApiHeaders(memberId)))
                 .andExpect(status().isBadRequest())
                 .andDo(this.document.document(
-                        requestHeaders(HEADER_X_USER_ID),
+                        requestHeaders(HEADER_ACCESS_TOKEN),
                         responseFields(
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
@@ -419,17 +418,14 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
         given(exerciseQueryService.findExerciseRecordByDate(date)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
 
         //when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberId.toString());
-
         this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/exercises")
-                        .param("date", date.toString())
+                        .queryParam("date", date.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .headers(headers))
+                        .headers(getCommonApiHeaders(memberId)))
                 .andExpect(status().isBadRequest())
                 .andDo(this.document.document(
-                        requestHeaders(HEADER_X_USER_ID),
+                        requestHeaders(HEADER_ACCESS_TOKEN),
                         responseFields(
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
@@ -452,17 +448,14 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
         given(exerciseQueryService.findExerciseRecordByDate(date)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
 
         //when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberId.toString());
-
         this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/exercises")
-                        .param("date", date.toString())
+                        .queryParam("date", date.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .headers(headers))
+                        .headers(getCommonApiHeaders(memberId)))
                 .andExpect(status().isBadRequest())
                 .andDo(this.document.document(
-                        requestHeaders(HEADER_X_USER_ID),
+                        requestHeaders(HEADER_ACCESS_TOKEN),
                         responseFields(
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
@@ -490,25 +483,29 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
         given(exerciseQueryService.findExerciseRecordsByPeriod(start, end)).willReturn(respDtoList);
 
         // when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberId.toString());
-
         this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/exercises/count")
-                        .param("start", start.toString())
-                        .param("end", end.toString())
+                        .queryParam("start", start.toString())
+                        .queryParam("end", end.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .headers(headers))
+                        .headers(getCommonApiHeaders(memberId)))
                 .andExpect(status().isOk())
                 .andDo(this.document.document(
-                        requestHeaders(HEADER_X_USER_ID),
+                        requestHeaders(HEADER_ACCESS_TOKEN),
+                        queryParameters(
+                                parameterWithName("start").attributes(getTypeFormat(JsonFieldType.STRING))
+                                        .description("운동 기록을 조회할 시작 날짜입니다. 형식은 ISO 8601 (YYYY-MM-DD)입니다. " +
+                                                "시작 날짜는 오늘 이전이어야 합니다."),
+                                parameterWithName("end").attributes(getTypeFormat(JsonFieldType.STRING))
+                                        .description("운동 기록을 조회할 종료 날짜입니다. 형식은 ISO 8601 (YYYY-MM-DD)입니다.")
+                        ),
                         responseFields(
-                                fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
-                                fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
-                                fieldWithPath("message").type(JsonFieldType.STRING).description("응답 메시지"),
-                                fieldWithPath("data").type(JsonFieldType.ARRAY).description("운동 기록 목록"),
-                                fieldWithPath("data[].date").type(JsonFieldType.STRING).description("운동 날짜"),
-                                fieldWithPath("data[].exerciseCount").type(JsonFieldType.NUMBER).description("운동 횟수")
+                                commonResponseFieldsForList(
+                                    fieldWithPath("data[].date").type(JsonFieldType.STRING)
+                                            .description("운동한 날짜입니다."),
+                                    fieldWithPath("data[].exerciseCount").type(JsonFieldType.NUMBER)
+                                            .description("운동 기록 수 입니다.")
+                                )
                         )
                 ));
 
@@ -525,18 +522,15 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
         LocalDate end = LocalDate.now();
 
         //when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberId.toString());
-
         this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/exercises/count")
-                        .param("start", start)
-                        .param("end", end.toString())
+                        .queryParam("start", start)
+                        .queryParam("end", end.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .headers(headers))
+                        .headers(getCommonApiHeaders(memberId)))
                 .andExpect(status().isBadRequest())
                 .andDo(this.document.document(
-                        requestHeaders(HEADER_X_USER_ID),
+                        requestHeaders(HEADER_ACCESS_TOKEN),
                         responseFields(
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
@@ -558,17 +552,14 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
         LocalDate start = LocalDate.now();
 
         //when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberId.toString());
-
         this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/exercises/count")
-                        .param("start", start.toString())
+                        .queryParam("start", start.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .headers(headers))
+                        .headers(getCommonApiHeaders(memberId)))
                 .andExpect(status().isBadRequest())
                 .andDo(this.document.document(
-                        requestHeaders(HEADER_X_USER_ID),
+                        requestHeaders(HEADER_ACCESS_TOKEN),
                         responseFields(
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
@@ -590,20 +581,17 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
         LocalDate end = LocalDate.of(1945, 8, 15);
 
         //when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberId.toString());
-
         given(exerciseQueryService.findExerciseRecordsByPeriod(start, end)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
 
         this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/exercises/count")
-                        .param("start", start.toString())
-                        .param("end", end.toString())
+                        .queryParam("start", start.toString())
+                        .queryParam("end", end.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .headers(headers))
+                        .headers(getCommonApiHeaders(memberId)))
                 .andExpect(status().isBadRequest())
                 .andDo(this.document.document(
-                        requestHeaders(HEADER_X_USER_ID),
+                        requestHeaders(HEADER_ACCESS_TOKEN),
                         responseFields(
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
@@ -626,18 +614,15 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
         given(exerciseQueryService.findExerciseRecordsByPeriod(start, end)).willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE));
 
         //when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberId.toString());
-
         this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/exercises/count")
-                        .param("start", start.toString())
-                        .param("end", end.toString())
+                        .queryParam("start", start.toString())
+                        .queryParam("end", end.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .headers(headers))
+                        .headers(getCommonApiHeaders(memberId)))
                 .andExpect(status().isBadRequest())
                 .andDo(this.document.document(
-                        requestHeaders(HEADER_X_USER_ID),
+                        requestHeaders(HEADER_ACCESS_TOKEN),
                         responseFields(
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),
@@ -661,18 +646,15 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
         given(exerciseQueryService.findExerciseRecordsByPeriod(start, end)).willThrow(new CustomException(ErrorCode.IMPOSSIBLE_INPUT_DATE));
 
         //when
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-USER-ID", memberId.toString());
-
         this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/exercises/count")
-                        .param("start", start.toString())
-                        .param("end", end.toString())
+                        .queryParam("start", start.toString())
+                        .queryParam("end", end.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .headers(headers))
+                        .headers(getCommonApiHeaders(memberId)))
                 .andExpect(status().isBadRequest())
                 .andDo(this.document.document(
-                        requestHeaders(HEADER_X_USER_ID),
+                        requestHeaders(HEADER_ACCESS_TOKEN),
                         responseFields(
                                 fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("응답 상태"),
                                 fieldWithPath("code").type(JsonFieldType.STRING).description("상태 코드"),

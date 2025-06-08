@@ -32,7 +32,7 @@ public class CommonResponse<T> {
     }
 
     public static <T> CommonResponse<T> update(T data) {
-        return new CommonResponse<>(true, "UPDATED", "리소스가 성공적으로 업데이트되었습니다.", data);
+        return new CommonResponse<>(true, "UPDATED", "리소스가 성공적으로 수정되었습니다.", data);
     }
 
     public static <T> CommonResponse<T> delete(T data) {
