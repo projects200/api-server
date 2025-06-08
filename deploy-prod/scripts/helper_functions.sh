@@ -10,7 +10,7 @@ check_health() {
     local compose_file_name=$3 # docker-compose.yml 또는 docker-compose-sub.yml
     echo "Health checking $container_name on port $port (using $compose_file_name)..."
     for i in $(seq 1 $MAX_HEALTH_RETRIES); do
-        HEALTH_STATUS=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}unhealthy{{end}}' $container_name 2>/dev/null)
+        HEALTH_STATUS=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}unhealthy{{end}}' "$container_name" 2>/dev/null)
         HTTP_STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$port/system-monitor/health)
 
         if [[ "$HEALTH_STATUS" == "healthy" && "$HTTP_STATUS_CODE" == "200" ]]; then
@@ -60,8 +60,8 @@ clean_specific_containers() {
     echo "Cleaning up only container: $container_name"
 
     # 지정된 컨테이너만 중지 및 제거
-    docker stop $container_name 2>/dev/null || true
-    docker rm $container_name 2>/dev/null || true
+    docker stop "$container_name" 2>/dev/null || true
+    docker rm "$container_name" 2>/dev/null || true
 
     echo "Cleanup of $container_name completed."
 }
