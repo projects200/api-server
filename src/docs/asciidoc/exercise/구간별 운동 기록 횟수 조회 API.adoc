@@ -1,7 +1,7 @@
 == 구간별 운동 기록 횟수 조회 API
 
 === 설명
-- #GET# `api/v1/exercises/coun?start={startDate}&end={endDate}`
+- #GET# `api/v1/exercises/count?start={startDate}&end={endDate}`
 - 날짜별 운동 기록을 조회하는 API입니다. 사용자가 특정 날짜에 수행한 운동 기록의 목록을 반환합니다.
 
 === 개발 참고 사항
