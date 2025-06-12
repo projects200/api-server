@@ -71,7 +71,7 @@ public class ExercisePictureServiceImplTest {
         try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
             BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
             BDDMockito.given(exerciseRepository.findById(testExerciseId)).willReturn(Optional.of(testExercise));
-            BDDMockito.given(exercisePictureRepository.countByExercise_Id(testExerciseId)).willReturn(0L);
+            BDDMockito.given(exercisePictureRepository.countNotDeletedPicturesByExerciseId(testExerciseId)).willReturn(0L);
             BDDMockito.given(s3Service.generateObjectKey(BDDMockito.anyString(), BDDMockito.any())).willReturn("key");
             BDDMockito.given(s3Service.uploadImage(BDDMockito.any(), BDDMockito.anyString())).willReturn("url");
 
@@ -146,7 +146,7 @@ public class ExercisePictureServiceImplTest {
         try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
             BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
             BDDMockito.given(exerciseRepository.findById(testExerciseId)).willReturn(Optional.of(testExercise));
-            BDDMockito.given(exercisePictureRepository.countByExercise_Id(testExerciseId)).willReturn(3L);
+            BDDMockito.given(exercisePictureRepository.countNotDeletedPicturesByExerciseId(testExerciseId)).willReturn(3L);
 
             // when and then
             assertThatThrownBy(() -> exercisePictureService.uploadExercisePictures(testExerciseId, testFiles))
@@ -174,7 +174,7 @@ public class ExercisePictureServiceImplTest {
         try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
             BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
             BDDMockito.given(exerciseRepository.findById(testExerciseId)).willReturn(Optional.of(testExercise));
-            BDDMockito.given(exercisePictureRepository.countByExercise_Id(testExerciseId)).willReturn(0L);
+            BDDMockito.given(exercisePictureRepository.countNotDeletedPicturesByExerciseId(testExerciseId)).willReturn(0L);
             BDDMockito.given(s3Service.generateObjectKey(BDDMockito.anyString(), BDDMockito.any())).willReturn("key");
             BDDMockito.given(s3Service.uploadImage(BDDMockito.any(), BDDMockito.anyString())).willReturn("url");
             BDDMockito.doThrow(new RuntimeException("Database error")).when(pictureRepository).saveAll(BDDMockito.any());
@@ -207,7 +207,7 @@ public class ExercisePictureServiceImplTest {
         try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
             BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
             BDDMockito.given(exerciseRepository.findById(testExerciseId)).willReturn(Optional.of(testExercise));
-            BDDMockito.given(exercisePictureRepository.countByExercise_Id(testExerciseId)).willReturn(2L);
+            BDDMockito.given(exercisePictureRepository.countNotDeletedPicturesByExerciseId(testExerciseId)).willReturn(2L);
             BDDMockito.given(s3Service.generateObjectKey(BDDMockito.anyString(), BDDMockito.any())).willReturn("key");
 
             // s3Service.uploadImage 모의 설정 시작
