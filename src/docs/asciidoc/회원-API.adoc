@@ -17,5 +17,3 @@
 [[공통-개발-참고-사항]]
 == 공통 개발 참고 사항
 include::overview/공통-개발-참고-사항.adoc[]
-
-include::member/회원-등록-상태-조회-API.adoc[]
