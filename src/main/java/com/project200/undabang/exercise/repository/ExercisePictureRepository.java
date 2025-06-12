@@ -8,4 +8,5 @@ import java.util.List;
 public interface ExercisePictureRepository extends JpaRepository<ExercisePicture, Long>, ExercisePictureRepositoryCustom {
 
     List<ExercisePicture> findAllByExercise_Id(Long exerciseId);
+    long countByExercise_Id(Long id);
 }
