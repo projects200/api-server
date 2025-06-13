@@ -449,9 +449,13 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         BDDMockito.then(memberService).should(BDDMockito.times(1)).memberSignUp(BDDMockito.any(SignUpRequestDto.class));
     }
 
+    /**
+     * /api/v1/... -> /auth/v1/...으로 url prefix 변경
+     * Authorization 헤더에 Access token 대신 Id token 필요, 이에 API 명세서에 별도 내용 명시
+     */
     @Test
-    @DisplayName("registration-status url 변경")
-    public void changeRegistrationStatusUrl() throws Exception {
+    @DisplayName("회원 등록 상태 조회 - 회원 맞음")
+    public void getRegistrationStatus_Success() throws Exception {
         // given
         MemberRegistrationStatusResponseDto respDto = MemberRegistrationStatusResponseDto.builder()
                 .memberId(memberTestId)
@@ -490,7 +494,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
 
     @Test
     @DisplayName("토큰은 유효하지만, 가입되지 않은 회원일 경우")
-    public void registrationStatus_UserNotRegistered_ReturnsFalse() throws Exception {
+    public void getRegistrationStatus_Succeed_NotExistUser() throws Exception {
         // given
         MemberRegistrationStatusResponseDto respDto = MemberRegistrationStatusResponseDto.builder()
                 .memberId(memberTestId)
@@ -518,7 +522,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
 
     @Test
     @DisplayName("ID 토큰이 없는 경우의 회원정보 조회")
-    public void changeRegistrationStatusUrl_Failed() throws Exception {
+    public void getRegistrationStatus_Failed() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.get("/auth/v1/registration-status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))

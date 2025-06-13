@@ -7,6 +7,7 @@
 
 === 개발 참고 사항
 - <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+- '/api' 에서 '/auth'로 변경되었습니다. Authorization 헤더에는 IDTOKEN 이 담겨야 합니다.
 
 === 코드 샘플
 operation::auth-rest-controller-test/change-registration-status-url[snippets="curl-request,http-request,http-response"]

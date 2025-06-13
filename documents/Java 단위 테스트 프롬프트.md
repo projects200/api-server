@@ -9,14 +9,12 @@
 - Controller test는 다음 코드를 참고해
 ```java
 @WebMvcTest(Controller.class)
-public class JUnit5ExampleTests extended AbstractRestDocSupport {
+public class JUnit5ExampleTests extends AbstractRestDocSupport {
 
     // 한국어로 주석 입력
     @Test
     @DisplayName("한국어로 입력")
-    public void testExample() extends
-
-    Exception {
+    public void testExample() throws Exception {
         // given
         UUID testMemberId = UUID.randomUUID();
 
