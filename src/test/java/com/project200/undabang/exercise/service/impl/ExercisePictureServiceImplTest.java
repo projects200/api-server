@@ -16,11 +16,10 @@ import com.project200.undabang.member.entity.Member;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.BDDMockito;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -68,7 +67,7 @@ public class ExercisePictureServiceImplTest {
         try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
             BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
             BDDMockito.given(exerciseRepository.findById(testExerciseId)).willReturn(Optional.of(testExercise));
-            BDDMockito.given(exercisePictureRepository.countByExercise_Id(testExerciseId)).willReturn(0L);
+            BDDMockito.given(exercisePictureRepository.countNotDeletedPicturesByExerciseId(testExerciseId)).willReturn(0L);
             BDDMockito.given(s3Service.generateObjectKey(BDDMockito.anyString(), BDDMockito.any())).willReturn("key");
             BDDMockito.given(s3Service.uploadImage(BDDMockito.any(), BDDMockito.anyString())).willReturn("url");
 
@@ -143,7 +142,7 @@ public class ExercisePictureServiceImplTest {
         try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
             BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
             BDDMockito.given(exerciseRepository.findById(testExerciseId)).willReturn(Optional.of(testExercise));
-            BDDMockito.given(exercisePictureRepository.countByExercise_Id(testExerciseId)).willReturn(3L);
+            BDDMockito.given(exercisePictureRepository.countNotDeletedPicturesByExerciseId(testExerciseId)).willReturn(3L);
 
             // when and then
             assertThatThrownBy(() -> exercisePictureService.uploadExercisePictures(testExerciseId, testFiles))
@@ -171,7 +170,7 @@ public class ExercisePictureServiceImplTest {
         try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
             BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
             BDDMockito.given(exerciseRepository.findById(testExerciseId)).willReturn(Optional.of(testExercise));
-            BDDMockito.given(exercisePictureRepository.countByExercise_Id(testExerciseId)).willReturn(0L);
+            BDDMockito.given(exercisePictureRepository.countNotDeletedPicturesByExerciseId(testExerciseId)).willReturn(0L);
             BDDMockito.given(s3Service.generateObjectKey(BDDMockito.anyString(), BDDMockito.any())).willReturn("key");
             BDDMockito.given(s3Service.uploadImage(BDDMockito.any(), BDDMockito.anyString())).willReturn("url");
             BDDMockito.doThrow(new RuntimeException("Database error")).when(pictureRepository).saveAll(BDDMockito.any());
@@ -204,7 +203,7 @@ public class ExercisePictureServiceImplTest {
         try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
             BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
             BDDMockito.given(exerciseRepository.findById(testExerciseId)).willReturn(Optional.of(testExercise));
-            BDDMockito.given(exercisePictureRepository.countByExercise_Id(testExerciseId)).willReturn(2L);
+            BDDMockito.given(exercisePictureRepository.countNotDeletedPicturesByExerciseId(testExerciseId)).willReturn(2L);
             BDDMockito.given(s3Service.generateObjectKey(BDDMockito.anyString(), BDDMockito.any())).willReturn("key");
 
             // s3Service.uploadImage 모의 설정 시작
@@ -233,7 +232,7 @@ public class ExercisePictureServiceImplTest {
 
     @Test
     @DisplayName("운동기록 이미지 삭제 _ 성공")
-    void deleteExerciseImages(){
+    void deleteExerciseImages() {
         // given
         UUID testMemberId = UUID.randomUUID();
         Long testExerciseId = 1L;
@@ -249,7 +248,7 @@ public class ExercisePictureServiceImplTest {
         ExercisePicture exercisePicture2 = ExercisePicture.builder().id(picture2.getId()).picture(picture2).exercise(testExercise).build();
         ExercisePicture exercisePicture3 = ExercisePicture.builder().id(picture3.getId()).picture(picture3).exercise(testExercise).build();
 
-        List<Long> testDeleteIdList = List.of(1L,2L,3L);
+        List<Long> testDeleteIdList = List.of(1L, 2L, 3L);
         List<ExercisePicture> exercisePicturesForAuthCheck = List.of(exercisePicture1, exercisePicture2, exercisePicture3);
         List<ExercisePicture> exercisePicturesToDelete = List.of(exercisePicture1, exercisePicture2, exercisePicture3);
 
@@ -283,17 +282,17 @@ public class ExercisePictureServiceImplTest {
 
     @Test
     @DisplayName("운동기록 이미지 삭제 _ 자신의 운동기록이 아닌경우")
-    void deleteExerciseImage_FailedNotOwner(){
+    void deleteExerciseImage_FailedNotOwner() {
         // given
         UUID testMemberId = UUID.randomUUID();
         Long testExerciseId = 1L;
-        List<Long> pictureIdDeleteList = List.of(1L,2L,3L);
+        List<Long> pictureIdDeleteList = List.of(1L, 2L, 3L);
 
-        BDDMockito.given(exerciseRepository.existsByRecordIdAndMemberId(testMemberId,testExerciseId)).willReturn(false);
+        BDDMockito.given(exerciseRepository.existsByRecordIdAndMemberId(testMemberId, testExerciseId)).willReturn(false);
 
         // when, then
         Assertions.assertThatThrownBy(() ->
-                exercisePictureService.deleteExercisePictures(testMemberId,testExerciseId,pictureIdDeleteList))
+                        exercisePictureService.deleteExercisePictures(testMemberId, testExerciseId, pictureIdDeleteList))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.AUTHORIZATION_DENIED);
 
@@ -305,7 +304,7 @@ public class ExercisePictureServiceImplTest {
 
     @Test
     @DisplayName("운동기록 이미지 삭제 _ 사진이 해당 운동 기록에 속하지 않는 경우")
-    void deleteExerciseImage_FailedPictureNotBelongsToExercise(){
+    void deleteExerciseImage_FailedPictureNotBelongsToExercise() {
         // given
         UUID testMemberId = UUID.randomUUID();
         Long testExerciseId = 1L;
@@ -322,13 +321,13 @@ public class ExercisePictureServiceImplTest {
                 .picture(picture)
                 .build();
 
-        BDDMockito.given(exerciseRepository.existsByRecordIdAndMemberId(testMemberId,testExerciseId)).willReturn(true);
+        BDDMockito.given(exerciseRepository.existsByRecordIdAndMemberId(testMemberId, testExerciseId)).willReturn(true);
         // 입력받은 pictureId가 아니라 실제 Id반환. 따라서 에러가 발생해야 함
         BDDMockito.given(exercisePictureRepository.findAllByExercise_Id(testExerciseId)).willReturn(List.of(exercisePicture));
 
         //when then
         Assertions.assertThatThrownBy(() ->
-                exercisePictureService.deleteExercisePictures(testMemberId,testExerciseId,testDeletePictureIdList))
+                        exercisePictureService.deleteExercisePictures(testMemberId, testExerciseId, testDeletePictureIdList))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.AUTHORIZATION_DENIED);
 
@@ -338,7 +337,7 @@ public class ExercisePictureServiceImplTest {
 
     @Test
     @DisplayName("운동기록 이미지 삭제 _ S3에 있는 이미지 삭제 실패")
-    void deleteExerciseImage_FailedToDeletePicturesInS3(){
+    void deleteExerciseImage_FailedToDeletePicturesInS3() {
         // given
         UUID testMemberId = UUID.randomUUID();
         Long testExerciseId = 1L;
@@ -350,7 +349,7 @@ public class ExercisePictureServiceImplTest {
         ExercisePicture exercisePicture = ExercisePicture.builder().id(picture.getId()).picture(picture).exercise(exercise).build();
         List<Long> testDeletePictureList = List.of(exercisePicture.getId());
 
-        BDDMockito.given(exerciseRepository.existsByRecordIdAndMemberId(testMemberId,testExerciseId)).willReturn(true);
+        BDDMockito.given(exerciseRepository.existsByRecordIdAndMemberId(testMemberId, testExerciseId)).willReturn(true);
         BDDMockito.given(exercisePictureRepository.findAllByExercise_Id(testExerciseId)).willReturn(List.of(exercisePicture));
         BDDMockito.given(exercisePictureRepository.findAllById(testDeletePictureList)).willReturn(List.of(exercisePicture));
         BDDMockito.given(s3Service.extractObjectKeyFromUrl(picture.getPictureUrl())).willReturn("key1.png");
@@ -358,8 +357,8 @@ public class ExercisePictureServiceImplTest {
         // S3 삭제시 S3UploadFailedException 발생
         BDDMockito.willThrow(new S3UploadFailedException("S3 Exception")).given(s3Service).deleteImage("key1.png");
 
-        Assertions.assertThatThrownBy(()->
-                exercisePictureService.deleteExercisePictures(testMemberId,testExerciseId,testDeletePictureList))
+        Assertions.assertThatThrownBy(() ->
+                        exercisePictureService.deleteExercisePictures(testMemberId, testExerciseId, testDeletePictureList))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.EXERCISE_PICTURE_DELETE_FAILED);
 
@@ -370,7 +369,7 @@ public class ExercisePictureServiceImplTest {
 
     @Test
     @DisplayName("운동기록과 연계된 이미지 조회 성공케이스")
-    void getAllImagesFromExercise(){
+    void getAllImagesFromExercise() {
         UUID testMemberId = UUID.randomUUID();
         Long testExerciseId = 1L;
 
@@ -399,7 +398,7 @@ public class ExercisePictureServiceImplTest {
         BDDMockito.given(exercisePictureRepository.findAllByExercise_Id(testExerciseId)).willReturn(testExercisePictures);
 
         // when
-        List<Long> pictureIds = exercisePictureService.getAllImagesFromExercise(testMemberId,testExerciseId);
+        List<Long> pictureIds = exercisePictureService.getAllImagesFromExercise(testMemberId, testExerciseId);
 
         // then
         Assertions.assertThat(pictureIds.size()).isEqualTo(testPictureIds.size());
@@ -411,14 +410,14 @@ public class ExercisePictureServiceImplTest {
 
     @Test
     @DisplayName("운동기록과 연계된 이미지 조회 실패 _ 운동기록 없음")
-    void getAllImagesFromExercise_NoExerciseExist(){
+    void getAllImagesFromExercise_NoExerciseExist() {
         UUID testMemberId = UUID.randomUUID();
         Long testExerciseId = 1L;
 
         BDDMockito.given(exerciseRepository.findById(testExerciseId)).willThrow(new CustomException(ErrorCode.EXERCISE_NOT_FOUND));
 
         Assertions.assertThatThrownBy(() ->
-                exercisePictureService.getAllImagesFromExercise(testMemberId,testExerciseId))
+                        exercisePictureService.getAllImagesFromExercise(testMemberId, testExerciseId))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.EXERCISE_NOT_FOUND);
 
@@ -427,7 +426,7 @@ public class ExercisePictureServiceImplTest {
 
     @Test
     @DisplayName("운동기록과 연계된 이미지 조회 실패 _  운동 기록이 회원의 것이 아닌 경우")
-    void getAllImagesFromExercise_NotRelatedMemberExercise(){
+    void getAllImagesFromExercise_NotRelatedMemberExercise() {
         // given
         UUID testMemberId = UUID.randomUUID();
         Long testExerciseId = 1L;
@@ -439,7 +438,7 @@ public class ExercisePictureServiceImplTest {
 
         // 운동기록과 연관되지 않은
         Assertions.assertThatThrownBy(() ->
-                exercisePictureService.getAllImagesFromExercise(UUID.randomUUID(), testExerciseId))
+                        exercisePictureService.getAllImagesFromExercise(UUID.randomUUID(), testExerciseId))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.AUTHORIZATION_DENIED);
 
@@ -449,7 +448,7 @@ public class ExercisePictureServiceImplTest {
 
     @Test
     @DisplayName("운동기록과 연계된 이미지 조회 실패 _ 운동 기록이 없는 경우 빈 리스트 발생")
-    void getAllImagesFromExercise_SucceedNoExercisePicture(){
+    void getAllImagesFromExercise_SucceedNoExercisePicture() {
         // given
         UUID testMemberId = UUID.randomUUID();
         Long testExerciseId = 1L;
@@ -462,7 +461,7 @@ public class ExercisePictureServiceImplTest {
         BDDMockito.given(exercisePictureRepository.findAllByExercise_Id(testExerciseId)).willReturn(Collections.emptyList());
 
         // when
-        List<Long> testPictureIds = exercisePictureService.getAllImagesFromExercise(testMemberId,testExerciseId);
+        List<Long> testPictureIds = exercisePictureService.getAllImagesFromExercise(testMemberId, testExerciseId);
 
         // then
         Assertions.assertThat(testPictureIds).isNotNull();
@@ -471,5 +470,81 @@ public class ExercisePictureServiceImplTest {
         BDDMockito.then(exerciseRepository).should(BDDMockito.times(1)).findById(testExerciseId);
         BDDMockito.then(exercisePictureRepository).should(BDDMockito.times(1)).findAllByExercise_Id(testExerciseId);
 
+    }
+
+    @Nested
+    class test_for_image_upload_error {
+        @Test
+        @DisplayName("운동 사진 관리 - 사진 3개 추가, 2개 삭제, 3개 추가 시나리오")
+            // 처음 작성시에는 디비를 모킹으로 넣어주었으므로 에러가 안남(확인됨)
+            // 함수 수정으로 인한 정상 동작 확인
+        void manageExerciseImages_AddDeleteAddScenario() {
+            // given
+            UUID testMemberId = UUID.randomUUID();
+            Long testExerciseId = 1L;
+            Member member = Member.builder().memberId(testMemberId).build();
+            Exercise exercise = Exercise.builder().id(testExerciseId).member(member).build();
+
+            // 처음 업로드할 사진 3개
+            List<MultipartFile> initialFiles = List.of(
+                    new MockMultipartFile("file1", "file1.jpg", MediaType.IMAGE_JPEG_VALUE, "test1".getBytes()),
+                    new MockMultipartFile("file2", "file2.jpg", MediaType.IMAGE_JPEG_VALUE, "test2".getBytes()),
+                    new MockMultipartFile("file3", "file3.jpg", MediaType.IMAGE_JPEG_VALUE, "test3".getBytes())
+            );
+
+            // 삭제할 사진 ID 목록
+            List<Long> pictureIdsToDelete = List.of(1L, 2L);
+
+            // 나중에 추가할 사진 3개
+            List<MultipartFile> additionalFiles = List.of(
+                    new MockMultipartFile("file4", "file4.jpg", MediaType.IMAGE_JPEG_VALUE, "test4".getBytes()),
+                    new MockMultipartFile("file5", "file5.jpg", MediaType.IMAGE_JPEG_VALUE, "test5".getBytes()),
+                    new MockMultipartFile("file6", "file6.jpg", MediaType.IMAGE_JPEG_VALUE, "test6".getBytes())
+            );
+
+            try (MockedStatic<UserContextHolder> mockedStatic = Mockito.mockStatic(UserContextHolder.class)) {
+                mockedStatic.when(UserContextHolder::getUserId).thenReturn(testMemberId);
+                BDDMockito.given(exerciseRepository.findById(testExerciseId)).willReturn(Optional.of(exercise));
+
+                BDDMockito.given(exercisePictureRepository.countNotDeletedPicturesByExerciseId(testExerciseId))
+                        .willReturn(0L) // 맨 처음 조회시 디비엔 아무것도 없으므로 0 반환
+                        .willReturn(1L);// 사진 3개 삽입 후 2개 삭제했으므로 1 반환
+
+                // S3 업로드 설정
+                BDDMockito.given(s3Service.generateObjectKey(BDDMockito.anyString(), BDDMockito.any())).willReturn("key");
+                BDDMockito.given(s3Service.uploadImage(BDDMockito.any(), BDDMockito.anyString())).willReturn("url");
+
+                // 2단계: 사진 2개 삭제 준비
+                BDDMockito.given(exerciseRepository.existsByRecordIdAndMemberId(testMemberId, testExerciseId)).willReturn(true);
+
+                Picture picture1 = Picture.builder().id(1L).pictureUrl("url1").build();
+                Picture picture2 = Picture.builder().id(2L).pictureUrl("url2").build();
+                ExercisePicture exercisePicture1 = ExercisePicture.builder().id(1L).exercise(exercise).picture(picture1).build();
+                ExercisePicture exercisePicture2 = ExercisePicture.builder().id(2L).exercise(exercise).picture(picture2).build();
+
+                List<ExercisePicture> exercisePictureList = List.of(exercisePicture1, exercisePicture2);
+
+                BDDMockito.given(exercisePictureRepository.findAllByExercise_Id(testExerciseId)).willReturn(exercisePictureList);
+                BDDMockito.given(exercisePictureRepository.findAllById(pictureIdsToDelete)).willReturn(exercisePictureList);
+
+                BDDMockito.given(s3Service.extractObjectKeyFromUrl(BDDMockito.anyString())).willReturn("key");
+                BDDMockito.willDoNothing().given(s3Service).deleteImage(BDDMockito.anyString());
+
+                // when
+                // 사진 3개 추가
+                exercisePictureService.uploadExercisePictures(testExerciseId, initialFiles);
+
+                // 사진 2개 삭제
+                exercisePictureService.deleteExercisePictures(testMemberId, testExerciseId, pictureIdsToDelete);
+
+                // 사진 3개 추가
+                ExerciseIdResponseDto uploadResult = exercisePictureService.uploadExercisePictures(testExerciseId, additionalFiles);
+
+                // then
+                Assertions.assertThat(uploadResult.exerciseId()).isEqualTo(testExerciseId);
+                // 내가 작성한 함수가 두번 호출되었는지 확인
+                BDDMockito.then(exercisePictureRepository).should(BDDMockito.times(2)).countNotDeletedPicturesByExerciseId(testExerciseId);
+            }
+        }
     }
 }

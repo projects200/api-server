@@ -54,7 +54,7 @@ public class ExercisePictureServiceImpl implements ExercisePictureService {
         }
 
         // 이미 있는 운동 사진 개수 + 새로 올라온 사진 개수 < 5 검증
-        long pictureCountOfExercise = exercisePictureRepository.countByExercise_Id(exerciseId);
+        long pictureCountOfExercise = exercisePictureRepository.countNotDeletedPicturesByExerciseId(exerciseId);
         if (pictureCountOfExercise + exercisePictureList.size() > 5) {
             throw new CustomException(ErrorCode.EXERCISE_PICTURE_COUNT_EXCEEDED);
         }

@@ -1,6 +1,7 @@
 package com.project200.undabang.exercise.repository;
 
 import com.project200.undabang.common.entity.Picture;
+import com.project200.undabang.common.repository.PictureRepository;
 import com.project200.undabang.configuration.TestQuerydslConfig;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.exercise.entity.ExercisePicture;
@@ -28,14 +29,21 @@ class ExercisePictureRepositoryTest {
     private ExercisePictureRepository exercisePictureRepository;
 
     @Autowired
+    private PictureRepository pictureRepository;
+
+    @Autowired
     private EntityManager em;
 
     private UUID memberId = UUID.randomUUID();
     private Exercise exercise;
+    private List<Picture> savedPictures;
 
     @BeforeEach
     void setUp(){
         makeEntities();
+
+        em.flush();
+        em.clear();
     }
 
     @Test
@@ -102,10 +110,7 @@ class ExercisePictureRepositoryTest {
                 .pictureUrl("pictureUrl3.jpg")
                 .pictureExtension(".jpg")
                 .build();
-
-        em.persist(picture);
-        em.persist(picture2);
-        em.persist(picture3);
+        savedPictures = pictureRepository.saveAll(List.of(picture, picture2, picture3));
 
         ExercisePicture exercisePicture = ExercisePicture.builder()
                 .exercise(exercise)
@@ -122,8 +127,34 @@ class ExercisePictureRepositoryTest {
                 .picture(picture3)
                 .build();
 
-        exercisePictureRepository.save(exercisePicture);
-        exercisePictureRepository.save(exercisePicture2);
-        exercisePictureRepository.save(exercisePicture3);
+        exercisePictureRepository.saveAll(List.of(exercisePicture, exercisePicture2, exercisePicture3));
+    }
+
+
+
+    @Test
+    @DisplayName("countNotDeletedPicturesByExerciseId을 사용해서 서비스 정상 작동되는지 확인")
+    public void countNotDeletedPicturesByExerciseId_success(){
+        // given
+        Assertions.assertThat(exercisePictureRepository.countNotDeletedPicturesByExerciseId(exercise.getId())).isEqualTo(3L);
+
+        // when
+        Picture pictureToDelete1 = savedPictures.get(0);
+        Picture pictureToDelete2 = savedPictures.get(1);
+
+        pictureToDelete1.softDelete();
+        pictureToDelete2.softDelete();
+
+        pictureRepository.save(pictureToDelete1);
+        pictureRepository.save(pictureToDelete2);
+
+        em.flush();
+        em.clear();
+
+        // 문제가 되는 메소드를 호출
+        long countAfterSoftDelete = exercisePictureRepository.countNotDeletedPicturesByExerciseId(exercise.getId());
+
+        // then
+        Assertions.assertThat(countAfterSoftDelete).isEqualTo(1L);
     }
 }

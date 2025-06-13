@@ -13,6 +13,7 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberPath;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,15 +25,9 @@ import java.util.stream.Collectors;
  * Exercise 엔티티에 대한 QueryDSL 기반 커스텀 레포지토리 구현체입니다.
  * 운동 기록 조회와 관련된 복잡한 쿼리를 처리합니다.
  */
+@RequiredArgsConstructor
 public class ExerciseRepositoryImpl implements ExerciseRepositoryCustom {
     private final JPAQueryFactory queryFactory;
-
-    /**
-     * QueryDSL 쿼리 팩토리를 주입받는 생성자입니다.
-     */
-    public ExerciseRepositoryImpl(JPAQueryFactory queryFactory) {
-        this.queryFactory = queryFactory;
-    }
 
     /**
      * 특정 회원이 소유한 운동 기록이 존재하는지 확인합니다.
