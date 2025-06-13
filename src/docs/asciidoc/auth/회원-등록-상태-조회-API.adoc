@@ -10,10 +10,10 @@
 - '/api' 에서 '/auth'로 변경되었습니다. Authorization 헤더에는 IDTOKEN 이 담겨야 합니다.
 
 === 코드 샘플
-operation::auth-rest-controller-test/change-registration-status-url[snippets="curl-request,http-request,http-response"]
+operation::auth-rest-controller-test/get-registration-status_-success[snippets="curl-request,http-request,http-response"]
 
 === 매개 변수
-operation::auth-rest-controller-test/change-registration-status-url[snippets="request-headers,response-fields"]
+operation::auth-rest-controller-test/get-registration-status_-success[snippets="request-headers,response-fields"]
 
 ==== 응답 상태 코드
 |===
