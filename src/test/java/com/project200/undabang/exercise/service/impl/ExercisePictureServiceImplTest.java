@@ -13,7 +13,6 @@ import com.project200.undabang.exercise.entity.ExercisePicture;
 import com.project200.undabang.exercise.repository.ExercisePictureRepository;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
 import com.project200.undabang.member.entity.Member;
-import com.project200.undabang.member.repository.MemberRepository;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.DisplayName;
@@ -47,9 +46,6 @@ public class ExercisePictureServiceImplTest {
 
     @Mock
     private S3Service s3Service;
-
-    @Mock
-    private MemberRepository memberRepository;
 
     @InjectMocks
     private ExercisePictureServiceImpl exercisePictureService;
@@ -548,9 +544,6 @@ public class ExercisePictureServiceImplTest {
                 Assertions.assertThat(uploadResult.exerciseId()).isEqualTo(testExerciseId);
                 // 내가 작성한 함수가 두번 호출되었는지 확인
                 BDDMockito.then(exercisePictureRepository).should(BDDMockito.times(2)).countNotDeletedPicturesByExerciseId(testExerciseId);
-
-                // 논리 오류가 있던 메소드는 호출되지 않았는지 확인
-                BDDMockito.then(exercisePictureRepository).should(BDDMockito.never()).countByExercise_Id(BDDMockito.anyLong());
             }
         }
     }

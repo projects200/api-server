@@ -130,47 +130,13 @@ class ExercisePictureRepositoryTest {
         exercisePictureRepository.saveAll(List.of(exercisePicture, exercisePicture2, exercisePicture3));
     }
 
-    @DisplayName("countByExercise_Id 가 SoftDelete된 데이터를 포함하여 갯수를 세는 경우 (버그 재현)")
-    // 에러 확인
-    public void countByExercise_Id_SoftDelete(){
-        // === Given: setUp에서 3개의 사진이 정상적으로 추가된 상태 ===
-        // 이 시점에서 총 개수는 3개입니다.
-        Assertions.assertThat(exercisePictureRepository.countByExercise_Id(exercise.getId())).isEqualTo(3L);
 
-
-        // === When: 연결된 Picture 중 2개를 soft-delete 처리 ===
-        // 1. 삭제할 Picture 엔티티 2개를 가져옵니다.
-        Picture pictureToDelete1 = savedPictures.get(0);
-        Picture pictureToDelete2 = savedPictures.get(1);
-
-        // 2. Picture 엔티티의 softDelete 메소드를 호출하여 pictureDeletedAt 필드를 업데이트합니다.
-        pictureToDelete1.softDelete();
-        pictureToDelete2.softDelete();
-
-        // 3. 변경된 Picture 엔티티를 저장합니다.
-        pictureRepository.save(pictureToDelete1);
-        pictureRepository.save(pictureToDelete2);
-
-        // 4. DB에 변경사항을 반영하고 캐시를 비웁니다.
-        em.flush();
-        em.clear();
-
-        // 5. 문제가 되는 메소드를 다시 호출합니다.
-        long countAfterSoftDelete = exercisePictureRepository.countByExercise_Id(exercise.getId());
-
-        // === Then: 활성 사진 개수는 1개여야 한다 ===
-        // 올바른 동작이라면 soft-delete된 Picture와 연결된 ExercisePicture를 제외하고 '1'을 반환해야 합니다.
-        // 하지만 현재 countByExercise_Id 쿼리는 Picture 테이블을 보지 않으므로, 여전히 '3'을 반환할 것입니다.
-        // 따라서 이 테스트는 `Expected: 1, but was: 3` 오류를 내며 실패합니다. (RED 단계 성공)
-        Assertions.assertThat(countAfterSoftDelete).isEqualTo(1L);
-    }
 
     @Test
     @DisplayName("countNotDeletedPicturesByExerciseId을 사용해서 서비스 정상 작동되는지 확인")
     public void countNotDeletedPicturesByExerciseId_success(){
         // given
         Assertions.assertThat(exercisePictureRepository.countNotDeletedPicturesByExerciseId(exercise.getId())).isEqualTo(3L);
-
 
         // when
         Picture pictureToDelete1 = savedPictures.get(0);
