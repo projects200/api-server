@@ -19,3 +19,5 @@
 include::overview/공통-개발-참고-사항.adoc[]
 
 include::auth/회원-가입-API.adoc[]
+
+include::auth/회원-등록-상태-조회-API.adoc[]

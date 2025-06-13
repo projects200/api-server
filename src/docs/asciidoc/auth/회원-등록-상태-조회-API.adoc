@@ -1,22 +1,24 @@
 == 회원 등록 상태 조회 API
 
 === 설명
-- #GET# `/api/v1/registration-status`
+- #GET# `/auth/v1/registration-status`
 - 회원의 등록 상태를 조회하는 API입니다.
 - 이 API는 회원의 등록 상태를 반환합니다. 등록 상태는 회원이 등록되어 있는지 여부를 나타냅니다. 만약 회원이 등록되어 있다면 `true`를 반환하고, 등록되어 있지 않다면 `false`를 반환합니다.
 
 === 개발 참고 사항
 - <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+- '/api' 에서 '/auth'로 변경되었습니다. Authorization 헤더에는 IDTOKEN 이 담겨야 합니다.
 
 === 코드 샘플
-operation::member-rest-controller-test/get-registration-status_-success[snippets="curl-request,http-request,http-response"]
+operation::auth-rest-controller-test/change-registration-status-url[snippets="curl-request,http-request,http-response"]
 
 === 매개 변수
-operation::member-rest-controller-test/get-registration-status_-success[snippets="request-headers,response-fields"]
+operation::auth-rest-controller-test/change-registration-status-url[snippets="request-headers,response-fields"]
 
 ==== 응답 상태 코드
 |===
 |상태 코드|설명
 |200|요청이 성공적으로 처리되었습니다. 회원의 등록 상태를 반환합니다.
+|401|인증되지 않은 요청입니다. Id Token이 없거나 유효하지 않습니다.
 |===
 
