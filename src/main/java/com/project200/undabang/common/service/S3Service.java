@@ -35,9 +35,9 @@ public class S3Service {
     private String bucketName;
 
     /**
-     * 사용자 ID와 파일 이름을 기반으로 S3 객체 키를 생성합니다.
-     * 형식: uploads/{category}/{userId}/{year}/{month}/{uuid}_{originalFilename}
-     */
+    * 사용자 ID와 파일 이름을 기반으로 S3 객체 키를 생성합니다.
+    * 형식: uploads/{category}/{userId}/{year}/{month}/{uuid}.{extension}
+    */
     public String generateObjectKey(String originalFilename, FileType category) {
         String userId = UserContextHolder.getUserId().toString();
         LocalDate now = LocalDate.now();
