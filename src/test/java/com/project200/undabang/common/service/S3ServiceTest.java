@@ -100,8 +100,8 @@ class S3ServiceTest {
             });
 
             // {uuid} 부분 검증
-            String pathSegment = objectKey.substring(expectedPrefix.length() + 1);
-            String uuidPart = pathSegment.substring(0, 35); // UUID는 36자
+            String pathSegment = objectKey.substring(expectedPrefix.length());
+            String uuidPart = pathSegment.substring(0, 36); // UUID는 36자
             assertThatCode(() -> UUID.fromString(uuidPart))
                     .withFailMessage("Object key의 UUID 부분이 유효한 UUID 형식이 아닙니다: " + uuidPart)
                     .doesNotThrowAnyException();

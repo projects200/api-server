@@ -96,13 +96,9 @@ public class ExerciseImageIntegrationTest {
 
         URI endpointOverride = localStack.getEndpointOverride(LocalStackContainer.Service.S3);
         String region = localStack.getRegion();
-        String accessKey = localStack.getAccessKey();
-        String secretKey = localStack.getSecretKey();
 
         System.out.println("LocalStack S3 endpoint: " + endpointOverride);
         System.out.println("LocalStack S3 region: " + region);
-        System.out.println("LocalStack S3 access key: " + accessKey);
-        System.out.println("LocalStack S3 secret key: " + secretKey);
         System.out.println("LocalStack S3 bucket name: " + BUCKET_NAME);
 
         System.out.printf("cli에서 S3 내의 파일을 확인하려면 다음 명령어를 사용하세요: aws s3 ls s3://%s --recursive --endpoint-url %s --region %s%n",
