@@ -83,6 +83,36 @@ public class ExercisePictureServiceImplTest {
     }
 
     @Test
+    @DisplayName("운동 이미지 파일 이름이 255자를 초과하는 경우 255자로 잘라서 저장")
+    void testUploadExercisePictures_FileNameLengthExceeded() {
+        // given
+        Long testExerciseId = 1L;
+        UUID testUserId = UUID.randomUUID();
+        Member testMember = Member.builder().memberId(testUserId).build();
+        Exercise testExercise = Exercise.builder().id(testExerciseId).member(testMember).build();
+
+        String longFileName = "a".repeat(300) + ".jpg"; // 300자 길이의 파일 이름
+        MultipartFile testFile = new MockMultipartFile("file.jpg", longFileName, MediaType.IMAGE_JPEG_VALUE, new byte[0]);
+
+        try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
+            BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
+            BDDMockito.given(exerciseRepository.findById(testExerciseId)).willReturn(Optional.of(testExercise));
+            BDDMockito.given(exercisePictureRepository.countNotDeletedPicturesByExerciseId(testExerciseId)).willReturn(0L);
+            BDDMockito.given(s3Service.generateObjectKey(BDDMockito.anyString(), BDDMockito.any())).willReturn("key");
+            BDDMockito.given(s3Service.uploadImage(BDDMockito.any(), BDDMockito.anyString())).willReturn("url");
+
+            // when
+            ExerciseIdResponseDto result = exercisePictureService.uploadExercisePictures(testExerciseId, List.of(testFile));
+
+            // then
+            SoftAssertions.assertSoftly(softAssertions -> {
+                softAssertions.assertThat(result).as("운동 ID가 반환되어야 함").isNotNull();
+                softAssertions.assertThat(result.exerciseId()).as("올바른 운동 ID가 반환되어야 함").isEqualTo(testExerciseId);
+            });
+        }
+    }
+
+    @Test
     @DisplayName("운동을 찾을 수 없을 때 CustomException 발생")
     void testUploadExercisePictures_ExerciseNotFound() {
         // given

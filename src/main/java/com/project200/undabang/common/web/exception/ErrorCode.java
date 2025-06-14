@@ -9,6 +9,9 @@ public enum ErrorCode {
     METHOD_NOT_ALLOWED(405, "METHOD_NOT_ALLOWED", "지원하지 않는 HTTP 메소드입니다."),
     INTERNAL_SERVER_ERROR(500, "INTERNAL_SERVER_ERROR", "서버 내부 오류가 발생했습니다."),
 
+    // 이미지 에러
+    INVALID_FILE_NAME(400, "INVALID_FILE_NAME", "파일 이름이 유효하지 않습니다."),
+
     // 인증 관련 에러
     AUTHENTICATION_FAILED(401, "AUTHENTICATION_FAILED", "인증에 실패했습니다."),
     AUTHORIZATION_DENIED(403, "AUTHORIZATION_DENIED", "접근 권한이 없습니다."),
