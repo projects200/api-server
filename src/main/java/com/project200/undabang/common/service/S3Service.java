@@ -17,7 +17,10 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -42,13 +45,15 @@ public class S3Service {
         String month = String.format("%02d", now.getMonthValue());
         String uuid = UUID.randomUUID().toString();
 
-        return String.format("uploads/%s/%s/%s/%s/%s_%s",
+        String extension =  originalFilename.substring(originalFilename.lastIndexOf('.') + 1);
+
+        return String.format("uploads/%s/%s/%s/%s/%s.%s",
                 category.getPath(),
                 userId,
                 year,
                 month,
                 uuid,
-                originalFilename);
+                extension);
     }
 
     /**
@@ -92,8 +97,14 @@ public class S3Service {
      */
     public String uploadImage(MultipartFile multipartFile, String objectKey)
             throws FileProcessingException, S3UploadFailedException {
+        // S3에 업로드할 이미지 메타데이터에 원본 파일 이름 추가
+        Map<String, String> metadata = new HashMap<>();
+        String originalFilename = multipartFile.getOriginalFilename();
+        String encodedFilename = URLEncoder.encode(originalFilename, StandardCharsets.UTF_8);
+        metadata.put("originalfilename", encodedFilename);
+
         // S3에 업로드할 객체 요청 생성
-        return uploadImage(multipartFile, objectKey, null);
+        return uploadImage(multipartFile, objectKey, metadata);
     }
 
 
@@ -214,5 +225,18 @@ public class S3Service {
     private void handleGenericException(String objectKey, Exception ex) throws S3UploadFailedException {
         log.error("S3 업로드 중 예기치 못한 오류 발생. Key: {}", objectKey, ex);
         throw new S3UploadFailedException("S3 업로드 중 알 수 없는 오류 발생: " + objectKey, ex);
+    }
+
+    public boolean isFileExists(String objectKey) {
+        try {
+            s3Client.headObject(builder -> builder.bucket(bucketName).key(objectKey));
+            return true; // 객체가 존재하는 경우
+        } catch (S3Exception e) {
+            if (e.statusCode() == 404) {
+                return false; // 객체가 존재하지 않는 경우
+            }
+            log.error("S3 객체 존재 여부 확인 중 오류 발생. Key: {}, 메시지: {}", objectKey, e.getMessage(), e);
+            throw new S3UploadFailedException("S3 객체 존재 여부 확인 중 오류 발생: " + objectKey, e);
+        }
     }
 }

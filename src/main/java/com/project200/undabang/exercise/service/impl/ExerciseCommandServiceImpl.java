@@ -43,6 +43,7 @@ public class ExerciseCommandServiceImpl implements ExerciseCommandService {
         return new ExerciseIdResponseDto(exercise.getId());
     }
 
+    // 퍼사드 패턴(Facade Pattern)
     @Override
     public ExerciseIdResponseDto uploadExerciseImages(Long exerciseId, List<MultipartFile> exercisePictureList) {
         return exercisePictureService.uploadExercisePictures(exerciseId, exercisePictureList);

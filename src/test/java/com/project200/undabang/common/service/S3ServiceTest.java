@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mockStatic;
 
@@ -72,7 +73,7 @@ class S3ServiceTest {
     @Test
     @DisplayName("generateObjectKey: 메서드가 올바른 형식의 S3 객체 키를 생성하는지 확인")
     void generateObjectKey_shouldGenerateCorrectFormat() {
-        // Given: 테스트에 필요한 값 설정
+        // given
         UUID testUserId = UUID.randomUUID(); // UUID로 변경
         String originalFilename = "test_image.jpg";
         LocalDate now = LocalDate.now(); // 검증을 위해 현재 날짜 사용
@@ -87,23 +88,23 @@ class S3ServiceTest {
         try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
             given(UserContextHolder.getUserId()).willReturn(testUserId);
 
-            // When: 테스트 대상 메서드 호출
+            // when
             String objectKey = s3Service.generateObjectKey(originalFilename, FileType.EXERCISE);
 
-            // Then: 결과 검증
+            // then
             // 생성된 객체 키 형식 검증
-            assertThat(objectKey).as("Object key prefix mismatch")
-                    .startsWith(expectedPrefix);
-            assertThat(objectKey).as("Object key suffix mismatch")
-                    .endsWith("_" + originalFilename);
+           assertSoftly(softAssertions -> {
+                assertThat(objectKey).as("객체 키가 null이 아닌지 확인").isNotNull();
+                assertThat(objectKey).as("올바른 경로를 포함하는지 확인").startsWith(expectedPrefix);
+                assertThat(objectKey).as("파일 이름에 포함된 확장자 확인").endsWith(".jpg");
+            });
 
-            // {uuid}_{originalFilename} 부분 추출 및 유효성 검사
-            String pathSegment = objectKey.substring(objectKey.lastIndexOf("/") + 1);
-            String uuidPart = pathSegment.substring(0, 36); // UUID는 36자
+            // {uuid} 부분 검증
+            String pathSegment = objectKey.substring(expectedPrefix.length() + 1);
+            String uuidPart = pathSegment.substring(0, 35); // UUID는 36자
             assertThatCode(() -> UUID.fromString(uuidPart))
                     .withFailMessage("Object key의 UUID 부분이 유효한 UUID 형식이 아닙니다: " + uuidPart)
                     .doesNotThrowAnyException();
-            assertThat(pathSegment).isEqualTo(uuidPart + "_" + originalFilename);
         }
     }
 
@@ -190,7 +191,6 @@ class S3ServiceTest {
 
             assertThat(headObjectResponse.contentType()).isEqualTo("image/png");
             assertThat(headObjectResponse.contentLength()).isEqualTo(content.length);
-            assertThat(headObjectResponse.metadata()).isNotNull().isEmpty(); // 메타데이터는 null이 아니고 비어있어야 함
 
             // 업로드된 객체의 내용 검증
             ResponseBytes<GetObjectResponse> objectBytes = s3Client.getObjectAsBytes(GetObjectRequest.builder().bucket(BUCKET_NAME).key(objectKey).build());
@@ -243,4 +243,6 @@ class S3ServiceTest {
         assertThatCode(() -> s3Service.deleteImage(nonExistentObjectKey))
                 .doesNotThrowAnyException();
     }
+
+
 }

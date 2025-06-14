@@ -49,8 +49,15 @@ public class Picture {
     private LocalDateTime pictureDeletedAt;
 
     public static Picture of(MultipartFile file, String pictureUrl) {
+        // 파일 이름이 255자를 초과하는 경우, 255자로 잘라냅니다.
+        String originalFilename = file.getOriginalFilename();
+        assert originalFilename != null;
+        if (originalFilename.length() > 255) {
+            originalFilename = originalFilename.substring(0, 255);
+        }
+
         return Picture.builder()
-                .pictureName(file.getOriginalFilename())
+                .pictureName(originalFilename)
                 .pictureExtension(getFileExtension(file.getOriginalFilename()))
                 .pictureSize((int) file.getSize())
                 .pictureUrl(pictureUrl)
