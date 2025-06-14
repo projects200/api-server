@@ -100,8 +100,10 @@ public class S3Service {
         // S3에 업로드할 이미지 메타데이터에 원본 파일 이름 추가
         Map<String, String> metadata = new HashMap<>();
         String originalFilename = multipartFile.getOriginalFilename();
-        String encodedFilename = URLEncoder.encode(originalFilename, StandardCharsets.UTF_8);
-        metadata.put("originalfilename", encodedFilename);
+        if (originalFilename != null) {
+            String encodedFilename = URLEncoder.encode(originalFilename, StandardCharsets.UTF_8);
+            metadata.put("originalfilename", encodedFilename);
+        }
 
         // S3에 업로드할 객체 요청 생성
         return uploadImage(multipartFile, objectKey, metadata);
