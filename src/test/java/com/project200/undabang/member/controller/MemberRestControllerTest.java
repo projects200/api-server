@@ -24,6 +24,7 @@ import static com.project200.undabang.configuration.RestDocsUtils.commonResponse
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(MemberRestController.class)
@@ -85,5 +86,15 @@ class MemberRestControllerTest extends AbstractRestDocSupport {
                 .andReturn().getResponse().getContentAsString();
 
         BDDMockito.then(memberQueryService).should(BDDMockito.times(1)).getMemberScore();
+    }
+
+    @Test
+    @DisplayName("Access 토큰이 없는 경우의 회원 운동 점수 조회")
+    public void getMemberScore_Failed_Not_Having_Token() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/members/score")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized())
+                .andDo(print());
     }
 }
