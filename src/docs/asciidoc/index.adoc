@@ -99,6 +99,8 @@ include::overview/공통-개발-참고-사항.adoc[]
 
 === xref:회원-API.html[회원 API]
 
+- 회원 운동 점수 조회 API #GET# `/api/v1/members/score`
+
 === xref:운동-API.html[운동 API]
 
 - 운동 기록 생성 API #POST# `/api/v1/exercises`
