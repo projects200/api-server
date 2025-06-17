@@ -533,4 +533,5 @@ class ExerciseCommandServiceImplTest {
             BDDMockito.then(exerciseRepository).should(BDDMockito.never()).findById(testExerciseId);
         }
     }
+
 }
