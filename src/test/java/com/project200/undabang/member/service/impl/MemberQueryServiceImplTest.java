@@ -80,6 +80,7 @@ class MemberQueryServiceImplTest {
     }
 
     @Nested
+    @DisplayName("운동기록 조회")
     class findMemberExerciseScore{
         @Test
         @DisplayName("회원의 운동점수 기록 조회")
@@ -91,7 +92,7 @@ class MemberQueryServiceImplTest {
             try (MockedStatic<UserContextHolder> ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
                 // given
                 given(UserContextHolder.getUserId()).willReturn(testMemberId);
-                given(memberRepository.findById(testMemberId)).willReturn(Optional.of(testMember));
+                given(memberRepository.findByMemberIdAndMemberDeletedAtNull(testMemberId)).willReturn(Optional.of(testMember));
 
                 MemberScoreResponseDto respDto = memberQueryService.getMemberScore();
 
@@ -112,7 +113,7 @@ class MemberQueryServiceImplTest {
             try (MockedStatic<UserContextHolder> ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
                 // given
                 given(UserContextHolder.getUserId()).willReturn(testMemberId);
-                given(memberRepository.findById(testMemberId)).willReturn(Optional.of(testMember));
+                given(memberRepository.findByMemberIdAndMemberDeletedAtNull(testMemberId)).willReturn(Optional.of(testMember));
 
                 MemberScoreResponseDto respDto = memberQueryService.getMemberScore();
 
@@ -128,7 +129,7 @@ class MemberQueryServiceImplTest {
         @DisplayName("회원의 운동점수 기록 조회_실패하는 경우")
         void findMemberExerciseScore_Fail(){
             UUID testMemberId = UUID.randomUUID();
-            given(memberRepository.findById(testMemberId)).willReturn(Optional.empty());
+            given(memberRepository.findByMemberIdAndMemberDeletedAtNull(testMemberId)).willReturn(Optional.empty());
             try (MockedStatic<UserContextHolder> ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
                 // given
                 given(UserContextHolder.getUserId()).willReturn(testMemberId);

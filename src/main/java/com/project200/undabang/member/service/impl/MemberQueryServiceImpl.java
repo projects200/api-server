@@ -45,7 +45,7 @@ public class MemberQueryServiceImpl implements MemberQueryService {
     }
 
     private Member findMemberById(){
-        return memberRepository.findById(UserContextHolder.getUserId())
+        return memberRepository.findByMemberIdAndMemberDeletedAtNull(UserContextHolder.getUserId())
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
     }
 }
