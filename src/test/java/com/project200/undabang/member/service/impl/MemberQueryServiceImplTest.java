@@ -100,7 +100,7 @@ class MemberQueryServiceImplTest {
                 Assertions.assertThat(respDto.getMemberScore()).isEqualTo(expectedScore);
                 Assertions.assertThat(respDto.getMemberId()).isEqualTo(testMemberId);
 
-                then(memberRepository).should(times(1)).findById(testMemberId);
+                then(memberRepository).should(times(1)).findByMemberIdAndMemberDeletedAtNull(testMemberId);
             }
         }
 
@@ -121,7 +121,7 @@ class MemberQueryServiceImplTest {
                 Assertions.assertThat(respDto.getMemberScore()).isEqualTo((byte)35);
                 Assertions.assertThat(respDto.getMemberId()).isEqualTo(testMemberId);
 
-                then(memberRepository).should(times(1)).findById(testMemberId);
+                then(memberRepository).should(times(1)).findByMemberIdAndMemberDeletedAtNull(testMemberId);
             }
         }
 
@@ -138,7 +138,7 @@ class MemberQueryServiceImplTest {
                         .isInstanceOf(CustomException.class)
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
 
-                then(memberRepository).should(times(1)).findById(testMemberId);
+                then(memberRepository).should(times(1)).findByMemberIdAndMemberDeletedAtNull(testMemberId);
             }
         }
     }
