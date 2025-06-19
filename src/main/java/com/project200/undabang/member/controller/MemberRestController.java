@@ -1,6 +1,11 @@
 package com.project200.undabang.member.controller;
 
+import com.project200.undabang.common.web.response.CommonResponse;
+import com.project200.undabang.member.dto.response.MemberScoreResponseDto;
+import com.project200.undabang.member.service.MemberQueryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -11,4 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/api")
 public class MemberRestController {
+    private final MemberQueryService memberQueryService;
+
+    @GetMapping("/v1/members/score")
+    public ResponseEntity<CommonResponse<MemberScoreResponseDto>> getMemberScore() {
+        return ResponseEntity.ok(CommonResponse.success(memberQueryService.getMemberScore()));
+    }
 }

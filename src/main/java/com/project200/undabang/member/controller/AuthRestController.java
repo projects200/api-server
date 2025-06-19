@@ -5,7 +5,7 @@ import com.project200.undabang.member.dto.request.SignUpRequestDto;
 import com.project200.undabang.member.dto.response.MemberRegistrationStatusResponseDto;
 import com.project200.undabang.member.dto.response.SignUpResponseDto;
 import com.project200.undabang.member.service.MemberQueryService;
-import com.project200.undabang.member.service.MemberService;
+import com.project200.undabang.member.service.MemberCommandService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,12 +15,12 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/auth")
 public class AuthRestController {
-    private final MemberService memberService;
+    private final MemberCommandService memberCommandService;
     private final MemberQueryService memberQueryService;
 
     @PostMapping("/v1/sign-up")
     public CommonResponse<SignUpResponseDto> signUpMember(@Valid @RequestBody SignUpRequestDto signUpRequestDto){
-        SignUpResponseDto responseDto = memberService.memberSignUp(signUpRequestDto);
+        SignUpResponseDto responseDto = memberCommandService.memberSignUp(signUpRequestDto);
         return CommonResponse.success(responseDto);
     }
 

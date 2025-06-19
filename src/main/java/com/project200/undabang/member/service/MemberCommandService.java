@@ -6,7 +6,7 @@ import com.project200.undabang.member.dto.response.SignUpResponseDto;
 import java.time.LocalDate;
 import java.util.UUID;
 
-public interface MemberService {
+public interface MemberCommandService {
     boolean checkMemberEmail(String email);
     boolean checkMemberNickname(String nickname);
     boolean checkMemberId(UUID memberId);

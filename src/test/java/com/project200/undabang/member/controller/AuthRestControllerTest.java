@@ -11,7 +11,7 @@ import com.project200.undabang.member.dto.response.MemberRegistrationStatusRespo
 import com.project200.undabang.member.dto.response.SignUpResponseDto;
 import com.project200.undabang.member.enums.MemberGender;
 import com.project200.undabang.member.service.MemberQueryService;
-import com.project200.undabang.member.service.MemberService;
+import com.project200.undabang.member.service.MemberCommandService;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class AuthRestControllerTest extends AbstractRestDocSupport {
 
     @MockitoBean
-    private MemberService memberService;
+    private MemberCommandService memberCommandService;
 
     @MockitoBean
     private MemberQueryService memberQueryService;
@@ -73,7 +73,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 .memberCreatedAt(LocalDateTime.now())
                 .build();
 
-        BDDMockito.given(memberService.memberSignUp(BDDMockito.any(SignUpRequestDto.class))).willReturn(respDto);
+        BDDMockito.given(memberCommandService.memberSignUp(BDDMockito.any(SignUpRequestDto.class))).willReturn(respDto);
 
         // when
         String response = this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
@@ -121,7 +121,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 .memberNickname(memberTestNickname)
                 .build();
 
-        BDDMockito.given(memberService.memberSignUp(BDDMockito.any(SignUpRequestDto.class)))
+        BDDMockito.given(memberCommandService.memberSignUp(BDDMockito.any(SignUpRequestDto.class)))
                 .willThrow(new CustomException(ErrorCode.USER_ID_HEADER_MISSING));
 
         // when
@@ -146,7 +146,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 );
 
         // then
-        BDDMockito.then(memberService).should(BDDMockito.never()).memberSignUp(BDDMockito.any(SignUpRequestDto.class));
+        BDDMockito.then(memberCommandService).should(BDDMockito.never()).memberSignUp(BDDMockito.any(SignUpRequestDto.class));
     }
 
     @Test
@@ -159,7 +159,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 .memberNickname(memberTestNickname)
                 .build();
 
-        BDDMockito.given(memberService.memberSignUp(BDDMockito.any())).willThrow(new CustomException(ErrorCode.MEMBER_EMAIL_DUPLICATED));
+        BDDMockito.given(memberCommandService.memberSignUp(BDDMockito.any())).willThrow(new CustomException(ErrorCode.MEMBER_EMAIL_DUPLICATED));
 
         //when
         this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
@@ -183,7 +183,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 ));
 
         //then
-        BDDMockito.then(memberService).should(BDDMockito.times(1)).memberSignUp(BDDMockito.any(SignUpRequestDto.class));
+        BDDMockito.then(memberCommandService).should(BDDMockito.times(1)).memberSignUp(BDDMockito.any(SignUpRequestDto.class));
     }
 
     @Test
@@ -196,7 +196,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 .memberNickname(memberTestNickname)
                 .build();
 
-        BDDMockito.given(memberService.memberSignUp(BDDMockito.any(SignUpRequestDto.class))).willThrow(new CustomException(ErrorCode.USER_EMAIL_HEADER_MISSING));
+        BDDMockito.given(memberCommandService.memberSignUp(BDDMockito.any(SignUpRequestDto.class))).willThrow(new CustomException(ErrorCode.USER_EMAIL_HEADER_MISSING));
 
         //when
         this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
@@ -220,7 +220,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 ));
 
         //then
-        BDDMockito.then(memberService).should(BDDMockito.never()).memberSignUp(BDDMockito.any(SignUpRequestDto.class));
+        BDDMockito.then(memberCommandService).should(BDDMockito.never()).memberSignUp(BDDMockito.any(SignUpRequestDto.class));
     }
 
     @Test
@@ -233,7 +233,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 .memberNickname(memberTestNickname)
                 .build();
 
-        BDDMockito.given(memberService.memberSignUp(BDDMockito.any(SignUpRequestDto.class))).willThrow(new CustomException(ErrorCode.MEMBER_NICKNAME_DUPLICATED));
+        BDDMockito.given(memberCommandService.memberSignUp(BDDMockito.any(SignUpRequestDto.class))).willThrow(new CustomException(ErrorCode.MEMBER_NICKNAME_DUPLICATED));
 
         //when
         this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
@@ -257,7 +257,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 ));
 
         //then
-        BDDMockito.then(memberService).should(BDDMockito.times(1)).memberSignUp(BDDMockito.any(SignUpRequestDto.class));
+        BDDMockito.then(memberCommandService).should(BDDMockito.times(1)).memberSignUp(BDDMockito.any(SignUpRequestDto.class));
     }
 
     @Test
@@ -270,7 +270,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 .memberNickname(memberTestNickname)
                 .build();
 
-        BDDMockito.given(memberService.memberSignUp(BDDMockito.any(SignUpRequestDto.class))).willThrow(new CustomException(ErrorCode.MEMBER_BDAY_ERROR));
+        BDDMockito.given(memberCommandService.memberSignUp(BDDMockito.any(SignUpRequestDto.class))).willThrow(new CustomException(ErrorCode.MEMBER_BDAY_ERROR));
 
         //when
         this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
@@ -294,7 +294,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 ));
 
         //then
-        BDDMockito.then(memberService).should(BDDMockito.times(1)).memberSignUp(BDDMockito.any(SignUpRequestDto.class));
+        BDDMockito.then(memberCommandService).should(BDDMockito.times(1)).memberSignUp(BDDMockito.any(SignUpRequestDto.class));
     }
 
     @Test
@@ -307,7 +307,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 .memberNickname(memberTestNickname)
                 .build();
 
-        BDDMockito.given(memberService.memberSignUp(BDDMockito.any(SignUpRequestDto.class))).willThrow(new CustomException(ErrorCode.MEMBER_GENDER_ERROR));
+        BDDMockito.given(memberCommandService.memberSignUp(BDDMockito.any(SignUpRequestDto.class))).willThrow(new CustomException(ErrorCode.MEMBER_GENDER_ERROR));
 
         //when
         this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
@@ -330,7 +330,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                         responseFields(RestDocsUtils.commonResponseFieldsOnly())
                 ));
         //then
-        BDDMockito.then(memberService).should(BDDMockito.times(1)).memberSignUp(BDDMockito.any(SignUpRequestDto.class));
+        BDDMockito.then(memberCommandService).should(BDDMockito.times(1)).memberSignUp(BDDMockito.any(SignUpRequestDto.class));
     }
 
     @Test
@@ -370,7 +370,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 ));
 
         //then
-        BDDMockito.then(memberService).should(BDDMockito.never()).memberSignUp(BDDMockito.any(SignUpRequestDto.class));
+        BDDMockito.then(memberCommandService).should(BDDMockito.never()).memberSignUp(BDDMockito.any(SignUpRequestDto.class));
     }
 
     @Test
@@ -409,7 +409,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                         )
                 ));
         //then
-        BDDMockito.then(memberService).should(BDDMockito.never()).memberSignUp(BDDMockito.any(SignUpRequestDto.class));
+        BDDMockito.then(memberCommandService).should(BDDMockito.never()).memberSignUp(BDDMockito.any(SignUpRequestDto.class));
     }
 
     @Test
@@ -422,7 +422,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                 .memberGender(MemberGender.M)
                 .build();
 
-        BDDMockito.given(memberService.memberSignUp(BDDMockito.any(SignUpRequestDto.class)))
+        BDDMockito.given(memberCommandService.memberSignUp(BDDMockito.any(SignUpRequestDto.class)))
                 .willThrow(new CustomException(ErrorCode.MEMBER_SAVE_FAILED_ERROR));
 
         // when & then
@@ -446,7 +446,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                         responseFields(RestDocsUtils.commonResponseFieldsOnly())
                 ));
 
-        BDDMockito.then(memberService).should(BDDMockito.times(1)).memberSignUp(BDDMockito.any(SignUpRequestDto.class));
+        BDDMockito.then(memberCommandService).should(BDDMockito.times(1)).memberSignUp(BDDMockito.any(SignUpRequestDto.class));
     }
 
     /**

@@ -7,7 +7,7 @@ import com.project200.undabang.member.dto.request.SignUpRequestDto;
 import com.project200.undabang.member.dto.response.SignUpResponseDto;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
-import com.project200.undabang.member.service.MemberService;
+import com.project200.undabang.member.service.MemberCommandService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,7 +24,7 @@ import java.util.UUID;
 @Validated
 @Transactional
 @RequiredArgsConstructor
-public class MemberServiceImpl implements MemberService {
+public class MemberCommandServiceImpl implements MemberCommandService {
     private final MemberRepository memberRepository;
 
     /**
