@@ -1,5 +1,6 @@
 package com.project200.undabang.batch.config;
 
+import com.project200.undabang.batch.provider.MemberScoreQuerydslProvider;
 import com.project200.undabang.member.entity.Member;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;
