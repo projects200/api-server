@@ -84,4 +84,10 @@ public class Member {
                 .memberBday(memberBday)
                 .build();
     }
+
+    public void decreaseMemberScore(Byte memberScore){
+        if(this.memberScore > 0){
+            this.memberScore = (byte) Math.max(0, this.memberScore - memberScore);
+        }
+    }
 }

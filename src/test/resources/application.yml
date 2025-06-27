@@ -27,7 +27,11 @@ spring:
       enabled: true
       path: /h2-console
 
-#  sql:
+  batch:
+    jdbc:
+      initialize-schema: always
+
+  #  sql:
 #    init:
 #      mode: always
 #      data-locations: classpath:test-data.sql    # 테스트 용 데이터 추가 필요할 때 사용

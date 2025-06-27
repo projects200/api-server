@@ -12,17 +12,19 @@ import jakarta.persistence.Query;
 import org.springframework.batch.item.database.orm.JpaQueryProvider;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
-public class MemberScoreQuerydslProvider implements JpaQueryProvider {
+public class DecreaseMemberScoreQuerydslProvider implements JpaQueryProvider {
     private EntityManager entityManager;
+    private final LocalDateTime referenceDate;
+
+    public DecreaseMemberScoreQuerydslProvider(LocalDateTime referenceDate) {
+        this.referenceDate = referenceDate;
+    }
 
     @Override
     public Query createQuery() {
         QMember member = QMember.member;
         QExercise exercise = QExercise.exercise;
-
-        LocalDateTime findMemberByPeriod = LocalDateTime.now().minusWeeks(2);
 
         JPAQueryFactory jpaQueryFactory = new JPAQueryFactory(entityManager);
 
@@ -32,15 +34,11 @@ public class MemberScoreQuerydslProvider implements JpaQueryProvider {
                 .from(exercise)
                 .where(exercise.member.eq(member));
 
-        JPAQuery<UUID> query = jpaQueryFactory
-                .select(member.memberId)
-                .from(member)
-                .where(lastExerciseDate.loe(lastExerciseDate));
-
-        JPAQuery<Member> queryTest = jpaQueryFactory // memberId만 반환화는것과 전체 엔티티를 반환하기 위해 테스트 하기위한 코드
+        JPAQuery<Member> query = jpaQueryFactory
                 .selectFrom(member)
-                .where(lastExerciseDate.loe(lastExerciseDate));
+                .where(lastExerciseDate.loe(referenceDate));
 
+        query.orderBy(member.memberId.asc());
 
         return query.createQuery();
     }
