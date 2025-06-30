@@ -43,6 +43,7 @@ dependencies {
 
     // Spring Batch 의존성 추가
     implementation 'org.springframework.boot:spring-boot-starter-batch:2.7.18'
+    implementation 'org.springframework.batch:spring-batch-test'
 
     implementation 'com.querydsl:querydsl-core:5.1.0'
     implementation "com.querydsl:querydsl-jpa:5.1.0:jakarta"

@@ -85,9 +85,9 @@ public class Member {
                 .build();
     }
 
-    public void decreaseMemberScore(Byte memberScore){
+    public void decreaseMemberScore(Byte decreaseScore){
         if(this.memberScore > 0){
-            this.memberScore = (byte) Math.max(0, this.memberScore - memberScore);
+            this.memberScore = (byte) Math.max(0, this.memberScore - decreaseScore);
         }
     }
 }

@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class DecreaseMemberScoreStepListener implements StepExecutionListener {
+public class DecreaseExerciseScoreStepListener implements StepExecutionListener {
     private final ThreadLocal<Long> stepStartTime = new ThreadLocal<>();
 
     @Override

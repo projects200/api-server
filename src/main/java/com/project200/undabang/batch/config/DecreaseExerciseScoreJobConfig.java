@@ -1,8 +1,8 @@
 package com.project200.undabang.batch.config;
 
-import com.project200.undabang.batch.listener.job.DecreaseMemberScoreJobListener;
-import com.project200.undabang.batch.listener.step.DecreaseMemberScoreStepListener;
-import com.project200.undabang.batch.provider.DecreaseMemberScoreQuerydslProvider;
+import com.project200.undabang.batch.listener.job.DecreaseExerciseScoreJobListener;
+import com.project200.undabang.batch.listener.step.DecreaseExerciseScoreStepListener;
+import com.project200.undabang.batch.provider.DecreaseExerciseScoreQuerydslProvider;
 import com.project200.undabang.member.entity.Member;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;
@@ -34,8 +34,8 @@ public class DecreaseExerciseScoreJobConfig {
     private final JobRepository jobRepository;
     private final PlatformTransactionManager platformTransactionManager;
     private final EntityManagerFactory entityManagerFactory;
-    private final DecreaseMemberScoreJobListener decreaseMemberScoreJobListener;
-    private final DecreaseMemberScoreStepListener decreaseMemberScoreStepListener;
+    private final DecreaseExerciseScoreJobListener decreaseExerciseScoreJobListener;
+    private final DecreaseExerciseScoreStepListener decreaseExerciseScoreStepListener;
 
     private static final int CHUNK_SIZE = 100; // 10, 100, 1000 중 뭐가 좋을진 아직 모르겠음 (데이터 부족)
     private static final byte DECREASE_SCORE = 1; // 언제든 정책에 따라 바꿀 수 있도록 전역 변수로 설계
@@ -43,7 +43,7 @@ public class DecreaseExerciseScoreJobConfig {
     @Bean
     public Job decreaseExerciseScoreJob(){
         return new JobBuilder("decreaseExerciseScoreJob", jobRepository)
-                .listener(decreaseMemberScoreJobListener)
+                .listener(decreaseExerciseScoreJobListener)
                 .start(decreaseExerciseScoreStep())
                 .build();
     }
@@ -52,7 +52,7 @@ public class DecreaseExerciseScoreJobConfig {
     public Step decreaseExerciseScoreStep(){
         return new StepBuilder("decreaseExerciseScoreStep", jobRepository)
                 .<Member, Member>chunk(CHUNK_SIZE, platformTransactionManager)
-                .listener(decreaseMemberScoreStepListener)
+                .listener(decreaseExerciseScoreStepListener)
                 .reader(decreaseExerciseReader(null))
                 .processor(decreaseExerciseProcessor())
                 .writer(decreaseExerciseWriter())
@@ -71,7 +71,7 @@ public class DecreaseExerciseScoreJobConfig {
                 .name("decreaseExerciseReader")
                 .entityManagerFactory(entityManagerFactory)
                 .pageSize(CHUNK_SIZE)
-                .queryProvider(new DecreaseMemberScoreQuerydslProvider(referenceDate))
+                .queryProvider(new DecreaseExerciseScoreQuerydslProvider(referenceDate))
                 .build();
     }
 

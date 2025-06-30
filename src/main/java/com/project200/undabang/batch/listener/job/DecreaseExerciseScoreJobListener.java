@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class DecreaseMemberScoreJobListener implements JobExecutionListener {
+public class DecreaseExerciseScoreJobListener implements JobExecutionListener {
     @Override
     public void beforeJob(JobExecution jobExecution) {
         log.info(">>>> {} Job 시작 <<<<", jobExecution.getJobInstance().getJobName());
