@@ -27,6 +27,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+
+/**
+ * 장기간 운동을 하지 않은 회원의 운동 점수를 감소시키는 배치 잡(Batch Job)의 설정 클래스입니다.
+ * 이 설정은 Job, Step, ItemReader, ItemProcessor, ItemWriter를 정의합니다.
+ */
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
@@ -37,9 +42,23 @@ public class DecreaseExerciseScoreJobConfig {
     private final DecreaseExerciseScoreJobListener decreaseExerciseScoreJobListener;
     private final DecreaseExerciseScoreStepListener decreaseExerciseScoreStepListener;
 
+    /**
+     * 한 번에 처리할 데이터의 양(청크)을 지정합니다.
+     * 데이터베이스 트랜잭션은 청크 단위로 커밋됩니다.
+     */
     private static final int CHUNK_SIZE = 100; // 10, 100, 1000 중 뭐가 좋을진 아직 모르겠음 (데이터 부족)
-    private static final byte DECREASE_SCORE = 1; // 언제든 정책에 따라 바꿀 수 있도록 전역 변수로 설계
 
+    /**
+     * 회원의 운동 점수를 감소시킬 값입니다.
+     * 정책 변경에 유연하게 대응하기 위해 상수로 정의되었습니다.
+     */
+    private static final byte DECREASE_SCORE = 1;
+
+
+    /**
+     * '운동 점수 감소' Job을 생성하여 빈으로 등록합니다.
+     * Job은 하나의 Step으로 구성됩니다.
+     */
     @Bean
     public Job decreaseExerciseScoreJob(){
         return new JobBuilder("decreaseExerciseScoreJob", jobRepository)
@@ -48,6 +67,12 @@ public class DecreaseExerciseScoreJobConfig {
                 .build();
     }
 
+    /**
+     * '운동 점수 감소' Step을 생성하여 빈으로 등록합니다.
+     * 이 Step은 decreaseExerciseReader를 통해 대상 회원을 읽고,
+     * decreaseExerciseProcessor에서 점수를 감소시킨 후,
+     * decreaseExerciseWriter를 통해 변경된 회원 정보를 데이터베이스에 저장합니다.
+     */
     @Bean
     public Step decreaseExerciseScoreStep(){
         return new StepBuilder("decreaseExerciseScoreStep", jobRepository)
@@ -60,12 +85,17 @@ public class DecreaseExerciseScoreJobConfig {
     }
 
 
+    /**
+     * 운동 점수 감소 대상이 되는 회원 정보를 데이터베이스에서 읽어오는 ItemReader를 생성합니다.
+     * StepScope 로 지정되어 각 Step 실행마다 새로운 인스턴스가 생성됩니다.
+     * Job 파라미터로 받은 'runDate'를 기준으로 2주 이상 운동 기록이 없는 회원을 조회합니다.
+     */
     @Bean
     @StepScope
     public JpaPagingItemReader<Member> decreaseExerciseReader(@Value("#{jobParameters['runDate']}") String runDate){
         LocalDateTime referenceDate = LocalDate.parse(runDate, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
                 .atStartOfDay()
-                .minusWeeks(2);
+                .minusWeeks(2); // 이 부분 정책 테이블에서 가져와서 넣기 (추후 리팩토링 필요)
 
         return new JpaPagingItemReaderBuilder<Member>()
                 .name("decreaseExerciseReader")
@@ -75,6 +105,11 @@ public class DecreaseExerciseScoreJobConfig {
                 .build();
     }
 
+    /**
+     * 읽어온 회원의 운동 점수를 감소시키는 ItemProcessor를 생성합니다.
+     * 회원의 현재 점수가 0보다 큰 경우에만 {@link #DECREASE_SCORE} 만큼 점수를 차감합니다.
+     * 점수가 0인 회원은 변경되지 않습니다.
+     */
     @Bean
     public ItemProcessor<Member, Member> decreaseExerciseProcessor(){
         return member -> {
@@ -91,6 +126,10 @@ public class DecreaseExerciseScoreJobConfig {
         };
     }
 
+    /**
+     * 처리된 회원 정보를 데이터베이스에 저장하는 ItemWriter를 생성합니다.
+     * JpaItemWriter를 사용하여 처리된 엔티티를 영속성 컨텍스트에 병합합니다.
+     */
     @Bean
     public JpaItemWriter<Member> decreaseExerciseWriter(){
         return new JpaItemWriterBuilder<Member>()

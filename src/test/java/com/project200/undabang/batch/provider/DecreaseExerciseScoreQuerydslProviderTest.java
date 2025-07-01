@@ -48,7 +48,7 @@ class DecreaseExerciseScoreQuerydslProviderTest {
         LocalDateTime referenceDate = runDate.minusWeeks(2);
 
         //when
-        DecreaseExerciseScoreQuerydslProvider provider = new DecreaseExerciseScoreQuerydslProvider(referenceDate);
+        DecreaseExerciseScoreQuerydslProvider_deleted provider = new DecreaseExerciseScoreQuerydslProvider_deleted(referenceDate);
         provider.setEntityManager(entityManager);
 
         Query query = provider.createQuery();
