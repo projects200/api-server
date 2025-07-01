@@ -1,6 +1,6 @@
 package com.project200.undabang.batch.itemProcessor;
 
-import com.project200.undabang.batch.config.DecreaseExerciseScoreJobConfig;
+import com.project200.undabang.common.batch.config.DecreaseExerciseScoreJobConfig;
 import com.project200.undabang.member.entity.Member;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;

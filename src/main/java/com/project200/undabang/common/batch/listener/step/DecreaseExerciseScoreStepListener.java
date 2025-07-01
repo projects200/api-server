@@ -1,4 +1,4 @@
-package com.project200.undabang.batch.listener.step;
+package com.project200.undabang.common.batch.listener.step;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.*;

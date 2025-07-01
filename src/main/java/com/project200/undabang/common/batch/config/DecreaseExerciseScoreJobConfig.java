@@ -1,8 +1,8 @@
-package com.project200.undabang.batch.config;
+package com.project200.undabang.common.batch.config;
 
-import com.project200.undabang.batch.listener.job.DecreaseExerciseScoreJobListener;
-import com.project200.undabang.batch.listener.step.DecreaseExerciseScoreStepListener;
-import com.project200.undabang.batch.provider.DecreaseExerciseScoreQuerydslProvider;
+import com.project200.undabang.common.batch.listener.job.DecreaseExerciseScoreJobListener;
+import com.project200.undabang.common.batch.listener.step.DecreaseExerciseScoreStepListener;
+import com.project200.undabang.common.batch.provider.DecreaseExerciseScoreQuerydslProvider;
 import com.project200.undabang.member.entity.Member;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;

@@ -1,6 +1,6 @@
 package com.project200.undabang.batch.listener;
 
-import com.project200.undabang.batch.listener.step.DecreaseExerciseScoreStepListener;
+import com.project200.undabang.common.batch.listener.step.DecreaseExerciseScoreStepListener;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

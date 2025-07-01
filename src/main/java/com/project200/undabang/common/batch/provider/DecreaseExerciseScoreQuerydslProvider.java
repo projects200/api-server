@@ -1,4 +1,4 @@
-package com.project200.undabang.batch.provider;
+package com.project200.undabang.common.batch.provider;
 
 import com.project200.undabang.exercise.entity.QExercise;
 import com.project200.undabang.member.entity.QMember;
@@ -69,6 +69,9 @@ public class DecreaseExerciseScoreQuerydslProvider extends AbstractJpaQueryProvi
      * 속성 설정 후 실행되는 메서드입니다.
      * AbstractJpaQueryProvider를 상속받았기 때문에 구현이 필요하지만,
      * 이 클래스에서는 별도의 초기화 로직이 필요하지 않습니다.
+     *
+     * 특별히 추가할 검증 로직이 없다면, 메소드의 내부를 비워도 좋다.
+     * 모든 의존성 주입이 끝난 후, Bean 이 사용되기 직전에 호출될 초기화 로직임
      */
     @Override
     public void afterPropertiesSet() throws Exception {}
