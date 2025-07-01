@@ -11,6 +11,7 @@
 - 이 API는 multipart/form-data 형식으로 이미지를 업로드합니다.
 - 요청의 필수 여부는 요청 파트(Form Data)의 필수 여부를 참고하세요.
 - 요청에 대한 검증은 요청 파트(Form Data)의 설명을 참고하세요.
+- S3에는 `uploads/exercises/{userId}/{year}/{month}/{랜덤 uuid}.{확장자}` 형식으로 저장됩니다.
 
 === 코드 샘플
 operation::exercise-command-controller-test/upload-exercise-images-success[snippets="curl-request,http-request,http-response"]

@@ -1,0 +1,24 @@
+== 회원 점수 조회 API
+
+=== 설명
+- #GET# `/api/v1/members/score`
+- 회원의 점수를 조회하는 API입니다.
+- 이 API는 회원의 식별자와 점수를 반환합니다. 회원의 운동 점수는 0~100 사이에 위치합니다.
+
+=== 개발 참고 사항
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+operation::member-rest-controller-test/get-member-score_success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+operation::member-rest-controller-test/get-member-score_success[snippets="request-headers,response-fields"]
+
+==== 응답 상태 코드
+|===
+|상태 코드|설명
+|200|요청이 성공적으로 처리되었습니다. 회원의 등록 상태를 반환합니다.
+|401|인증되지 않은 요청입니다. Access Token이 없거나 유효하지 않습니다.
+|404|존재하지 않는 회원입니다.
+|===
+

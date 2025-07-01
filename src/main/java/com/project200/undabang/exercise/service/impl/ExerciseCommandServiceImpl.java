@@ -43,6 +43,8 @@ public class ExerciseCommandServiceImpl implements ExerciseCommandService {
         return new ExerciseIdResponseDto(exercise.getId());
     }
 
+    // 퍼사드 패턴(Facade Pattern): 이 메서드는 운동 이미지 업로드를 위한 간소화 된 인터페이스 역할을 합니다 .
+    // 작업 을 ExercisePictureService에 위임 하고 이미지 처리의 복잡성을 추상화 합니다.
     @Override
     public ExerciseIdResponseDto uploadExerciseImages(Long exerciseId, List<MultipartFile> exercisePictureList) {
         return exercisePictureService.uploadExercisePictures(exerciseId, exercisePictureList);

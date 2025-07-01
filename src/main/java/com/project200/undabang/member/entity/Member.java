@@ -28,13 +28,16 @@ public class Member {
     private UUID memberId;
 
     @Size(max = 320)
+    @NotNull
     @Column(name = "member_email", length = 320, unique = true)
     private String memberEmail;
 
     @Comment("M: 남 / F: 여 / U: 비공개")
+    @ColumnDefault("'U'")
     @Convert(converter = MemberGenderConverter.class)
     @Column(name = "member_gender", columnDefinition = "char(1)")
-    private MemberGender memberGender;
+    @Builder.Default
+    private MemberGender memberGender = MemberGender.U;
 
     @Column(name = "member_bday")
     private LocalDate memberBday;

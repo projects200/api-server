@@ -2,7 +2,7 @@
 
 === 설명
 
-- #POST# `/auth/v1/signup`
+- #POST# `/auth/v1/sign-up`
 - 회원 가입을 위한 API입니다.
 
 === 개발 참고 사항

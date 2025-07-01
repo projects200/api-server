@@ -1,5 +1,7 @@
 package com.project200.undabang.common.entity;
 
+import com.project200.undabang.common.web.exception.CustomException;
+import com.project200.undabang.common.web.exception.ErrorCode;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -49,8 +51,14 @@ public class Picture {
     private LocalDateTime pictureDeletedAt;
 
     public static Picture of(MultipartFile file, String pictureUrl) {
+        // 파일 이름이 255자를 초과하는 경우, 255자로 잘라냅니다.
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename != null && originalFilename.length() > 255) {
+            originalFilename = originalFilename.substring(0, 255);
+        }
+
         return Picture.builder()
-                .pictureName(file.getOriginalFilename())
+                .pictureName(originalFilename)
                 .pictureExtension(getFileExtension(file.getOriginalFilename()))
                 .pictureSize((int) file.getSize())
                 .pictureUrl(pictureUrl)

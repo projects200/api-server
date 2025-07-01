@@ -11,6 +11,8 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -104,5 +106,51 @@ class MemberRepositoryTest {
 
         // then
         assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("회원의 운동점수 조회")
+    void findMemberScore_Success() {
+        // given
+        UUID memberId = testUUID;
+
+        // when
+        Optional<Member> foundMember = memberRepository.findByMemberIdAndMemberDeletedAtNull(memberId);
+
+        // then
+        assertThat(foundMember).isPresent();
+        assertThat(foundMember.get().getMemberDeletedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("회원의 운동점수 조회 _ 탈퇴한 경우")
+    void findMemberScore_WithdrawnMember() {
+        UUID testMemberId = UUID.randomUUID();
+        Member withdrawnMember = Member.builder()
+                .memberId(testMemberId)
+                .memberEmail("e@eail.com")
+                .memberNickname("탈퇴유저닉테임")
+                .memberDeletedAt(LocalDateTime.now()) // 빌더를 통해 탈퇴 시간 설정
+                .build();
+        memberRepository.save(withdrawnMember);
+
+        // when
+        Optional<Member> foundMember = memberRepository.findByMemberIdAndMemberDeletedAtNull(testMemberId);
+
+        // then
+        assertThat(foundMember).isNotPresent();
+    }
+
+    @Test
+    @DisplayName("회원의 운동점수 조회 _ 회원이 없는 경우")
+    void findMemberScore_NonExistentMember() {
+        // given
+        UUID nonExistentMemberId = UUID.randomUUID();
+
+        // when
+        Optional<Member> foundMember = memberRepository.findByMemberIdAndMemberDeletedAtNull(nonExistentMemberId);
+
+        // then
+        assertThat(foundMember).isNotPresent();
     }
 }

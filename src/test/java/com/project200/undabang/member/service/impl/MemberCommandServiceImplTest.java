@@ -26,9 +26,9 @@ import static org.assertj.core.api.AssertionsForClassTypes.catchThrowable;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
-class MemberServiceImplTest {
+class MemberCommandServiceImplTest {
     @InjectMocks
-    private MemberServiceImpl memberService;
+    private MemberCommandServiceImpl memberService;
     @Mock
     private MemberRepository memberRepository;
 
