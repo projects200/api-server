@@ -41,7 +41,8 @@ jobs:
           mkdir -p src/main/resources/
           echo ${{ secrets.APPLICATION_DEV_YML }} | base64 -d > src/main/resources/application-dev.yml
           chmod +x gradlew
-          ./gradlew build -Dspring.profiles.active=dev
+#         테스트 실행 및 문서 생성을 위해 dev-docs 프로필을 사용하도록 변경
+          ./gradlew build -Dspring.profiles.active=dev-docs
         shell: bash
 
       - name: Build and push image to Amazon ECR
