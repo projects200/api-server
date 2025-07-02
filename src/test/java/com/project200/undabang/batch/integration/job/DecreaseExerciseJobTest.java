@@ -45,10 +45,10 @@ public class DecreaseExerciseJobTest {
         LocalDateTime runDate = LocalDateTime.of(2020, 1, 15, 0, 0, 0);
 
         Member activeMember = createMember("activeMember", (byte) 77);
-        Exercise activeMemberExercise = createExercise(activeMember, runDate.minusWeeks(1), runDate.minusWeeks(1).plusDays(1));
+        Exercise activeMemberExercise = createExercise(activeMember, runDate.minusDays(6), runDate.minusDays(5));
 
         Member inActiveMember = createMember("inActiveMember", (byte) 25);
-        Exercise inActiveMemberExercise = createExercise(inActiveMember, runDate.minusWeeks(3), runDate.minusWeeks(3).plusDays(1));
+        Exercise inActiveMemberExercise = createExercise(inActiveMember, runDate.minusDays(8), runDate.minusDays(7));
 
         Member zeroScoreMember = createMember("zeroScoreMember", (byte) 0);
         Exercise zeroScoreMemberExercise = createExercise(zeroScoreMember, runDate.minusYears(1), runDate.minusYears(1).plusDays(1));

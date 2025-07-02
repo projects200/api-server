@@ -95,7 +95,7 @@ public class DecreaseExerciseScoreJobConfig {
     public JpaPagingItemReader<Member> decreaseExerciseReader(@Value("#{jobParameters['runDate']}") String runDate){
         LocalDateTime referenceDate = LocalDate.parse(runDate, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
                 .atStartOfDay()
-                .minusWeeks(2); // 이 부분 정책 테이블에서 가져와서 넣기 (추후 리팩토링 필요)
+                .minusWeeks(1); // 이 부분 정책 테이블에서 가져와서 넣기 (추후 리팩토링 필요)
 
         return new JpaPagingItemReaderBuilder<Member>()
                 .name("decreaseExerciseReader")

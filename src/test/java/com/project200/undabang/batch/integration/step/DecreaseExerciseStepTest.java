@@ -46,20 +46,17 @@ class DecreaseExerciseStepTest {
     }
 
     @Test
-    @DisplayName("decreaseExerciseScoreStep은 2주간 운동기록이 생성되지 않은 회원의 점수를 감소시킨다")
+    @DisplayName("decreaseExerciseScoreStep은 정책에 따라 운동기록이 생성되지 않은 회원의 점수를 감소시킨다")
     void decreaseExerciseScoreStep_executeSucceed() {
         // given
         LocalDateTime runDate = LocalDateTime.of(2020, 1, 15, 0, 0, 0);
 
-        // 점수 감소 대상
-        Member inactiveMember = createMember("inActiveMember", (byte) 35);
-        Exercise inactiveMemberExercise = createExercise(inactiveMember, runDate.minusWeeks(3), runDate.minusWeeks(3).plusDays(1));
+        Member activeMember = createMember("activeMember", (byte) 97);
+        Exercise activeMemberExercise = createExercise(activeMember, runDate.minusDays(6), runDate.minusDays(5));
 
-        // 점수 유지 대상
-        Member activeMember = createMember("activeMember", (byte) 56);
-        Exercise activeMemberExercise = createExercise(activeMember, runDate.minusWeeks(1), runDate.minusWeeks(1).plusDays(1));
+        Member inActiveMember = createMember("inActiveMember", (byte) 25);
+        Exercise inActiveMemberExercise = createExercise(inActiveMember, runDate.minusDays(8), runDate.minusDays(7));
 
-        // 휴면 회원 (점수 0)
         Member zeroScoreMember = createMember("zeroScoreMember", (byte) 0);
         Exercise zeroScoreMemberExercise = createExercise(zeroScoreMember, runDate.minusYears(1), runDate.minusYears(1).plusDays(1));
 
@@ -79,11 +76,11 @@ class DecreaseExerciseStepTest {
         Assertions.assertThat(stepExecution.getWriteCount()).isEqualTo(1); // inactive
         Assertions.assertThat(stepExecution.getFilterCount()).isEqualTo(1); // zeroScore
 
-        Member foundInactiveMember = memberRepository.findById(inactiveMember.getMemberId()).orElseThrow();
-        Assertions.assertThat(foundInactiveMember.getMemberScore()).isEqualTo((byte) 34); // 35-1
+        Member foundInactiveMember = memberRepository.findById(inActiveMember.getMemberId()).orElseThrow();
+        Assertions.assertThat(foundInactiveMember.getMemberScore()).isEqualTo((byte) 24); // 25-1
 
         Member foundActiveMember = memberRepository.findById(activeMember.getMemberId()).orElseThrow();
-        Assertions.assertThat(foundActiveMember.getMemberScore()).isEqualTo((byte) 56);
+        Assertions.assertThat(foundActiveMember.getMemberScore()).isEqualTo((byte) 97);
 
         Member foundZeroScoreMember = memberRepository.findById(zeroScoreMember.getMemberId()).orElseThrow();
         Assertions.assertThat(foundZeroScoreMember.getMemberScore()).isEqualTo((byte) 0);
