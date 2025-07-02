@@ -41,7 +41,6 @@ jobs:
           mkdir -p src/main/resources/
           echo ${{ secrets.APPLICATION_PROD_YML }} | base64 -d > src/main/resources/application-prod.yml
           chmod +x gradlew
-#         테스트 실행 및 문서 생성을 위해 prod-docs 프로필을 사용하도록 변경
           ./gradlew build -Dspring.profiles.active=prod-docs
         shell: bash
 
