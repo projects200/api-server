@@ -34,7 +34,10 @@ public enum ErrorCode {
     EXERCISE_RECORD_NOT_FOUND(404, "EXERCISE_RECORD_NOT_FOUND", "운동 기록을 찾을 수 없습니다."),
     EXERCISE_PICTURE_UPLOAD_FAILED(500, "EXERCISE_PICTURE_UPLOAD_FAILED", "운동 이미지 업로드에 실패했습니다."),
     EXERCISE_PICTURE_DELETE_FAILED(500, "EXERCISE_PICTURE_DELETE_FAILED", "운동 이미지 수정에 실패했습니다."),
-    EXERCISE_PICTURE_COUNT_EXCEEDED(400, "EXERCISE_PICTURE_COUNT_EXCEEDED", "운동 사진은 최대 5개까지만 업로드할 수 있습니다.");
+    EXERCISE_PICTURE_COUNT_EXCEEDED(400, "EXERCISE_PICTURE_COUNT_EXCEEDED", "운동 사진은 최대 5개까지만 업로드할 수 있습니다."),
+
+    // 정책 관련 에러
+    POLICY_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR.value(), "POLICY_NOT_FOUND", "정책을 찾을 수 없습니다.");
 
     private final HttpStatusCode status;
     private final String code;
