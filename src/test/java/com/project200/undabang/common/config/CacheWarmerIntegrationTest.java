@@ -3,20 +3,17 @@ package com.project200.undabang.common.config;
 import com.project200.undabang.policy.entity.Policy;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.provider.PolicyProvider;
-import com.project200.undabang.policy.provider.impl.PolicyProviderImpl;
 import com.project200.undabang.policy.repository.PolicyRepository;
-import com.project200.undabang.policy.service.impl.PolicyServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.interceptor.SimpleKey;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
@@ -26,14 +23,9 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.times;
 
-@SpringBootTest(classes = {
-        CacheWarmer.class,
-        PolicyProviderImpl.class,
-        PolicyServiceImpl.class,
-        PolicyRepository.class
-//        CacheWarmerIntegrationTest.TestConfig.class
-})
+@SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class CacheWarmerIntegrationTest {
 
@@ -46,13 +38,11 @@ class CacheWarmerIntegrationTest {
     @MockitoSpyBean
     private PolicyRepository policyRepository;
 
-//    @Configuration
-//    @EnableAutoConfiguration // <-- 데이터베이스, JPA 등 필수적인 자동 설정을 켜줍니다.
-//    @EnableJpaRepositories(basePackages = "com.project200.undabang.policy.repository") // <-- 리포지토리 위치
-//    @EntityScan(basePackages = "com.project200.undabang.policy.entity") // <-- 엔티티 위치
-//    static class TestConfig {
-//        // 이 클래스는 설정을 위한 용도이므로 내부는 비워둡니다.
-//    }
+    @TestConfiguration
+    @EnableCaching // "이 테스트 컨텍스트에서는 캐시 기능을 반드시 활성화해줘!"
+    static class CacheTestConfig {
+        // 내부는 비워둡니다. @EnableCaching 어노테이션 자체가 목적입니다.
+    }
 
     @BeforeEach
     void setUp() {
@@ -87,13 +77,48 @@ class CacheWarmerIntegrationTest {
         Cache policiesCache = cacheManager.getCache("policies");
         assertThat(policiesCache).isNotNull();
 
+        // 파라미터 없는 메소드는 SimpleKey.EMPTY를 키로 사용하므로, 올바른 키로 데이터를 조회합니다.
+        Cache.ValueWrapper cachedValueWrapper = policiesCache.get(SimpleKey.EMPTY);
+        assertThat(cachedValueWrapper).isNotNull();
+
         // 캐시 안에 실제로 데이터가 들어있는지 확인
-        // getAllPoliciesAsMap()이 Map<PolicyKey, Policy>를 반환하므로, 해당 타입으로 캐시 값 조회
         @SuppressWarnings("unchecked")
-        Map<PolicyKey, Policy> cachedMap = policiesCache.get("policies", Map.class);
+        Map<PolicyKey, Policy> cachedMap = (Map<PolicyKey, Policy>) cachedValueWrapper.get();
         assertThat(cachedMap).isNotNull();
-        assertThat(cachedMap).hasSize(2);
         assertThat(cachedMap.get(PolicyKey.EXERCISE_SCORE_MAX_POINTS)).isNotNull();
         assertThat(cachedMap.get(PolicyKey.EXERCISE_SCORE_MIN_POINTS)).isNotNull();
+    }
+
+    @Test
+    @DisplayName("캐시 예열 후, 정책을 조회하면 DB를 다시 호출하지 않고 캐시를 사용한다")
+    void shouldUseCacheAfterWarmingUp() {
+        // given
+        // 애플리케이션 시작 시 CacheWarmer에 의해 캐시가 이미 예열된 상태
+
+        // when
+        // 정책 조회 메소드를 다시 한번 호출
+        policyProvider.getAllPoliciesAsMap();
+
+        // then
+        // 총 호출 횟수: 예열 시 1번
+        then(policyRepository).should(times(1)).findAll();
+    }
+
+    @Test
+    @DisplayName("캐시를 무효화(refresh)하면, 다음 조회 시 DB를 다시 호출하여 캐시를 갱신한다")
+    void shouldReloadCacheAfterEviction() {
+        // given
+        // 캐시 예열 후. findAll()이 1번 호출된 상태입니다.
+
+        // when
+        // 캐시 무효화
+        policyProvider.refreshPolicies();
+
+        // 정책 재조회
+        policyProvider.getAllPoliciesAsMap();
+
+        // then
+        // 총 호출 횟수: (예열 시 1번 + 갱신 시 1번) = 2번
+        then(policyRepository).should(times(2)).findAll();
     }
 }

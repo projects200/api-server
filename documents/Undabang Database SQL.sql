@@ -269,16 +269,6 @@ create table if not exists member_locations
         foreign key (member_id) references members (member_id)
 );
 
-create definer = admin@`%` trigger before_insert_members
-    before insert
-    on members
-    for each row
-BEGIN
-    IF NEW.member_id IS NULL OR NEW.member_id = '' THEN
-        SET NEW.member_id = UUID();
-END IF;
-END;
-
 create table if not exists pictures
 (
     picture_id         bigint auto_increment
@@ -473,3 +463,72 @@ create table if not exists post_reports
         foreign key (report_id) references reports (report_id)
 );
 
+CREATE TRIGGER before_insert_members
+    BEFORE INSERT
+    ON members
+    FOR EACH ROW
+BEGIN
+    IF NEW.member_id IS NULL OR NEW.member_id = '' THEN
+        SET NEW.member_id = UUID();
+    END IF;
+END;
+
+INSERT INTO exercise_types (exercise_name, exercise_type_emoji)
+VALUES ('헬스', '💪'),
+       ('조깅', '🏃'),
+       ('자전거', '🚲'),
+       ('수영', '🏊'),
+       ('요가', '🧘'),
+       ('등산', '⛰️'),
+       ('축구', '⚽'),
+       ('농구', '🏀'),
+       ('테니스', '🎾'),
+       ('배드민턴', '🏸');
+
+INSERT INTO post_type (post_type_name, post_type_desc)
+VALUES ('오운완 게시판', '오늘의 운동한 모습이나 결과를 자랑하는 게시판입니다');
+
+INSERT INTO comment_report_subjects (comment_report_subject_name)
+VALUES ('스팸홍보/도배입니다.'),
+       ('음란물입니다.'),
+       ('불법정보를 포함하고 있습니다.'),
+       ('청소년에게 유해한 내용입니다.'),
+       ('욕설/생명경시/혐오/차별적 표현입니다.'),
+       ('개인정보가 노출되었습니다.'),
+       ('불쾌한 표현이 있습니다.'),
+       ('기타');
+
+INSERT INTO member_report_subjects (member_report_subject_name)
+VALUES ('사용자 사진에 음란물이 있습니다.'),
+       ('사용자 정보에 불법정보를 포함하고 있습니다.'),
+       ('사용자 정보에 청소년에게 유해한 내용이 있습니다.'),
+       ('사용자 정보에 욕설/생명경시/혐오/차별적 표현이 있습니다.'),
+       ('사용자 정보에 개인정보가 노출되었습니다.'),
+       ('사용자 정보에 불쾌한 표현이 있습니다.'),
+       ('약속된 운동에 상습적으로 무단 불참하였습니다.'),
+       ('기타');
+
+INSERT INTO post_report_subjects (post_report_subject_name)
+VALUES ('스팸홍보/도배입니다.'),
+       ('음란물입니다.'),
+       ('불법정보를 포함하고 있습니다.'),
+       ('청소년에게 유해한 내용입니다.'),
+       ('욕설/생명경시/혐오/차별적 표현입니다.'),
+       ('개인정보가 노출되었습니다.'),
+       ('불쾌한 표현이 있습니다.'),
+       ('기타');
+
+INSERT INTO policies (policy_key, policy_value, policy_unit, policy_description)
+VALUES
+    -- 점수 범위 정책
+    ('EXERCISE_SCORE_MAX_POINTS', '100', 'POINTS', '회원이 가질 수 있는 최대 운동 점수'),
+    ('EXERCISE_SCORE_MIN_POINTS', '0', 'POINTS', '회원이 가질 수 있는 최소 운동 점수'),
+
+    -- 점수 획득 정책
+    ('SIGNUP_INITIAL_POINTS', '35', 'POINTS', '회원 가입 시 기본으로 부여되는 점수'),
+    ('POINTS_PER_EXERCISE', '3', 'POINTS', '운동 기록 1회당 부여되는 점수 (일 1회)'),
+    ('EXERCISE_RECORD_VALIDITY_PERIOD', '2', 'DAYS', '점수 획득이 가능한 운동 기록의 유효 기간. (값: 2, 단위: DAYS)'),
+
+    -- 점수 차감 (페널티) 정책
+    ('PENALTY_INACTIVITY_THRESHOLD_DAYS', '7', 'DAYS', '페널티가 시작되는 비활성 기준일 (이 기간 이상 운동 기록이 없을 경우)'),
+    ('PENALTY_SCORE_DECREMENT_POINTS', '1', 'POINTS', '비활성 상태일 때 매일 차감되는 점수');

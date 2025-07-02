@@ -40,7 +40,7 @@ public class CacheWarmer implements ApplicationRunner {
         } catch (Exception e) {
             // 예외 발생 시 로깅 및 처리
             log.error("[CacheWarming] 캐시 예열 중 오류 발생: {}", e.getMessage(), e);
-            System.exit(1);
+            throw new RuntimeException("캐시 예열 실패!", e);
         }
 
         log.info("==================== 캐시 예열 완료 ====================");

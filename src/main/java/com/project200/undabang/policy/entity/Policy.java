@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "policies", schema = "mydatabase")
+@Table(name = "policies")
 public class Policy {
     @Comment("정책을 식별하는 고유 키 (예: SCORE_INITIAL)")
     @Id
