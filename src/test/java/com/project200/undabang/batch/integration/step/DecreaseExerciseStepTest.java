@@ -91,7 +91,7 @@ class DecreaseExerciseStepTest {
         Assertions.assertThat(stepExecution.getFilterCount()).isEqualTo(1); // zeroScore
 
         Member foundInactiveMember = memberRepository.findById(inActiveMember.getMemberId()).orElseThrow();
-        Assertions.assertThat(foundInactiveMember.getMemberScore()).isEqualTo((byte) (25) - policyDecreasePoint); // 25-1
+        Assertions.assertThat(foundInactiveMember.getMemberScore()).isEqualTo((byte) (25 - policyDecreasePoint)); // 25-1
 
         Member foundActiveMember = memberRepository.findById(activeMember.getMemberId()).orElseThrow();
         Assertions.assertThat(foundActiveMember.getMemberScore()).isEqualTo((byte) 97);

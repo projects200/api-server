@@ -4,6 +4,8 @@ import com.project200.undabang.common.batch.listener.job.DecreaseExerciseScoreJo
 import com.project200.undabang.common.batch.listener.step.DecreaseExerciseScoreStepListener;
 import com.project200.undabang.common.batch.provider.DecreaseExerciseScoreQuerydslProvider;
 import com.project200.undabang.member.entity.Member;
+import com.project200.undabang.policy.entity.PolicyKey;
+import com.project200.undabang.policy.service.PolicyService;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,19 +43,13 @@ public class DecreaseExerciseScoreJobConfig {
     private final EntityManagerFactory entityManagerFactory;
     private final DecreaseExerciseScoreJobListener decreaseExerciseScoreJobListener;
     private final DecreaseExerciseScoreStepListener decreaseExerciseScoreStepListener;
+    private final PolicyService policyService;
 
     /**
      * 한 번에 처리할 데이터의 양(청크)을 지정합니다.
      * 데이터베이스 트랜잭션은 청크 단위로 커밋됩니다.
      */
     private static final int CHUNK_SIZE = 100; // 10, 100, 1000 중 뭐가 좋을진 아직 모르겠음 (데이터 부족)
-
-    /**
-     * 회원의 운동 점수를 감소시킬 값입니다.
-     * 정책 변경에 유연하게 대응하기 위해 상수로 정의되었습니다.
-     */
-    private static final byte DECREASE_SCORE = 1;
-
 
     /**
      * '운동 점수 감소' Job을 생성하여 빈으로 등록합니다.
@@ -93,9 +89,11 @@ public class DecreaseExerciseScoreJobConfig {
     @Bean
     @StepScope
     public JpaPagingItemReader<Member> decreaseExerciseReader(@Value("#{jobParameters['runDate']}") String runDate){
+        final int THRESHOLD_DAYS = policyService.getPolicyAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS);
+
         LocalDateTime referenceDate = LocalDate.parse(runDate, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
                 .atStartOfDay()
-                .minusWeeks(1); // 이 부분 정책 테이블에서 가져와서 넣기 (추후 리팩토링 필요)
+                .minusDays(THRESHOLD_DAYS); // 이 부분 정책 테이블에서 가져와서 넣기 (추후 리팩토링 필요)
 
         return new JpaPagingItemReaderBuilder<Member>()
                 .name("decreaseExerciseReader")
@@ -107,18 +105,20 @@ public class DecreaseExerciseScoreJobConfig {
 
     /**
      * 읽어온 회원의 운동 점수를 감소시키는 ItemProcessor를 생성합니다.
-     * 회원의 현재 점수가 0보다 큰 경우에만 {@link #DECREASE_SCORE} 만큼 점수를 차감합니다.
+     * 회원의 현재 점수가 0보다 큰 경우에만 DECREASE_SCORE 만큼 점수를 차감합니다.
      * 점수가 0인 회원은 변경되지 않습니다.
      */
     @Bean
     public ItemProcessor<Member, Member> decreaseExerciseProcessor(){
+        final int DECREASE_POINTS = policyService.getPolicyAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS);
+
         return member -> {
             byte currentMemberScore = member.getMemberScore();
             if(currentMemberScore > 0){
                 log.info(">>>>>> 회원 점수 감소 대상: memberId = {}, memberNickname = {}, prevMemberScore = {}",
                         member.getMemberId(), member.getMemberNickname(), currentMemberScore);
 
-                member.decreaseMemberScore(DECREASE_SCORE);
+                member.decreaseMemberScore(DECREASE_POINTS);
 
                 return member;
             }
