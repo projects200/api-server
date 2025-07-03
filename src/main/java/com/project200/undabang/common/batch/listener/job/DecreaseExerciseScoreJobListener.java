@@ -15,7 +15,7 @@ public class DecreaseExerciseScoreJobListener implements JobExecutionListener {
 
     @Override
     public void afterJob(JobExecution jobExecution) {
-        long durationInMills = jobExecution.getEndTime().compareTo(jobExecution.getStartTime());
+        long durationInMills = java.time.Duration.between(jobExecution.getStartTime(), jobExecution.getEndTime()).toMillis();
 
         log.info(">>>> {} Job 종료. 상태 : {}, 소요시간 : {} <<<< ", jobExecution.getJobInstance().getJobName(), jobExecution.getStatus(), durationInMills);
     }
