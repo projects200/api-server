@@ -4,8 +4,11 @@ import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
+import com.project200.undabang.policy.entity.PolicyKey;
+import com.project200.undabang.policy.service.PolicyService;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.batch.core.*;
@@ -39,6 +42,17 @@ class DecreaseExerciseStepTest {
     @Qualifier("decreaseExerciseScoreJob") // 추후 다른 배치가 생길 수 있으니 운동점수 감소 Job 빈만 주입
     Job decreaseExerciseScoreJob;
 
+    @Autowired
+    private PolicyService policyService;
+    private int policyDueDate;
+    private int policyDecreasePoint;
+
+    @BeforeEach
+    void setUp(){
+        policyDueDate = policyService.getPolicyAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS);
+        policyDecreasePoint = policyService.getPolicyAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS);
+    }
+
     @AfterEach
     void tearDown() {
         exerciseRepository.deleteAllInBatch();
@@ -52,10 +66,10 @@ class DecreaseExerciseStepTest {
         LocalDateTime runDate = LocalDateTime.of(2020, 1, 15, 0, 0, 0);
 
         Member activeMember = createMember("activeMember", (byte) 97);
-        Exercise activeMemberExercise = createExercise(activeMember, runDate.minusDays(6), runDate.minusDays(5));
+        Exercise activeMemberExercise = createExercise(activeMember, runDate.minusDays(policyDueDate-1), runDate.minusDays(policyDueDate-2));
 
         Member inActiveMember = createMember("inActiveMember", (byte) 25);
-        Exercise inActiveMemberExercise = createExercise(inActiveMember, runDate.minusDays(8), runDate.minusDays(7));
+        Exercise inActiveMemberExercise = createExercise(inActiveMember, runDate.minusDays(policyDueDate+1), runDate.minusDays(policyDueDate));
 
         Member zeroScoreMember = createMember("zeroScoreMember", (byte) 0);
         Exercise zeroScoreMemberExercise = createExercise(zeroScoreMember, runDate.minusYears(1), runDate.minusYears(1).plusDays(1));
@@ -77,7 +91,7 @@ class DecreaseExerciseStepTest {
         Assertions.assertThat(stepExecution.getFilterCount()).isEqualTo(1); // zeroScore
 
         Member foundInactiveMember = memberRepository.findById(inActiveMember.getMemberId()).orElseThrow();
-        Assertions.assertThat(foundInactiveMember.getMemberScore()).isEqualTo((byte) 24); // 25-1
+        Assertions.assertThat(foundInactiveMember.getMemberScore()).isEqualTo((byte) (25) - policyDecreasePoint); // 25-1
 
         Member foundActiveMember = memberRepository.findById(activeMember.getMemberId()).orElseThrow();
         Assertions.assertThat(foundActiveMember.getMemberScore()).isEqualTo((byte) 97);

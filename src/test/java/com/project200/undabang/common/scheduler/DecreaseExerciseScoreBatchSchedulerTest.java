@@ -20,7 +20,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
-@SpringBootTest(properties = {"spring.batch.job.enabled=false"})
+@SpringBootTest
 class DecreaseExerciseScoreBatchSchedulerTest {
 
     // jobLauncher를 가짜 객체로 생성해 등록
