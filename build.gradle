@@ -47,6 +47,7 @@ dependencies {
 
     implementation 'com.querydsl:querydsl-core:5.1.0'
     implementation "com.querydsl:querydsl-jpa:5.1.0:jakarta"
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
     annotationProcessor "com.querydsl:querydsl-apt:5.1.0:jakarta"
     annotationProcessor "jakarta.annotation:jakarta.annotation-api"
     annotationProcessor "jakarta.persistence:jakarta.persistence-api:3.1.0"
@@ -93,7 +94,7 @@ dependencies {
 tasks.named('test') {
     outputs.dir snippetsDir
     useJUnitPlatform()
-    systemProperty("spring.profiles.active", System.getProperty("spring.profiles.active", "local"))
+//    systemProperty("spring.profiles.active", System.getProperty("spring.profiles.active", "local"))
     jvmArgs("-javaagent:${configurations.mockitoAgent.asPath}")
 }
 
