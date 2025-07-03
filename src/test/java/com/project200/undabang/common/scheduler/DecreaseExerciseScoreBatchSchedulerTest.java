@@ -53,6 +53,7 @@ class DecreaseExerciseScoreBatchSchedulerTest {
         // then
 
         // Awaitility : 비동기 작업이 끝날 때 까지 기다려주는 역할 수행
+        // 현재는 5초간 기다리도록 설정
         Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
             // 특정 인자가 넘어가는지, 정확하게 넘어가는지 확인
             // 객체의 상호작용을 확인할 수 있다.
