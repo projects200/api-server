@@ -1,5 +1,7 @@
 package com.project200.undabang.common.config;
 
+import com.project200.undabang.common.batch.config.DecreaseExerciseScoreJobConfig;
+import com.project200.undabang.common.scheduler.DecreaseExerciseScoreBatchScheduler;
 import com.project200.undabang.policy.entity.Policy;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.provider.PolicyProvider;
@@ -15,6 +17,7 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.interceptor.SimpleKey;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.util.List;
@@ -37,6 +40,12 @@ class CacheWarmerIntegrationTest {
 
     @MockitoSpyBean
     private PolicyRepository policyRepository;
+
+    @MockitoBean
+    private DecreaseExerciseScoreJobConfig decreaseExerciseScoreJobConfig;
+
+    @MockitoBean
+    private DecreaseExerciseScoreBatchScheduler decreaseExerciseScoreBatchScheduler;
 
     @TestConfiguration
     @EnableCaching // "이 테스트 컨텍스트에서는 캐시 기능을 반드시 활성화해줘!"
