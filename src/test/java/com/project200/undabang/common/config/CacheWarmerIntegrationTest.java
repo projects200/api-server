@@ -73,6 +73,7 @@ class CacheWarmerIntegrationTest {
     void cacheShouldBeWarmedUpOnStartup() {
         // then
         // 애플리케이션 시작 시 CacheWarmer에 의해 캐시가 이미 예열된 상태
+        // 배치 등에서 캐시 적용 전에 호출하므로 인해 호출 횟수가 1로 보장되지 않아 최소 1회로 지정
         then(policyRepository).should(atLeast(1)).findAll();
 
         // 'policies' 캐시 생성 확인
@@ -96,6 +97,7 @@ class CacheWarmerIntegrationTest {
     void shouldUseCacheAfterWarmingUp() {
         // given
         // 애플리케이션 시작 시 CacheWarmer에 의해 캐시가 이미 예열된 상태
+        // 배치 등에서 캐시 적용 전에 호출하므로 인해 호출 횟수가 1로 보장되지 않아 최소 1회로 지정
         then(policyRepository).should(atLeast(1)).findAll();
 
         // when
@@ -111,7 +113,8 @@ class CacheWarmerIntegrationTest {
     @DisplayName("캐시를 무효화(refresh)하면, 다음 조회 시 DB를 다시 호출하여 캐시를 갱신한다")
     void shouldReloadCacheAfterEviction() {
         // given
-        // 캐시 예열 후. findAll()이 1번 호출된 상태입니다.
+        // 애플리케이션 시작 시 CacheWarmer에 의해 캐시가 이미 예열된 상태
+        // 배치 등에서 캐시 적용 전에 호출하므로 인해 호출 횟수가 1로 보장되지 않아서 현재까지 호출 횟수를 확인합니다.
         int initialInvocationCount = Math.toIntExact(BDDMockito.mockingDetails(policyRepository).getInvocations().stream()
                 .filter(invocation -> invocation.getMethod().getName().equals("findAll"))
                 .count());
@@ -126,7 +129,7 @@ class CacheWarmerIntegrationTest {
         policyProvider.getAllPoliciesAsMap();
 
         // then
-        // 총 호출 횟수: (예열 시 1번 + 갱신 시 1번) = 2번
+        // 총 호출 횟수: 기존 예열 호출 횟수 + 1
         then(policyRepository).should(times(initialInvocationCount + 1)).findAll();
     }
 }
