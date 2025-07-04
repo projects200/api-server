@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
  */
 public class DecreaseExerciseScoreQuerydslProvider extends AbstractJpaQueryProvider {
     private final LocalDateTime referenceDate;
+    private JPAQueryFactory jpaQueryFactory;
 
     public DecreaseExerciseScoreQuerydslProvider(LocalDateTime referenceDate) {
         this.referenceDate = referenceDate;
@@ -27,14 +28,15 @@ public class DecreaseExerciseScoreQuerydslProvider extends AbstractJpaQueryProvi
      */
     @Override
     public Query createQuery() {
-        JPAQueryFactory jpaQueryFactory = new JPAQueryFactory(getEntityManager());
         QMember member = QMember.member;
 
         return jpaQueryFactory
                 .selectFrom(member)
                 .where(
-                        checkLastExerciseDateIsBeforeReferenceDate(member)
-                                .or(checkHasNoExerciseRecord(member))
+                        member.memberDeletedAt.isNull().and(
+                                checkLastExerciseDateIsBeforeReferenceDate(member)
+                                        .or(checkHasNoExerciseRecord(member))
+                        )
                 )
                 .orderBy(member.memberId.asc())
                 .createQuery();
@@ -49,20 +51,24 @@ public class DecreaseExerciseScoreQuerydslProvider extends AbstractJpaQueryProvi
         return JPAExpressions
                 .select(exercise.exerciseStartedAt.max())
                 .from(exercise)
-                .where(exercise.member.eq(member))
-                .loe(this.referenceDate);
+                .where(exercise.member.eq(member)
+                        .and(exercise.exerciseDeletedAt.isNull()))
+                .loe(referenceDate);
     }
 
     /**
-     * 회원에게 운동 기록이 없는지 확인하는 조건을 생성합니다.
+     * 운동기록이 없는 회원이 가입일 기준 유예기간이 지났는지 확인하는 조건을 생성합니다.
+     * 운동기록이 없고, 멤버 생성일이 기준일 이전인 조건
      */
     private BooleanExpression checkHasNoExerciseRecord(QMember member){
         QExercise exercise = QExercise.exercise;
 
         return JPAExpressions
                 .selectFrom(exercise)
-                .where(exercise.member.eq(member))
-                .notExists();
+                .where(exercise.member.eq(member)
+                        .and(exercise.exerciseDeletedAt.isNull()))
+                .notExists()
+                .and(member.memberCreatedAt.loe(referenceDate));
     }
 
     /**
@@ -74,5 +80,8 @@ public class DecreaseExerciseScoreQuerydslProvider extends AbstractJpaQueryProvi
      * 모든 의존성 주입이 끝난 후, Bean 이 사용되기 직전에 호출될 초기화 로직임
      */
     @Override
-    public void afterPropertiesSet() throws Exception {}
+    public void afterPropertiesSet() throws Exception {
+        // EntityManager 가 주입된 이후에 JPAQueryFactory를 생성
+        this.jpaQueryFactory = new JPAQueryFactory(getEntityManager());
+    }
 }

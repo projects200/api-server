@@ -22,3 +22,7 @@ spring:
       initialize-schema: never
     job:
       enabled: false
+
+batch:
+  jobs:
+    chunk-size: 100

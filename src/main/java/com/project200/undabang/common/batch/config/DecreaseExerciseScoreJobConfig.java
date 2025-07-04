@@ -1,5 +1,8 @@
 package com.project200.undabang.common.batch.config;
 
+import com.project200.undabang.common.batch.items.DecreaseExerciseScoreProcessor;
+import com.project200.undabang.common.batch.items.DecreaseExerciseScoreReader;
+import com.project200.undabang.common.batch.items.DecreaseExerciseScoreWriter;
 import com.project200.undabang.common.batch.listener.job.DecreaseExerciseScoreJobListener;
 import com.project200.undabang.common.batch.listener.step.DecreaseExerciseScoreStepListener;
 import com.project200.undabang.common.batch.provider.DecreaseExerciseScoreQuerydslProvider;
@@ -44,12 +47,16 @@ public class DecreaseExerciseScoreJobConfig {
     private final DecreaseExerciseScoreJobListener decreaseExerciseScoreJobListener;
     private final DecreaseExerciseScoreStepListener decreaseExerciseScoreStepListener;
     private final PolicyService policyService;
+    private final DecreaseExerciseScoreReader decreaseExerciseScoreReader;
+    private final DecreaseExerciseScoreProcessor decreaseExerciseScoreProcessor;
+    private final DecreaseExerciseScoreWriter decreaseExerciseScoreWriter;
 
     /**
      * 한 번에 처리할 데이터의 양(청크)을 지정합니다.
      * 데이터베이스 트랜잭션은 청크 단위로 커밋됩니다.
      */
-    private static final int CHUNK_SIZE = 100; // 10, 100, 1000 중 뭐가 좋을진 아직 모르겠음 (데이터 부족)
+    @Value("${batch.jobs.chunk-size}")
+    private int CHUNK_SIZE;
 
     /**
      * '운동 점수 감소' Job을 생성하여 빈으로 등록합니다.
@@ -74,7 +81,7 @@ public class DecreaseExerciseScoreJobConfig {
         return new StepBuilder("decreaseExerciseScoreStep", jobRepository)
                 .<Member, Member>chunk(CHUNK_SIZE, platformTransactionManager)
                 .listener(decreaseExerciseScoreStepListener)
-                .reader(decreaseExerciseReader(null))
+                .reader(decreaseExerciseScoreReader)
                 .processor(decreaseExerciseProcessor())
                 .writer(decreaseExerciseWriter())
                 .build();
@@ -86,7 +93,7 @@ public class DecreaseExerciseScoreJobConfig {
      * StepScope 로 지정되어 각 Step 실행마다 새로운 인스턴스가 생성됩니다.
      * Job 파라미터로 받은 'runDate'를 기준으로 2주 이상 운동 기록이 없는 회원을 조회합니다.
      */
-    @Bean
+//    @Bean
     @StepScope
     public JpaPagingItemReader<Member> decreaseExerciseReader(@Value("#{jobParameters['runDate']}") String runDate){
         final int THRESHOLD_DAYS = policyService.getPolicyAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS);
@@ -108,7 +115,7 @@ public class DecreaseExerciseScoreJobConfig {
      * 회원의 현재 점수가 0보다 큰 경우에만 DECREASE_SCORE 만큼 점수를 차감합니다.
      * 점수가 0인 회원은 변경되지 않습니다.
      */
-    @Bean
+//    @Bean
     public ItemProcessor<Member, Member> decreaseExerciseProcessor(){
         final int DECREASE_POINTS = policyService.getPolicyAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS);
 
@@ -130,7 +137,7 @@ public class DecreaseExerciseScoreJobConfig {
      * 처리된 회원 정보를 데이터베이스에 저장하는 ItemWriter를 생성합니다.
      * JpaItemWriter를 사용하여 처리된 엔티티를 영속성 컨텍스트에 병합합니다.
      */
-    @Bean
+//    @Bean
     public JpaItemWriter<Member> decreaseExerciseWriter(){
         return new JpaItemWriterBuilder<Member>()
                 .entityManagerFactory(entityManagerFactory)
