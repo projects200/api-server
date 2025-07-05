@@ -212,7 +212,8 @@ public class GlobalExceptionHandler {
     protected ResponseEntity<CommonResponse<Void>> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
         log.warn("HttpMessageNotReadableException 발생: ", ex);
         ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
-        CommonResponse<Void> response = CommonResponse.<Void>error(errorCode).message("올바른 값을 입력해 주세요").build();
+        CommonResponse<Void> response = CommonResponse.<Void>error(errorCode)
+                .message("요청 본문을 읽을 수 없습니다. 올바른 형식으로 요청해 주세요.").build();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
@@ -266,6 +267,42 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * NullPointerException을 처리하는 메서드입니다.
+     * <p>
+     * 이 메서드는 애플리케이션 실행 중 NullPointerException이 발생한 경우
+     * 내부 서버 오류로 처리하며, 적절한 HTTP 상태 코드와 오류 응답 메시지를 생성합니다.
+     *
+     * @param ex 처리할 NullPointerException 예외
+     * @return 내부 서버 오류에 대한 오류 응답 객체
+     */
+    @ExceptionHandler(NullPointerException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    protected ResponseEntity<CommonResponse<Void>> handleNullPointerException(NullPointerException ex) {
+        log.error("NullPointerException 발생: ", ex);
+        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+        CommonResponse<Void> response = CommonResponse.<Void>error(errorCode).message(ex.getMessage()).build();
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
+    }
+
+    /**
+     * 실행 시 발생하는 {@link RuntimeException}을 처리하는 메서드입니다.
+     * <p>
+     * 지정된 {@link RuntimeException}이 발생하면 내부 서버 오류 상태와 함께
+     * 적절한 오류 응답 메시지를 생성하여 반환합니다. 예외의 상세 내용은 로그에 기록됩니다.
+     *
+     * @param ex 처리할 {@link RuntimeException} 예외
+     * @return 내부 서버 오류에 대한 {@link CommonResponse} 객체를 감싸는 {@link ResponseEntity}
+     */
+    @ExceptionHandler(RuntimeException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    protected ResponseEntity<CommonResponse<Void>> handleRuntimeException(RuntimeException ex) {
+        log.error("RuntimeException 발생: ", ex);
+        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+        CommonResponse<Void> response = CommonResponse.<Void>error(errorCode).message(ex.getMessage()).build();
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
+    }
+
+    /**
      * 다른 모든 처리되지 않은 예외를 처리합니다. (최후의 방어선)
      *
      * <p>이 메서드는 애플리케이션에서 명시적으로 처리되지 않은 모든 예외를 포착하여
@@ -279,9 +316,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     protected ResponseEntity<CommonResponse<Void>> handleException(Exception ex) {
-        log.error("처리되지 않은 예외 발생: ", ex);
+        log.error("Unhandled Exception 발생: ", ex);
         ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
-        CommonResponse<Void> response = CommonResponse.<Void>error(errorCode).build();
+        CommonResponse<Void> response = CommonResponse.<Void>error(errorCode).message(ex.getMessage()).build();
         return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
 }
