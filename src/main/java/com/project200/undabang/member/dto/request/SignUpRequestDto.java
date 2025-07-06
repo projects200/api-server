@@ -1,7 +1,5 @@
 package com.project200.undabang.member.dto.request;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.project200.undabang.member.deserializer.MemberGenderDeserializer;
 import com.project200.undabang.member.enums.MemberGender;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -19,7 +17,6 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class SignUpRequestDto {
     @NotNull(message = "성별을 입력해주세요")
-    @JsonDeserialize(using = MemberGenderDeserializer.class)
     private MemberGender memberGender;
 
     @NotNull (message = "생일을 입력하세요")

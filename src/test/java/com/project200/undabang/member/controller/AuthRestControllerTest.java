@@ -10,8 +10,8 @@ import com.project200.undabang.member.dto.request.SignUpRequestDto;
 import com.project200.undabang.member.dto.response.MemberRegistrationStatusResponseDto;
 import com.project200.undabang.member.dto.response.SignUpResponseDto;
 import com.project200.undabang.member.enums.MemberGender;
-import com.project200.undabang.member.service.MemberQueryService;
 import com.project200.undabang.member.service.MemberCommandService;
+import com.project200.undabang.member.service.MemberQueryService;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -50,7 +50,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
     private final String memberTestEmail = "naturalPlayer@steroid.com";
     private final String memberTestNickname = "25년생프로헬창지망생";
     private final LocalDate memberBday = LocalDate.of(2025, 1, 1);
-    private final char memberGender = MemberGender.M.getCode();
+    private final char memberGender = MemberGender.MALE.getCode();
 
     @Test
     @DisplayName("회원가입 성공 케이스")
@@ -58,7 +58,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         // given
         SignUpRequestDto reqDto = SignUpRequestDto.builder()
                 .memberBday(memberBday)
-                .memberGender(MemberGender.M)
+                .memberGender(MemberGender.MALE)
                 .memberNickname(memberTestNickname)
                 .build();
 
@@ -88,7 +88,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                                                 .description("회원 닉네임입니다. 최대 30자 이내로 한글, 영문, 숫자만 사용 가능합니다. " +
                                                         "닉네임은 공백일 수 없으며 중복될 수 없습니다."),
                                         fieldWithPath("memberGender").type(JsonFieldType.STRING)
-                                                .description("회원 성별입니다. 회원 성별은 M(남성), F(여성), U(알수없음) 중 하나로 입력해주세요."),
+                                                .description("회원 성별입니다. 회원 성별은 M(남성), F(여성), U(알수없음) 중 하나로 입력해주세요.(소문자도 가능)"),
                                         fieldWithPath("memberBday").type("Date")
                                                 .description("회원 생년월일 입니다. ISO 8601 형식으로 입력해주세요. 예: 2025-01-01")
                                 ),
@@ -117,7 +117,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         // given
         SignUpRequestDto reqDto = SignUpRequestDto.builder()
                 .memberBday(memberBday)
-                .memberGender(MemberGender.M)
+                .memberGender(MemberGender.MALE)
                 .memberNickname(memberTestNickname)
                 .build();
 
@@ -155,7 +155,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         //given
         SignUpRequestDto reqDto = SignUpRequestDto.builder()
                 .memberBday(memberBday)
-                .memberGender(MemberGender.M)
+                .memberGender(MemberGender.MALE)
                 .memberNickname(memberTestNickname)
                 .build();
 
@@ -192,7 +192,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         //when
         SignUpRequestDto reqDto = SignUpRequestDto.builder()
                 .memberBday(memberBday)
-                .memberGender(MemberGender.M)
+                .memberGender(MemberGender.MALE)
                 .memberNickname(memberTestNickname)
                 .build();
 
@@ -229,7 +229,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         //given
         SignUpRequestDto reqDto = SignUpRequestDto.builder()
                 .memberBday(memberBday)
-                .memberGender(MemberGender.M)
+                .memberGender(MemberGender.MALE)
                 .memberNickname(memberTestNickname)
                 .build();
 
@@ -266,7 +266,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         //given
         SignUpRequestDto reqDto = SignUpRequestDto.builder()
                 .memberBday(memberBday)
-                .memberGender(MemberGender.M)
+                .memberGender(MemberGender.MALE)
                 .memberNickname(memberTestNickname)
                 .build();
 
@@ -278,7 +278,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                         .accept(MediaType.APPLICATION_JSON)
                         .headers(getCommonAuthHeaders(memberTestId, memberTestEmail))
                         .content(objectMapper.writeValueAsString(reqDto)))
-                .andExpect(status().isConflict())
+                .andExpect(status().isBadRequest())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.succeed").value(false))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.code").value("MEMBER_BDAY_ERROR"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message").exists())
@@ -303,7 +303,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         //given
         SignUpRequestDto reqDto = SignUpRequestDto.builder()
                 .memberBday(memberBday)
-                .memberGender(MemberGender.M)
+                .memberGender(MemberGender.MALE)
                 .memberNickname(memberTestNickname)
                 .build();
 
@@ -315,7 +315,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                         .accept(MediaType.APPLICATION_JSON)
                         .headers(getCommonAuthHeaders(memberTestId, memberTestEmail))
                         .content(objectMapper.writeValueAsString(reqDto)))
-                .andExpect(status().isConflict())
+                .andExpect(status().isBadRequest())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.succeed").value(false))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.code").value("MEMBER_GENDER_ERROR"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message").exists())
@@ -339,7 +339,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         // given
         SignUpRequestDto reqDto = SignUpRequestDto.builder()
                 .memberBday(memberBday)
-                .memberGender(MemberGender.M)
+                .memberGender(MemberGender.MALE)
                 .build();
 
         // when
@@ -380,7 +380,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         SignUpRequestDto reqDto = SignUpRequestDto.builder()
                 .memberNickname("aslenfwgnlsdrjgbsldkjrgbslekrjgbslekrjgbslekrjgbselkrjgbslekrjgbselkjrgblskjerbgslkejrbgslkjerbg")
                 .memberBday(memberBday)
-                .memberGender(MemberGender.M)
+                .memberGender(MemberGender.MALE)
                 .build();
         // when
         this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
@@ -419,7 +419,7 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
         SignUpRequestDto reqDto = SignUpRequestDto.builder()
                 .memberNickname(memberTestNickname)
                 .memberBday(memberBday)
-                .memberGender(MemberGender.M)
+                .memberGender(MemberGender.MALE)
                 .build();
 
         BDDMockito.given(memberCommandService.memberSignUp(BDDMockito.any(SignUpRequestDto.class)))
@@ -528,5 +528,67 @@ public class AuthRestControllerTest extends AbstractRestDocSupport {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized())
                 .andDo(print());
+    }
+
+    @Test
+    @DisplayName("회원가입 성별이 소문자인 경우")
+    public void signUpMember_Success_LowerCaseGender() throws Exception {
+        // given
+        String requestBody = """
+                {
+                    "memberNickname": "테스트닉네임",
+                    "memberGender": "u",
+                    "memberBday": "2025-01-01"
+                }
+                """;
+
+        SignUpRequestDto requestDto = SignUpRequestDto.builder()
+                .memberNickname("테스트닉네임")
+                .memberGender(MemberGender.UNKNOWN)
+                .memberBday(LocalDate.parse("2025-01-01"))
+                .build();
+
+        // when
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+                        .headers(getCommonAuthHeaders(memberTestId, memberTestEmail)))
+                .andExpect(status().isOk());
+
+        // then
+        BDDMockito.then(memberCommandService).should(BDDMockito.times(1)).memberSignUp(BDDMockito.any(SignUpRequestDto.class));
+        BDDMockito.verify(memberCommandService).memberSignUp(BDDMockito.argThat(dto ->
+                dto != null && dto.getMemberGender() == MemberGender.UNKNOWN
+        ));
+    }
+
+    @Test
+    @DisplayName("회원가입 성별이 M, F, U가 아닌 경우")
+    public void signUpMember_Failed_InvalidGender() throws Exception {
+        // given
+        String requestBody = """
+                {
+                    "memberNickname": "테스트닉네임",
+                    "memberGender": "X",
+                    "memberBday": "2025-01-01"
+                }
+                """;
+
+        // when
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/auth/v1/sign-up")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+                        .headers(getCommonAuthHeaders(memberTestId, memberTestEmail)))
+                .andExpect(status().isBadRequest())
+                .andExpectAll(
+                        MockMvcResultMatchers.jsonPath("$.succeed").value(false),
+                        MockMvcResultMatchers.jsonPath("$.code").value("MEMBER_GENDER_ERROR"),
+                        MockMvcResultMatchers.jsonPath("$.message").exists(),
+                        MockMvcResultMatchers.jsonPath("$.data").doesNotExist());
+
+        // then
+        BDDMockito.then(memberCommandService).should(BDDMockito.never()).memberSignUp(BDDMockito.any(SignUpRequestDto.class));
     }
 }

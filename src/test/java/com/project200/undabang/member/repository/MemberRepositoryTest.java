@@ -1,8 +1,10 @@
 package com.project200.undabang.member.repository;
 
 import com.project200.undabang.configuration.TestQuerydslConfig;
+import com.project200.undabang.member.dto.command.SignUpMemberCommand;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.enums.MemberGender;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -26,18 +29,24 @@ class MemberRepositoryTest {
     @Autowired
     MemberRepository memberRepository;
 
+    @Autowired
+    private EntityManager em;
+
     private UUID testUUID;
 
     @BeforeEach
     void setUp() {
         testUUID = UUID.randomUUID();
-        Member member = Member.createFromSignUp(
-                testUUID,
-                "user@email.com",
-                "유저닉네임",
-                MemberGender.M,
-                LocalDate.of(1990, 1, 1)
-        );
+
+        Member member = Member.signUp(
+                SignUpMemberCommand.builder()
+                        .memberId(testUUID)
+                        .memberEmail("user@email.com")
+                        .memberNickname("유저닉네임")
+                        .memberGender(MemberGender.MALE)
+                        .initialSignupPoints((byte) 35)
+                        .memberBday(LocalDate.of(1990, 1, 1))
+                        .build());
 
         memberRepository.save(member);
     }
@@ -152,5 +161,71 @@ class MemberRepositoryTest {
 
         // then
         assertThat(foundMember).isNotPresent();
+    }
+
+    @Test
+    @DisplayName("성별 컨버터가 정상적으로 동작하여 멤버를 조회한다")
+    void findById_Success() {
+        // given
+        em.flush();
+        em.clear();
+
+        // when
+        Optional<Member> foundMemberOptional = memberRepository.findById(testUUID);
+
+        // then
+        assertThat(foundMemberOptional).isPresent();
+        Member foundMember = foundMemberOptional.get();
+        assertThat(foundMember.getMemberGender()).isEqualTo(MemberGender.MALE);
+    }
+
+    @Test
+    @DisplayName("성별이 null인 멤버를 조회한다")
+    void findById_NullGender() {
+        // given
+        UUID nullGenderMemberId = UUID.randomUUID();
+        Member nullGenderMember = Member.builder()
+                .memberId(nullGenderMemberId)
+                .memberEmail("")
+                .memberNickname("nullGenderUser")
+                .memberGender(null) // 성별을 null로 설정
+                .memberBday(LocalDate.of(1990, 1, 1))
+                .build();
+        memberRepository.save(nullGenderMember);
+        em.flush();
+        em.clear();
+
+        // when
+        Optional<Member> foundMemberOptional = memberRepository.findById(nullGenderMemberId);
+
+        // then
+        assertThat(foundMemberOptional).isPresent();
+        Member foundMember = foundMemberOptional.get();
+        assertThat(foundMember.getMemberGender()).isNull(); // 성별이 null이어야 함
+        assertThat(foundMember.getMemberId()).isEqualTo(nullGenderMemberId);
+    }
+
+    @Test
+    @DisplayName("회원의 성별이 M, F, U 중 하나가 아닌 경우를 조회한다")
+    void findById_InvalidGender() {
+        // given
+        UUID invalidGenderMemberId = UUID.randomUUID();
+        em.createNativeQuery("INSERT INTO members (member_id, member_email, member_nickname, member_gender, member_bday, member_score) " +
+                        "VALUES (?, ?, ?, 'X', ?, ?)")
+                .setParameter(1, invalidGenderMemberId)
+                .setParameter(2, "invalid@email.com")
+                .setParameter(3, "invalidGenderUser")
+                .setParameter(4, LocalDate.of(1990, 1, 1))
+                .setParameter(5, (byte) 0)
+                .executeUpdate();
+
+        em.flush();
+        em.clear();
+
+        // when & then
+        assertThatThrownBy(() -> memberRepository.findById(invalidGenderMemberId))
+                .rootCause()
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("X는 유효하지 않은 성별 값입니다.");
     }
 }

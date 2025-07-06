@@ -199,21 +199,41 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
 
+
     /**
-     * HttpMessageNotReadableException 예외를 처리합니다.
+     * HttpMessageNotReadableException을 처리하기 위한 핸들러 메서드입니다.
+     * 클라이언트 요청의 본문이 읽을 수 없거나 형식이 올바르지 않을 경우 이 메서드가 호출됩니다.
+     * CustomException을 원인으로 포함하고 있는 경우, 해당 예외의 정보를 기반으로 응답을 생성합니다.
+     * 그 외의 경우에는 기본 에러 메시지를 반환합니다.
      *
-     * <p>요청 본문을 읽을 수 없거나 파싱할 수 없을 때 발생하는 예외를 처리합니다.</p>
-     *
-     * @param ex 처리할 HttpMessageNotReadableException 예외
-     * @return 유효하지 않은 요청에 대한 오류 응답
+     * @param ex 클라이언트 요청 본문 문제로 인해 발생한 HttpMessageNotReadableException
+     * @return 적절한 오류 정보를 포함한 ResponseEntity 객체
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     protected ResponseEntity<CommonResponse<Void>> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
         log.warn("HttpMessageNotReadableException 발생: ", ex);
+
+        // 최상위 원인(Root Cause)을 찾습니다.
+        Throwable rootCause = ex.getCause();
+        while (rootCause != null && rootCause.getCause() != null) {
+            rootCause = rootCause.getCause();
+        }
+
+        // 원인이 CustomException인 경우, 해당 예외의 정보를 사용합니다.
+        if (rootCause instanceof CustomException customException) {
+            ErrorCode errorCode = customException.getErrorCode();
+            String message = customException.getMessage(); // CustomException에서 메시지 가져오기
+
+            CommonResponse<Void> response = CommonResponse.<Void>error(errorCode)
+                    .message(message).build();
+            return ResponseEntity.status(errorCode.getStatus()).body(response);
+        }
+
+        // 그 외의 경우, 기존처럼 일반적인 메시지를 반환합니다.
         ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
         CommonResponse<Void> response = CommonResponse.<Void>error(errorCode)
-                .message("요청 본문을 읽을 수 없습니다. 올바른 형식으로 요청해 주세요.").build();
+                .message("요청 본문을 읽을 수 없거나 형식이 올바르지 않습니다.").build();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
