@@ -199,20 +199,41 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
 
+
     /**
-     * HttpMessageNotReadableException 예외를 처리합니다.
+     * HttpMessageNotReadableException을 처리하기 위한 핸들러 메서드입니다.
+     * 클라이언트 요청의 본문이 읽을 수 없거나 형식이 올바르지 않을 경우 이 메서드가 호출됩니다.
+     * CustomException을 원인으로 포함하고 있는 경우, 해당 예외의 정보를 기반으로 응답을 생성합니다.
+     * 그 외의 경우에는 기본 에러 메시지를 반환합니다.
      *
-     * <p>요청 본문을 읽을 수 없거나 파싱할 수 없을 때 발생하는 예외를 처리합니다.</p>
-     *
-     * @param ex 처리할 HttpMessageNotReadableException 예외
-     * @return 유효하지 않은 요청에 대한 오류 응답
+     * @param ex 클라이언트 요청 본문 문제로 인해 발생한 HttpMessageNotReadableException
+     * @return 적절한 오류 정보를 포함한 ResponseEntity 객체
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     protected ResponseEntity<CommonResponse<Void>> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
         log.warn("HttpMessageNotReadableException 발생: ", ex);
+
+        // 최상위 원인(Root Cause)을 찾습니다.
+        Throwable rootCause = ex.getCause();
+        while (rootCause != null && rootCause.getCause() != null) {
+            rootCause = rootCause.getCause();
+        }
+
+        // 원인이 CustomException인 경우, 해당 예외의 정보를 사용합니다.
+        if (rootCause instanceof CustomException customException) {
+            ErrorCode errorCode = customException.getErrorCode();
+            String message = customException.getMessage(); // CustomException에서 메시지 가져오기
+
+            CommonResponse<Void> response = CommonResponse.<Void>error(errorCode)
+                    .message(message).build();
+            return ResponseEntity.status(errorCode.getStatus()).body(response);
+        }
+
+        // 그 외의 경우, 기존처럼 일반적인 메시지를 반환합니다.
         ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
-        CommonResponse<Void> response = CommonResponse.<Void>error(errorCode).message("올바른 값을 입력해 주세요").build();
+        CommonResponse<Void> response = CommonResponse.<Void>error(errorCode)
+                .message("요청 본문을 읽을 수 없거나 형식이 올바르지 않습니다.").build();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
@@ -266,6 +287,42 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * NullPointerException을 처리하는 메서드입니다.
+     * <p>
+     * 이 메서드는 애플리케이션 실행 중 NullPointerException이 발생한 경우
+     * 내부 서버 오류로 처리하며, 적절한 HTTP 상태 코드와 오류 응답 메시지를 생성합니다.
+     *
+     * @param ex 처리할 NullPointerException 예외
+     * @return 내부 서버 오류에 대한 오류 응답 객체
+     */
+    @ExceptionHandler(NullPointerException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    protected ResponseEntity<CommonResponse<Void>> handleNullPointerException(NullPointerException ex) {
+        log.error("NullPointerException 발생: ", ex);
+        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+        CommonResponse<Void> response = CommonResponse.<Void>error(errorCode).message(ex.getMessage()).build();
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
+    }
+
+    /**
+     * 실행 시 발생하는 {@link RuntimeException}을 처리하는 메서드입니다.
+     * <p>
+     * 지정된 {@link RuntimeException}이 발생하면 내부 서버 오류 상태와 함께
+     * 적절한 오류 응답 메시지를 생성하여 반환합니다. 예외의 상세 내용은 로그에 기록됩니다.
+     *
+     * @param ex 처리할 {@link RuntimeException} 예외
+     * @return 내부 서버 오류에 대한 {@link CommonResponse} 객체를 감싸는 {@link ResponseEntity}
+     */
+    @ExceptionHandler(RuntimeException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    protected ResponseEntity<CommonResponse<Void>> handleRuntimeException(RuntimeException ex) {
+        log.error("RuntimeException 발생: ", ex);
+        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+        CommonResponse<Void> response = CommonResponse.<Void>error(errorCode).message(ex.getMessage()).build();
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
+    }
+
+    /**
      * 다른 모든 처리되지 않은 예외를 처리합니다. (최후의 방어선)
      *
      * <p>이 메서드는 애플리케이션에서 명시적으로 처리되지 않은 모든 예외를 포착하여
@@ -279,9 +336,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     protected ResponseEntity<CommonResponse<Void>> handleException(Exception ex) {
-        log.error("처리되지 않은 예외 발생: ", ex);
+        log.error("Unhandled Exception 발생: ", ex);
         ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
-        CommonResponse<Void> response = CommonResponse.<Void>error(errorCode).build();
+        CommonResponse<Void> response = CommonResponse.<Void>error(errorCode).message(ex.getMessage()).build();
         return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
 }

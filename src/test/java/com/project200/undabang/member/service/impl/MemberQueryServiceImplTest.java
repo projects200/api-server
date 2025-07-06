@@ -108,7 +108,8 @@ class MemberQueryServiceImplTest {
         @DisplayName("회원의 운동점수 기록 조회_운동기록 없음")
         void findMemberExerciseScore_NotHavingExerciseRecord(){
             UUID testMemberId = UUID.randomUUID();
-            Member testMember = Member.builder().memberId(testMemberId).build();
+            Byte initialScore = 35; // 초기 점수 설정
+            Member testMember = Member.builder().memberId(testMemberId).memberScore(initialScore).build();
 
             try (MockedStatic<UserContextHolder> ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
                 // given

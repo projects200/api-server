@@ -56,7 +56,7 @@ class ExerciseRepositoryImplTest {
         exerciseRepositoryCustom = new ExerciseRepositoryImpl(jpaQueryFactory);
 
         String testNickname = "테스트닉네임";
-        MemberGender testMemberGender = MemberGender.M;
+        MemberGender testMemberGender = MemberGender.MALE;
         LocalDate memberBday = LocalDate.of(2010, 1, 1);
 
         Member member = Member.builder()

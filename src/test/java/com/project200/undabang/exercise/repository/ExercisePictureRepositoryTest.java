@@ -34,7 +34,7 @@ class ExercisePictureRepositoryTest {
     @Autowired
     private EntityManager em;
 
-    private UUID memberId = UUID.randomUUID();
+    private final UUID memberId = UUID.randomUUID();
     private Exercise exercise;
     private List<Picture> savedPictures;
 
@@ -73,7 +73,7 @@ class ExercisePictureRepositoryTest {
         Member member = Member.builder()
                 .memberId(memberId)
                 .memberBday(LocalDate.now().minusDays(1))
-                .memberGender(MemberGender.M)
+                .memberGender(MemberGender.MALE)
                 .memberNickname("nickname")
                 .memberEmail("email.com")
                 .memberDesc("memberDesc")
