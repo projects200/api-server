@@ -28,6 +28,9 @@ public class DecreaseExerciseJobTest {
     private JobLauncherTestUtils jobLauncherTestUtils;
 
     @Autowired
+    private Job decreaseExerciseJob;
+
+    @Autowired
     private MemberRepository memberRepository;
 
     @Autowired
@@ -35,13 +38,18 @@ public class DecreaseExerciseJobTest {
 
     @Autowired
     private PolicyService policyService;
+
     private int policyDueDate;
     private int policyDecreasePoint;
 
     @BeforeEach
     void setUp() {
-        policyDueDate = policyService.getPolicyAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS);
-        policyDecreasePoint = policyService.getPolicyAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS);
+        this.jobLauncherTestUtils.setJob(decreaseExerciseJob);
+
+        this.policyDueDate = policyService.getPolicyAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS);
+        this.policyDecreasePoint = policyService.getPolicyAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS);
+
+        tearDown();
     }
 
     @AfterEach
@@ -54,24 +62,26 @@ public class DecreaseExerciseJobTest {
     @DisplayName("운동점수감소 Job 성공한 경우 : 점수가 0보다 크면 1씩 감소, 0인 회원은 유지")
     void decreaseExerciseJob_Success() throws Exception{
         // given
-        LocalDateTime runDate = LocalDateTime.of(2020, 1, 15, 0, 0, 0);
+        LocalDateTime runDate = LocalDateTime.of(2025, 1, 15, 0, 0, 0);
 
+        // 점수 감소 대상이 아닌 유저
         Member activeMember = createMember("activeMember", (byte) 77);
-        Exercise activeMemberExercise = createExercise(activeMember, runDate.minusDays(policyDueDate-1), runDate.minusDays(policyDueDate-2));
+        Exercise activeMemberExercise = createExercise(activeMember, runDate.minusDays(policyDueDate-1));
 
+        // 점수 감소 대상인 유저
         Member inActiveMember = createMember("inActiveMember", (byte) 25);
-        Exercise inActiveMemberExercise = createExercise(inActiveMember, runDate.minusDays(policyDueDate+1), runDate.minusDays(policyDueDate));
+        Exercise inActiveMemberExercise = createExercise(inActiveMember, runDate.minusDays(policyDueDate+1));
 
+        // 점수 감소 대상이지만, 점수가 없는 유저
         Member zeroScoreMember = createMember("zeroScoreMember", (byte) 0);
-        Exercise zeroScoreMemberExercise = createExercise(zeroScoreMember, runDate.minusYears(1), runDate.minusYears(1).plusDays(1));
+        Exercise zeroScoreMemberExercise = createExercise(zeroScoreMember, runDate.minusYears(1));
 
-
-        // when
+        // JobParameter 설정
         JobParameters jobParameters = new JobParametersBuilder()
                 .addString("runDate", runDate.toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
                 .toJobParameters();
 
-        // job 실행
+        // when
         JobExecution jobExecution = jobLauncherTestUtils.launchJob(jobParameters);
 
         // then
@@ -88,9 +98,11 @@ public class DecreaseExerciseJobTest {
         // 데이터베이스 상태 검증
         Member decreasedMember = memberRepository.findById(inActiveMember.getMemberId()).orElseThrow();
         Member exercisedMember = memberRepository.findById(activeMember.getMemberId()).orElseThrow();
+        Member notActivedMember = memberRepository.findById(zeroScoreMember.getMemberId()).orElseThrow();
 
         Assertions.assertThat(decreasedMember.getMemberScore()).isEqualTo((byte) (25 - policyDecreasePoint));
         Assertions.assertThat(exercisedMember.getMemberScore()).isEqualTo(activeMember.getMemberScore());
+        Assertions.assertThat(notActivedMember.getMemberScore()).isEqualTo(zeroScoreMember.getMemberScore());
     }
 
     private Member createMember(String nickname, Byte score){
@@ -99,16 +111,17 @@ public class DecreaseExerciseJobTest {
                 .memberEmail(nickname + "@email.com")
                 .memberNickname(nickname)
                 .memberScore(score)
+                .memberCreatedAt(LocalDateTime.now().minusYears(1))
                 .build();
 
         return memberRepository.save(member);
     }
 
-    private Exercise createExercise(Member member, LocalDateTime startedAt, LocalDateTime endedAt){
+    private Exercise createExercise(Member member, LocalDateTime startedAt){
         Exercise exercise = Exercise.builder()
                 .member(member)
                 .exerciseStartedAt(startedAt)
-                .exerciseEndedAt(endedAt)
+                .exerciseEndedAt(startedAt.plusHours(1))
                 .exerciseTitle("테스트 운동")
                 .build();
 
