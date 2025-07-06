@@ -1,5 +1,7 @@
 package com.project200.undabang.common.config;
 
+import com.project200.undabang.common.properties.AsyncProperties;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -21,7 +23,9 @@ import java.util.concurrent.Executor;
  */
 @Configuration
 @EnableAsync
+@RequiredArgsConstructor
 public class AsyncConfig {
+    private final AsyncProperties asyncProperties;
 
     /**
      * '운동 점수 감소' 배치 잡을 위한 전용 스레드 풀 Executor를 생성하여 빈으로 등록합니다.
@@ -32,10 +36,10 @@ public class AsyncConfig {
     @Bean(name = "decreaseExerciseScoreBatchJobExecutor")
     public Executor decreaseExerciseScoreBatchJobExecutor(){
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(10); // 핵심 쓰레드 수
-        executor.setMaxPoolSize(10); // 최대 쓰레드 수
-        executor.setQueueCapacity(25);
-        executor.setThreadNamePrefix("decreaseExerciseScoreBatchJobExecutor-"); // 쓰레드 이름 접두사
+        executor.setCorePoolSize(asyncProperties.getCorePoolSize()); // 핵심 쓰레드 수
+        executor.setMaxPoolSize(asyncProperties.getMaxPoolSize()); // 최대 쓰레드 수
+        executor.setQueueCapacity(asyncProperties.getQueueCapacity());
+        executor.setThreadNamePrefix(asyncProperties.getThreadNamePrefix()); // 쓰레드 이름 접두사
         executor.initialize();
         return executor;
     }

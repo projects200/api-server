@@ -26,3 +26,11 @@ spring:
 batch:
   jobs:
     chunk-size: 100
+
+async:
+  thread-pool:
+    decrease-exercise-score:
+      core-pool-size: 10
+      max-pool-size: 10
+      queue-capacity: 25
+      thread-name-prefix: "decreaseExerciseScoreBatchJobExecutor-"
