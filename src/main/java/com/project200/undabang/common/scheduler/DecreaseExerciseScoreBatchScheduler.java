@@ -48,7 +48,6 @@ public class DecreaseExerciseScoreBatchScheduler {
             jobLauncher.run(decreaseExerciseScoreJob, jobParameters);
         }catch (Exception e){
             log.error("운동 점수 감소 배치 Job 실행 중 오류 발생", e);
-            // 요기에 슬랙 API 전송 하도록 설정하면 될듯
         }
     }
 }

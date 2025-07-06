@@ -12,33 +12,21 @@ import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
-@SpringBootTest
+@SpringBootTest(properties = "spring.batch.job.enabled=false")
 class DecreaseExerciseScoreBatchSchedulerTest {
 
     // jobLauncher를 가짜 객체로 생성해 등록
-    // MockBean이 Depreciated 되므로 이렇게 직접 주입
-    @TestConfiguration
-    static class TestJobLauncherConfig{
-        @Bean
-        @Primary
-        public JobLauncher testJobLauncher(){
-            return Mockito.mock(JobLauncher.class);
-        }
-    }
+    @MockitoBean
+    private JobLauncher jobLauncher;
 
     @Autowired
     private DecreaseExerciseScoreBatchScheduler scheduler;
-
-    @Autowired
-    private JobLauncher jobLauncher;
 
     @Autowired
     @Qualifier("decreaseExerciseScoreJob")
@@ -68,6 +56,7 @@ class DecreaseExerciseScoreBatchSchedulerTest {
 
             JobParameters capturedParams = jobParametersCaptor.getValue();
             String expectedRunDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
             Assertions.assertThat(capturedParams.getString("runDate")).isEqualTo(expectedRunDate);
         });
     }

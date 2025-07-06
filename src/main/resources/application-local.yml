@@ -30,7 +30,7 @@ spring:
 
   batch:
     jdbc:
-      initialize-schema: always
+      initialize-schema: never
 
 logging:
   level:
