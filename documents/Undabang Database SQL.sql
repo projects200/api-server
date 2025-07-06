@@ -181,7 +181,7 @@ create table if not exists members
     member_bday         date                               null,
     member_nickname     varchar(50)                        not null,
     member_desc         varchar(500)                       null,
-    member_score        tinyint  default 35                null comment '0~100, 초기값 35',
+    member_score tinyint not null comment '0~100',
     member_warned_count tinyint  default 0                 not null comment '관리자 처리 신고 누적',
     member_created_at   datetime default CURRENT_TIMESTAMP not null,
     member_deleted_at   datetime                           null comment '탈퇴 시 삭제 일시 기록',

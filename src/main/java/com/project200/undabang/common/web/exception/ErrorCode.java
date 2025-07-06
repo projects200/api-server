@@ -24,8 +24,8 @@ public enum ErrorCode {
     MEMBER_EMAIL_DUPLICATED(409, "MEMBER_EMAIL_DUPLICATED", "이미 사용 중인 이메일입니다."),
     MEMBER_ID_DUPLICATED(409, "MEMBER_ID_DUPLICATED", "이미 가입한 회원 입니다."),
     MEMBER_NICKNAME_DUPLICATED(409, "MEMBER_NICKNAME_DUPLICATED", "이미 사용 중인 닉네임입니다."),
-    MEMBER_GENDER_ERROR(409, "MEMBER_GENDER_ERROR", "유효하지 않은 입력 값입니다."),
-    MEMBER_BDAY_ERROR(409, "MEMBER_BDAY_ERROR", "유효하지 않은 입력 값입니다."),
+    MEMBER_GENDER_ERROR(400, "MEMBER_GENDER_ERROR", "유효하지 않은 성별 값입니다."),
+    MEMBER_BDAY_ERROR(400, "MEMBER_BDAY_ERROR", "유효하지 않은 생년월일 값입니다."),
     MEMBER_SAVE_FAILED_ERROR(500, "MEMBER_SAVE_FAILED_ERROR", "모종의 에러로 회원가입에 실패하였습니다."),
 
     // 운동기록 관련 에러
