@@ -6,7 +6,6 @@ import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.service.PolicyService;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.database.JpaPagingItemReader;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -25,7 +24,7 @@ import java.time.format.DateTimeFormatter;
  * @StepScope가 붙은 빈은 싱글톤이 아니라 Step 하나의 실행과정과 생명주기를 공유한다
  */
 @Slf4j
-@StepScope
+//@StepScope
 public class DecreaseExerciseScoreReader extends JpaPagingItemReader<Member> {
     private final DecreaseExerciseScoreQuerydslProvider querydslProvider;
 
