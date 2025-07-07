@@ -16,3 +16,21 @@ spring:
     multipart:
       max-file-size: 10MB # 개별 파일 최대 크기
       max-request-size: 50MB # 총 요청 최대 크기 (여러 파일 업로드 시)
+
+  batch:
+    jdbc:
+      initialize-schema: never
+    job:
+      enabled: false
+
+batch:
+  jobs:
+    chunk-size: 100
+
+async:
+  thread-pool:
+    decrease-exercise-score:
+      core-pool-size: 10
+      max-pool-size: 10
+      queue-capacity: 25
+      thread-name-prefix: "decreaseExerciseScoreBatchJobExecutor-"

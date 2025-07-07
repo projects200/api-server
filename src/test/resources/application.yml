@@ -27,6 +27,12 @@ spring:
       enabled: true
       path: /h2-console
 
+  batch:
+    jdbc:
+      initialize-schema: always
+    job:
+      enabled: false
+
   sql:
     init:
       mode: always
@@ -63,3 +69,7 @@ restdocs:
     scheme: https
     host: api.undabang.store
     port: 443
+
+batch:
+  jobs:
+    chunk-size: 100
