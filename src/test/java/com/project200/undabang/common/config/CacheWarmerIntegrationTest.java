@@ -39,7 +39,7 @@ class CacheWarmerIntegrationTest {
     private PolicyRepository policyRepository;
 
     @TestConfiguration
-    @EnableCaching // "이 테스트 컨텍스트에서는 캐시 기능을 반드시 활성화해줘!"
+    @EnableCaching
     static class CacheTestConfig {
         // 내부는 비워둡니다. @EnableCaching 어노테이션 자체가 목적입니다.
     }
@@ -65,13 +65,12 @@ class CacheWarmerIntegrationTest {
         // SpyBean의 실제 메소드 호출 대신 Mock 결과를 반환하도록 설정
         given(policyRepository.findAll()).willReturn(mockPolicies);
     }
-
     @Test
     @DisplayName("애플리케이션 시작 시 CacheWarmer가 실행되어 정책 캐시가 예열된다")
     void cacheShouldBeWarmedUpOnStartup() {
         // then
         // DB 조회(findAll)가 CacheWarmer에 의해 정확히 1번만 호출되었는지 검증
-        then(policyRepository).should().findAll();
+        then(policyRepository).should(times(1)).findAll();
 
         // 'policies' 캐시 생성 확인
         Cache policiesCache = cacheManager.getCache("policies");
