@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @RequiredArgsConstructor
-@RequestMapping("/api")
+@RequestMapping("/open")
 public class PolicyRestController {
     private final PolicyProvider policyProvider;
 
