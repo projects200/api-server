@@ -67,7 +67,6 @@ class CacheWarmerIntegrationTest {
         // SpyBean의 실제 메소드 호출 대신 Mock 결과를 반환하도록 설정
         given(policyRepository.findAll()).willReturn(mockPolicies);
     }
-
     @Test
     @DisplayName("애플리케이션 시작 시 CacheWarmer가 실행되어 정책 캐시가 예열된다")
     void cacheShouldBeWarmedUpOnStartup() {
