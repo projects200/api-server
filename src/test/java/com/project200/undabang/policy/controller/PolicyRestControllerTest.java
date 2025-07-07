@@ -1,10 +1,13 @@
 package com.project200.undabang.policy.controller;
 
+import com.project200.undabang.common.web.exception.CustomException;
+import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
 import com.project200.undabang.policy.dto.response.ExercisePolicyResponseDto;
 import com.project200.undabang.policy.service.PolicyService;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -32,15 +35,34 @@ class PolicyRestControllerTest extends AbstractRestDocSupport {
     @Nested
     @DisplayName("운동 정책 조회 API 테스트")
     class ExercisePolicyTest{
+        private final String maxPoint = "100";
+        private final String minPoint = "0";
+        private final String initialPoint = "35";
+        private final String penaltyPoint = "1";
+        private final String penaltyThresholdDay = "7";
+        private final String pointPerExercise = "3";
+        private final String validityPeriod = "2";
+        private ExercisePolicyResponseDto responseDto;
+
+        @BeforeEach
+        void setup(){
+            responseDto = ExercisePolicyResponseDto.builder()
+                    .maxPoint(maxPoint)
+                    .minPoint(minPoint)
+                    .initialPoint(initialPoint)
+                    .penaltyPoint(penaltyPoint)
+                    .penaltyThresholdDay(penaltyThresholdDay)
+                    .pointPerExercise(pointPerExercise)
+                    .validityPeriod(validityPeriod)
+                    .build();
+        }
 
         @Test
         @DisplayName("성공케이스 : 운동정책을 조회한다")
         void getExercisePolicy_Success() throws Exception{
             // given
             String type = "exercises";
-            ExercisePolicyResponseDto responseDto = ExercisePolicyResponseDto.builder().build();
-
-            BDDMockito.given(policyService.getExercisePolicies()).willReturn(responseDto);
+            BDDMockito.given(policyService.findPoliciesByType(type)).willReturn(responseDto);
 
             // when
             String response = mockMvc.perform(MockMvcRequestBuilders.get("/open/v1/policies")
@@ -50,7 +72,7 @@ class PolicyRestControllerTest extends AbstractRestDocSupport {
                     .andExpect(status().isOk())
                     .andDo(document.document(
                             queryParameters(
-                                parameterWithName("exercises").attributes(getTypeFormat(JsonFieldType.STRING))
+                                parameterWithName("type").attributes(getTypeFormat(JsonFieldType.STRING))
                                         .description("정책 종류입니다. 운동 정책을 조회할 경우 exercises를 요청 하시면 됩니다.")
                             ),
                             responseFields(commonResponseFields(
@@ -67,9 +89,35 @@ class PolicyRestControllerTest extends AbstractRestDocSupport {
                             ))
                     )).andReturn().getResponse().getContentAsString();
 
-            CommonResponse expectedData = CommonResponse.success(responseDto);
+            CommonResponse<?> expectedData = CommonResponse.success(responseDto);
             String expected = objectMapper.writeValueAsString(expectedData);
             Assertions.assertThat(response).isEqualTo(expected);
+        }
+
+        @Test
+        @DisplayName("실패케이스 : 쿼리 파라미터가 없는 경우 400에러를 반환한다")
+        void getExercisePolicy_Fail_NoTypeQueryParam() throws Exception {
+            // when then
+            mockMvc.perform(MockMvcRequestBuilders.get("/open/v1/policies")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("실패케이스 : 지원하지 않는 type으로 조회시 500에러를 반환한다")
+        void getExercisePolicy_Fail_UnsupportedType() throws Exception {
+            // given
+            String invalidType = "invalid-type";
+            BDDMockito.given(policyService.findPoliciesByType(invalidType))
+                    .willThrow(new CustomException(ErrorCode.POLICY_NOT_FOUND));
+
+            // when then
+            mockMvc.perform(MockMvcRequestBuilders.get("/open/v1/policies")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .queryParam("type", invalidType))
+                    .andExpect(status().isInternalServerError());
         }
     }
 }

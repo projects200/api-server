@@ -10,8 +10,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ExercisePolicyResponseDto {
-    private String maxPoint;
     private String minPoint;
+    private String maxPoint;
     private String initialPoint;
     private String pointPerExercise;
     private String penaltyPoint;

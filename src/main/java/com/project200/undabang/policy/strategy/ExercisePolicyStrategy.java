@@ -11,7 +11,7 @@ import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
-public class ExercisePolicyStrategyImpl implements PolicyStrategy {
+public class ExercisePolicyStrategy implements PolicyStrategy {
     private final PolicyProvider policyProvider;
 
     @Override
