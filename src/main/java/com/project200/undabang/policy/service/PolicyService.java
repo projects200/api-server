@@ -10,4 +10,5 @@ public interface PolicyService {
      * @return 정책 값(policy_value)이 정수형으로 변환된 결과
      */
     int getPolicyAsInt(PolicyKey key);
+    Object findPoliciesByType(String policyType);
 }

@@ -10,4 +10,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ExercisePolicyResponseDto {
+    private String maxPoint;
+    private String minPoint;
+    private String initialPoint;
+    private String pointPerExercise;
+    private String penaltyPoint;
+    private String validityPeriod;
+    private String penaltyThresholdDay;
 }
