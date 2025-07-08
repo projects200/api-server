@@ -37,7 +37,7 @@ public class PolicyServiceImpl implements PolicyService {
     }
 
     @Override
-    public Object findPoliciesByType(String policyType) {
+    public Object getPoliciesByType(String policyType) {
         return policyStrategyFinder.findStrategy(policyType).getPolicyValue();
     }
 }

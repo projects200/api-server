@@ -17,7 +17,7 @@ public class PolicyRestController {
 
     @GetMapping("/v1/policies")
     public ResponseEntity<CommonResponse<?>> findPolicies(@RequestParam(value = "type") String policyType){
-        Object policy = policyService.findPoliciesByType(policyType);
+        Object policy = policyService.getPoliciesByType(policyType);
         return ResponseEntity.ok(CommonResponse.success(policy));
     }
 }

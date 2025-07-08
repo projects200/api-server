@@ -62,7 +62,7 @@ class PolicyRestControllerTest extends AbstractRestDocSupport {
         void getExercisePolicy_Success() throws Exception{
             // given
             String type = "exercises";
-            BDDMockito.given(policyService.findPoliciesByType(type)).willReturn(responseDto);
+            BDDMockito.given(policyService.getPoliciesByType(type)).willReturn(responseDto);
 
             // when
             String response = mockMvc.perform(MockMvcRequestBuilders.get("/open/v1/policies")
@@ -109,7 +109,7 @@ class PolicyRestControllerTest extends AbstractRestDocSupport {
         void getExercisePolicy_Fail_UnsupportedType() throws Exception {
             // given
             String invalidType = "invalid-type";
-            BDDMockito.given(policyService.findPoliciesByType(invalidType))
+            BDDMockito.given(policyService.getPoliciesByType(invalidType))
                     .willThrow(new CustomException(ErrorCode.POLICY_NOT_FOUND));
 
             // when then
