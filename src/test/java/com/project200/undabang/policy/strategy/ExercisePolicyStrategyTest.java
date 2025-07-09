@@ -26,11 +26,11 @@ class ExercisePolicyStrategyTest {
     private PolicyProvider policyProvider;
 
     @Test
-    @DisplayName("getPolicyType()은 exerecises를 반환한다")
+    @DisplayName("getPolicyType()은 exercise-score를 반환한다")
     void getPolicyType() {
         String policyType = exercisePolicyStrategy.getPolicyType();
 
-        Assertions.assertThat(policyType).isEqualTo("exercises");
+        Assertions.assertThat(policyType).isEqualTo("exercise-score");
     }
 
     @Test

@@ -16,7 +16,7 @@ public class ExercisePolicyStrategy implements PolicyStrategy {
 
     @Override
     public String getPolicyType() {
-        return "exercises";
+        return "exercise-score";
     }
 
     @Override

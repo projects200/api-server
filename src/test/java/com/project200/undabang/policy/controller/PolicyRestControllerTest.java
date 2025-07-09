@@ -61,7 +61,7 @@ class PolicyRestControllerTest extends AbstractRestDocSupport {
         @DisplayName("성공케이스 : 운동정책을 조회한다")
         void getExercisePolicy_Success() throws Exception{
             // given
-            String type = "exercises";
+            String type = "exercise-score";
             BDDMockito.given(policyService.getPoliciesByType(type)).willReturn(responseDto);
 
             // when
@@ -76,15 +76,15 @@ class PolicyRestControllerTest extends AbstractRestDocSupport {
                                         .description("정책 종류입니다. 운동 정책을 조회할 경우 exercises를 요청 하시면 됩니다.")
                             ),
                             responseFields(commonResponseFields(
-                                fieldWithPath("data.maxPoint").type(getTypeFormat(JsonFieldType.STRING)).description("회원이 가질 수 있는 최대 점수 입니다."),
-                                fieldWithPath("data.minPoint").type(getTypeFormat(JsonFieldType.STRING)).description("회원이 가질 수 있는 최소 점수 입니다."),
-                                fieldWithPath("data.initialPoint").type(getTypeFormat(JsonFieldType.STRING)).description("회원이 회원 가입시 부여 받는 기본 점수 입니다."),
-                                fieldWithPath("data.penaltyPoint").type(getTypeFormat(JsonFieldType.STRING)).description("회원이 일정 기간 운동 기록을 생성 하지 않을시 차감 되는 포인트 입니다."),
-                                fieldWithPath("data.pointPerExercise").type(getTypeFormat(JsonFieldType.STRING)).description("회원이 운동 기록을 생성할 시 부여 받는 포인트 입니다." +
+                                fieldWithPath("data.maxPoint").type(JsonFieldType.STRING).description("회원이 가질 수 있는 최대 점수 입니다."),
+                                fieldWithPath("data.minPoint").type(JsonFieldType.STRING).description("회원이 가질 수 있는 최소 점수 입니다."),
+                                fieldWithPath("data.initialPoint").type(JsonFieldType.STRING).description("회원이 회원 가입시 부여 받는 기본 점수 입니다."),
+                                fieldWithPath("data.penaltyPoint").type(JsonFieldType.STRING).description("회원이 일정 기간 운동 기록을 생성 하지 않을시 차감 되는 포인트 입니다."),
+                                fieldWithPath("data.pointPerExercise").type(JsonFieldType.STRING).description("회원이 운동 기록을 생성할 시 부여 받는 포인트 입니다." +
                                         "(해당 날짜에 운동 기록이 없을 경우 부여 받습니다)"),
-                                fieldWithPath("data.validityPeriod").type(getTypeFormat(JsonFieldType.STRING)).description("회원이 운동 기록을 생성할 시, 점수를 부여 받을 수 있는 기간을 의미 합니다. " +
+                                fieldWithPath("data.validityPeriod").type(JsonFieldType.STRING).description("회원이 운동 기록을 생성할 시, 점수를 부여 받을 수 있는 기간을 의미 합니다. " +
                                         "이 기간이 지나면 운동 기록을 생성 해도 점수를 부여받을 수 없습니다"),
-                                fieldWithPath("data.penaltyThresholdDay").type(getTypeFormat(JsonFieldType.STRING)).description("회원이 특정 기간동안 운동 기록을 생성하지 않을 경우, 운동 점수가 감소합니다." +
+                                fieldWithPath("data.penaltyThresholdDay").type(JsonFieldType.STRING).description("회원이 특정 기간동안 운동 기록을 생성하지 않을 경우, 운동 점수가 감소합니다." +
                                         "이때, 특정 기간을 설정하는 필드입니다.")
                             ))
                     )).andReturn().getResponse().getContentAsString();
