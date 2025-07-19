@@ -1,6 +1,7 @@
 package com.project200.undabang.policy.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -21,10 +22,14 @@ public class PolicyGroup {
     private String name;
 
     @Column(name = "policy_groups_created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    @NotNull
+    @Builder.Default
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     @Column(name = "policy_groups_updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    @NotNull
+    @Builder.Default
+    private LocalDateTime updatedAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "policyGroup")
     private List<PolicyGroupMapping> policyMappings = new ArrayList<>();

@@ -25,7 +25,7 @@ public class Policy {
 
     @Comment("정책을 식별하는 고유 값 (예: SCORE_INITIAL)")
     @Enumerated(EnumType.STRING)
-    @Size(max = 100)
+//    @Size(max = 100)
     @Column(name = "policies_key", nullable = false, unique = true, length = 100)
     private PolicyKey policyKey;
 
@@ -49,13 +49,15 @@ public class Policy {
     @Comment("정책 생성 일시")
     @NotNull
     @Column(name = "policies_created_at", nullable = false)
-    private LocalDateTime policyCreatedAt;
+    @Builder.Default
+    private LocalDateTime policyCreatedAt = LocalDateTime.now();
 
     @Comment("마지막 수정 일시")
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "policies_updated_at", nullable = false)
-    private LocalDateTime policyUpdatedAt;
+    @Builder.Default
+    private LocalDateTime policyUpdatedAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "policy")
     private List<PolicyGroupMapping> groupMappings = new ArrayList<>();

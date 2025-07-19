@@ -3,10 +3,12 @@ package com.project200.undabang.policy.controller;
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.policy.dto.response.PolicyResponseDto;
 import com.project200.undabang.policy.service.PolicyQueryService;
-import com.project200.undabang.policy.service.PolicyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 정책 관련 API 요청을 처리하는 컨트롤러입니다.
@@ -15,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/open")
 public class PolicyRestController {
-    private final PolicyService policyService;
     private final PolicyQueryService policyQueryService;
 
     /**
