@@ -82,7 +82,7 @@ class PolicyServiceImplTest {
 
     @Test
     @DisplayName("특정 정책을 요청하면, 해당 정책과 관련된 내용들을 반환한다")
-    void getPoliciesByType_success(){
+    void getPoliciesByGroupName_success(){
         // given
         String policyType = "exercise";
         Object expectedValue = "exercisePolicies";
@@ -91,7 +91,7 @@ class PolicyServiceImplTest {
         BDDMockito.given(policyStrategy.getPolicyValue()).willReturn(expectedValue);
 
         // when
-        Object result = policyService.getPoliciesByType(policyType);
+        Object result = policyService.getPoliciesByGroupName(policyType);
 
         // then
         Assertions.assertThat(result).isEqualTo(expectedValue);
@@ -102,13 +102,13 @@ class PolicyServiceImplTest {
 
     @Test
     @DisplayName("존재하지 않는 정책을 요청하면, 예외를 반환한다")
-    void getPoliciesByType_failed_NotExistPolicyName(){
+    void getPoliciesByGroupName_failed_NotExistPolicyName(){
         // given
         String policyType = "notExistPolicy";
         BDDMockito.given(policyStrategyFinder.findStrategy(policyType)).willThrow(new CustomException(ErrorCode.POLICY_NOT_FOUND, "해당 전략을 찾을 수 없습니다."));
 
         // when
-        Assertions.assertThatThrownBy(() -> policyService.getPoliciesByType(policyType))
+        Assertions.assertThatThrownBy(() -> policyService.getPoliciesByGroupName(policyType))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.POLICY_NOT_FOUND);
 

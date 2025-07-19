@@ -37,12 +37,4 @@ public class PolicyServiceImpl implements PolicyService {
             throw new CustomException(ErrorCode.POLICY_NOT_FOUND, "요청한 정책 키(" + key + ")가 존재하지 않습니다.");
         }
     }
-    /**
-     * 문자열로 지정된 정책 유형(policyType)에 따라 관련 정책들을 조회합니다.
-     * 내부적으로 {@link PolicyStrategyFinder}를 사용하여 적절한 전략을 찾아 정책 조회를 위임합니다.
-     */
-    @Override
-    public Object getPoliciesByType(String policyType) {
-        return policyStrategyFinder.findStrategy(policyType).getPolicyValue();
-    }
 }

@@ -22,6 +22,8 @@ drop table if exists member_locations;
 drop table if exists member_pictures;
 drop table if exists member_reports;
 drop table if exists member_report_subjects;
+drop table if exists policy_group_mappings;
+drop table if exists policy_groups;
 drop table if exists policies;
 drop table if exists post_pictures;
 drop table if exists pictures;
@@ -308,14 +310,29 @@ create table if not exists member_pictures
         foreign key (picture_id) references pictures (picture_id)
 );
 
-create table if not exists policies
-(
-    policy_key         varchar(100)                       not null comment '정책을 식별하는 고유 키 (예: SCORE_INITIAL)'
-        primary key,
-    policy_value       varchar(255)                       not null comment '정책 값',
-    policy_unit        varchar(20)                        null comment '정책 값의 단위 (예: POINTS, DAYS)',
-    policy_description varchar(500)                       not null comment '관리자 페이지에 표시될 정책 설명',
-    policy_updated_at  datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '마지막 수정 일시'
+create table if not exists policies (
+    policies_id             int             not null    auto_increment primary key,
+    policies_key            varchar(100)    not null    unique comment '정책을 식별하는 키 (ex:SCORE_INITIAL)',
+    policies_value          varchar(255)    null comment '정책 값',
+    policies_unit           varchar(20)     null comment '정책 값의 단위',
+    policies_description    varchar(500)    null comment '관리자 페이지에 표시될 정책 설명',
+    policies_updated_at     datetime        not null default current_timestamp comment '마지막 수정 일시',
+    policies_created_at     datetime        not null default current_timestamp comment '생성일시'
+);
+
+create table if not exists policy_groups (
+    policy_groups_id            int             not null    auto_increment primary key,
+    policy_groups_name          varchar(100)    not null    unique comment '정책 타입 이름',
+    policy_groups_created_at    datetime        not null    default current_timestamp comment '생성일시',
+    policy_groups_updated_at    datetime        not null    default current_timestamp comment '수정일시'
+);
+
+create table if not exists policy_group_mappings (
+    mapping_id                  int             not null    auto_increment primary key comment '정책 타입 매핑 id',
+    policies_id                 int             not null    comment '정책번호',
+    policy_types_id             int             not null    comment '정책 그룹 번호',
+    foreign key (policies_id) references policies(policies_id),
+    foreign key (policy_types_id) references policy_groups(policy_groups_id)
 );
 
 create table if not exists post_report_subjects
@@ -518,7 +535,7 @@ VALUES ('스팸홍보/도배입니다.'),
        ('불쾌한 표현이 있습니다.'),
        ('기타');
 
-INSERT INTO policies (policy_key, policy_value, policy_unit, policy_description)
+INSERT INTO policies (policies_key, policies_value, policies_unit, policies_description)
 VALUES
     -- 점수 범위 정책
     ('EXERCISE_SCORE_MAX_POINTS', '100', 'POINTS', '회원이 가질 수 있는 최대 운동 점수'),
@@ -527,7 +544,8 @@ VALUES
     -- 점수 획득 정책
     ('SIGNUP_INITIAL_POINTS', '35', 'POINTS', '회원 가입 시 기본으로 부여되는 점수'),
     ('POINTS_PER_EXERCISE', '3', 'POINTS', '운동 기록 1회당 부여되는 점수 (일 1회)'),
-    ('EXERCISE_RECORD_VALIDITY_PERIOD', '2', 'DAYS', '점수 획득이 가능한 운동 기록의 유효 기간. (값: 2, 단위: DAYS)'),
+    ('EXERCISE_RECORD_VALIDITY_PERIOD', '2', 'DAYS', '점수 획득이 가능한 운동 기록의 유효 기간. (단위: DAYS, HOURS, MINUTES)'),
+    ('EXERCISE_RECORD_MAX_PER_DAY', '1', 'COUNT', '하루에 기록할 수 있는 최대 운동 횟수'),
 
     -- 점수 차감 (페널티) 정책
     ('PENALTY_INACTIVITY_THRESHOLD_DAYS', '7', 'DAYS', '페널티가 시작되는 비활성 기준일 (이 기간 이상 운동 기록이 없을 경우)'),
