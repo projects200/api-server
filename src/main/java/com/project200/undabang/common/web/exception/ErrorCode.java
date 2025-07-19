@@ -37,6 +37,7 @@ public enum ErrorCode {
     EXERCISE_PICTURE_COUNT_EXCEEDED(400, "EXERCISE_PICTURE_COUNT_EXCEEDED", "운동 사진은 최대 5개까지만 업로드할 수 있습니다."),
 
     // 정책 관련 에러
+    POLICY_NOT_EXIST(404, "POLICY_NOT_EXIST", "존재하지 않는 정책명 입니다."),
     POLICY_NOT_FOUND(500, "POLICY_NOT_FOUND", "정책을 찾을 수 없습니다.");
 
     private final HttpStatusCode status;

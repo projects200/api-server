@@ -330,9 +330,9 @@ create table if not exists policy_groups (
 create table if not exists policy_group_mappings (
     mapping_id                  int             not null    auto_increment primary key comment '정책 타입 매핑 id',
     policies_id                 int             not null    comment '정책번호',
-    policy_types_id             int             not null    comment '정책 그룹 번호',
+    policy_groups_id             int             not null    comment '정책 그룹 번호',
     foreign key (policies_id) references policies(policies_id),
-    foreign key (policy_types_id) references policy_groups(policy_groups_id)
+    foreign key (policy_groups_id) references policy_groups(policy_groups_id)
 );
 
 create table if not exists post_report_subjects
@@ -550,3 +550,29 @@ VALUES
     -- 점수 차감 (페널티) 정책
     ('PENALTY_INACTIVITY_THRESHOLD_DAYS', '7', 'DAYS', '페널티가 시작되는 비활성 기준일 (이 기간 이상 운동 기록이 없을 경우)'),
     ('PENALTY_SCORE_DECREMENT_POINTS', '1', 'POINTS', '비활성 상태일 때 매일 차감되는 점수');
+
+INSERT INTO policy_groups (policy_groups_name) VALUES ('exercise-score');
+
+INSERT INTO policy_group_mappings (policies_id, policy_groups_id)
+SELECT
+    p.policies_id, -- (A) 조회된 각 정책의 ID
+    (SELECT pg.policy_groups_id FROM policy_groups pg WHERE pg.policy_groups_name = 'exercise-score') -- (B) 'exercise-score' 그룹의 ID
+FROM
+    policies p
+WHERE
+    p.policies_key IN (
+                       'EXERCISE_SCORE_MAX_POINTS',
+                       'EXERCISE_SCORE_MIN_POINTS',
+                       'SIGNUP_INITIAL_POINTS',
+                       'POINTS_PER_EXERCISE',
+                       'EXERCISE_RECORD_VALIDITY_PERIOD',
+                       'EXERCISE_RECORD_MAX_PER_DAY',
+                       'PENALTY_INACTIVITY_THRESHOLD_DAYS',
+                       'PENALTY_SCORE_DECREMENT_POINTS'
+        )
+  -- 이미 매핑된 데이터는 중복 삽입하지 않도록 방지하는 로직
+  AND NOT EXISTS (
+    SELECT 1 FROM policy_group_mappings pgm
+    WHERE pgm.policies_id = p.policies_id
+      AND pgm.policy_groups_id = (SELECT pg.policy_groups_id FROM policy_groups pg WHERE pg.policy_groups_name = 'exercise-score')
+);

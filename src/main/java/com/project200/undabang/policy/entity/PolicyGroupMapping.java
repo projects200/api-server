@@ -6,21 +6,22 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Table(name = "policy_group_mapping")
+@Table(name = "policy_group_mappings")
 @Getter@Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class PolicyGroupMapping {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "mapping_id")
+    private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "policy_id", nullable = false)
+    @JoinColumn(name = "policies_id", nullable = false)
     private Policy policy;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "policy_group_id", nullable = false)
+    @JoinColumn(name = "policy_groups_id", nullable = false)
     private PolicyGroup policyGroup;
 
     public PolicyGroupMapping(Policy policy, PolicyGroup policyGroup) {

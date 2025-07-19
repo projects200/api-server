@@ -15,7 +15,7 @@ public class PolicyGroup {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "policy_groups_id")
-    private Long id;
+    private Integer id;
 
     @Column(name = "policy_groups_name", nullable = false, unique = true, length = 100)
     private String name;

@@ -6,7 +6,6 @@ import com.project200.undabang.policy.entity.Policy;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.provider.PolicyProvider;
 import com.project200.undabang.policy.service.PolicyService;
-import com.project200.undabang.policy.strategy.PolicyStrategyFinder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,7 +20,6 @@ import java.util.Map;
 public class PolicyServiceImpl implements PolicyService {
 
     private final PolicyProvider policyProvider;
-    private final PolicyStrategyFinder policyStrategyFinder;
 
     /**
      * 지정된 {@link PolicyKey}에 해당하는 정책 값을 정수(int)로 조회합니다.
