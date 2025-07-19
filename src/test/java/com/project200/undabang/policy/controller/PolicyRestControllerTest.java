@@ -59,8 +59,7 @@ class PolicyRestControllerTest extends AbstractRestDocSupport {
         // then
         String response = mockMvc.perform(MockMvcRequestBuilders.get("/open/v1/policy-groups/{groupName}/policies", groupName)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
-                        .param("groupName", "exercise-score"))
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.document.document(
                         pathParameters(

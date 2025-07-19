@@ -18,4 +18,4 @@
 == 공통 개발 참고 사항
 include::overview/공통-개발-참고-사항.adoc[]
 
-include::policy/운동-점수-정책-조회-API.adoc[]
+include::policy/정책-조회-API.adoc[]

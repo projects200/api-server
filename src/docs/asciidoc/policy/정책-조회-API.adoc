@@ -1,7 +1,7 @@
-== 점수 정책 조회 API
+== 정책 조회 API
 
 === 설명
-- #GET# `/open/v1/policies?type={exercise-score}`
+- #GET# `/open/v1/policy-groups/{groupName}/policies`
 - 운동점수 관련 정책들을 조회하는 API입니다.
 - 이 API는 아래 항목에 대한 정책을 반환합니다.
 * 최대 점수
@@ -17,15 +17,15 @@
 - <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
 
 === 코드 샘플
-operation::exercise-policy-test/get-exercise-policy_-success[snippets="curl-request,http-request,http-response"]
+operation::policy-rest-controller-test/find-policies-by-group-name[snippets="curl-request,http-request,http-response"]
 
 === 매개 변수
-operation::exercise-policy-test/get-exercise-policy_-success[snippets="query-parameters,response-fields"]
+operation::policy-rest-controller-test/find-policies-by-group-name[snippets="path-parameters,response-fields"]
 
 ==== 응답 상태 코드
 |===
 |상태 코드|설명
 |200|요청이 성공적으로 처리되었습니다. 운동 점수 관련 정책을 반환합니다.
-|500|존재하지 않는 정책입니다.
+|404|존재하지 않는 정책입니다.
 |===
 
