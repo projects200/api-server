@@ -4,6 +4,7 @@ import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
 import com.project200.undabang.policy.dto.record.PolicyItemRecord;
 import com.project200.undabang.policy.dto.response.PolicyResponseDto;
+import com.project200.undabang.policy.service.PolicyGroupService;
 import com.project200.undabang.policy.service.PolicyQueryService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -16,6 +17,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.util.List;
+import java.util.Optional;
 
 import static com.project200.undabang.configuration.DocumentFormatGenerator.getTypeFormat;
 import static com.project200.undabang.configuration.RestDocsUtils.commonResponseFields;
@@ -30,6 +32,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class PolicyRestControllerTest extends AbstractRestDocSupport {
     @MockitoBean
     private PolicyQueryService policyQueryService;
+
+    @MockitoBean
+    private PolicyGroupService policyGroupService;
 
     @Test
     @DisplayName("정책 그룹 이름으로 조회시 성공하면 정책 그룹 이름, 크기, 정책들을 반환한다")
@@ -54,8 +59,7 @@ class PolicyRestControllerTest extends AbstractRestDocSupport {
                 .build();
 
         // when
-//        BDDMockito.given(policyQueryService.getPoliciesByGroupName(groupName)).willReturn(mockedResponse);
-        BDDMockito.given(policyQueryService.getPoliciesByGroupNameFromCache(groupName)).willReturn(mockedResponse);
+        BDDMockito.given(policyGroupService.getByGroupName(groupName)).willReturn(Optional.ofNullable(mockedResponse));
 
         // then
         String response = mockMvc.perform(MockMvcRequestBuilders.get("/open/v1/policy-groups/{groupName}/policies", groupName)
