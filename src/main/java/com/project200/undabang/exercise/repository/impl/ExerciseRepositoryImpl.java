@@ -8,6 +8,7 @@ import com.project200.undabang.exercise.dto.response.PictureDataResponse;
 import com.project200.undabang.exercise.entity.QExercise;
 import com.project200.undabang.exercise.entity.QExercisePicture;
 import com.project200.undabang.exercise.repository.ExerciseRepositoryCustom;
+import com.project200.undabang.member.entity.Member;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
@@ -269,5 +270,61 @@ public class ExerciseRepositoryImpl implements ExerciseRepositoryCustom {
 
 
         return responseDtoList;
+    }
+
+    /**
+     * QueryDSL을 사용하여 특정 회원이 특정 날짜에 생성한 운동 기록 수를 조회합니다.
+     * exerciseStartedAt (LocalDateTime) 필드를 기준으로 날짜 범위(하루)를 설정하여 검색합니다.
+     */
+    @Override
+    public long countByMemberAndExerciseStartedAt(Member member, LocalDate date) {
+        QExercise exercise = QExercise.exercise;
+
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
+
+        Long count = queryFactory
+                .select(exercise.count())
+                .from(exercise)
+                .where(
+                        exercise.member.eq(member),
+                        exercise.exerciseStartedAt.goe(startOfDay),
+                        exercise.exerciseStartedAt.lt(endOfDay),
+                        exercise.exerciseDeletedAt.isNull()
+                )
+                .fetchOne();
+
+        // fetchOne()은 결과가 없을 때 null을 반환할 수 있으므로, Null-safe 처리를 해줍니다.
+        return Objects.requireNonNullElse(count, 0L);
+    }
+
+    @Override
+    public Map<LocalDate, Long> findExerciseCountsByDateBetween(Member member, LocalDate startDate, LocalDate endDate) {
+        QExercise exercise = QExercise.exercise;
+
+        // DB 종류에 상관없이 LocalDateTime에서 날짜 부분만 추출하기 위한 템플릿
+        var exerciseDate = Expressions.dateTemplate(java.sql.Date.class, "DATE({0})", exercise.exerciseStartedAt);
+
+        return queryFactory
+                .select(exerciseDate, exercise.count())
+                .from(exercise)
+                .where(
+                        exercise.member.eq(member),
+                        // 시작일의 00:00:00 이후
+                        exercise.exerciseStartedAt.goe(startDate.atStartOfDay()),
+                        // 종료일의 다음날 00:00:00 이전
+                        exercise.exerciseStartedAt.lt(endDate.plusDays(1).atStartOfDay()),
+                        exercise.exerciseDeletedAt.isNull()
+                )
+                .groupBy(exerciseDate)
+                .fetch()
+                .stream()
+                .collect(Collectors.toMap(
+                        tuple -> Objects.requireNonNull(tuple.get(exerciseDate)).toLocalDate(),
+                        tuple -> {
+                            Long count = tuple.get(exercise.count());
+                            return count != null ? count : 0L;
+                        }
+                ));
     }
 }

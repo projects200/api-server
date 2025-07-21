@@ -80,6 +80,30 @@ public class Member {
     private LocalDateTime memberDeletedAt;
 
     /**
+     * 회원의 점수를 증가시킵니다. 점수는 정책에 정의된 최소/최대 값을 벗어나지 않습니다.
+     *
+     * @param pointsToAdd 추가할 점수
+     * @param minScore    허용되는 최소 점수
+     * @param maxScore    허용되는 최대 점수
+     * @return 실제로 증가한 점수
+     */
+    public byte addScore(byte pointsToAdd, byte minScore, byte maxScore) {
+        byte oldScore = this.memberScore;
+        int newScore = oldScore + pointsToAdd;
+
+        if (newScore > maxScore) {
+            this.memberScore = maxScore;
+        } else if (newScore < minScore) {
+            this.memberScore = minScore;
+        } else {
+            this.memberScore = (byte) newScore;
+        }
+
+        // 실제 변경된 점수 = 변경 후 점수 - 변경 전 점수
+        return (byte) (this.memberScore - oldScore);
+    }
+
+    /**
      * 새로운 회원을 생성하는 메서드입니다. 입력받은 회원 정보에 따라 유효성을 검증한 후
      * 회원 엔티티 객체를 생성합니다.
      *

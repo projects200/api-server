@@ -5,6 +5,7 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.exercise.dto.request.CreateExerciseRequestDto;
 import com.project200.undabang.exercise.dto.request.UpdateExerciseRequestDto;
+import com.project200.undabang.exercise.dto.response.CreateExerciseResponseDto;
 import com.project200.undabang.exercise.dto.response.ExerciseIdResponseDto;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
@@ -12,6 +13,7 @@ import com.project200.undabang.exercise.service.ExercisePictureService;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.enums.MemberGender;
 import com.project200.undabang.member.repository.MemberRepository;
+import com.project200.undabang.score.service.ExerciseScoreCommandService;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.DisplayName;
@@ -42,6 +44,9 @@ class ExerciseCommandServiceImplTest {
 
     @Mock
     private ExercisePictureService exercisePictureService;
+
+    @Mock
+    private ExerciseScoreCommandService exerciseScoreCommandService;
 
     // 운동 필드 생성 관련 테스트들
     // 성공적으로 운동 데이터를 생성하는 테스트
@@ -75,14 +80,17 @@ class ExerciseCommandServiceImplTest {
                 ReflectionTestUtils.setField(savedExercise, "id", 1L);
                 return savedExercise;
             });
+            BDDMockito.given(exerciseScoreCommandService.awardPointsForExercise(ArgumentMatchers.any(Exercise.class)))
+                    .willReturn((byte) 10);
 
             // when
-            ExerciseIdResponseDto actualResponse = exerciseCommandService.createExercise(requestDto);
+            CreateExerciseResponseDto actualResponse = exerciseCommandService.createExercise(requestDto);
 
             // then
             SoftAssertions.assertSoftly(softAssertions -> {
                 softAssertions.assertThat(actualResponse).as("응답 객체가 null이 아니어야함").isNotNull();
                 softAssertions.assertThat(actualResponse.exerciseId()).as("운동 ID가 일치해야함").isEqualTo(expectedResponse.exerciseId());
+                softAssertions.assertThat(actualResponse.earnedPoints()).as("획득한 포인트가 일치해야함").isEqualTo((byte) 10);
                 BDDMockito.then(exerciseRepository).should(BDDMockito.times(1)).save(ArgumentMatchers.any(Exercise.class));
             });
         }
