@@ -8,12 +8,26 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+
+/**
+ * 메서드 실행 시간을 측정하고 기록하는 AOP Aspect입니다.
+ * {@code @LogExecutionTime} 어노테이션이 붙은 메서드를 대상으로 합니다.
+ * 다른 Aspect들보다 먼저 실행되어야 정확한 시간 측정이 가능하므로 가장 높은 우선순위를 가집니다.
+ */
 @Slf4j
 @Aspect
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class ExecutionTimeLoggerAspect {
 
+    /**
+     * {@code @LogExecutionTime} 어노테이션이 적용된 메서드의 실행을 가로채는 Around 어드바이스입니다.
+     * 메서드 실행 시작 전후의 시간을 측정하여 실행 시간을 계산하고 로그로 남깁니다.
+     *
+     * @param joinPoint 프록시된 메서드에 대한 정보를 제공합니다.
+     * @return 원본 메서드의 실행 결과를 반환합니다.
+     * @throws Throwable 원본 메서드에서 발생한 예외를 전파합니다.
+     */
     @Around("@annotation(com.project200.undabang.common.aop.LogExecutionTime)")
     public Object logExecutionTime(final ProceedingJoinPoint joinPoint) throws Throwable {
 
