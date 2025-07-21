@@ -65,8 +65,7 @@ public class ExerciseScoreCommandServiceImpl implements ExerciseScoreCommandServ
      * @param exerciseStartedAt 운동 시작 시간
      * @return 점수를 획득할 수 있는지 여부와 획득 가능한 점수
      */
-    @Override
-    public EarnablePointsInfoDto checkEarnablePoints(Member member, LocalDateTime exerciseStartedAt) {
+    private EarnablePointsInfoDto checkEarnablePoints(Member member, LocalDateTime exerciseStartedAt) {
         // 1. 점수 획득 유효 기간 검증
         if (isOutsideValidityPeriod(exerciseStartedAt)) {
             log.debug("점수 부여 조건 확인: 유효 기간 벗어남. memberId: {}", member.getMemberId());
