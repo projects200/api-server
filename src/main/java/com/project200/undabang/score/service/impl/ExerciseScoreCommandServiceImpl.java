@@ -97,7 +97,7 @@ public class ExerciseScoreCommandServiceImpl implements ExerciseScoreCommandServ
      * @param exerciseStartedAt 운동 시작 시간
      * @return 유효 기간을 벗어났다면 true, 그렇지 않다면 false
      */
-    public boolean isOutsideValidityPeriod(LocalDateTime exerciseStartedAt) {
+    private boolean isOutsideValidityPeriod(LocalDateTime exerciseStartedAt) {
         LocalDateTime endDate = exercisePolicyValidator.calculateValidityEndDate();
 
         return exerciseStartedAt.isBefore(endDate);
