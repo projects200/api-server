@@ -27,7 +27,7 @@ public class PolicyRestController {
      */
     @GetMapping("/v1/policy-groups/{groupName}/policies")
     public ResponseEntity<CommonResponse<PolicyResponseDto>> findPolicies(@PathVariable String groupName){
-        PolicyResponseDto policyResponseDto = policyGroupService.getByGroupName(groupName).orElseThrow(() -> new CustomException(ErrorCode.POLICY_NOT_FOUND));
+        PolicyResponseDto policyResponseDto = policyGroupService.getByGroupName(groupName).orElseThrow(() -> new CustomException(ErrorCode.POLICY_NOT_EXIST));
 
         return ResponseEntity.ok(CommonResponse.success(policyResponseDto));
     }
