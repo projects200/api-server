@@ -54,7 +54,8 @@ class PolicyRestControllerTest extends AbstractRestDocSupport {
                 .build();
 
         // when
-        BDDMockito.given(policyQueryService.getPoliciesByGroupName(groupName)).willReturn(mockedResponse);
+//        BDDMockito.given(policyQueryService.getPoliciesByGroupName(groupName)).willReturn(mockedResponse);
+        BDDMockito.given(policyQueryService.getPoliciesByGroupNameFromCache(groupName)).willReturn(mockedResponse);
 
         // then
         String response = mockMvc.perform(MockMvcRequestBuilders.get("/open/v1/policy-groups/{groupName}/policies", groupName)

@@ -25,7 +25,6 @@ public class Policy {
 
     @Comment("정책을 식별하는 고유 값 (예: SCORE_INITIAL)")
     @Enumerated(EnumType.STRING)
-//    @Size(max = 100)
     @Column(name = "policies_key", nullable = false, unique = true, length = 100)
     private PolicyKey policyKey;
 

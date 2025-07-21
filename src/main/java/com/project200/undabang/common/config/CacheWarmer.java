@@ -1,6 +1,6 @@
 package com.project200.undabang.common.config;
 
-import com.project200.undabang.policy.provider.PolicyProvider;
+import com.project200.undabang.policy.provider.PolicyGroupProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -18,8 +18,8 @@ import org.springframework.stereotype.Component;
 @Order(1)
 public class CacheWarmer implements ApplicationRunner {
 
-    private final PolicyProvider policyProvider;
-
+//    private final PolicyProvider policyProvider;
+    private final PolicyGroupProvider policyGroupProvider;
     /**
      * Spring Boot 애플리케이션이 시작될 때 단 한 번 호출되는 메소드입니다.
      * 이 메소드에서 정책 데이터를 미리 조회하여 캐시에 저장합니다.
@@ -32,7 +32,8 @@ public class CacheWarmer implements ApplicationRunner {
 
         try {
             log.info("[CacheWarming] 정책(Policies) 데이터 캐싱을 시작합니다...");
-            policyProvider.getAllPoliciesAsMap();
+//            policyProvider.getAllPoliciesAsMap();
+            policyGroupProvider.getAllPolicyGroupAsMap();
             log.info("[CacheWarming] >>> 정책(Policies) 데이터 캐싱 성공!");
 
             // --- 다른 캐시 예열 작업이 필요하다면 여기에 추가 ---

@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -15,5 +16,11 @@ import java.util.List;
 public class PolicyResponseDto {
     private String groupName;
     private int size;
-    private List<PolicyItemRecord> policies;
+    @Builder.Default
+    private List<PolicyItemRecord> policies = new ArrayList<>();
+
+    public void addPolicyItem(PolicyItemRecord item){
+        this.policies.add(item);
+        this.size = this.policies.size();
+    }
 }
