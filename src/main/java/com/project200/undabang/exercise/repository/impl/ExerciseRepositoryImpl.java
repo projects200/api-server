@@ -298,6 +298,15 @@ public class ExerciseRepositoryImpl implements ExerciseRepositoryCustom {
         return Objects.requireNonNullElse(count, 0L);
     }
 
+    /**
+     * 주어진 회원과 날짜 범위에 해당하는 기간 동안의 날짜별 운동 기록 개수를 조회합니다.
+     * 시작일과 종료일의 운동 기록 개수를 날짜별로 그룹화하여 반환합니다.
+     *
+     * @param member    조회 대상 회원 객체 (운동 기록 소유자)
+     * @param startDate 조회 범위의 시작 날짜
+     * @param endDate   조회 범위의 종료 날짜
+     * @return 날짜별 운동 기록 개수의 맵 (키: 날짜, 값: 해당 날짜의 운동 기록 개수)
+     */
     @Override
     public Map<LocalDate, Long> findExerciseCountsByDateBetween(Member member, LocalDate startDate, LocalDate endDate) {
         QExercise exercise = QExercise.exercise;
