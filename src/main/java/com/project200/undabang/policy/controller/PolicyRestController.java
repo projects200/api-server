@@ -5,7 +5,6 @@ import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.policy.dto.response.PolicyResponseDto;
 import com.project200.undabang.policy.service.PolicyGroupService;
-import com.project200.undabang.policy.service.PolicyQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,7 +20,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/open")
 public class PolicyRestController {
     private final PolicyGroupService policyGroupService;
-    private final PolicyQueryService policyQueryService;
 
     /**
      * 지정된 타입의 정책 정보를 LocalCache에서 조회합니다.
@@ -33,18 +31,4 @@ public class PolicyRestController {
 
         return ResponseEntity.ok(CommonResponse.success(policyResponseDto));
     }
-
-    /**
-     * 지정된 타입의 정책 정보를 DB에서 조회합니다.
-     * PathVariable 'groupName'을 기준으로 관련 정책 데이터를 반환합니다.
-     *
-     * 실제 운영서버에는 배포되지 않고 개발서버에서 속도 측정을 위해서만 사용될 코드입니다.
-     */
-    @GetMapping("/_internal/v1/policy-groups/{groupName}/policies")
-    public ResponseEntity<CommonResponse<PolicyResponseDto>> findPoliciesFromDB(@PathVariable String groupName){
-        PolicyResponseDto policyResponseDto = policyQueryService.getPoliciesByGroupNameFromDB(groupName);
-
-        return ResponseEntity.ok(CommonResponse.success(policyResponseDto));
-    }
-
 }

@@ -5,7 +5,6 @@ import com.project200.undabang.configuration.AbstractRestDocSupport;
 import com.project200.undabang.policy.dto.record.PolicyItemRecord;
 import com.project200.undabang.policy.dto.response.PolicyResponseDto;
 import com.project200.undabang.policy.service.PolicyGroupService;
-import com.project200.undabang.policy.service.PolicyQueryService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,9 +29,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(PolicyRestController.class)
 class PolicyRestControllerTest extends AbstractRestDocSupport {
-    @MockitoBean
-    private PolicyQueryService policyQueryService;
-
     @MockitoBean
     private PolicyGroupService policyGroupService;
 
