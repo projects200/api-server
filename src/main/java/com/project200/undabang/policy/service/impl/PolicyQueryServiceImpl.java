@@ -5,7 +5,6 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.policy.dto.record.PolicyItemRecord;
 import com.project200.undabang.policy.dto.response.PolicyResponseDto;
-import com.project200.undabang.policy.provider.PolicyGroupProvider;
 import com.project200.undabang.policy.repository.PolicyGroupRepository;
 import com.project200.undabang.policy.service.PolicyQueryService;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +21,6 @@ import java.util.Objects;
 @Transactional(readOnly = true)
 public class PolicyQueryServiceImpl implements PolicyQueryService {
     private final PolicyGroupRepository policyGroupRepository;
-    private final PolicyGroupProvider policyGroupProvider;
 
     @Override
     @LogExecutionTime
@@ -38,11 +36,5 @@ public class PolicyQueryServiceImpl implements PolicyQueryService {
                 .size(policies.size())
                 .policies(policies)
                 .build();
-    }
-
-    @Override
-    @LogExecutionTime
-    public PolicyResponseDto getPoliciesByGroupNameFromCache(String groupName) {
-        return policyGroupProvider.getAllPolicyGroupAsMap().get(groupName);
     }
 }

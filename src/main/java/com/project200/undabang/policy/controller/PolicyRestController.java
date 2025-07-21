@@ -1,8 +1,10 @@
 package com.project200.undabang.policy.controller;
 
+import com.project200.undabang.common.web.exception.CustomException;
+import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.policy.dto.response.PolicyResponseDto;
-import com.project200.undabang.policy.service.PolicyQueryService;
+import com.project200.undabang.policy.service.PolicyGroupService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/open")
 public class PolicyRestController {
-    private final PolicyQueryService policyQueryService;
+    private final PolicyGroupService policyGroupService;
 
     /**
      * 지정된 타입의 정책 정보를 조회합니다.
@@ -25,9 +27,8 @@ public class PolicyRestController {
      */
     @GetMapping("/v1/policy-groups/{groupName}/policies")
     public ResponseEntity<CommonResponse<PolicyResponseDto>> findPolicies(@PathVariable String groupName){
-//        PolicyResponseDto policy = policyQueryService.getPoliciesByGroupName(groupName);
-        PolicyResponseDto policy = policyQueryService.getPoliciesByGroupNameFromCache(groupName);
+        PolicyResponseDto policyResponseDto = policyGroupService.getByGroupName(groupName).orElseThrow(() -> new CustomException(ErrorCode.POLICY_NOT_FOUND));
 
-        return ResponseEntity.ok(CommonResponse.success(policy));
+        return ResponseEntity.ok(CommonResponse.success(policyResponseDto));
     }
 }
