@@ -37,7 +37,7 @@ public class PolicyGroupServiceImpl implements PolicyGroupService {
      * 어플리케이션 시작시 모든 정책을 캐시에 미리 저장합니다.
      */
     @PostConstruct
-    public void loadAllPoliciesIntoCache(){
+    public void loadAllPoliciesIntoCache() {
         log.info("==== 정책 그룹 캐시 Warming 시작 ====");
 
         try{
@@ -62,7 +62,7 @@ public class PolicyGroupServiceImpl implements PolicyGroupService {
      * @param recordList DB에서 조회한 모든 정책 아이템 레코드 리스트
      * @return 그룹별로 정리된 정책 DTO 맵
      */
-    private Map<String, PolicyResponseDto> buildPolicyGroupMap(List<PolicyGroupItemRecord> recordList){
+    private Map<String, PolicyResponseDto> buildPolicyGroupMap(List<PolicyGroupItemRecord> recordList) {
         Map<String, PolicyResponseDto> policyGroupMap = new HashMap<>();
 
         // groupName을 키로 하는 DTO 조회
@@ -91,7 +91,7 @@ public class PolicyGroupServiceImpl implements PolicyGroupService {
      * 가공된 정책 DTO 맵을 'policyGroups' 캐시에 저장합니다.
      * @param policyGroupMap 캐시에 저장할 정책 DTO 맵
      */
-    private void populateCache(Map<String, PolicyResponseDto> policyGroupMap){
+    private void populateCache(Map<String, PolicyResponseDto> policyGroupMap) {
         Cache policyCache = cacheManager.getCache("policyGroups");
         if(Objects.nonNull(policyCache)){
             policyGroupMap.forEach((groupName, dto) -> policyCache.put(groupName, Optional.of(dto)));
