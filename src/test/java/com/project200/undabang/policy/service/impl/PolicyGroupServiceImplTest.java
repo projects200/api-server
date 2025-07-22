@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -113,5 +114,22 @@ public class PolicyGroupServiceImplTest {
 
         // then
         assertThat(result).isEmpty();
+    }
+
+    @DisplayName("캐시 예열시, 캐시를 찾을 수 없으면 에러를 로깅하고 캐싱을 수행하지 않는다")
+    @Test
+    void loadAllPoliciesIntoCache_WhenCacheMiss() {
+        // given
+        List<PolicyGroupItemRecord> records = createRecordFromTestData();
+        Mockito.when(policyGroupRepository.findAllPoliciesWithGroupName()).thenReturn(records);
+
+        // when
+        Mockito.when(cacheManager.getCache("policyGroups")).thenReturn(null);
+        policyGroupService.loadAllPoliciesIntoCache();
+
+        // then
+        // 디비 접근은 한번만 이루어 져야 함
+        Mockito.verify(policyGroupRepository, times(1)).findAllPoliciesWithGroupName();
+        Mockito.verify(policyCache, never()).put(anyString(), any());
     }
 }
