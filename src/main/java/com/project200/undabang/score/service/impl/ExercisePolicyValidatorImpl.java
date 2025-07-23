@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Component
 @RequiredArgsConstructor
@@ -28,9 +29,9 @@ public class ExercisePolicyValidatorImpl implements ExercisePolicyValidator {
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime validUntil = switch (periodUnit.toUpperCase()) {
-            case "DAYS" -> now.minusDays(periodValue).withHour(0).withMinute(0).withSecond(0).withNano(0);
-            case "HOURS" -> now.minusHours(periodValue).withMinute(0).withSecond(0).withNano(0);
-            case "MINUTES" -> now.minusMinutes(periodValue).withSecond(0).withNano(0);
+            case "DAYS" -> now.minusDays(periodValue).truncatedTo(ChronoUnit.DAYS);
+            case "HOURS" -> now.minusHours(periodValue).truncatedTo(ChronoUnit.HOURS);
+            case "MINUTES" -> now.minusMinutes(periodValue).truncatedTo(ChronoUnit.MINUTES);
             default -> throw new IllegalStateException("Unsupported policy unit: " + periodUnit);
         };
         return validUntil;
