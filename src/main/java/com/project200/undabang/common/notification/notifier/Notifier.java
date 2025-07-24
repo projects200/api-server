@@ -1,4 +1,4 @@
-package com.project200.undabang.common.notify;
+package com.project200.undabang.common.notification.notifier;
 
 public interface Notifier {
     void notify(String message);

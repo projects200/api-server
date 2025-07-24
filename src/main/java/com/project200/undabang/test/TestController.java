@@ -1,6 +1,6 @@
 package com.project200.undabang.test;
 
-import com.project200.undabang.common.notify.Notifier;
+import com.project200.undabang.common.notification.command.NotificationCommand;
 import com.project200.undabang.common.web.response.CommonResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -17,7 +17,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class TestController {
 
-    private final Notifier notifier;
+    private final NotificationCommand notificationCommand;
 
     @PostMapping(value = "/test1", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public CommonResponse<String> handleFormSubmit2(@ModelAttribute TestDto1 testDto1) {
@@ -49,9 +49,9 @@ public class TestController {
 
     }
 
-    @PostMapping("/test/notification/slack")
+    @PostMapping("/mock/slack-webhook")
     public ResponseEntity<CommonResponse<String>> testSlackNotification() {
-        notifier.notify("테스트 메시지 발송");
-        return ResponseEntity.ok(CommonResponse.success("success"));
+        notificationCommand.sendErrorNotification("테스트 메시지 발송");
+        return ResponseEntity.ok(CommonResponse.success("okok"));
     }
 }

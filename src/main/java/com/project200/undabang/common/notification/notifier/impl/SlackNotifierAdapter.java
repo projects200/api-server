@@ -1,6 +1,6 @@
-package com.project200.undabang.common.notify.impl;
+package com.project200.undabang.common.notification.notifier.impl;
 
-import com.project200.undabang.common.notify.Notifier;
+import com.project200.undabang.common.notification.notifier.Notifier;
 import com.slack.api.Slack;
 import com.slack.api.webhook.Payload;
 import com.slack.api.webhook.WebhookResponse;
@@ -11,13 +11,13 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 
 @Slf4j
-@Component
-public class SlackWebHookNotifierImpl implements Notifier {
+@Component("slackNotifier")
+public class SlackNotifierAdapter implements Notifier {
     private static final Slack slack = Slack.getInstance();
     private final String webhookUrl;
 
 
-    public SlackWebHookNotifierImpl(@Value("${notification.slack.webhook-url}") String webhookUrl) {
+    public SlackNotifierAdapter(@Value("${notification.slack.webhook-url}") String webhookUrl) {
         this.webhookUrl = webhookUrl;
     }
 
