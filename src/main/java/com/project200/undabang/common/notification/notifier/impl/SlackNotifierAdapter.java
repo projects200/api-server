@@ -23,7 +23,7 @@ public class SlackNotifierAdapter implements Notifier {
 
     @Override
     public void notify(String message) {
-        try{
+        try {
             Payload payload = Payload.builder()
                     .text(message)
                     .build();
@@ -33,7 +33,7 @@ public class SlackNotifierAdapter implements Notifier {
             if(response.getCode() != 200){
                 log.warn("Slack 알림 전송 실패. \n 응답코드 : {}, 응답 본문 : {}", response.getCode(), response.getBody());
             }
-        }catch (IOException e){
+        } catch (IOException e) {
             log.error("Slack 알림 전송 중 I/O 에러가 발생했습니다", e);
         }
 
