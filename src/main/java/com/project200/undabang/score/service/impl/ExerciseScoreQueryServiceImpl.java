@@ -44,8 +44,8 @@ public class ExerciseScoreQueryServiceImpl implements ExerciseScoreQueryService 
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
         // 정책 값 조회
-        int pointsPerExercise = policyService.getPolicyValueAsInt(PolicyKey.POINTS_PER_EXERCISE);
-        int maxScore = policyService.getPolicyValueAsInt(PolicyKey.EXERCISE_SCORE_MAX_POINTS);
+        byte pointsPerExercise = policyService.getPolicyValueAsByte(PolicyKey.POINTS_PER_EXERCISE);
+        byte maxScore = policyService.getPolicyValueAsByte(PolicyKey.EXERCISE_SCORE_MAX_POINTS);
         int maxRecordsPerDay = policyService.getPolicyValueAsInt(PolicyKey.EXERCISE_RECORD_MAX_PER_DAY);
 
         // 운동 기록 후 점수 획득 가능한 유효 기간 계산
