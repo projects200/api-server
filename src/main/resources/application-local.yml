@@ -45,3 +45,8 @@ app:
 
 cors:
   allowed-origins: http://localhost:3000
+
+notification:
+  slack:
+    enabled: true
+    webhook-url: "http://localhost:7777/mock/slack-webhook"

@@ -21,3 +21,13 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "./init-scripts:/etc/localstack/init/ready.d"
+
+  wiremock:
+    image: wiremock/wiremock:latest
+    container_name: "wireframe-slack-local"
+    ports:
+      - "7777:8080"
+    volumes:
+      - ./documents/api-stubs:/home/wiremock/mappings
+    command:
+      - --verbose

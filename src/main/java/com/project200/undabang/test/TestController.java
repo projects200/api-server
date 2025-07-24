@@ -1,6 +1,8 @@
 package com.project200.undabang.test;
 
+import com.project200.undabang.common.notify.Notifier;
 import com.project200.undabang.common.web.response.CommonResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +14,10 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
+@RequiredArgsConstructor
 public class TestController {
+
+    private final Notifier notifier;
 
     @PostMapping(value = "/test1", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public CommonResponse<String> handleFormSubmit2(@ModelAttribute TestDto1 testDto1) {
@@ -42,5 +47,11 @@ public class TestController {
         return ResponseEntity.ok(headersMap);
 
 
+    }
+
+    @PostMapping("/test/notification/slack")
+    public ResponseEntity<CommonResponse<String>> testSlackNotification() {
+        notifier.notify("테스트 메시지 발송");
+        return ResponseEntity.ok(CommonResponse.success("success"));
     }
 }
