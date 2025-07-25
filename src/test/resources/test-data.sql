@@ -1,4 +1,4 @@
-INSERT INTO policies (policies_key, policies_value, policies_unit, policies_description, policies_updated_at, policies_created_at)
+INSERT INTO policies (policy_key, policy_value, policy_unit, policy_description, policy_updated_at, policy_created_at)
 VALUES
     -- 점수 범위 정책
     ('EXERCISE_SCORE_MAX_POINTS', '100', 'POINTS', '회원이 가질 수 있는 최대 운동 점수', '2021-01-01 00:00:00', '2021-01-01 00:00:00'),
@@ -17,11 +17,11 @@ VALUES
 -- test-data.sql
 
 -- PolicyGroup 추가
-INSERT INTO POLICY_GROUPS (policy_groups_name, policy_groups_created_at, policy_groups_updated_at) VALUES
+INSERT INTO policy_groups (policy_groups_name, policy_groups_created_at, policy_groups_updated_at) VALUES
     ('exercise-score', '2021-01-01 00:00:00', '2021-01-01 00:00:00');
 
 -- PolicyGroupMapping 추가 (policy_id는 test-data.sql에 이미 정의된 값을 사용해야 합니다)
-INSERT INTO POLICY_GROUP_MAPPINGS (mapping_id, policies_id, policy_groups_id) VALUES
+INSERT INTO policy_group_mappings (mapping_id, policy_id, policy_groups_id) VALUES
     (1, 1, 1), -- EXERCISE_SCORE_MAX_POINTS
     (2, 2, 1), -- EXERCISE_SCORE_MIN_POINTS
     (3, 3, 1), -- SIGNUP_INITIAL_POINTS
