@@ -73,3 +73,8 @@ restdocs:
 batch:
   jobs:
     chunk-size: 100
+
+notification:
+  slack:
+    enabled: false
+    webhook-url: ""

@@ -1,6 +1,7 @@
 package com.project200.undabang.batch.listener;
 
 import com.project200.undabang.common.batch.listener.job.DecreaseExerciseScoreJobListener;
+import com.project200.undabang.common.notification.command.NotificationCommand;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobInstance;
+import org.springframework.batch.core.JobParameters;
 
 import java.time.LocalDateTime;
 
@@ -26,6 +28,9 @@ public class DecreaseExerciseJobListenerTest {
     @Mock
     private JobInstance jobInstance;
 
+    @Mock
+    private NotificationCommand notificationCommand;
+
     @Test
     @DisplayName("afterJob 메소드가 호출되면 Job의 이름, 상태, 소요시간에 대한 로그를 남긴다")
     void afterJob_logsJobStatusAndName(){
@@ -40,10 +45,7 @@ public class DecreaseExerciseJobListenerTest {
         jobListener.afterJob(jobExecution);
 
         // then
-        verify(jobExecution, times(1)).getJobInstance();
-        verify(jobExecution, times(1)).getStatus();
-        verify(jobExecution, times(1)).getEndTime();
-        verify(jobExecution, times(1)).getStartTime();
+        verify(notificationCommand, never()).sendErrorNotification(anyString());
     }
 
     @Test
@@ -53,6 +55,7 @@ public class DecreaseExerciseJobListenerTest {
         when(jobExecution.getJobInstance()).thenReturn(jobInstance);
         when(jobInstance.getJobName()).thenReturn("decreaseExerciseScoreJob");
         when(jobExecution.getStatus()).thenReturn(BatchStatus.FAILED); // Job 상태를 FAILED로 설정
+        when(jobExecution.getJobParameters()).thenReturn(new JobParameters());
         when(jobExecution.getEndTime()).thenReturn(LocalDateTime.now());
         when(jobExecution.getStartTime()).thenReturn(LocalDateTime.now().minusSeconds(5));
 
@@ -61,9 +64,6 @@ public class DecreaseExerciseJobListenerTest {
 
         // then
         // Job 실패 시에도 관련 정보를 가져와 로그를 남기는지 검증
-        verify(jobExecution, times(1)).getJobInstance();
-        verify(jobExecution, times(1)).getStatus();
-        verify(jobExecution, times(1)).getEndTime();
-        verify(jobExecution, times(1)).getStartTime();
+        verify(notificationCommand, times(1)).sendErrorNotification(anyString());
     }
 }
