@@ -132,10 +132,7 @@ public class ExerciseRepositoryImpl implements ExerciseRepositoryCustom {
                 .collect(Collectors.toList());
 
         // 조회된 운동 ID 들에 해당하는 사진 URL들을 조회하여 MAP으로 그룹화
-        Map<Long, List<String>> picturesMap = Collections.emptyMap();
-        if (!exerciseIds.isEmpty()) {
-            picturesMap = findPictureUrlsByExerciseId(exercisePicture, picture, exerciseIds);
-        }
+        Map<Long, List<String>> picturesMap = findPictureUrlsByExerciseId(exercisePicture, picture, exerciseIds);
 
         // 운동정보와 사진 url 목록을 조합하여 DTO 생성 후 반환
         return createExerciseResponseDtoList(exercises, exercise, picturesMap);
@@ -312,7 +309,7 @@ public class ExerciseRepositoryImpl implements ExerciseRepositoryCustom {
         QExercise exercise = QExercise.exercise;
 
         // DB 종류에 상관없이 LocalDateTime에서 날짜 부분만 추출하기 위한 템플릿
-        var exerciseDate = Expressions.dateTemplate(java.sql.Date.class, "DATE({0})", exercise.exerciseStartedAt);
+        var exerciseDate = Expressions.dateTemplate(java.sql.Date.class, "CAST({0} AS DATE)", exercise.exerciseStartedAt);
 
         return queryFactory
                 .select(exerciseDate, exercise.count())
@@ -330,10 +327,7 @@ public class ExerciseRepositoryImpl implements ExerciseRepositoryCustom {
                 .stream()
                 .collect(Collectors.toMap(
                         tuple -> Objects.requireNonNull(tuple.get(exerciseDate)).toLocalDate(),
-                        tuple -> {
-                            Long count = tuple.get(exercise.count());
-                            return count != null ? count : 0L;
-                        }
+                        tuple -> Objects.requireNonNullElse(tuple.get(exercise.count()), 0L)
                 ));
     }
 }
