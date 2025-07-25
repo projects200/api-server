@@ -17,7 +17,7 @@ public class PolicyGroupMapping {
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "policies_id", nullable = false)
+    @JoinColumn(name = "policy_id", nullable = false)
     private Policy policy;
 
     @ManyToOne(fetch = FetchType.LAZY)
