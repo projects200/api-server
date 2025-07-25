@@ -85,6 +85,9 @@ dependencies {
     testImplementation 'org.testcontainers:localstack'
     testImplementation 'org.testcontainers:junit-jupiter'
 
+    // wiremock 테스트 의존성 추가
+    testImplementation "com.github.tomakehurst:wiremock-jre8-standalone:2.35.0"
+
     // Scheduler 테스트 를 위한 의존성 추가
     testImplementation 'org.awaitility:awaitility:4.2.2'
 
