@@ -40,93 +40,6 @@ class ExerciseRepositoryImplTest {
     @Autowired
     private EntityManager em;
 
-    /**
-     * 테스트용 Member 엔티티를 생성하고 영속화합니다.
-     *
-     * @param nickname 테스트용 회원 닉네임 (이메일에도 사용)
-     * @return 영속화된 Member 객체
-     */
-    private Member createAndSaveMember(String nickname) {
-        Member member = Member.builder()
-                .memberId(UUID.randomUUID())
-                .memberEmail(nickname)
-                .memberNickname(nickname + "@email.com")
-                .memberGender(MemberGender.UNKNOWN)
-                .memberBday(LocalDate.of(2010, 1, 1))
-                .build();
-        return memberRepository.save(member);
-    }
-
-    /**
-     * 테스트용 Exercise 엔티티를 생성하고 저장합니다.
-     *
-     * @param member    운동 기록에 연결할 Member 객체
-     * @param title     운동 제목
-     * @param startedAt 운동 시작 시간
-     * @param endedAt   운동 종료 시간
-     * @return 저장된 Exercise 객체
-     */
-    private Exercise createAndSaveExercise(Member member, String title, LocalDateTime startedAt, LocalDateTime endedAt) {
-        Exercise exercise = Exercise.builder()
-                .member(member)
-                .exerciseTitle(title)
-                .exerciseDetail("exercise detail for " + title)
-                .exercisePersonalType("exercise personal type for " + title)
-                .exerciseStartedAt(startedAt)
-                .exerciseEndedAt(endedAt)
-                .exerciseLocation("exercise location for " + title)
-                .build();
-        return exerciseRepository.save(exercise);
-    }
-
-    /**
-     * Picture 엔티티를 생성하고 영속화합니다.
-     */
-    private Picture createAndPersistPicture(String name, String url, String extension) {
-        Picture picture = Picture.builder()
-                .pictureName(name)
-                .pictureExtension(extension)
-                .pictureSize(1000)
-                .pictureUrl(url)
-                .build();
-        em.persist(picture);
-        return picture;
-    }
-
-    /**
-     * ExercisePicture 엔티티(연관 관계)를 생성하고 영속화합니다.
-     */
-    private ExercisePicture createAndPersistExercisePicture(Exercise exercise, Picture picture) {
-        ExercisePicture exercisePicture = ExercisePicture.builder()
-                .picture(picture)
-                .exercise(exercise)
-                .build();
-        em.persist(exercisePicture);
-        return exercisePicture;
-    }
-
-    /**
-     * Exercise 엔티티에 Picture 엔티티를 연결하여 ExercisePicture 엔티티를 생성하고 영속화합니다.
-     */
-    private void createAndPersistExercisePicture(Exercise exercise, String name, String url, String extension) {
-        // 이름과 URL을 사용하여 Picture 엔티티를 생성하고 영속화한 후,
-        // ExercisePicture 엔티티를 생성하고 영속화합니다.
-        Picture picture = createAndPersistPicture(name, url, extension);
-        createAndPersistExercisePicture(exercise, picture);
-    }
-
-    /**
-     * 영속성 컨텍스트의 변경사항을 DB에 즉시 반영(flush)하고,
-     * 컨텍스트를 비워(clear) 다음 조회 시 DB에서 데이터를 가져오도록 보장합니다.
-     */
-    private void flushAndClear() {
-        em.flush();
-        em.clear();
-    }
-
-
-    // --- 헬퍼 메서드: 데이터 생성을 위한 재사용 로직 ---
-
     @Nested
     @DisplayName("existsByRecordIdAndMemberId 메서드는")
     class Describe_existsByRecordIdAndMemberId {
@@ -585,5 +498,91 @@ class ExerciseRepositoryImplTest {
             // then
             assertThat(result).isEmpty();
         }
+    }
+
+    // --- 헬퍼 메서드: 데이터 생성을 위한 재사용 로직 ---
+
+    /**
+     * 테스트용 Member 엔티티를 생성하고 영속화합니다.
+     *
+     * @param nickname 테스트용 회원 닉네임 (이메일에도 사용)
+     * @return 영속화된 Member 객체
+     */
+    private Member createAndSaveMember(String nickname) {
+        Member member = Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberEmail(nickname)
+                .memberNickname(nickname + "@email.com")
+                .memberGender(MemberGender.UNKNOWN)
+                .memberBday(LocalDate.of(2010, 1, 1))
+                .build();
+        return memberRepository.save(member);
+    }
+
+    /**
+     * 테스트용 Exercise 엔티티를 생성하고 저장합니다.
+     *
+     * @param member    운동 기록에 연결할 Member 객체
+     * @param title     운동 제목
+     * @param startedAt 운동 시작 시간
+     * @param endedAt   운동 종료 시간
+     * @return 저장된 Exercise 객체
+     */
+    private Exercise createAndSaveExercise(Member member, String title, LocalDateTime startedAt, LocalDateTime endedAt) {
+        Exercise exercise = Exercise.builder()
+                .member(member)
+                .exerciseTitle(title)
+                .exerciseDetail("exercise detail for " + title)
+                .exercisePersonalType("exercise personal type for " + title)
+                .exerciseStartedAt(startedAt)
+                .exerciseEndedAt(endedAt)
+                .exerciseLocation("exercise location for " + title)
+                .build();
+        return exerciseRepository.save(exercise);
+    }
+
+    /**
+     * Picture 엔티티를 생성하고 영속화합니다.
+     */
+    private Picture createAndPersistPicture(String name, String url, String extension) {
+        Picture picture = Picture.builder()
+                .pictureName(name)
+                .pictureExtension(extension)
+                .pictureSize(1000)
+                .pictureUrl(url)
+                .build();
+        em.persist(picture);
+        return picture;
+    }
+
+    /**
+     * ExercisePicture 엔티티(연관 관계)를 생성하고 영속화합니다.
+     */
+    private ExercisePicture createAndPersistExercisePicture(Exercise exercise, Picture picture) {
+        ExercisePicture exercisePicture = ExercisePicture.builder()
+                .picture(picture)
+                .exercise(exercise)
+                .build();
+        em.persist(exercisePicture);
+        return exercisePicture;
+    }
+
+    /**
+     * Exercise 엔티티에 Picture 엔티티를 연결하여 ExercisePicture 엔티티를 생성하고 영속화합니다.
+     */
+    private void createAndPersistExercisePicture(Exercise exercise, String name, String url, String extension) {
+        // 이름과 URL을 사용하여 Picture 엔티티를 생성하고 영속화한 후,
+        // ExercisePicture 엔티티를 생성하고 영속화합니다.
+        Picture picture = createAndPersistPicture(name, url, extension);
+        createAndPersistExercisePicture(exercise, picture);
+    }
+
+    /**
+     * 영속성 컨텍스트의 변경사항을 DB에 즉시 반영(flush)하고,
+     * 컨텍스트를 비워(clear) 다음 조회 시 DB에서 데이터를 가져오도록 보장합니다.
+     */
+    private void flushAndClear() {
+        em.flush();
+        em.clear();
     }
 }
