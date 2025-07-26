@@ -40,8 +40,5 @@ public class TestController {
         headers.forEach((key, value) -> headersMap.put(key, value.getFirst()));
 
         return ResponseEntity.ok(headersMap);
-
-
     }
-
 }
