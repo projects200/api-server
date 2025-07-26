@@ -28,12 +28,11 @@ public class ExercisePolicyValidatorImpl implements ExercisePolicyValidator {
         String periodUnit = validityPolicy.getPolicyUnit();
 
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime validUntil = switch (periodUnit.toUpperCase()) {
+        return switch (periodUnit.toUpperCase()) {
             case "DAYS" -> now.minusDays(periodValue).truncatedTo(ChronoUnit.DAYS);
             case "HOURS" -> now.minusHours(periodValue).truncatedTo(ChronoUnit.HOURS);
             case "MINUTES" -> now.minusMinutes(periodValue).truncatedTo(ChronoUnit.MINUTES);
             default -> throw new IllegalStateException("Unsupported policy unit: " + periodUnit);
         };
-        return validUntil;
     }
 }
