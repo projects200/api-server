@@ -75,7 +75,7 @@ class ExercisePolicyValidatorImplTest {
             // when
             LocalDateTime result = exercisePolicyValidator.calculateValidityEndDate();
 
-            // then: 결과가 현재 시간으로부터 정확히 5시간 전인지 확인합니다. (분 단위 절삭)
+            // then: 결과가 현재 시간으로부터 정확히 24시간 전인지 확인합니다. (분 단위 절삭)
             LocalDateTime expected = LocalDateTime.now().minusHours(periodValue).truncatedTo(ChronoUnit.HOURS);
             assertThat(result).isCloseTo(expected, within(1, ChronoUnit.SECONDS));
         }
