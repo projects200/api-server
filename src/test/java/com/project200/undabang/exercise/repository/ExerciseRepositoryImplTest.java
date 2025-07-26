@@ -511,8 +511,8 @@ class ExerciseRepositoryImplTest {
     private Member createAndSaveMember(String nickname) {
         Member member = Member.builder()
                 .memberId(UUID.randomUUID())
-                .memberEmail(nickname)
-                .memberNickname(nickname + "@email.com")
+                .memberEmail(nickname + "@email.com")
+                .memberNickname(nickname)
                 .memberGender(MemberGender.UNKNOWN)
                 .memberBday(LocalDate.of(2010, 1, 1))
                 .build();
