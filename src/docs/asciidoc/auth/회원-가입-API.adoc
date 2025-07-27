@@ -10,7 +10,7 @@
 
 === 변경 이력
 
-- 2025-07-22: 회원 가입 시 부여되는 초기 점수가 정책에 따라 변경되도록 수정되었습니다.
+- Sprint 8 (2025-07-22): 회원 가입 시 부여되는 초기 점수가 정책에 따라 변경되도록 수정되었습니다.
 
 === 코드 샘플
 operation::auth-rest-controller-test/sign-up-member_-succeed[snippets="curl-request,http-request,http-response"]
