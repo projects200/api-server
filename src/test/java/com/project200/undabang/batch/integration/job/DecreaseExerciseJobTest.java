@@ -79,8 +79,8 @@ public class DecreaseExerciseJobTest {
         int policyDueDate = 7;
         int policyDecreasePoint = 1;
 
-        given(policyService.getPolicyAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS)).willReturn(policyDecreasePoint);
-        given(policyService.getPolicyAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS)).willReturn(policyDueDate);
+        given(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS)).willReturn(policyDecreasePoint);
+        given(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS)).willReturn(policyDueDate);
 
         // 점수 감소 대상이 아닌 유저
         Member activeMember = createMember("activeMember", (byte) 77);
@@ -122,8 +122,8 @@ public class DecreaseExerciseJobTest {
     @DisplayName("Job 실행중 정책이 변경되어도 현재 Job 실행중 영향이 가면 안된다.")
     void decreaseExerciseJob_initializedOnce_atTheStartOfStep() throws Exception{
         // given
-        given(policyService.getPolicyAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS)).willReturn(1);
-        given(policyService.getPolicyAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS)).willReturn(7);
+        given(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS)).willReturn(1);
+        given(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS)).willReturn(7);
 
         // 조건에 부합하는 회원 (마지막 운동 8일 전)
         Member targetMember = createMember("targetMember", (byte) 77);
@@ -134,8 +134,8 @@ public class DecreaseExerciseJobTest {
 
         // Job이 끝난 후 정책이 변경되었다 가정함
         // 그 중간에 정책이 바뀌어도 현재 작업에 영향을 주어선 안된다.
-        given(policyService.getPolicyAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS)).willReturn(30);
-        given(policyService.getPolicyAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS)).willReturn(3);
+        given(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS)).willReturn(30);
+        given(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS)).willReturn(3);
 
         // then
         // 중간에 정책이 바뀌어도, 맨 처음 적용한 정책이 반영되어야 함
@@ -143,16 +143,16 @@ public class DecreaseExerciseJobTest {
 
         // step이 동작하는 동안 Reader와 Process는 동작하지 않고, Step 시작시 초기화 된 값을 계속 사용해야 한다.
         // StepScope빈 은 Step이 시작될 때, 단 한번만 인스턴스화 되므로 정확히 한번만 호출됨을 확인하면 외부 정책이 변경되어도 현재 Step의 동작은 영향을 받지 않는다는 사실이 보장됨
-        verify(policyService, times(1)).getPolicyAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS);
-        verify(policyService, times(1)).getPolicyAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS);
+        verify(policyService, times(1)).getPolicyValueAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS);
+        verify(policyService, times(1)).getPolicyValueAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS);
     }
 
     @Test
     @DisplayName("Job 실행중 정책이 변경되면, 현재 실행중인 Job이 아니라, 다음 Job에 새로운 정책이 적용되야 한다")
     void decreaseExerciseJob_policyChanged_reflectNextJob() throws Exception{
         // given
-        given(policyService.getPolicyAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS)).willReturn(1);
-        given(policyService.getPolicyAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS)).willReturn(7);
+        given(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS)).willReturn(1);
+        given(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS)).willReturn(7);
 
         // 조건에 부합하는 회원 (마지막 운동 8일 전)
         Member firstMember = createMember("firstMember", (byte) 77);
@@ -173,8 +173,8 @@ public class DecreaseExerciseJobTest {
 
         // when
         // 정책 변경 이후 새로운 Job 실행
-        given(policyService.getPolicyAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS)).willReturn(30);
-        given(policyService.getPolicyAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS)).willReturn(3);
+        given(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS)).willReturn(30);
+        given(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS)).willReturn(3);
 
         jobLauncherTestUtils.launchJob(getJobParameters(RUN_DATE));
 
@@ -183,8 +183,8 @@ public class DecreaseExerciseJobTest {
         Assertions.assertThat(memberRepository.findById(secondMember.getMemberId()).get().getMemberScore()).isEqualTo((byte) 15);
 
         // 정책 테이블 호출이 두번 이루어 졌는지 확인
-        verify(policyService, times(2)).getPolicyAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS);
-        verify(policyService, times(2)).getPolicyAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS);
+        verify(policyService, times(2)).getPolicyValueAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS);
+        verify(policyService, times(2)).getPolicyValueAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS);
     }
 
     private Member createMember(String nickname, Byte score){

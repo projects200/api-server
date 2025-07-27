@@ -92,11 +92,6 @@ public class PolicyGroupServiceImpl implements PolicyGroupService {
      */
     private void populateCache(Map<String, PolicyResponseDto> policyGroupMap) {
         Cache policyCache = cacheManager.getCache("policyGroups");
-//        if(Objects.nonNull(policyCache)){
-//            policyGroupMap.forEach((groupName, dto) -> policyCache.put(groupName, Optional.of(dto)));
-//        }else{
-//            log.error("==== 정책 그룹 캐시 조회 실패. 캐싱이 수행되지 않았습니다. ====");
-//        }
         policyGroupMap.forEach((groupName, dto) -> policyCache.put(groupName, Optional.of(dto)));
     }
 }
