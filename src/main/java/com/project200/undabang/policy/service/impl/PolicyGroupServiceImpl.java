@@ -52,8 +52,7 @@ public class PolicyGroupServiceImpl implements PolicyGroupService {
 
             log.info("==== 정책 그룹 캐시 Warming 종료 ====");
         }catch (Exception e){
-            log.error("==== 정책 그룹 캐시 Warming 실패 ====", e);
-            throw new RuntimeException("정책 그룹 캐시 예열에 실패했습니다.", e);
+            log.error("==== 정책 그룹 캐시 Warming 실패 ====\n ====정책 그룹 캐시 예열에 실패했습니다.====", e.getMessage(), e);
         }
     }
 
@@ -93,10 +92,11 @@ public class PolicyGroupServiceImpl implements PolicyGroupService {
      */
     private void populateCache(Map<String, PolicyResponseDto> policyGroupMap) {
         Cache policyCache = cacheManager.getCache("policyGroups");
-        if(Objects.nonNull(policyCache)){
-            policyGroupMap.forEach((groupName, dto) -> policyCache.put(groupName, Optional.of(dto)));
-        }else{
-            log.error("==== 정책 그룹 캐시 조회 실패. 캐싱이 수행되지 않았습니다. ====");
-        }
+//        if(Objects.nonNull(policyCache)){
+//            policyGroupMap.forEach((groupName, dto) -> policyCache.put(groupName, Optional.of(dto)));
+//        }else{
+//            log.error("==== 정책 그룹 캐시 조회 실패. 캐싱이 수행되지 않았습니다. ====");
+//        }
+        policyGroupMap.forEach((groupName, dto) -> policyCache.put(groupName, Optional.of(dto)));
     }
 }
