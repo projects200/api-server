@@ -193,7 +193,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     protected ResponseEntity<CommonResponse<Void>> handleDatabaseException(Exception ex) {
         log.error("데이터베이스 저장 실패: ", ex);
-        ErrorCode errorCode = ErrorCode.MEMBER_SAVE_FAILED_ERROR;
+        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
 
         CommonResponse<Void> response = CommonResponse.<Void>error(errorCode).build();
         return ResponseEntity.status(errorCode.getStatus()).body(response);

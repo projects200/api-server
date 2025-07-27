@@ -136,7 +136,7 @@ class MemberCommandServiceImplTest {
         Mockito.when(memberRepository.existsByMemberNickname(TEST_NICKNAME)).thenReturn(false);
 
         // SIGNUP_INITIAL_POINTS 정책 값을 35로 설정
-        given(policyService.getPolicyAsInt(PolicyKey.SIGNUP_INITIAL_POINTS)).willReturn(35);
+        given(policyService.getPolicyValueAsByte(PolicyKey.SIGNUP_INITIAL_POINTS)).willReturn((byte) 35);
 
         Member member = Member.builder()
                 .memberId(TEST_UUID)

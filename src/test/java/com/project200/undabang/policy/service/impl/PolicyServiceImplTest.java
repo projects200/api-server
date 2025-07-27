@@ -30,7 +30,7 @@ class PolicyServiceImplTest {
 
     @Test
     @DisplayName("올바른 정책 키를 요청하면, 정책 값을 정수로 변환하여 성공적으로 반환한다")
-    void getPolicyAsInt_Success() {
+    void getPolicyValueAsInt_Success() {
         // given (전제 조건 설정)
         PolicyKey key = PolicyKey.EXERCISE_SCORE_MAX_POINTS;
         Policy mockPolicy = Policy.builder()
@@ -43,7 +43,7 @@ class PolicyServiceImplTest {
         given(policyProvider.getAllPoliciesAsMap()).willReturn(mockPolicyMap);
 
         // when
-        int result = policyService.getPolicyAsInt(key);
+        int result = policyService.getPolicyValueAsInt(key);
 
         // then
         assertThat(result).isEqualTo(100); // 정수 3이 맞는지 확인
@@ -52,7 +52,7 @@ class PolicyServiceImplTest {
 
     @Test
     @DisplayName("존재하지 않는 정책 키를 요청하면, POLICY_NOT_FOUND 예외를 던진다")
-    void getPolicyAsInt_Fail_WhenKeyNotFound() {
+    void getPolicyValueAsInt_Fail_WhenKeyNotFound() {
         // given
         PolicyKey nonExistentKey = PolicyKey.EXERCISE_SCORE_MAX_POINTS;
 
@@ -62,7 +62,7 @@ class PolicyServiceImplTest {
         // when & then
         // policyService.getPolicyAsInt(...)를 실행했을 때,
         // CustomException이 발생하는지, 그리고 그 예외의 ErrorCode가 POLICY_NOT_FOUND인지 검증합니다.
-        assertThatThrownBy(() -> policyService.getPolicyAsInt(nonExistentKey))
+        assertThatThrownBy(() -> policyService.getPolicyValueAsInt(nonExistentKey))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.POLICY_NOT_FOUND);
 
