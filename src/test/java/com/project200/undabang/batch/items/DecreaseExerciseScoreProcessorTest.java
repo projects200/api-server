@@ -26,8 +26,8 @@ class DecreaseExerciseScoreProcessorTest {
 
     @BeforeEach
     void setUp(){
-        Mockito.when(policyService.getPolicyAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS)).thenReturn(DECREASE_POINT);
-        DECREASE_POINT = policyService.getPolicyAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS);
+        Mockito.when(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS)).thenReturn(DECREASE_POINT);
+        DECREASE_POINT = policyService.getPolicyValueAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS);
     }
 
     @Test

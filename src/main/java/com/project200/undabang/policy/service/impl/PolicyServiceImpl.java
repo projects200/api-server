@@ -21,6 +21,9 @@ public class PolicyServiceImpl implements PolicyService {
 
     private final PolicyProvider policyProvider;
 
+    /**
+     * 지정된 {@link PolicyKey}에 해당하는 정책 값을 정수(int)로 조회합니다.
+     */
     @Override
     public int getPolicyValueAsInt(PolicyKey key) {
         Map<PolicyKey, Policy> policies = policyProvider.getAllPoliciesAsMap();

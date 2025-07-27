@@ -80,8 +80,11 @@ class ExerciseScoreQueryServiceImplTest {
                 Map<LocalDate, Long> dailyCounts = Map.of(LocalDate.of(2025, 7, 25), 1L);
 
                 // UserContextHolder.getUserId()가 testUserId를 반환하도록 static mocking
-                try (MockedStatic<UserContextHolder> holder = mockStatic(UserContextHolder.class)) {
+                try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class);
+                    MockedStatic<LocalDateTime> ignoredTime = mockStatic(LocalDateTime.class)) {
+
                     given(UserContextHolder.getUserId()).willReturn(testUserId);
+                    given(LocalDateTime.now()).willReturn(endDateTime);
 
                     // 의존성 Mock 객체들의 동작 설정
                     given(memberRepository.findById(testUserId)).willReturn(Optional.of(member));

@@ -17,9 +17,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Order(1)
 public class CacheWarmer implements ApplicationRunner {
-
     private final PolicyProvider policyProvider;
-
     /**
      * Spring Boot 애플리케이션이 시작될 때 단 한 번 호출되는 메소드입니다.
      * 이 메소드에서 정책 데이터를 미리 조회하여 캐시에 저장합니다.

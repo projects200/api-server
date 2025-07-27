@@ -33,7 +33,7 @@ class DecreaseExerciseScoreReaderTest {
         int chunkSize = 10;
         int thresholdDays = 7;
 
-        Mockito.when(policyService.getPolicyAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS))
+        Mockito.when(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS))
                 .thenReturn(thresholdDays);
 
         // when
@@ -63,7 +63,7 @@ class DecreaseExerciseScoreReaderTest {
         int chunkSize = 10;
         int thresholdDays = 0;
 
-        Mockito.when(policyService.getPolicyAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS)).thenReturn(thresholdDays);
+        Mockito.when(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS)).thenReturn(thresholdDays);
 
         // when
         DecreaseExerciseScoreReader reader = new DecreaseExerciseScoreReader(

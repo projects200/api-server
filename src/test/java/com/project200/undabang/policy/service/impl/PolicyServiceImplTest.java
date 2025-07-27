@@ -69,4 +69,5 @@ class PolicyServiceImplTest {
         // 예외가 발생하더라도, policyProvider의 메소드는 1번 호출되어야 합니다.
         then(policyProvider).should().getAllPoliciesAsMap();
     }
+
 }

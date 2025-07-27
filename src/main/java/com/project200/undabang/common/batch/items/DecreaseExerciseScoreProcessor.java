@@ -20,7 +20,7 @@ public class DecreaseExerciseScoreProcessor implements ItemProcessor<Member, Mem
     private final int decreasePoints;
 
     public DecreaseExerciseScoreProcessor(PolicyService policyService){
-        this.decreasePoints = policyService.getPolicyAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS);
+        this.decreasePoints = policyService.getPolicyValueAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS);
     }
 
     @Override
