@@ -4,6 +4,7 @@ import com.project200.undabang.common.validation.AllowedExtensions;
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.exercise.dto.request.CreateExerciseRequestDto;
 import com.project200.undabang.exercise.dto.request.UpdateExerciseRequestDto;
+import com.project200.undabang.exercise.dto.response.CreateExerciseResponseDto;
 import com.project200.undabang.exercise.dto.response.ExerciseIdResponseDto;
 import com.project200.undabang.exercise.service.ExerciseCommandService;
 import jakarta.validation.Valid;
@@ -35,8 +36,8 @@ public class ExerciseCommandController {
      * @return 생성된 운동 기록 ID를 포함하는 응답
      */
     @PostMapping(path = "/v1/exercises")
-    public ResponseEntity<CommonResponse<ExerciseIdResponseDto>> createExercise(@Valid @RequestBody CreateExerciseRequestDto requestDto) {
-        ExerciseIdResponseDto responseData = exerciseCommandService.createExercise(requestDto);
+    public ResponseEntity<CommonResponse<CreateExerciseResponseDto>> createExercise(@Valid @RequestBody CreateExerciseRequestDto requestDto) {
+        CreateExerciseResponseDto responseData = exerciseCommandService.createExercise(requestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(responseData));
     }
 

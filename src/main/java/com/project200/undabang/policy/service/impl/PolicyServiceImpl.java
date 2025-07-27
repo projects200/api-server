@@ -25,11 +25,46 @@ public class PolicyServiceImpl implements PolicyService {
      * 지정된 {@link PolicyKey}에 해당하는 정책 값을 정수(int)로 조회합니다.
      */
     @Override
-    public int getPolicyAsInt(PolicyKey key) {
+    public int getPolicyValueAsInt(PolicyKey key) {
         Map<PolicyKey, Policy> policies = policyProvider.getAllPoliciesAsMap();
         if (policies.containsKey(key)) {
             Policy policy = policies.get(key);
             return Integer.parseInt(policy.getPolicyValue());
+        } else {
+            log.error("존재하지 않는 정책 키에 대한 요청입니다. Key: {}", key);
+            throw new CustomException(ErrorCode.POLICY_NOT_FOUND, "요청한 정책 키(" + key + ")가 존재하지 않습니다.");
+        }
+    }
+
+    @Override
+    public byte getPolicyValueAsByte(PolicyKey key) {
+        Map<PolicyKey, Policy> policies = policyProvider.getAllPoliciesAsMap();
+        if (policies.containsKey(key)) {
+            Policy policy = policies.get(key);
+            return Byte.parseByte(policy.getPolicyValue());
+        } else {
+            log.error("존재하지 않는 정책 키에 대한 요청입니다. Key: {}", key);
+            throw new CustomException(ErrorCode.POLICY_NOT_FOUND, "요청한 정책 키(" + key + ")가 존재하지 않습니다.");
+        }
+    }
+
+    @Override
+    public String getPolicyValueAsString(PolicyKey key) {
+        Map<PolicyKey, Policy> policies = policyProvider.getAllPoliciesAsMap();
+        if (policies.containsKey(key)) {
+            Policy policy = policies.get(key);
+            return policy.getPolicyValue();
+        } else {
+            log.error("존재하지 않는 정책 키에 대한 요청입니다. Key: {}", key);
+            throw new CustomException(ErrorCode.POLICY_NOT_FOUND, "요청한 정책 키(" + key + ")가 존재하지 않습니다.");
+        }
+    }
+
+    @Override
+    public Policy getPolicy(PolicyKey key) {
+        Map<PolicyKey, Policy> policies = policyProvider.getAllPoliciesAsMap();
+        if (policies.containsKey(key)) {
+            return policies.get(key);
         } else {
             log.error("존재하지 않는 정책 키에 대한 요청입니다. Key: {}", key);
             throw new CustomException(ErrorCode.POLICY_NOT_FOUND, "요청한 정책 키(" + key + ")가 존재하지 않습니다.");

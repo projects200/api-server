@@ -1,6 +1,5 @@
 package com.project200.undabang.exercise.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.response.CommonResponse;
@@ -8,32 +7,20 @@ import com.project200.undabang.configuration.AbstractRestDocSupport;
 import com.project200.undabang.configuration.RestDocsUtils;
 import com.project200.undabang.exercise.dto.request.CreateExerciseRequestDto;
 import com.project200.undabang.exercise.dto.request.UpdateExerciseRequestDto;
+import com.project200.undabang.exercise.dto.response.CreateExerciseResponseDto;
 import com.project200.undabang.exercise.dto.response.ExerciseIdResponseDto;
 import com.project200.undabang.exercise.service.ExerciseCommandService;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.BDDMockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.restdocs.RestDocumentationContextProvider;
-import org.springframework.restdocs.mockmvc.MockMvcRestDocumentation;
-import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
-import org.springframework.restdocs.operation.preprocess.Preprocessors;
-import org.springframework.restdocs.operation.preprocess.UriModifyingOperationPreprocessor;
 import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.filter.CharacterEncodingFilter;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -71,7 +58,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                 .exerciseEndedAt(LocalDateTime.of(2023, 10, 1, 7, 0))
                 .build();
 
-        ExerciseIdResponseDto responseDto = new ExerciseIdResponseDto(1L);
+        CreateExerciseResponseDto responseDto = new CreateExerciseResponseDto(1L, (byte) 3);
         BDDMockito.given(exerciseCommandService.createExercise(BDDMockito.any(CreateExerciseRequestDto.class)))
                 .willReturn(responseDto);
 
@@ -104,14 +91,17 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                         ),
                         responseFields(RestDocsUtils.commonResponseFields(
                                 fieldWithPath("data.exerciseId").type(JsonFieldType.NUMBER)
-                                        .description("운동 ID입니다. 이미지 업로드 시 사용 가능합니다.")
+                                        .description("운동 ID입니다. 이미지 업로드 시 사용 가능합니다."),
+                                fieldWithPath("data.earnedPoints").type(JsonFieldType.NUMBER)
+                                        .description("운동 기록 생성 시 부여된 점수입니다. " +
+                                                "운동 기록 생성 시 부여된 점수는 정책에 따라 달라집니다.")
                         ))
                 ))
                 .andReturn().getResponse().getContentAsString();
 
         // then
         Assertions.assertThat(response).isEqualTo(objectMapper.writeValueAsString(
-                CommonResponse.create(new ExerciseIdResponseDto(1L))
+                CommonResponse.create(new CreateExerciseResponseDto(1L, (byte) 3))
         ));
         BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1))
                 .createExercise(BDDMockito.any(CreateExerciseRequestDto.class));

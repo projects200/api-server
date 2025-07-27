@@ -49,7 +49,7 @@ public class MemberCommandServiceImpl implements MemberCommandService {
             throw new CustomException(ErrorCode.MEMBER_NICKNAME_DUPLICATED);
         }
 
-        byte initialSignupPoints = (byte) policyService.getPolicyAsInt(PolicyKey.SIGNUP_INITIAL_POINTS);
+        byte initialSignupPoints = policyService.getPolicyValueAsByte(PolicyKey.SIGNUP_INITIAL_POINTS);
 
         Member member = Member.signUp(
                 SignUpMemberCommand.builder()
