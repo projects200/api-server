@@ -1,6 +1,6 @@
 package com.project200.undabang.common.batch.listener.job;
 
-import com.project200.undabang.common.notification.command.NotificationCommand;
+import com.project200.undabang.admin.component.NotifyErrorToAdmin;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.BatchStatus;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class DecreaseExerciseScoreJobListener implements JobExecutionListener {
-    private final NotificationCommand notificationCommand;
+    private final NotifyErrorToAdmin notifyErrorToAdmin;
 
     @Override
     public void beforeJob(JobExecution jobExecution) {
@@ -32,7 +32,7 @@ public class DecreaseExerciseScoreJobListener implements JobExecutionListener {
                     .append("- Status: ").append(jobExecution.getStatus()).append("\n")
                     .append("- JobParameters: ").append(jobExecution.getJobParameters());
 
-            notificationCommand.sendErrorNotification(errorMessage.toString());
+            notifyErrorToAdmin.sendErrorNotification(errorMessage.toString());
         }else{
             log.info(">>>> {} Job 종료. 상태 : {}, 소요시간 : {} <<<< ", jobName, jobExecution.getStatus(), durationInMills);
         }

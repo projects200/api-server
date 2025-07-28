@@ -1,7 +1,7 @@
 package com.project200.undabang.batch.listener;
 
 import com.project200.undabang.common.batch.listener.job.DecreaseExerciseScoreJobListener;
-import com.project200.undabang.common.notification.command.NotificationCommand;
+import com.project200.undabang.admin.component.NotifyErrorToAdmin;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,7 +29,7 @@ public class DecreaseExerciseJobListenerTest {
     private JobInstance jobInstance;
 
     @Mock
-    private NotificationCommand notificationCommand;
+    private NotifyErrorToAdmin notifyErrorToAdmin;
 
     @Test
     @DisplayName("afterJob 메소드가 호출되면 Job의 이름, 상태, 소요시간에 대한 로그를 남긴다")
@@ -45,7 +45,7 @@ public class DecreaseExerciseJobListenerTest {
         jobListener.afterJob(jobExecution);
 
         // then
-        verify(notificationCommand, never()).sendErrorNotification(anyString());
+        verify(notifyErrorToAdmin, never()).sendErrorNotification(anyString());
     }
 
     @Test
@@ -64,6 +64,6 @@ public class DecreaseExerciseJobListenerTest {
 
         // then
         // Job 실패 시에도 관련 정보를 가져와 로그를 남기는지 검증
-        verify(notificationCommand, times(1)).sendErrorNotification(anyString());
+        verify(notifyErrorToAdmin, times(1)).sendErrorNotification(anyString());
     }
 }

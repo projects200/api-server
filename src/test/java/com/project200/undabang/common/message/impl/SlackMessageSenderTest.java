@@ -1,4 +1,4 @@
-package com.project200.undabang.common.notification.notifier.impl;
+package com.project200.undabang.common.message.impl;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,10 +21,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
 @Testcontainers
 @SpringBootTest
-class SlackNotifierAdapterTest {
+class SlackMessageSenderTest {
 
     @Autowired
-    private SlackNotifierAdapter slackNotifierAdapter;
+    private SlackMessageSender slackNotifierAdapter;
 
     // @Container: Testcontainers가 이 컨테이너의 생명주기(시작, 종료)를 관리하게 합니다.
     @Container
@@ -33,7 +33,7 @@ class SlackNotifierAdapterTest {
             .waitingFor(Wait.forHttp("/__admin/mappings").forStatusCode(200)) // WireMock이 완전히 실행될 때 까지 기다림
             .withCommand("--verbose") // WireMock Container가 --verbose 옵션으로 실행되서 wiremock이 받은 요청과 응답에 대한 상세 로그를 출력한다
             // 테스트 실행 시 콘솔에서 WireMock 로그를 확인할 수 있음
-            .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(SlackNotifierAdapterTest.class)));
+            .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(SlackMessageSenderTest.class)));
 
 
     // @DynamicPropertySource: Spring 애플리케이션의 프로퍼티를 동적으로 설정합니다.

@@ -1,6 +1,7 @@
 package com.project200.undabang.common.notification.command.impl;
 
-import com.project200.undabang.common.notification.notifier.Notifier;
+import com.project200.undabang.admin.component.impl.NotifyErrorToAdminImpl;
+import com.project200.undabang.common.message.MessageSender;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,13 +11,13 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class NotificationCommandImplTest {
+class NotifyErrorToAdminImplTest {
 
     @Mock
-    private Notifier notifier;
+    private MessageSender messageSender;
 
     @InjectMocks
-    private NotificationCommandImpl notificationCommand;
+    private NotifyErrorToAdminImpl notificationCommand;
 
     @Test
     @DisplayName("sendErrorNotification 호출시 Notifier의 notify() 메소드를 호출한다")
@@ -28,6 +29,6 @@ class NotificationCommandImplTest {
         notificationCommand.sendErrorNotification(message);
 
         // then
-        Mockito.verify(notifier, Mockito.times(1)).notify(message);
+        Mockito.verify(messageSender, Mockito.times(1)).notify(message);
     }
 }

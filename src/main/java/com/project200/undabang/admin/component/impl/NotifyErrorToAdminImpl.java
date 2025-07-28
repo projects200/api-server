@@ -1,13 +1,14 @@
-package com.project200.undabang.common.notification.command.impl;
+package com.project200.undabang.admin.component.impl;
 
-import com.project200.undabang.common.notification.command.NotificationCommand;
-import com.project200.undabang.common.notification.notifier.Notifier;
+import com.project200.undabang.admin.component.NotifyErrorToAdmin;
+import com.project200.undabang.admin.component.dto.ErrorNotifyDto;
+import com.project200.undabang.common.message.MessageSender;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 /**
- * NotificationCommand 인터페이스의 구현체입니다.
+ * NotifyErrorToAdmin 인터페이스의 구현체입니다.
  * 이 클래스는 시스템의 모든 알림 요청을 중앙에서 처리하는 '컨트롤 타워' 역할을 합니다.
  *
  * [설계 결정]
@@ -18,16 +19,13 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-public class NotificationCommandImpl implements NotificationCommand {
-    private final Notifier slackNotifier;
-
-    public NotificationCommandImpl(@Qualifier("slackNotifier") Notifier slackNotifier){
-        this.slackNotifier = slackNotifier;
-    }
+@RequiredArgsConstructor
+public class NotifyErrorToAdminImpl implements NotifyErrorToAdmin {
+    private final MessageSender slackMessageSender;
 
     @Override
-    public void sendErrorNotification(String message) {
+    public void sendErrorNotification(ErrorNotifyDto dto) {
         log.info("SLACK 채널에 에러 알림을 전송합니다.");
-        slackNotifier.notify(message);
+        slackMessageSender.notify("이거 바꿔야 함 ㅋㅋ;");
     }
 }
