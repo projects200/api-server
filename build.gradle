@@ -3,6 +3,7 @@ plugins {
     id 'org.springframework.boot' version '3.4.5'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
+    id 'jacoco'
 }
 
 group = 'com.project200'
@@ -146,3 +147,25 @@ tasks.withType(JavaCompile) {
 clean {
     delete file(querydslSrcDir)
 }
+
+// JaCoCo 테스트 리포트 설정
+jacocoTestReport {
+    reports {
+        html.required = true
+        xml.required = true
+        csv.required = false
+    }
+
+    // 커버리지 측정에서 제외할 클래스 파일들을 지정합니다.
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    '**/entity/Q*.class',  // QueryDSL QClass
+                    '**/*Dto.class',           // DTO 클래스
+            ])
+        }))
+    }
+}
+
+// 'test' 태스크가 성공적으로 끝나면 jacocoTestReport 태스크가 실행되도록 설정
+test.finalizedBy jacocoTestReport

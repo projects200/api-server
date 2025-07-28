@@ -22,11 +22,11 @@ INSERT INTO policy_groups (policy_groups_name, policy_groups_created_at, policy_
 
 -- PolicyGroupMapping 추가 (policy_id는 test-data.sql에 이미 정의된 값을 사용해야 합니다)
 INSERT INTO policy_group_mappings (mapping_id, policy_id, policy_groups_id) VALUES
-                                                                                (1, 1, 1), -- EXERCISE_SCORE_MAX_POINTS
-                                                                                (2, 2, 1), -- EXERCISE_SCORE_MIN_POINTS
-                                                                                (3, 3, 1), -- SIGNUP_INITIAL_POINTS
-                                                                                (4, 4, 1), -- POINTS_PER_EXERCISE
-                                                                                (5, 5, 1), -- EXERCISE_RECORD_VALIDITY_PERIOD
-                                                                                (6, 6, 1), -- EXERCISE_RECORD_MAX_PER_DAY
-                                                                                (7, 7, 1), -- PENALTY_INACTIVITY_THRESHOLD_DAYS
-                                                                                (8, 8, 1); -- PENALTY_SCORE_DECREMENT_POINTS
+    (1, 1, 1), -- EXERCISE_SCORE_MAX_POINTS
+    (2, 2, 1), -- EXERCISE_SCORE_MIN_POINTS
+    (3, 3, 1), -- SIGNUP_INITIAL_POINTS
+    (4, 4, 1), -- POINTS_PER_EXERCISE
+    (5, 5, 1), -- EXERCISE_RECORD_VALIDITY_PERIOD
+    (6, 6, 1), -- EXERCISE_RECORD_MAX_PER_DAY
+    (7, 7, 1), -- PENALTY_INACTIVITY_THRESHOLD_DAYS
+    (8, 8, 1); -- PENALTY_SCORE_DECREMENT_POINTS
