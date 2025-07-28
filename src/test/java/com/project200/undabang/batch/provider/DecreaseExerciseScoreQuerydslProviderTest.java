@@ -48,10 +48,10 @@ class DecreaseExerciseScoreQuerydslProviderTest {
     @BeforeEach
     void setUp() throws Exception{
         // Mockito를 사용하여 policyService의 메소드가 특정 값을 반환하도록 설정
-        Mockito.when(policyService.getPolicyAsInt(PENALTY_INACTIVITY_THRESHOLD_DAYS)).thenReturn(7);
+        Mockito.when(policyService.getPolicyValueAsInt(PENALTY_INACTIVITY_THRESHOLD_DAYS)).thenReturn(7);
 
         // 설정된 Mock 객체를 사용하여 필드 초기화
-        policyDueDate = policyService.getPolicyAsInt(PENALTY_INACTIVITY_THRESHOLD_DAYS);
+        policyDueDate = policyService.getPolicyValueAsInt(PENALTY_INACTIVITY_THRESHOLD_DAYS);
         referenceDate = runDate.minusDays(policyDueDate);
 
         provider = new DecreaseExerciseScoreQuerydslProvider(referenceDate);
