@@ -34,7 +34,7 @@ public class DecreaseExerciseScoreReader extends JpaPagingItemReader<Member> {
                                        @Value("#{jobParameters['runDate']}") String runDate,
                                        @Value("${batch.jobs.chunk-size}") int chunkSize){
 
-        int THRESHOLD_DAYS = policyService.getPolicyAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS);
+        int THRESHOLD_DAYS = policyService.getPolicyValueAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS);
 
         LocalDateTime referenceDate = LocalDate.parse(runDate, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
                 .atStartOfDay()

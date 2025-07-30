@@ -45,7 +45,7 @@ public class DecreaseExerciseJobListenerTest {
         jobListener.afterJob(jobExecution);
 
         // then
-        verify(notifyErrorToAdmin, never()).sendErrorNotification(anyString());
+        verify(notifyErrorToAdmin, never()).sendErrorNotification(any());
     }
 
     @Test
@@ -64,6 +64,6 @@ public class DecreaseExerciseJobListenerTest {
 
         // then
         // Job 실패 시에도 관련 정보를 가져와 로그를 남기는지 검증
-        verify(notifyErrorToAdmin, times(1)).sendErrorNotification(anyString());
+        verify(notifyErrorToAdmin, times(1)).sendErrorNotification(any());
     }
 }
