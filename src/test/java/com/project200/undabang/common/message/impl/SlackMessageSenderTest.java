@@ -75,7 +75,7 @@ class SlackMessageSenderTest {
 
 
             // when
-            slackNotifierAdapter.notify(message);
+            slackNotifierAdapter.send(message);
 
             // then
             verify(1, postRequestedFor(urlEqualTo(webhookPath))
@@ -97,7 +97,7 @@ class SlackMessageSenderTest {
                             .withBody("error")));
 
             // when
-            slackNotifierAdapter.notify(message);
+            slackNotifierAdapter.send(message);
 
             // then
             verify(1, postRequestedFor(urlEqualTo(webhookPath))

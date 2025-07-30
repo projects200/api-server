@@ -25,7 +25,12 @@ public class NotifyErrorToAdminImpl implements NotifyErrorToAdmin {
 
     @Override
     public void sendErrorNotification(ErrorReportDto dto) {
-        log.info("SLACK 채널에 에러 알림을 전송합니다.");
-        slackMessageSender.notify("이거 바꿔야 함 ㅋㅋ;");
+        String formattedReport = formatReportToString(dto);
+        slackMessageSender.send(formattedReport);
+    }
+
+    private String formatReportToString(ErrorReportDto dto){
+        // 요기서 이제 진짜 수정
+        return null;
     }
 }

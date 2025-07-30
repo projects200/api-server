@@ -22,7 +22,7 @@ public class SlackMessageSender implements MessageSender {
     }
 
     @Override
-    public void notify(String message) {
+    public void send(String message) {
         try {
             Payload payload = Payload.builder()
                     .text(message)

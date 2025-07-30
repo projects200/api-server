@@ -29,6 +29,6 @@ class NotifyErrorToAdminImplTest {
         notificationCommand.sendErrorNotification(message);
 
         // then
-        Mockito.verify(messageSender, Mockito.times(1)).notify(message);
+        Mockito.verify(messageSender, Mockito.times(1)).send(message);
     }
 }
