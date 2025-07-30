@@ -28,6 +28,6 @@ services:
     ports:
       - "7777:8080"
     volumes:
-      - ./documents/api-stubs:/home/wiremock/mappings
+      - "./init-scripts/api-stubs:/home/wiremock/mappings"
     command:
       - --verbose
