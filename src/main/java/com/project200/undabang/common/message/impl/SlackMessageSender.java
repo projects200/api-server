@@ -11,11 +11,10 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 
 @Slf4j
-@Component("slackNotifier")
+@Component
 public class SlackMessageSender implements MessageSender {
     private static final Slack slack = Slack.getInstance();
     private final String webhookUrl;
-
 
     public SlackMessageSender(@Value("${notification.slack.webhook-url}") String webhookUrl) {
         this.webhookUrl = webhookUrl;
