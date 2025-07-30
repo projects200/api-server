@@ -5,6 +5,7 @@ import com.project200.undabang.admin.component.dto.CommonErrorData;
 import com.project200.undabang.admin.component.dto.ErrorLevel;
 import com.project200.undabang.admin.component.dto.context.BatchErrorContext;
 import com.project200.undabang.admin.component.dto.impl.BatchErrorReportDto;
+import com.project200.undabang.admin.util.ErrorLogsUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.BatchStatus;
@@ -30,8 +31,10 @@ public class DecreaseExerciseScoreJobListener implements JobExecutionListener {
         long durationInMills = java.time.Duration.between(jobExecution.getStartTime(), jobExecution.getEndTime()).toMillis();
         String jobName = jobExecution.getJobInstance().getJobName();
 
-        if(jobExecution.getStatus() == BatchStatus.FAILED){
+        if (jobExecution.getStatus() == BatchStatus.FAILED) {
             log.error(">>>> {} Job 실패. 상태 : {}, 소요시간 : {} <<<< ", jobName, jobExecution.getStatus(), durationInMills);
+
+            Throwable rootCause = jobExecution.getAllFailureExceptions().get(0);
 
             BatchErrorContext batchErrorContext = BatchErrorContext.builder()
                     .jobName(jobName)
@@ -44,7 +47,7 @@ public class DecreaseExerciseScoreJobListener implements JobExecutionListener {
                     .errorLevel(ErrorLevel.ERROR)
                     .summary(String.format("배치 작업 [%s] 실패", batchErrorContext.getJobName()))
                     .errorOccurredAt(LocalDateTime.now())
-                    .stackTrace("에러를 찾는 함수(getStackTraceAsString)에서 에러를 찾아서 반환할 예정")
+                    .stackTrace(ErrorLogsUtils.getStructuredStackTrace(rootCause))
                     .build();
 
             BatchErrorReportDto reportDto = BatchErrorReportDto.builder()
@@ -53,23 +56,8 @@ public class DecreaseExerciseScoreJobListener implements JobExecutionListener {
                     .build();
 
             notifyErrorToAdmin.sendErrorNotification(reportDto);
-        }else{
+        } else {
             log.info(">>>> {} Job 종료. 상태 : {}, 소요시간 : {} <<<< ", jobName, jobExecution.getStatus(), durationInMills);
         }
     }
-
-    private String getStackTraceAsString(JobExecution jobExecution){
-        // 에러 메시지 만드는 헬퍼 함수
-        // getRootCause 사용
-        return null;
-    }
-
-    private Throwable getRootCause(JobExecution jobExecution){
-        // 에러 원인을 계속 파고 들어가는 함수 (GlobalExceptionHandler 참조)
-        // 가장 기본 원인만 반환?
-        // 전부 반환?
-        return null;
-    }
-
-
 }
