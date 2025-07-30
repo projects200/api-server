@@ -34,7 +34,12 @@ public class DecreaseExerciseScoreJobListener implements JobExecutionListener {
         if (jobExecution.getStatus() == BatchStatus.FAILED) {
             log.error(">>>> {} Job 실패. 상태 : {}, 소요시간 : {} <<<< ", jobName, jobExecution.getStatus(), durationInMills);
 
-            Throwable rootCause = jobExecution.getAllFailureExceptions().get(0);
+            Throwable rootCause = null;
+            if (!jobExecution.getAllFailureExceptions().isEmpty()) {
+                rootCause = jobExecution.getAllFailureExceptions().get(0);
+            } else {
+                log.warn("No failure exceptions found for job: {}", jobName);
+            }
 
             BatchErrorData batchErrorData = BatchErrorData.builder()
                     .jobName(jobName)

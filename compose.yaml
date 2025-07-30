@@ -24,7 +24,7 @@ services:
 
   wiremock:
     image: wiremock/wiremock:latest
-    container_name: "wireframe-slack-local"
+    container_name: "wiremock"
     ports:
       - "7777:8080"
     volumes:
