@@ -1,5 +1,6 @@
-package com.project200.undabang.admin.entity.dto;
+package com.project200.undabang.admin.entity.dto.error;
 
+import com.project200.undabang.admin.entity.dto.ErrorLevel;
 import lombok.Builder;
 import lombok.Getter;
 

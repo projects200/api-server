@@ -1,9 +1,9 @@
 package com.project200.undabang.common.batch.listener.job;
 
 import com.project200.undabang.admin.component.NotifyErrorToAdmin;
-import com.project200.undabang.admin.entity.dto.CommonErrorData;
+import com.project200.undabang.admin.entity.dto.error.CommonErrorData;
 import com.project200.undabang.admin.entity.dto.ErrorLevel;
-import com.project200.undabang.admin.entity.dto.context.BatchErrorData;
+import com.project200.undabang.admin.entity.dto.error.BatchErrorData;
 import com.project200.undabang.admin.entity.dto.impl.BatchErrorReportDto;
 import com.project200.undabang.admin.util.ErrorLogsUtils;
 import lombok.RequiredArgsConstructor;

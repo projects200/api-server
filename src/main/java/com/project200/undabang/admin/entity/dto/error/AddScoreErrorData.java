@@ -1,4 +1,4 @@
-package com.project200.undabang.admin.entity.dto.context;
+package com.project200.undabang.admin.entity.dto.error;
 
 import lombok.Builder;
 import lombok.Getter;

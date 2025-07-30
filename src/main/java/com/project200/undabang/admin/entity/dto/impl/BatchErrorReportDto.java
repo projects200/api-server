@@ -1,8 +1,8 @@
 package com.project200.undabang.admin.entity.dto.impl;
 
-import com.project200.undabang.admin.entity.dto.CommonErrorData;
+import com.project200.undabang.admin.entity.dto.error.CommonErrorData;
 import com.project200.undabang.admin.entity.dto.ErrorReportDto;
-import com.project200.undabang.admin.entity.dto.context.BatchErrorData;
+import com.project200.undabang.admin.entity.dto.error.BatchErrorData;
 import lombok.Builder;
 import lombok.Getter;
 
