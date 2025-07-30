@@ -1,7 +1,7 @@
 package com.project200.undabang.admin.component.impl;
 
 import com.project200.undabang.admin.component.NotifyErrorToAdmin;
-import com.project200.undabang.admin.component.dto.ErrorNotifyDto;
+import com.project200.undabang.admin.component.dto.ErrorReportDto;
 import com.project200.undabang.common.message.MessageSender;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +24,7 @@ public class NotifyErrorToAdminImpl implements NotifyErrorToAdmin {
     private final MessageSender slackMessageSender;
 
     @Override
-    public void sendErrorNotification(ErrorNotifyDto dto) {
+    public void sendErrorNotification(ErrorReportDto dto) {
         log.info("SLACK 채널에 에러 알림을 전송합니다.");
         slackMessageSender.notify("이거 바꿔야 함 ㅋㅋ;");
     }
