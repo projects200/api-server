@@ -1,4 +1,4 @@
-package com.project200.undabang.admin.component.dto;
+package com.project200.undabang.admin.entity.dto;
 
 import lombok.Builder;
 import lombok.Getter;

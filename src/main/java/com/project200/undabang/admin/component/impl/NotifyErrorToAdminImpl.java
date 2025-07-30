@@ -1,7 +1,7 @@
 package com.project200.undabang.admin.component.impl;
 
 import com.project200.undabang.admin.component.NotifyErrorToAdmin;
-import com.project200.undabang.admin.component.dto.ErrorReport;
+import com.project200.undabang.admin.entity.dto.ErrorReportDto;
 import com.project200.undabang.common.message.MessageSender;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +24,7 @@ public class NotifyErrorToAdminImpl implements NotifyErrorToAdmin {
     private final MessageSender slackMessageSender;
 
     @Override
-    public void sendErrorNotification(ErrorReport<?> report) {
+    public void sendErrorNotification(ErrorReportDto<?> report) {
         String formattedMessage = report.formattingMessage();
         slackMessageSender.send(formattedMessage);
     }

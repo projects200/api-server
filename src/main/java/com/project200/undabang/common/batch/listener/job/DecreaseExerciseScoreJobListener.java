@@ -1,10 +1,10 @@
 package com.project200.undabang.common.batch.listener.job;
 
 import com.project200.undabang.admin.component.NotifyErrorToAdmin;
-import com.project200.undabang.admin.component.dto.CommonErrorData;
-import com.project200.undabang.admin.component.dto.ErrorLevel;
-import com.project200.undabang.admin.component.dto.context.BatchErrorContext;
-import com.project200.undabang.admin.component.dto.impl.BatchErrorReportDto;
+import com.project200.undabang.admin.entity.dto.CommonErrorData;
+import com.project200.undabang.admin.entity.dto.ErrorLevel;
+import com.project200.undabang.admin.entity.dto.context.BatchErrorData;
+import com.project200.undabang.admin.entity.dto.impl.BatchErrorReportDto;
 import com.project200.undabang.admin.util.ErrorLogsUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +36,7 @@ public class DecreaseExerciseScoreJobListener implements JobExecutionListener {
 
             Throwable rootCause = jobExecution.getAllFailureExceptions().get(0);
 
-            BatchErrorContext batchErrorContext = BatchErrorContext.builder()
+            BatchErrorData batchErrorData = BatchErrorData.builder()
                     .jobName(jobName)
                     .jobParameters(jobExecution.getJobParameters().toString())
                     .status(jobExecution.getStatus().toString())
@@ -45,13 +45,13 @@ public class DecreaseExerciseScoreJobListener implements JobExecutionListener {
             CommonErrorData commonErrorData = CommonErrorData.builder()
                     .serviceName("DecreaseExerciseScoreJob")
                     .errorLevel(ErrorLevel.ERROR)
-                    .summary(String.format("배치 작업 [%s] 실패", batchErrorContext.getJobName()))
+                    .summary(String.format("배치 작업 [%s] 실패", batchErrorData.getJobName()))
                     .errorOccurredAt(LocalDateTime.now())
                     .stackTrace(ErrorLogsUtils.getStructuredStackTrace(rootCause))
                     .build();
 
             BatchErrorReportDto reportDto = BatchErrorReportDto.builder()
-                    .batchErrorContext(batchErrorContext)
+                    .batchErrorData(batchErrorData)
                     .commonErrorData(commonErrorData)
                     .build();
 

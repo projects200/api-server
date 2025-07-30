@@ -1,4 +1,4 @@
-package com.project200.undabang.admin.component.dto;
+package com.project200.undabang.admin.entity.dto;
 
 public enum ErrorLevel {
     CRITICAL, // 즉시 확인 필요

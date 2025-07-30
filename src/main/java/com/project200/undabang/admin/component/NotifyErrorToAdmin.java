@@ -1,6 +1,6 @@
 package com.project200.undabang.admin.component;
 
-import com.project200.undabang.admin.component.dto.ErrorReport;
+import com.project200.undabang.admin.entity.dto.ErrorReportDto;
 
 /**
  * 애플리케이션의 모든 알림 기능을 대표하는 단일 진입점(Facade) 인터페이스입니다.
@@ -14,5 +14,5 @@ public interface NotifyErrorToAdmin {
      * 개발팀이 인지할 수 있도록 긴급 알림을 보냅니다.
      * (주로 슬랙 채널을 대상으로 합니다.)
      */
-    void sendErrorNotification(ErrorReport<?> report);
+    void sendErrorNotification(ErrorReportDto<?> report);
 }
