@@ -1,9 +1,9 @@
 package com.project200.undabang.common.batch.listener.job;
 
 import com.project200.undabang.admin.component.NotifyErrorToAdmin;
-import com.project200.undabang.admin.entity.dto.error.CommonErrorData;
 import com.project200.undabang.admin.entity.dto.ErrorLevel;
 import com.project200.undabang.admin.entity.dto.error.BatchErrorData;
+import com.project200.undabang.admin.entity.dto.error.CommonErrorData;
 import com.project200.undabang.admin.entity.dto.impl.BatchErrorReportDto;
 import com.project200.undabang.admin.util.ErrorLogsUtils;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobExecutionListener;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -20,6 +21,8 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class DecreaseExerciseScoreJobListener implements JobExecutionListener {
     private final NotifyErrorToAdmin notifyErrorToAdmin;
+    @Value("${spring.profiles.active}")
+    private String profile;
 
     @Override
     public void beforeJob(JobExecution jobExecution) {
@@ -34,25 +37,23 @@ public class DecreaseExerciseScoreJobListener implements JobExecutionListener {
         if (jobExecution.getStatus() == BatchStatus.FAILED) {
             log.error(">>>> {} Job 실패. 상태 : {}, 소요시간 : {} <<<< ", jobName, jobExecution.getStatus(), durationInMills);
 
-            Throwable rootCause = null;
-            if (!jobExecution.getAllFailureExceptions().isEmpty()) {
-                rootCause = jobExecution.getAllFailureExceptions().get(0);
-            } else {
-                log.warn("No failure exceptions found for job: {}", jobName);
-            }
+            Throwable throwable = jobExecution.getAllFailureExceptions().get(0);
 
             BatchErrorData batchErrorData = BatchErrorData.builder()
                     .jobName(jobName)
-                    .jobParameters(jobExecution.getJobParameters().toString())
+                    .jobParameters(jobExecution.getJobParameters())
                     .status(jobExecution.getStatus().toString())
                     .build();
 
             CommonErrorData commonErrorData = CommonErrorData.builder()
                     .serviceName("DecreaseExerciseScoreJob")
+                    .className(ErrorLogsUtils.findClassErrorHappened(throwable))
                     .errorLevel(ErrorLevel.ERROR)
-                    .summary(String.format("배치 작업 [%s] 실패", batchErrorData.getJobName()))
+                    .summary(String.format("배치 작업 [%s] 실패 알림입니다.", batchErrorData.getJobName()))
                     .errorOccurredAt(LocalDateTime.now())
-                    .stackTrace(ErrorLogsUtils.getStructuredStackTrace(rootCause))
+                    .stackTrace(ErrorLogsUtils.getStructuredStackTrace(throwable))
+                    .environment(profile)
+                    .actionGuide("\n 전송되는 로그를 확인 후, 에러를 수정하여 Batch 작업을 다시 돌려주세요!\n")
                     .build();
 
             BatchErrorReportDto reportDto = BatchErrorReportDto.builder()
