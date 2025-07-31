@@ -42,25 +42,22 @@ create table if not exists BATCH_JOB_EXECUTION_SEQ
 (
     ID         bigint not null,
     UNIQUE_KEY char   not null,
-    constraint UNIQUE_KEY_UN
-        unique (UNIQUE_KEY)
+    constraint UNIQUE_KEY_UN unique (UNIQUE_KEY)
 );
+
 
 create table if not exists BATCH_JOB_INSTANCE
 (
-    JOB_INSTANCE_ID bigint       not null
-        primary key,
+    JOB_INSTANCE_ID bigint       not null   primary key,
     VERSION         bigint       null,
     JOB_NAME        varchar(100) not null,
     JOB_KEY         varchar(32)  not null,
-    constraint JOB_INST_UN
-        unique (JOB_NAME, JOB_KEY)
+    constraint JOB_INST_UN  unique (JOB_NAME, JOB_KEY)
 );
 
 create table if not exists BATCH_JOB_EXECUTION
 (
-    JOB_EXECUTION_ID           bigint        not null
-        primary key,
+    JOB_EXECUTION_ID           bigint        not null        primary key,
     VERSION                    bigint        null,
     JOB_INSTANCE_ID            bigint        not null,
     CREATE_TIME                datetime(6)   not null,
@@ -71,50 +68,43 @@ create table if not exists BATCH_JOB_EXECUTION
     EXIT_MESSAGE               varchar(2500) null,
     LAST_UPDATED               datetime(6)   null,
     JOB_CONFIGURATION_LOCATION varchar(2500) null,
-    constraint JOB_INST_EXEC_FK
-        foreign key (JOB_INSTANCE_ID) references BATCH_JOB_INSTANCE (JOB_INSTANCE_ID)
+    constraint JOB_INST_EXEC_FK foreign key (JOB_INSTANCE_ID) references BATCH_JOB_INSTANCE (JOB_INSTANCE_ID)
 );
 
 create table if not exists BATCH_JOB_EXECUTION_CONTEXT
 (
-    JOB_EXECUTION_ID   bigint        not null
-        primary key,
+    JOB_EXECUTION_ID   bigint        not null primary key,
     SHORT_CONTEXT      varchar(2500) not null,
     SERIALIZED_CONTEXT text          null,
-    constraint JOB_EXEC_CTX_FK
-        foreign key (JOB_EXECUTION_ID) references BATCH_JOB_EXECUTION (JOB_EXECUTION_ID)
+    constraint JOB_EXEC_CTX_FK foreign key (JOB_EXECUTION_ID) references BATCH_JOB_EXECUTION (JOB_EXECUTION_ID)
 );
 
 create table if not exists BATCH_JOB_EXECUTION_PARAMS
 (
-    JOB_EXECUTION_ID bigint       not null,
-    TYPE_CD          varchar(6)   not null,
-    KEY_NAME         varchar(100) not null,
-    STRING_VAL       varchar(250) null,
-    DATE_VAL         datetime(6)  null,
-    LONG_VAL         bigint       null,
-    DOUBLE_VAL       double       null,
-    IDENTIFYING      char         not null,
-    constraint JOB_EXEC_PARAMS_FK
-        foreign key (JOB_EXECUTION_ID) references BATCH_JOB_EXECUTION (JOB_EXECUTION_ID)
+    JOB_EXECUTION_ID bigint        not null,
+    PARAMETER_NAME   varchar(100)  not null,
+    PARAMETER_TYPE   varchar(100)  not null,
+    PARAMETER_VALUE  varchar(2500) null,
+    IDENTIFYING      char(1)       not null,
+    constraint JOB_EXEC_PARAMS_FK foreign key (JOB_EXECUTION_ID) references BATCH_JOB_EXECUTION (JOB_EXECUTION_ID)
 );
 
 create table if not exists BATCH_JOB_SEQ
 (
     ID         bigint not null,
     UNIQUE_KEY char   not null,
-    constraint UNIQUE_KEY_UN
-        unique (UNIQUE_KEY)
+    constraint UNIQUE_KEY_UN unique (UNIQUE_KEY)
 );
+
 
 create table if not exists BATCH_STEP_EXECUTION
 (
-    STEP_EXECUTION_ID  bigint        not null
-        primary key,
+    STEP_EXECUTION_ID  bigint        not null primary key,
     VERSION            bigint        not null,
     STEP_NAME          varchar(100)  not null,
     JOB_EXECUTION_ID   bigint        not null,
-    START_TIME         datetime(6)   not null,
+    CREATE_TIME        datetime(6)   not null, -- 5.x 버전에서 CREATE_TIME 추가
+    START_TIME         datetime(6)   null,     -- START_TIME은 nullable로 변경
     END_TIME           datetime(6)   null,
     STATUS             varchar(10)   null,
     COMMIT_COUNT       bigint        null,
@@ -128,26 +118,22 @@ create table if not exists BATCH_STEP_EXECUTION
     EXIT_CODE          varchar(2500) null,
     EXIT_MESSAGE       varchar(2500) null,
     LAST_UPDATED       datetime(6)   null,
-    constraint JOB_EXEC_STEP_FK
-        foreign key (JOB_EXECUTION_ID) references BATCH_JOB_EXECUTION (JOB_EXECUTION_ID)
+    constraint JOB_EXEC_STEP_FK foreign key (JOB_EXECUTION_ID) references BATCH_JOB_EXECUTION (JOB_EXECUTION_ID)
 );
 
 create table if not exists BATCH_STEP_EXECUTION_CONTEXT
 (
-    STEP_EXECUTION_ID  bigint        not null
-        primary key,
+    STEP_EXECUTION_ID  bigint not null primary key,
     SHORT_CONTEXT      varchar(2500) not null,
-    SERIALIZED_CONTEXT text          null,
-    constraint STEP_EXEC_CTX_FK
-        foreign key (STEP_EXECUTION_ID) references BATCH_STEP_EXECUTION (STEP_EXECUTION_ID)
+    SERIALIZED_CONTEXT text   null,
+    constraint STEP_EXEC_CTX_FK foreign key (STEP_EXECUTION_ID) references BATCH_STEP_EXECUTION (STEP_EXECUTION_ID)
 );
 
 create table if not exists BATCH_STEP_EXECUTION_SEQ
 (
     ID         bigint not null,
     UNIQUE_KEY char   not null,
-    constraint UNIQUE_KEY_UN
-        unique (UNIQUE_KEY)
+    constraint UNIQUE_KEY_UN unique (UNIQUE_KEY)
 );
 
 create table if not exists comment_report_subjects
@@ -576,3 +562,8 @@ WHERE
     WHERE pgm.policy_id = p.policy_id
       AND pgm.policy_groups_id = (SELECT pg.policy_groups_id FROM policy_groups pg WHERE pg.policy_groups_name = 'exercise-score')
 );
+
+-- 시퀀스 초기값 설정
+insert into BATCH_JOB_EXECUTION_SEQ (ID, UNIQUE_KEY) values (0, '0');
+insert into BATCH_JOB_SEQ (ID, UNIQUE_KEY) values (0, '0');
+insert into BATCH_STEP_EXECUTION_SEQ (ID, UNIQUE_KEY) values (0, '0');
