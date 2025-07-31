@@ -1,5 +1,11 @@
 package com.project200.undabang.score.service.impl;
 
+import com.project200.undabang.admin.component.NotifyErrorToAdmin;
+import com.project200.undabang.admin.entity.dto.error.AddScoreErrorData;
+import com.project200.undabang.admin.entity.dto.error.CommonErrorData;
+import com.project200.undabang.admin.entity.dto.impl.WebRequestErrorReportDto;
+import com.project200.undabang.admin.util.ErrorLogsUtils;
+import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
 import com.project200.undabang.member.entity.Member;
@@ -13,8 +19,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -25,6 +34,7 @@ public class ExerciseScoreCommandServiceImpl implements ExerciseScoreCommandServ
     private final ExerciseRepository exerciseRepository;
     private final PolicyService policyService;
     private final ExercisePolicyValidator exercisePolicyValidator;
+    private final NotifyErrorToAdmin notifyErrorToAdmin;
 
     /**
      * 운동 기록에 대한 점수 부여를 처리합니다.
@@ -51,8 +61,43 @@ public class ExerciseScoreCommandServiceImpl implements ExerciseScoreCommandServ
         } catch (Exception e) {
             log.error("운동 기록 점수 부여 중 오류 발생. exerciseId: {}, memberId: {}",
                     exercise.getId(), exercise.getMember().getMemberId(), e);
+
+            CommonErrorData commonErrorData = createCommonData(e);
+            AddScoreErrorData addScoreErrorData = createScoreData();
+
+            WebRequestErrorReportDto dto = WebRequestErrorReportDto.builder()
+                    .commonErrorData(commonErrorData)
+                    .addScoreErrorData(addScoreErrorData)
+                    .build();
+
+            notifyErrorToAdmin.sendErrorNotification(dto);
             return 0; // 예외 발생 시 0점 반환
         }
+    }
+
+    private AddScoreErrorData createScoreData(){
+        UUID memberId = UserContextHolder.getUserId();
+
+        // 현재 쓰레드의 Http 요청 컨텍스트에 접근할 수 있도록 RequestContextHolder 사용
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        String requestUri = attributes.getRequest().getRequestURI();
+        String requestMethod = attributes.getRequest().getMethod();
+
+        return AddScoreErrorData.builder()
+                .userIdentifier(memberId)
+                .httpMethod(requestMethod)
+                .requestUri(requestUri)
+                .build();
+    }
+
+    private CommonErrorData createCommonData(Exception e){
+        CommonErrorData commonErrorData = CommonErrorData.builder()
+                .serviceName("운동기록 생성시 운동점수 추가기능")
+                .className(ErrorLogsUtils.findClassErrorHappened(e))
+                .build();
+
+
+        return commonErrorData;
     }
 
 
