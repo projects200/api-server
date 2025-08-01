@@ -14,8 +14,9 @@ import java.io.IOException;
 @Component
 public class SlackMessageSender implements MessageSender {
     private static final Slack slack = Slack.getInstance();
+
     private final String webhookUrl;
-    private boolean webhookEnabled;
+    private final boolean webhookEnabled;
 
     public SlackMessageSender(@Value("${slack.webhook.url}") String webhookUrl,
                               @Value("${slack.webhook.enabled}") boolean webhookEnabled) {

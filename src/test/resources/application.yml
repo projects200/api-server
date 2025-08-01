@@ -74,7 +74,7 @@ batch:
   jobs:
     chunk-size: 100
 
-notification:
-  slack:
-    enabled: false
-    webhook-url: ""
+slack:
+  webhook:
+    url:  ""
+    enabled:  true
