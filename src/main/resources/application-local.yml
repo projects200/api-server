@@ -28,6 +28,10 @@ spring:
         endpoint: http://localhost:4566
         path-style-access-enabled: true
 
+  batch:
+    jdbc:
+      initialize-schema: never
+
 logging:
   level:
     com.project200.undabang: debug  # 애플리케이션 로그

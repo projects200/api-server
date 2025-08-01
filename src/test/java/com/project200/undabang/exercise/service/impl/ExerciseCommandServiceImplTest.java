@@ -5,6 +5,7 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.exercise.dto.request.CreateExerciseRequestDto;
 import com.project200.undabang.exercise.dto.request.UpdateExerciseRequestDto;
+import com.project200.undabang.exercise.dto.response.CreateExerciseResponseDto;
 import com.project200.undabang.exercise.dto.response.ExerciseIdResponseDto;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
@@ -12,6 +13,7 @@ import com.project200.undabang.exercise.service.ExercisePictureService;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.enums.MemberGender;
 import com.project200.undabang.member.repository.MemberRepository;
+import com.project200.undabang.score.service.ExerciseScoreCommandService;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.DisplayName;
@@ -19,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
@@ -42,6 +45,9 @@ class ExerciseCommandServiceImplTest {
     @Mock
     private ExercisePictureService exercisePictureService;
 
+    @Mock
+    private ExerciseScoreCommandService exerciseScoreCommandService;
+
     // 운동 필드 생성 관련 테스트들
     // 성공적으로 운동 데이터를 생성하는 테스트
     @Test
@@ -49,25 +55,43 @@ class ExerciseCommandServiceImplTest {
     void createExercise_Success() {
         // given
         UUID testUserId = UUID.randomUUID();
-        Member mockMember = BDDMockito.mock(Member.class);
-        CreateExerciseRequestDto requestDto = BDDMockito.mock(CreateExerciseRequestDto.class);
-        Exercise mockExercise = BDDMockito.mock(Exercise.class);
         ExerciseIdResponseDto expectedResponse = new ExerciseIdResponseDto(1L);
+
+        Member testMember = Member.builder()
+                .memberId(testUserId)
+                .memberEmail("test@test.com")
+                .memberNickname("테스트닉네임")
+                .build();
+
+        CreateExerciseRequestDto requestDto = CreateExerciseRequestDto.builder()
+                .exerciseTitle("운동 제목")
+                .exerciseDetail("운동 상세 내용")
+                .exerciseLocation("운동 장소")
+                .exercisePersonalType("헬스")
+                .exerciseStartedAt(LocalDateTime.now().minusHours(1))
+                .exerciseEndedAt(LocalDateTime.now())
+                .build();
 
         try (MockedStatic<UserContextHolder> ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
             BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
-            BDDMockito.given(memberRepository.findById(testUserId)).willReturn(Optional.of(mockMember));
-            BDDMockito.given(requestDto.toEntity(mockMember)).willReturn(mockExercise);
-            BDDMockito.given(exerciseRepository.save(mockExercise)).willReturn(mockExercise);
-            BDDMockito.given(mockExercise.getId()).willReturn(1L);
+            BDDMockito.given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
+            BDDMockito.given(exerciseRepository.save(ArgumentMatchers.any(Exercise.class))).willAnswer(invocation -> {
+                Exercise savedExercise = invocation.getArgument(0);
+                ReflectionTestUtils.setField(savedExercise, "id", 1L);
+                return savedExercise;
+            });
+            BDDMockito.given(exerciseScoreCommandService.awardPointsForExercise(ArgumentMatchers.any(Exercise.class)))
+                    .willReturn((byte) 10);
 
             // when
-            ExerciseIdResponseDto actualResponse = exerciseCommandService.createExercise(requestDto);
+            CreateExerciseResponseDto actualResponse = exerciseCommandService.createExercise(requestDto);
 
             // then
             SoftAssertions.assertSoftly(softAssertions -> {
-                softAssertions.assertThat(actualResponse).as("응답 객체가 null이 아님").isNotNull();
-                softAssertions.assertThat(actualResponse.exerciseId()).as("운동 ID가 일치함").isEqualTo(expectedResponse.exerciseId());
+                softAssertions.assertThat(actualResponse).as("응답 객체가 null이 아니어야함").isNotNull();
+                softAssertions.assertThat(actualResponse.exerciseId()).as("운동 ID가 일치해야함").isEqualTo(expectedResponse.exerciseId());
+                softAssertions.assertThat(actualResponse.earnedPoints()).as("획득한 포인트가 일치해야함").isEqualTo((byte) 10);
+                BDDMockito.then(exerciseRepository).should(BDDMockito.times(1)).save(ArgumentMatchers.any(Exercise.class));
             });
         }
     }
@@ -126,7 +150,7 @@ class ExerciseCommandServiceImplTest {
                 .memberId(memberId)
                 .memberDesc("설명")
                 .memberBday(LocalDate.now().minusDays(1))
-                .memberGender(MemberGender.M)
+                .memberGender(MemberGender.MALE)
                 .memberNickname("nickname")
                 .memberEmail("email.com")
                 .memberDesc("memberDesc")

@@ -3,17 +3,19 @@ package com.project200.undabang.member.service.impl;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
+import com.project200.undabang.member.dto.command.SignUpMemberCommand;
 import com.project200.undabang.member.dto.request.SignUpRequestDto;
 import com.project200.undabang.member.dto.response.SignUpResponseDto;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.member.service.MemberCommandService;
+import com.project200.undabang.policy.entity.PolicyKey;
+import com.project200.undabang.policy.service.PolicyService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
-import java.time.LocalDate;
 import java.util.UUID;
 
 /**
@@ -25,7 +27,10 @@ import java.util.UUID;
 @Transactional
 @RequiredArgsConstructor
 public class MemberCommandServiceImpl implements MemberCommandService {
+
     private final MemberRepository memberRepository;
+
+    private final PolicyService policyService;
 
     /**
      * 회원 가입을 처리합니다.
@@ -43,26 +48,21 @@ public class MemberCommandServiceImpl implements MemberCommandService {
         if(checkMemberNickname(signUpRequestDto.getMemberNickname())){
             throw new CustomException(ErrorCode.MEMBER_NICKNAME_DUPLICATED);
         }
-        if(checkMemberBday(signUpRequestDto.getMemberBday())){
-            throw new CustomException((ErrorCode.MEMBER_BDAY_ERROR));
-        }
-        if(signUpRequestDto.getMemberGender() == null){
-            throw new IllegalArgumentException("성별을 입력해주세요");
-        }
 
-        Member member = Member.createFromSignUp(
-                UserContextHolder.getUserId(),
-                UserContextHolder.getUserEmail(),
-                signUpRequestDto.getMemberNickname(),
-                signUpRequestDto.getMemberGender(),
-                signUpRequestDto.getMemberBday()
-        );
+        byte initialSignupPoints = policyService.getPolicyValueAsByte(PolicyKey.SIGNUP_INITIAL_POINTS);
 
-        /**
-         * 저장 실패시 에러처리
-         */
-        Member savedMember = memberRepository.save(member);
-        return SignUpResponseDto.of(savedMember);
+        Member member = Member.signUp(
+                SignUpMemberCommand.builder()
+                        .memberId(UserContextHolder.getUserId())
+                        .memberEmail(UserContextHolder.getUserEmail())
+                        .memberNickname(signUpRequestDto.getMemberNickname())
+                        .memberGender(signUpRequestDto.getMemberGender())
+                        .initialSignupPoints(initialSignupPoints)
+                        .memberBday(signUpRequestDto.getMemberBday())
+                        .build());
+
+        memberRepository.save(member);
+        return SignUpResponseDto.of(member);
     }
 
     /**
@@ -88,15 +88,5 @@ public class MemberCommandServiceImpl implements MemberCommandService {
     public boolean checkMemberId(UUID memberId) {
         return memberRepository.existsByMemberId(memberId);
     }
-
-    /**
-     * 생년월일이 유효한지 확인합니다.
-     * 현재 날짜보다 미래인 경우 유효하지 않음(true 반환)
-     */
-    @Override
-    public boolean checkMemberBday(LocalDate memberBday){
-        return !memberBday.isBefore(LocalDate.now());
-    }
-
 
 }

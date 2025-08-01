@@ -3,6 +3,7 @@ plugins {
     id 'org.springframework.boot' version '3.4.5'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
+    id 'jacoco'
 }
 
 group = 'com.project200'
@@ -41,8 +42,13 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
 
+    // Spring Batch 의존성 추가
+    implementation 'org.springframework.boot:spring-boot-starter-batch:2.7.18'
+    implementation 'org.springframework.batch:spring-batch-test'
+
     implementation 'com.querydsl:querydsl-core:5.1.0'
     implementation "com.querydsl:querydsl-jpa:5.1.0:jakarta"
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
     annotationProcessor "com.querydsl:querydsl-apt:5.1.0:jakarta"
     annotationProcessor "jakarta.annotation:jakarta.annotation-api"
     annotationProcessor "jakarta.persistence:jakarta.persistence-api:3.1.0"
@@ -77,6 +83,9 @@ dependencies {
     testImplementation 'org.testcontainers:localstack'
     testImplementation 'org.testcontainers:junit-jupiter'
 
+    // Scheduler 테스트 를 위한 의존성 추가
+    testImplementation 'org.awaitility:awaitility:4.2.2'
+
     // Mockito 설정
     mockitoAgent('org.mockito:mockito-core') {
         transitive = false
@@ -86,7 +95,7 @@ dependencies {
 tasks.named('test') {
     outputs.dir snippetsDir
     useJUnitPlatform()
-    systemProperty("spring.profiles.active", System.getProperty("spring.profiles.active", "local"))
+//    systemProperty("spring.profiles.active", System.getProperty("spring.profiles.active", "local"))
     jvmArgs("-javaagent:${configurations.mockitoAgent.asPath}")
 }
 
@@ -132,3 +141,25 @@ tasks.withType(JavaCompile) {
 clean {
     delete file(querydslSrcDir)
 }
+
+// JaCoCo 테스트 리포트 설정
+jacocoTestReport {
+    reports {
+        html.required = true
+        xml.required = true
+        csv.required = false
+    }
+
+    // 커버리지 측정에서 제외할 클래스 파일들을 지정합니다.
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    '**/entity/Q*.class',  // QueryDSL QClass
+                    '**/*Dto.class',           // DTO 클래스
+            ])
+        }))
+    }
+}
+
+// 'test' 태스크가 성공적으로 끝나면 jacocoTestReport 태스크가 실행되도록 설정
+test.finalizedBy jacocoTestReport

@@ -5,6 +5,7 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.exercise.dto.request.CreateExerciseRequestDto;
 import com.project200.undabang.exercise.dto.request.UpdateExerciseRequestDto;
+import com.project200.undabang.exercise.dto.response.CreateExerciseResponseDto;
 import com.project200.undabang.exercise.dto.response.ExerciseIdResponseDto;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
@@ -12,6 +13,7 @@ import com.project200.undabang.exercise.service.ExerciseCommandService;
 import com.project200.undabang.exercise.service.ExercisePictureService;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
+import com.project200.undabang.score.service.ExerciseScoreCommandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,19 +30,21 @@ import java.util.UUID;
 public class ExerciseCommandServiceImpl implements ExerciseCommandService {
 
     private final ExercisePictureService exercisePictureService;
-
     private final ExerciseRepository exerciseRepository;
     private final MemberRepository memberRepository;
+    private final ExerciseScoreCommandService exerciseScoreCommandService;
 
     @Override
-    public ExerciseIdResponseDto createExercise(CreateExerciseRequestDto requestDto) {
+    @Transactional
+    public CreateExerciseResponseDto createExercise(CreateExerciseRequestDto requestDto) {
         Member member = findMember();
-
         Exercise exercise = requestDto.toEntity(member);
-
         exerciseRepository.save(exercise);
 
-        return new ExerciseIdResponseDto(exercise.getId());
+        // 점수 부여 로직 호출
+        byte earnedPoints = exerciseScoreCommandService.awardPointsForExercise(exercise);
+
+        return new CreateExerciseResponseDto(exercise.getId(), earnedPoints);
     }
 
     // 퍼사드 패턴(Facade Pattern): 이 메서드는 운동 이미지 업로드를 위한 간소화 된 인터페이스 역할을 합니다 .
