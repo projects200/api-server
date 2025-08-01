@@ -34,7 +34,3 @@ async:
       max-pool-size: 10
       queue-capacity: 25
       thread-name-prefix: "decreaseExerciseScoreBatchJobExecutor-"
-
-notification:
-  slack:
-    enabled: false

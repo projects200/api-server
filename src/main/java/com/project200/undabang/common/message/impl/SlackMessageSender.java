@@ -15,14 +15,22 @@ import java.io.IOException;
 public class SlackMessageSender implements MessageSender {
     private static final Slack slack = Slack.getInstance();
     private final String webhookUrl;
+    private boolean webhookEnabled;
 
-    public SlackMessageSender(@Value("${notification.slack.webhook-url}") String webhookUrl) {
+    public SlackMessageSender(@Value("${slack.webhook.url}") String webhookUrl,
+                              @Value("${slack.webhook.enabled}") boolean webhookEnabled) {
         this.webhookUrl = webhookUrl;
+        this.webhookEnabled = webhookEnabled;
     }
 
     @Override
     public void send(String message) {
         try {
+            if(!webhookEnabled){
+                log.info("메시지를 보내지 않는 상태입니다!");
+                return;
+            }
+
             Payload payload = Payload.builder()
                     .text(message)
                     .build();

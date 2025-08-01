@@ -1,9 +1,8 @@
 package com.project200.undabang.score.service.impl;
 
 import com.project200.undabang.admin.component.NotifyErrorToAdmin;
-import com.project200.undabang.admin.entity.dto.error.AddScoreErrorData;
-import com.project200.undabang.admin.entity.dto.error.CommonErrorData;
-import com.project200.undabang.admin.entity.dto.impl.WebRequestErrorReportDto;
+import com.project200.undabang.admin.entity.dto.ErrorLevel;
+import com.project200.undabang.admin.entity.dto.MemberScoreErrorDto;
 import com.project200.undabang.admin.util.ErrorLogsUtils;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.exercise.entity.Exercise;
@@ -16,6 +15,7 @@ import com.project200.undabang.score.service.ExerciseScoreCommandService;
 import com.project200.undabang.score.validation.ExercisePolicyValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +23,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Slf4j
@@ -35,6 +36,9 @@ public class ExerciseScoreCommandServiceImpl implements ExerciseScoreCommandServ
     private final PolicyService policyService;
     private final ExercisePolicyValidator exercisePolicyValidator;
     private final NotifyErrorToAdmin notifyErrorToAdmin;
+
+    @Value("${spring.profiles.active}")
+    private String profile;
 
     /**
      * 운동 기록에 대한 점수 부여를 처리합니다.
@@ -62,20 +66,14 @@ public class ExerciseScoreCommandServiceImpl implements ExerciseScoreCommandServ
             log.error("운동 기록 점수 부여 중 오류 발생. exerciseId: {}, memberId: {}",
                     exercise.getId(), exercise.getMember().getMemberId(), e);
 
-            CommonErrorData commonErrorData = createCommonData(e);
-            AddScoreErrorData addScoreErrorData = createScoreData();
+            MemberScoreErrorDto dto = createMemberScoreErrorDto(e);
+            notifyErrorToAdmin.sendMemberScoreIncreaseErrorToSlack(dto);
 
-            WebRequestErrorReportDto dto = WebRequestErrorReportDto.builder()
-                    .commonErrorData(commonErrorData)
-                    .addScoreErrorData(addScoreErrorData)
-                    .build();
-
-            notifyErrorToAdmin.sendErrorNotification(dto);
             return 0; // 예외 발생 시 0점 반환
         }
     }
 
-    private AddScoreErrorData createScoreData(){
+    private MemberScoreErrorDto createMemberScoreErrorDto(Exception e){
         UUID memberId = UserContextHolder.getUserId();
 
         // 현재 쓰레드의 Http 요청 컨텍스트에 접근할 수 있도록 RequestContextHolder 사용
@@ -83,21 +81,19 @@ public class ExerciseScoreCommandServiceImpl implements ExerciseScoreCommandServ
         String requestUri = attributes.getRequest().getRequestURI();
         String requestMethod = attributes.getRequest().getMethod();
 
-        return AddScoreErrorData.builder()
-                .userIdentifier(memberId)
+        return MemberScoreErrorDto.builder()
                 .httpMethod(requestMethod)
                 .requestUri(requestUri)
-                .build();
-    }
-
-    private CommonErrorData createCommonData(Exception e){
-        CommonErrorData commonErrorData = CommonErrorData.builder()
-                .serviceName("운동기록 생성시 운동점수 추가기능")
+                .userIdentifier(memberId)
+                .serviceName("ExerciseScoreCommandServiceImpl")
                 .className(ErrorLogsUtils.findClassErrorHappened(e))
+                .errorLevel(ErrorLevel.ERROR)
+                .summary("운동기록 생성시 점수가 추가되지 않았습니다.")
+                .errorOccurredAt(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS))
+                .environment(profile)
+                .stackTrace(ErrorLogsUtils.getStructuredStackTrace(e))
+                .actionGuide("에러가 발생한 클래스와, 유저 ID를 찾아서 수동으로 회원의 운동점수를 추가해 주세요!")
                 .build();
-
-
-        return commonErrorData;
     }
 
 
