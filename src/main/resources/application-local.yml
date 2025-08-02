@@ -45,3 +45,8 @@ app:
 
 cors:
   allowed-origins: http://localhost:3000
+
+firebase:
+  enabled: true
+  credentials:
+    path: "classpath:firebase/undabang-firebase-adminsdk.json"
