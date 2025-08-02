@@ -6,6 +6,7 @@ import com.slack.api.webhook.Payload;
 import com.slack.api.webhook.WebhookResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -24,6 +25,7 @@ public class SlackMessageSender implements MessageSender {
         this.webhookEnabled = webhookEnabled;
     }
 
+    @Async("slackMessageSenderExecutor")
     @Override
     public void send(String message) {
         try {
