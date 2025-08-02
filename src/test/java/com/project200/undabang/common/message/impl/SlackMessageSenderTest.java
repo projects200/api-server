@@ -2,6 +2,10 @@ package com.project200.undabang.common.message.impl;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.project200.undabang.common.message.MessageSender;
+import com.project200.undabang.exercise.repository.ExerciseRepository;
+import com.project200.undabang.policy.service.PolicyService;
+import com.project200.undabang.score.service.ExerciseScoreCommandService;
+import com.project200.undabang.score.validation.ExercisePolicyValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -11,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -29,6 +34,18 @@ class SlackMessageSenderTest {
 
     @Autowired
     private MessageSender messageSender;
+
+    @Autowired
+    private ExerciseScoreCommandService exerciseScoreCommandService;
+
+    @MockitoBean
+    private PolicyService policyService;
+
+    @MockitoBean
+    private ExerciseRepository exerciseRepository;
+
+    @MockitoBean
+    private ExercisePolicyValidator exercisePolicyValidator;
 
     // @Container: Testcontainers가 이 컨테이너의 생명주기(시작, 종료)를 관리하게 합니다.
     @Container
@@ -53,8 +70,9 @@ class SlackMessageSenderTest {
     }
 
     @Nested
-    @DisplayName("send 메서드 테스트")
+    @DisplayName("send 메서드 테스트 - slackMessageSender와 외부 HTTP 통신 테스트")
     class sendMethod {
+
         @BeforeEach
         void setUp() {
             // WireMock의 정적 클라이언트(stubFor, verify 등)가 어떤 서버를 대상으로 할지 설정합니다.
