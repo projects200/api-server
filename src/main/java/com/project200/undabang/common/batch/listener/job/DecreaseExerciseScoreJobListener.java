@@ -45,7 +45,7 @@ public class DecreaseExerciseScoreJobListener implements JobExecutionListener {
                     .errorOccurredAt(LocalDateTime.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS))
                     .stackTrace(ErrorLogsUtils.getStructuredStackTrace(throwable))
                     .environment(profile)
-                    .actionGuide("\n 알림을 통해 제공되는 에러를 확인 후, DB가 종료되었는지 확인해주세요! 만약 DB 연결 오류의 경우 application-prod.yml 파일을 수정해주세요\n")
+                    .actionGuide("\n 알림을 통해 제공되는 에러를 확인 후, DB가 종료되었는지 확인해주세요! 만약 DB 연결 오류의 경우 application.yml 파일을 수정해주세요\n")
                     .jobName(jobName)
                     .jobParameters(jobExecution.getJobParameters())
                     .status(jobExecution.getStatus().toString())

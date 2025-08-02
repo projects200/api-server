@@ -66,6 +66,7 @@ public class ExerciseScoreCommandServiceImpl implements ExerciseScoreCommandServ
             log.error("운동 기록 점수 부여 중 오류 발생. exerciseId: {}, memberId: {}",
                     exercise.getId(), exercise.getMember().getMemberId(), e);
 
+            // 슬랙 알림을 통해 개발자에게 비동기로 공지
             MemberScoreErrorDto dto = createMemberScoreErrorDto(e);
             notifyErrorToAdmin.sendMemberScoreIncreaseErrorToSlack(dto);
 
@@ -92,7 +93,7 @@ public class ExerciseScoreCommandServiceImpl implements ExerciseScoreCommandServ
                 .errorOccurredAt(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS))
                 .environment(profile)
                 .stackTrace(ErrorLogsUtils.getStructuredStackTrace(e))
-                .actionGuide("에러가 발생한 클래스와, 유저 ID를 찾아서 수동으로 회원의 운동점수를 추가해 주세요!")
+                .actionGuide("전송받은 메시지의 에러가 발생한 클래스와, 유저 ID를 참고하여 회원의 운동점수를 추가해 주세요!")
                 .build();
     }
 
