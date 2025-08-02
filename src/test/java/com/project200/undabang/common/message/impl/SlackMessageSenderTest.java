@@ -1,6 +1,7 @@
 package com.project200.undabang.common.message.impl;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.project200.undabang.common.message.MessageSender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -17,14 +18,17 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import java.util.concurrent.TimeUnit;
+
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static org.awaitility.Awaitility.await;
 
 @Testcontainers
 @SpringBootTest
 class SlackMessageSenderTest {
 
     @Autowired
-    private SlackMessageSender slackNotifierAdapter;
+    private MessageSender messageSender;
 
     // @Container: Testcontainers가 이 컨테이너의 생명주기(시작, 종료)를 관리하게 합니다.
     @Container
@@ -41,16 +45,16 @@ class SlackMessageSenderTest {
     @DynamicPropertySource
     static void overrideProperties(DynamicPropertyRegistry registry) {
         String webhookPath = "/mock/slack-webhook";
-        registry.add("notification.slack.webhook-url",
+        registry.add("slack.webhook.url",
                 () -> String.format("http://%s:%d%s", wiremockContainer.getHost(), wiremockContainer.getFirstMappedPort(), webhookPath));
-
+        registry.add("slack.webhook.enabled", () -> "true");
         // wiremockContainer.getHost() -> "localhost"
         // wiremockContainer.getFirstMappedPort() -> 매번 바뀌는 랜덤 포트
     }
 
     @Nested
-    @DisplayName("notify 메서드 테스트")
-    class NotifyMethodTest {
+    @DisplayName("send 메서드 테스트")
+    class sendMethod {
         @BeforeEach
         void setUp() {
             // WireMock의 정적 클라이언트(stubFor, verify 등)가 어떤 서버를 대상으로 할지 설정합니다.
@@ -75,12 +79,13 @@ class SlackMessageSenderTest {
 
 
             // when
-            slackNotifierAdapter.send(message);
+            messageSender.send(message);
 
             // then
-            verify(1, postRequestedFor(urlEqualTo(webhookPath))
-                    .withRequestBody(containing(message)));
-
+            await().atMost(5, TimeUnit.SECONDS).untilAsserted(
+                    () -> verify(1, postRequestedFor(urlEqualTo(webhookPath))
+                            .withRequestBody(containing(message)))
+            );
         }
 
         @Test
@@ -97,11 +102,13 @@ class SlackMessageSenderTest {
                             .withBody("error")));
 
             // when
-            slackNotifierAdapter.send(message);
+            messageSender.send(message);
 
             // then
-            verify(1, postRequestedFor(urlEqualTo(webhookPath))
-                    .withRequestBody(containing(message)));
+            await().atMost(5, TimeUnit.SECONDS).untilAsserted(
+                    () -> verify(1, postRequestedFor(urlEqualTo(webhookPath))
+                            .withRequestBody(containing(message)))
+            );
         }
     }
 }
