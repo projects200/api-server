@@ -57,6 +57,8 @@ public class SlackMessageSender implements MessageSender {
             }
         } catch (IOException e) {
             log.error("Slack 알림 전송 중 I/O 에러가 발생했습니다", e);
+        } catch (Exception e) {
+            log.error("Slack 알림 전송 중 예기치 않은 에러가 발생했습니다", e);
         }
 
     }

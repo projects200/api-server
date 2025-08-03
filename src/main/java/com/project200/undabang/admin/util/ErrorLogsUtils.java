@@ -158,8 +158,7 @@ public final class ErrorLogsUtils {
         // findClassErrorHappened 메소드와 기능이 중복되지만, 스택 트레이스를 추출하기 위해 중복사용
         for (StackTraceElement element : throwable.getStackTrace()) {
             if(element.getClassName().startsWith(PACKAGE_NAME)){
-                sb.append("\n  at \n").append(element);
-                sb.append(element).append("\n");
+                sb.append("\n  at ").append(element).append("\n");
                 lineCount++;
             }
 
@@ -172,9 +171,10 @@ public final class ErrorLogsUtils {
     }
 
     /**
-     * 최상위 Throwable을 찾는 헬퍼 메소드
-     * @param throwable
-     * @return
+     * 전달된 예외 객체의 가장 근본적인 원인(Root Cause)을 찾아 반환하는 헬퍼 메소드입니다.
+     * 
+     * @param throwable 원인 체인을 탐색할 시작 예외 객체
+     * @return 예외 체인의 가장 마지막(근본적인) 원인에 해당하는 Throwable 객체. throwable이 null이거나 추가 원인이 없으면 입력된 throwable 자체를 반환합니다.
      */
     private static Throwable getRootCause(Throwable throwable) {
         Throwable rootCause = throwable;
