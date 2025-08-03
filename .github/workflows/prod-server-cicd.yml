@@ -36,10 +36,23 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Build Gradle
+      # 1. 애플리케이션 속성 파일 설정
+      - name: Configure Application Properties
         run: |
           mkdir -p src/main/resources/
           echo ${{ secrets.APPLICATION_PROD_YML }} | base64 -d > src/main/resources/application-prod.yml
+        shell: bash
+
+      # 2. Firebase Admin SDK 설정
+      - name: Configure Firebase Admin SDK
+        run: |
+          mkdir -p src/main/resources/firebase
+          echo ${{ secrets.PROD_FIREBASE_ADMIN_SDK_JSON }} | base64 -d > src/main/resources/firebase/undabang-firebase-adminsdk.json
+        shell: bash
+
+      # 3. 모든 설정이 끝난 후 빌드 실행
+      - name: Build Gradle
+        run: |
           chmod +x gradlew
           ./gradlew build -Dspring.profiles.active=prod-docs
         shell: bash
