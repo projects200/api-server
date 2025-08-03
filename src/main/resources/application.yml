@@ -34,7 +34,13 @@ async:
       max-pool-size: 10
       queue-capacity: 25
       thread-name-prefix: "decreaseExerciseScoreBatchJobExecutor-"
+    slack-message-sender:
+      core-pool-size: 5
+      max-pool-size: 5
+      queue-capacity: 10
+      thread-name-prefix: "slackMessageSender-"
 
-notification:
-  slack:
-    enabled: false
+slack:
+  webhook:
+    url:  ""
+    enabled:  false

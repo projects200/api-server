@@ -1,6 +1,11 @@
 package com.project200.undabang.common.message.impl;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.project200.undabang.common.message.MessageSender;
+import com.project200.undabang.exercise.repository.ExerciseRepository;
+import com.project200.undabang.policy.service.PolicyService;
+import com.project200.undabang.score.service.ExerciseScoreCommandService;
+import com.project200.undabang.score.validation.ExercisePolicyValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -10,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -17,14 +23,29 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import java.util.concurrent.TimeUnit;
+
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static org.awaitility.Awaitility.await;
 
 @Testcontainers
 @SpringBootTest
 class SlackMessageSenderTest {
 
     @Autowired
-    private SlackMessageSender slackNotifierAdapter;
+    private MessageSender messageSender;
+
+    @Autowired
+    private ExerciseScoreCommandService exerciseScoreCommandService;
+
+    @MockitoBean
+    private PolicyService policyService;
+
+    @MockitoBean
+    private ExerciseRepository exerciseRepository;
+
+    @MockitoBean
+    private ExercisePolicyValidator exercisePolicyValidator;
 
     // @Container: Testcontainers가 이 컨테이너의 생명주기(시작, 종료)를 관리하게 합니다.
     @Container
@@ -41,16 +62,17 @@ class SlackMessageSenderTest {
     @DynamicPropertySource
     static void overrideProperties(DynamicPropertyRegistry registry) {
         String webhookPath = "/mock/slack-webhook";
-        registry.add("notification.slack.webhook-url",
+        registry.add("slack.webhook.url",
                 () -> String.format("http://%s:%d%s", wiremockContainer.getHost(), wiremockContainer.getFirstMappedPort(), webhookPath));
-
+        registry.add("slack.webhook.enabled", () -> "true");
         // wiremockContainer.getHost() -> "localhost"
         // wiremockContainer.getFirstMappedPort() -> 매번 바뀌는 랜덤 포트
     }
 
     @Nested
-    @DisplayName("notify 메서드 테스트")
-    class NotifyMethodTest {
+    @DisplayName("send 메서드 테스트 - slackMessageSender와 외부 HTTP 통신 테스트")
+    class sendMethod {
+
         @BeforeEach
         void setUp() {
             // WireMock의 정적 클라이언트(stubFor, verify 등)가 어떤 서버를 대상으로 할지 설정합니다.
@@ -75,12 +97,13 @@ class SlackMessageSenderTest {
 
 
             // when
-            slackNotifierAdapter.send(message);
+            messageSender.send(message);
 
             // then
-            verify(1, postRequestedFor(urlEqualTo(webhookPath))
-                    .withRequestBody(containing(message)));
-
+            await().atMost(5, TimeUnit.SECONDS).untilAsserted(
+                    () -> verify(1, postRequestedFor(urlEqualTo(webhookPath))
+                            .withRequestBody(containing(message)))
+            );
         }
 
         @Test
@@ -97,11 +120,61 @@ class SlackMessageSenderTest {
                             .withBody("error")));
 
             // when
-            slackNotifierAdapter.send(message);
+            messageSender.send(message);
 
             // then
-            verify(1, postRequestedFor(urlEqualTo(webhookPath))
-                    .withRequestBody(containing(message)));
+            await().atMost(5, TimeUnit.SECONDS).untilAsserted(
+                    () -> verify(1, postRequestedFor(urlEqualTo(webhookPath))
+                            .withRequestBody(containing(message)))
+            );
+        }
+        @Test
+        @DisplayName("Slack Webhook URL이 유효하지 않아 403 에러를 반환하면 경고 로그를 남김")
+        void slackNotifierAdapterInvalidUrlCondition() {
+            // given
+            String message = "테스트 메시지 _ 잘못된 Webhook URL";
+            String webhookPath = "/mock/slack-webhook";
+
+            // mock stub 설정 - 403 Forbidden 응답을 반환하도록 설정
+            stubFor(post(urlEqualTo(webhookPath))
+                    .willReturn(aResponse()
+                            .withStatus(403)
+                            .withHeader("Content-Type", "text/plain")
+                            .withBody("invalid_auth")));
+
+            // when
+            messageSender.send(message);
+
+            // then
+            // 비동기 호출이므로 Awaitility를 사용하여 요청이 시도되었는지 검증
+            await().atMost(5, TimeUnit.SECONDS).untilAsserted(
+                    () -> verify(1, postRequestedFor(urlEqualTo(webhookPath))
+                            .withRequestBody(containing(message)))
+            );
+        }
+
+        @Test
+        @DisplayName("Slack API 통신 중 IOException이 발생하면 에러 로그를 남긴다")
+        void slackNotifierAdapterIOExceptionCondition(){
+            // given
+            String message = "테스트 메시지 _ IOException 발생";
+            String webhookPath = "/mock/slack-webhook";
+
+            // mock stub 설정 - CONNECTION_RESET_BY_PEER Fault를 발생시켜 IOException을 유도
+            stubFor(post(urlEqualTo(webhookPath))
+                    .willReturn(aResponse()
+                            .withFault(com.github.tomakehurst.wiremock.http.Fault.CONNECTION_RESET_BY_PEER)));
+
+            // when
+            messageSender.send(message);
+
+            // then
+            // 비동기 호출이므로 Awaitility를 사용하여 요청이 시도되었는지 검증
+            // IOE 발생시 내부 재시도를 하므로 2번 호출
+            await().atMost(5, TimeUnit.SECONDS).untilAsserted(
+                    () -> verify(2, postRequestedFor(urlEqualTo(webhookPath))
+                            .withRequestBody(containing(message)))
+            );
         }
     }
 }

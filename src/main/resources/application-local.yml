@@ -28,6 +28,10 @@ spring:
         endpoint: http://localhost:4566
         path-style-access-enabled: true
 
+  batch:
+    jdbc:
+      initialize-schema: never
+
 logging:
   level:
     com.project200.undabang: debug  # 애플리케이션 로그
@@ -42,7 +46,13 @@ app:
 cors:
   allowed-origins: http://localhost:3000
 
-notification:
-  slack:
-    enabled: true
-    webhook-url: "http://localhost:7777/mock/slack-webhook"
+slack:
+  webhook:
+    url:  "http://localhost:7777/mock/slack-webhook"
+    enabled:  true
+
+
+firebase:
+  enabled: false
+  credentials:
+    path: "classpath:firebase/undabang-firebase-adminsdk.json"

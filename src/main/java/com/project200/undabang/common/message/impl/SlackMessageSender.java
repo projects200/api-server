@@ -6,6 +6,7 @@ import com.slack.api.webhook.Payload;
 import com.slack.api.webhook.WebhookResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -14,15 +15,25 @@ import java.io.IOException;
 @Component
 public class SlackMessageSender implements MessageSender {
     private static final Slack slack = Slack.getInstance();
-    private final String webhookUrl;
 
-    public SlackMessageSender(@Value("${notification.slack.webhook-url}") String webhookUrl) {
+    private final String webhookUrl;
+    private final boolean webhookEnabled;
+
+    public SlackMessageSender(@Value("${slack.webhook.url}") String webhookUrl,
+                              @Value("${slack.webhook.enabled}") boolean webhookEnabled) {
         this.webhookUrl = webhookUrl;
+        this.webhookEnabled = webhookEnabled;
     }
 
+    @Async("slackMessageSenderExecutor")
     @Override
     public void send(String message) {
         try {
+            if(!webhookEnabled){
+                log.info("슬랙 알림 기능 비활성화 상태입니다!");
+                return;
+            }
+
             Payload payload = Payload.builder()
                     .text(message)
                     .build();

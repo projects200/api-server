@@ -1,20 +1,29 @@
 package com.project200.undabang.score.service.impl;
 
+import com.project200.undabang.admin.component.NotifyErrorToAdmin;
+import com.project200.undabang.admin.entity.dto.MemberScoreErrorDto;
+import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.service.PolicyService;
 import com.project200.undabang.score.validation.ExercisePolicyValidator;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -23,6 +32,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ExerciseScoreCommandServiceImpl 테스트")
@@ -34,6 +45,8 @@ class ExerciseScoreCommandServiceImplTest {
     private PolicyService policyService;
     @Mock
     private ExercisePolicyValidator exercisePolicyValidator;
+    @Mock
+    private NotifyErrorToAdmin notifyErrorToAdmin;
 
     @InjectMocks
     private ExerciseScoreCommandServiceImpl exerciseScoreCommandService;
@@ -156,19 +169,67 @@ class ExerciseScoreCommandServiceImplTest {
             @Test
             @DisplayName("0점을 반환하고 회원의 점수는 변하지 않는다")
             void it_returns_zero_and_member_score_is_unchanged() {
-                // given
-                Member member = createMemberWithScore((byte) 50);
-                Exercise exercise = createExerciseFor(member, LocalDateTime.now());
+                setUpExceptionTestContext("/api/v1/exercise/award", "POST");
+                try(MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)){
+                    // given
+                    Member member = createMemberWithScore((byte) 50);
+                    Exercise exercise = createExerciseFor(member, LocalDateTime.now());
 
-                // PolicyService 호출 시 의도적으로 예외 발생
-                given(exercisePolicyValidator.calculateValidityEndDate()).willThrow(new IllegalStateException("Unsupported policy unit: WEEKS"));
+                    // PolicyService 호출 시 의도적으로 예외 발생
+                    given(exercisePolicyValidator.calculateValidityEndDate()).willThrow(new IllegalStateException("Unsupported policy unit: WEEKS"));
 
-                // when
-                byte earnedPoints = exerciseScoreCommandService.awardPointsForExercise(exercise);
+                    // when
+                    byte earnedPoints = exerciseScoreCommandService.awardPointsForExercise(exercise);
 
-                // then
-                assertThat(earnedPoints).isZero();
-                assertThat(member.getMemberScore()).isEqualTo((byte) 50); // 점수 변동 없음
+                    // then
+                    assertThat(earnedPoints).isZero();
+                    assertThat(member.getMemberScore()).isEqualTo((byte) 50); // 점수 변동 없음
+                } finally{
+                    RequestContextHolder.resetRequestAttributes();
+                }
+            }
+
+            @Test
+            @DisplayName("관리자에게 슬랙으로 에러 알림을 보낸다")
+            void sends_error_to_admin_using_slack(){
+                UUID memberId = UUID.randomUUID();
+                String requestUri = "/api/v1/exercise/award";
+                String requestMethod = "POST";
+
+                setUpExceptionTestContext(requestUri, requestMethod);
+
+                try (MockedStatic<UserContextHolder> userContextHolderMock = mockStatic(UserContextHolder.class)) {
+                    // given
+                    userContextHolderMock.when(UserContextHolder::getUserId).thenReturn(memberId);
+
+
+                    Member member = createMemberWithScore((byte) 50);
+                    Exercise exercise = createExerciseFor(member, LocalDateTime.now());
+                    given(exercisePolicyValidator.calculateValidityEndDate()).willThrow(new IllegalStateException("DB Connection Failed"));
+
+                    // when
+                    exerciseScoreCommandService.awardPointsForExercise(exercise);
+
+                    // then
+                    ArgumentCaptor<MemberScoreErrorDto> dtoCaptor = ArgumentCaptor.forClass(MemberScoreErrorDto.class);
+
+                    verify(notifyErrorToAdmin).sendMemberScoreIncreaseErrorToSlack(dtoCaptor.capture());
+
+                    MemberScoreErrorDto capturedDto = dtoCaptor.getValue();
+
+                    Assertions.assertThat(capturedDto.getUserIdentifier()).isEqualTo(memberId);
+                    Assertions.assertThat(capturedDto.getHttpMethod()).isEqualTo(requestMethod);
+                    Assertions.assertThat(capturedDto.getRequestUri()).isEqualTo(requestUri);
+                } finally {
+                    RequestContextHolder.resetRequestAttributes();
+                }
+            }
+
+            private void setUpExceptionTestContext(String requestUri, String requestMethod){
+                MockHttpServletRequest request = new MockHttpServletRequest();
+                request.setRequestURI(requestUri);
+                request.setMethod(requestMethod);
+                RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
             }
         }
     }

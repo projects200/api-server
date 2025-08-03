@@ -74,7 +74,20 @@ batch:
   jobs:
     chunk-size: 100
 
-notification:
-  slack:
-    enabled: false
-    webhook-url: ""
+slack:
+  webhook:
+    url:  ""
+    enabled:  true
+
+async:
+  thread-pool:
+    decrease-exercise-score:
+      core-pool-size: 10
+      max-pool-size: 10
+      queue-capacity: 25
+      thread-name-prefix: "decreaseExerciseScoreBatchJobExecutor-"
+    slack-message-sender:
+      core-pool-size: 5
+      max-pool-size: 5
+      queue-capacity: 10
+      thread-name-prefix: "slackMessageSender-"

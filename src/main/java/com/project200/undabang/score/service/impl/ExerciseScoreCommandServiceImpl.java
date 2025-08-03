@@ -1,5 +1,10 @@
 package com.project200.undabang.score.service.impl;
 
+import com.project200.undabang.admin.component.NotifyErrorToAdmin;
+import com.project200.undabang.admin.entity.dto.ErrorLevel;
+import com.project200.undabang.admin.entity.dto.MemberScoreErrorDto;
+import com.project200.undabang.admin.util.ErrorLogsUtils;
+import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
 import com.project200.undabang.member.entity.Member;
@@ -10,11 +15,16 @@ import com.project200.undabang.score.service.ExerciseScoreCommandService;
 import com.project200.undabang.score.validation.ExercisePolicyValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -25,6 +35,10 @@ public class ExerciseScoreCommandServiceImpl implements ExerciseScoreCommandServ
     private final ExerciseRepository exerciseRepository;
     private final PolicyService policyService;
     private final ExercisePolicyValidator exercisePolicyValidator;
+    private final NotifyErrorToAdmin notifyErrorToAdmin;
+
+    @Value("${spring.profiles.active}")
+    private String profile;
 
     /**
      * 운동 기록에 대한 점수 부여를 처리합니다.
@@ -51,8 +65,40 @@ public class ExerciseScoreCommandServiceImpl implements ExerciseScoreCommandServ
         } catch (Exception e) {
             log.error("운동 기록 점수 부여 중 오류 발생. exerciseId: {}, memberId: {}",
                     exercise.getId(), exercise.getMember().getMemberId(), e);
+
+            // 슬랙 알림을 통해 개발자에게 비동기로 공지
+            MemberScoreErrorDto dto = createMemberScoreErrorDto(e);
+            notifyErrorToAdmin.sendMemberScoreIncreaseErrorToSlack(dto);
+
             return 0; // 예외 발생 시 0점 반환
         }
+    }
+
+    private MemberScoreErrorDto createMemberScoreErrorDto(Exception e){
+        UUID memberId = UserContextHolder.getUserId();
+
+        // 현재 쓰레드의 Http 요청 컨텍스트에 접근할 수 있도록 RequestContextHolder 사용
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        String requestUri = attributes.getRequest().getRequestURI();
+        String requestMethod = attributes.getRequest().getMethod();
+
+        String errorClassName = ErrorLogsUtils.findClassErrorHappened(e);
+        String stackTrace = ErrorLogsUtils.getStructuredStackTrace(e);
+        String actionGuide = ErrorLogsUtils.createActionGuide(e);
+
+        return MemberScoreErrorDto.builder()
+                .httpMethod(requestMethod)
+                .requestUri(requestUri)
+                .userIdentifier(memberId)
+                .serviceName("ExerciseScoreCommandServiceImpl")
+                .className(errorClassName)
+                .errorLevel(ErrorLevel.ERROR)
+                .summary("운동기록 생성시 점수가 추가되지 않았습니다.")
+                .errorOccurredAt(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS))
+                .environment(profile)
+                .stackTrace(stackTrace)
+                .actionGuide(actionGuide)
+                .build();
     }
 
 
