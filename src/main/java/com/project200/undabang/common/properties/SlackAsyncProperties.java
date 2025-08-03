@@ -6,8 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
-@Getter
-@Setter
+@Getter @Setter
 @ConfigurationProperties("async.thread-pool.slack-message-sender")
 public class SlackAsyncProperties {
     private int corePoolSize;

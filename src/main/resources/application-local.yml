@@ -45,5 +45,4 @@ cors:
 slack:
   webhook:
     url:  "http://localhost:7777/mock/slack-webhook"
-#    url:  "https://hooks.slack.com/services/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"
     enabled:  true

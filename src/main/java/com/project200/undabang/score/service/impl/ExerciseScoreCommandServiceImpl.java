@@ -53,10 +53,6 @@ public class ExerciseScoreCommandServiceImpl implements ExerciseScoreCommandServ
         try {
             EarnablePointsInfoDto pointsInfo = checkEarnablePoints(exercise.getMember(), exercise.getExerciseStartedAt());
 
-            if(true){
-                throw new RuntimeException("고의로 테스트 발생");
-            }
-
             if (pointsInfo.isEarnable()) {
                 Member member = exercise.getMember();
                 byte minScore = policyService.getPolicyValueAsByte(PolicyKey.EXERCISE_SCORE_MIN_POINTS);

@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
-@Getter@Setter
+@Getter @Setter
 @ConfigurationProperties(prefix = "async.thread-pool.decrease-exercise-score")
 public class BatchAsyncProperties {
     private int corePoolSize;

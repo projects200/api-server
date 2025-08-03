@@ -30,7 +30,7 @@ public class SlackMessageSender implements MessageSender {
     public void send(String message) {
         try {
             if(!webhookEnabled){
-                log.info("메시지를 보내지 않는 상태입니다!");
+                log.info("슬랙 알림 기능 비활성화 상태입니다!");
                 return;
             }
 
