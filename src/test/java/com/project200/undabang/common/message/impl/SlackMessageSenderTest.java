@@ -128,5 +128,53 @@ class SlackMessageSenderTest {
                             .withRequestBody(containing(message)))
             );
         }
+        @Test
+        @DisplayName("Slack Webhook URL이 유효하지 않아 403 에러를 반환하면 경고 로그를 남김")
+        void slackNotifierAdapterInvalidUrlCondition() {
+            // given
+            String message = "테스트 메시지 _ 잘못된 Webhook URL";
+            String webhookPath = "/mock/slack-webhook";
+
+            // mock stub 설정 - 403 Forbidden 응답을 반환하도록 설정
+            stubFor(post(urlEqualTo(webhookPath))
+                    .willReturn(aResponse()
+                            .withStatus(403)
+                            .withHeader("Content-Type", "text/plain")
+                            .withBody("invalid_auth")));
+
+            // when
+            messageSender.send(message);
+
+            // then
+            // 비동기 호출이므로 Awaitility를 사용하여 요청이 시도되었는지 검증
+            await().atMost(5, TimeUnit.SECONDS).untilAsserted(
+                    () -> verify(1, postRequestedFor(urlEqualTo(webhookPath))
+                            .withRequestBody(containing(message)))
+            );
+        }
+
+        @Test
+        @DisplayName("Slack API 통신 중 IOException이 발생하면 에러 로그를 남긴다")
+        void slackNotifierAdapterIOExceptionCondition(){
+            // given
+            String message = "테스트 메시지 _ IOException 발생";
+            String webhookPath = "/mock/slack-webhook";
+
+            // mock stub 설정 - CONNECTION_RESET_BY_PEER Fault를 발생시켜 IOException을 유도
+            stubFor(post(urlEqualTo(webhookPath))
+                    .willReturn(aResponse()
+                            .withFault(com.github.tomakehurst.wiremock.http.Fault.CONNECTION_RESET_BY_PEER)));
+
+            // when
+            messageSender.send(message);
+
+            // then
+            // 비동기 호출이므로 Awaitility를 사용하여 요청이 시도되었는지 검증
+            // IOE 발생시 내부 재시도를 하므로 2번 호출
+            await().atMost(5, TimeUnit.SECONDS).untilAsserted(
+                    () -> verify(2, postRequestedFor(urlEqualTo(webhookPath))
+                            .withRequestBody(containing(message)))
+            );
+        }
     }
 }
