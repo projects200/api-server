@@ -72,10 +72,15 @@ dependencies {
     // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+
+    // Spring Boot Configuration Processor
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
     // AWS 관련
     implementation "io.awspring.cloud:spring-cloud-aws-starter-s3"    // Spring Cloud AWS S3 Starter
+
+    // firebase
+    implementation 'com.google.firebase:firebase-admin:9.5.0'
 
     // 테스트 의존성
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
