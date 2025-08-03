@@ -5,12 +5,25 @@ import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.InvalidDataAccessResourceUsageException;
 
+/**
+ * 예외 처리 및 오류 로깅과 관련된 유틸리티 메소드를 제공하는 클래스입니다.
+ * 이 클래스는 인스턴스화할 수 없도록 final 및 private 생성자로 선언되었습니다.
+ */
 public final class ErrorLogsUtils {
     private ErrorLogsUtils() {}
-    private static final String PACKAGE_NAME = "com.project200.undabang";
-    private static final int MAX_LINE_LIMIT = 3;
 
-    // 에러가 발생한 클래스명을 반환하는 유틸 메소드
+    private static final String PACKAGE_NAME = "com.project200.undabang"; // 패키지 기본 경로
+    private static final int MAX_LINE_LIMIT = 3; // 스택 트레이스에 표시할 최대 라인 수
+
+    /**
+     * 발생한 예외(Throwable)를 분석하여 오류가 시작된 애플리케이션 내부의 클래스 및 지점을 찾아 문자열로 반환합니다.
+     * 스택 트레이스를 역추적하며, 프로젝트의 기본 패키지({@value #PACKAGE_NAME}) 내에서 발생한 첫 번째 지점을 식별합니다.
+     *
+     * @param throwable 분석할 예외 객체
+     * @return {@value #PACKAGE_NAME}으로 시작하는 패키지에서 오류가 발생한 첫 번째 위치의 전체 스택 트레이스 문자열.
+     *         만약 해당 패키지 내에서 원인을 찾지 못하면 스택 트레이스의 최상단 클래스 이름을 반환합니다.
+     *         throwable이 null일 경우, "throwable 값이 없습니다." 메시지를 반환합니다.
+     */
     public static String findClassErrorHappened(Throwable throwable){
         if(throwable == null){
             return "throwable 값이 없습니다.";
@@ -27,7 +40,14 @@ public final class ErrorLogsUtils {
         return throwable.getStackTrace()[0].getClassName();
     }
 
-    // StackTrace를 호출하면서 가장 근원이 되는 에러를 개발자에게 알려주는 유틸 메소드
+    /**
+     * 예외의 근본 원인(Root Cause)과 애플리케이션 내부와 관련된 스택 트레이스를 조합하여 구조화된 오류 메시지를 생성합니다.
+     * 로그나 알림을 통해 개발자가 핵심적인 정보만 빠르게 파악할 수 있도록 돕습니다.
+     *
+     * @param throwable 분석할 예외 객체
+     * @return 예외의 근본 원인과 필터링된 스택 트레이스가 포함된 문자열.
+     *         throwable이 null일 경우, "throwable 값이 없습니다." 메시지를 반환합니다.
+     */
     public static String getStructuredStackTrace(Throwable throwable) {
         if(throwable == null){
             return "throwable 값이 없습니다.";
@@ -44,6 +64,15 @@ public final class ErrorLogsUtils {
         return sb.toString();
     }
 
+    /**
+     * 발생한 예외의 유형을 분석하여 개발자에게 해결을 위한 구체적인 조치 가이드를 생성합니다.
+     * 특히, Spring의 {@link DataAccessException} 하위 예외들을 분석하여 일반적인 데이터베이스 관련 문제에 대한 해결 방안을 제시합니다.
+     *
+     * @param throwable 분석할 예외 객체
+     * @return 예외 유형에 따른 해결 가이드 문자열.
+     *         분석 가능한 원인이 없으면 "원인을 찾을 수 없습니다" 메시지를 반환하고,
+     *         특정 가이드가 없는 예외의 경우 전체 스택 트레이스 확인을 권장하는 기본 메시지를 반환합니다.
+     */
     public static String createActionGuide(Throwable throwable) {
         Throwable analyzedCause = findCauseToAnalyze(throwable);
 
@@ -91,6 +120,13 @@ public final class ErrorLogsUtils {
         return sb.toString();
     }
 
+    /**
+     * 조치 가이드를 생성하기 위해 예외 체인을 탐색하며 분석할 원인을 찾습니다.
+     * 현재는 {@link DataAccessException}을 주요 분석 대상으로 찾으며, 필요시 다른 종류의 예외를 추가하여 확장할 수 있습니다.
+     *
+     * @param throwable 분석을 시작할 최상위 예외 객체
+     * @return 분석에 가장 적합한 원인(Cause) 예외. 특정 원인을 찾지 못하면 예외 체인의 가장 근본적인 원인(Root Cause)을 반환합니다.
+     */
     private static Throwable findCauseToAnalyze(Throwable throwable) {
         Throwable currentThrowable = throwable;
 
@@ -108,11 +144,18 @@ public final class ErrorLogsUtils {
         return getRootCause(throwable);
     }
 
-    // 전체 에러를 보내기는 에러의 양이 너무 많으므로 운다방 패키지와 관련된 부분만 추려내서 개발자에게 전달
+    /**
+     * 전체 스택 트레이스에서 {@value #PACKAGE_NAME} 패키지 경로를 포함하는 부분만 필터링하여 문자열로 반환합니다.
+     * 이는 로그가 외부 라이브러리 정보로 과도하게 채워지는 것을 방지하고, 애플리케이션 내부의 문제에 집중할 수 있도록 돕습니다.
+     *
+     * @param throwable 필터링할 스택 트레이스를 가진 예외 객체
+     * @return 필터링 및 축약된 스택 트레이스 문자열. 최대 {@value #MAX_LINE_LIMIT}개의 라인만 포함됩니다.
+     */
     private static String filteringStackTrace(Throwable throwable) {
         StringBuilder sb = new StringBuilder();
         int lineCount = 0;
 
+        // findClassErrorHappened 메소드와 기능이 중복되지만, 스택 트레이스를 추출하기 위해 중복사용
         for (StackTraceElement element : throwable.getStackTrace()) {
             if(element.getClassName().startsWith(PACKAGE_NAME)){
                 sb.append("\n  at \n").append(element);

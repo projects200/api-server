@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * NotifyErrorToAdmin 인터페이스의 구현체입니다.
- * 이 클래스는 시스템의 모든 알림 요청을 중앙에서 처리하는 '컨트롤 타워' 역할을 합니다.
+ * 이 클래스는 시스템의 모든 알림 요청을 중앙에서 처리하는 역할을 합니다.
  *
  * [설계 결정]
  * 1. 필요한 모든 Notifier(슬랙, RabbitMQ 등) 구현체를 주입받습니다.
