@@ -53,6 +53,10 @@ public class ExerciseScoreCommandServiceImpl implements ExerciseScoreCommandServ
         try {
             EarnablePointsInfoDto pointsInfo = checkEarnablePoints(exercise.getMember(), exercise.getExerciseStartedAt());
 
+            if(true){
+                throw new RuntimeException("고의로 테스트 발생");
+            }
+
             if (pointsInfo.isEarnable()) {
                 Member member = exercise.getMember();
                 byte minScore = policyService.getPolicyValueAsByte(PolicyKey.EXERCISE_SCORE_MIN_POINTS);
@@ -82,18 +86,22 @@ public class ExerciseScoreCommandServiceImpl implements ExerciseScoreCommandServ
         String requestUri = attributes.getRequest().getRequestURI();
         String requestMethod = attributes.getRequest().getMethod();
 
+        String errorClassName = ErrorLogsUtils.findClassErrorHappened(e);
+        String stackTrace = ErrorLogsUtils.getStructuredStackTrace(e);
+        String actionGuide = ErrorLogsUtils.createActionGuide(e);
+
         return MemberScoreErrorDto.builder()
                 .httpMethod(requestMethod)
                 .requestUri(requestUri)
                 .userIdentifier(memberId)
                 .serviceName("ExerciseScoreCommandServiceImpl")
-                .className(ErrorLogsUtils.findClassErrorHappened(e))
+                .className(errorClassName)
                 .errorLevel(ErrorLevel.ERROR)
                 .summary("운동기록 생성시 점수가 추가되지 않았습니다.")
                 .errorOccurredAt(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS))
                 .environment(profile)
-                .stackTrace(ErrorLogsUtils.getStructuredStackTrace(e))
-                .actionGuide("전송받은 메시지의 에러가 발생한 클래스와, 유저 ID를 참고하여 회원의 운동점수를 추가해 주세요!")
+                .stackTrace(stackTrace)
+                .actionGuide(actionGuide)
                 .build();
     }
 

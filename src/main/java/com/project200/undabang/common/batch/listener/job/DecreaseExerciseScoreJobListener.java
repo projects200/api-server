@@ -36,16 +36,19 @@ public class DecreaseExerciseScoreJobListener implements JobExecutionListener {
             log.error(">>>> {} Job 실패. 상태 : {}, 소요시간 : {} <<<< ", jobName, jobExecution.getStatus(), durationInMills);
 
             Throwable throwable = jobExecution.getAllFailureExceptions().get(0);
+            String errorClassName = ErrorLogsUtils.findClassErrorHappened(throwable);
+            String actionGuide = ErrorLogsUtils.createActionGuide(throwable);
+            String stackTrace = ErrorLogsUtils.getStructuredStackTrace(throwable);
 
             BatchErrorDto batchErrorDto = BatchErrorDto.builder()
                     .serviceName("DecreaseExerciseScoreJob")
-                    .className(ErrorLogsUtils.findClassErrorHappened(throwable))
+                    .className(errorClassName)
                     .errorLevel(ErrorLevel.ERROR)
                     .summary("배치 작업 실패 알림 입니다.")
                     .errorOccurredAt(LocalDateTime.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS))
-                    .stackTrace(ErrorLogsUtils.getStructuredStackTrace(throwable))
+                    .stackTrace(stackTrace)
                     .environment(profile)
-                    .actionGuide("\n 알림을 통해 제공되는 에러를 확인 후, DB가 종료되었는지 확인해주세요! 만약 DB 연결 오류의 경우 application.yml 파일을 수정해주세요\n")
+                    .actionGuide(actionGuide)
                     .jobName(jobName)
                     .jobParameters(jobExecution.getJobParameters())
                     .status(jobExecution.getStatus().toString())
