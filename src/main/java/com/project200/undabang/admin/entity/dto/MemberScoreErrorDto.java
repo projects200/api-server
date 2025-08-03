@@ -18,9 +18,9 @@ public class MemberScoreErrorDto extends CommonErrorDto{
 
         sb.append("*!!!!!운동기록 생성시 점수 추가 로직 오류 발생!!!!!*\n");
         sb.append("------------------------------------------\n");
-        sb.append("HTTP METHOD: ").append(this.getHttpMethod()).append("\n");
-        sb.append("REQUEST URI: ").append(this.getRequestUri()).append("\n");
-        sb.append("점수가 증가하지 않은 회원 식별자: ").append(this.getUserIdentifier()).append("\n");
+        sb.append("*HTTP METHOD*: ").append(this.getHttpMethod()).append("\n");
+        sb.append("*REQUEST URI*: ").append(this.getRequestUri()).append("\n");
+        sb.append("*점수가 증가하지 않은 회원 식별자*: \n").append(this.getUserIdentifier()).append("\n");
         sb.append("------------------------------------------\n");
         sb.append("*오류 요약*: ").append(super.getSummary()).append("\n");
         sb.append("*에러가 발생한 서비스*: ").append(super.getServiceName()).append("\n");
