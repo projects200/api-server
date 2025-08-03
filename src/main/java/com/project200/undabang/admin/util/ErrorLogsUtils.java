@@ -74,11 +74,11 @@ public final class ErrorLogsUtils {
      *         특정 가이드가 없는 예외의 경우 전체 스택 트레이스 확인을 권장하는 기본 메시지를 반환합니다.
      */
     public static String createActionGuide(Throwable throwable) {
-        Throwable analyzedCause = findCauseToAnalyze(throwable);
-
-        if(analyzedCause == null){
-            return "원인을 찾을 수 없습니다";
+        if(throwable == null){
+            return "throwable 값이 없습니다.";
         }
+
+        Throwable analyzedCause = findCauseToAnalyze(throwable);
 
         StringBuilder sb = new StringBuilder();
 
