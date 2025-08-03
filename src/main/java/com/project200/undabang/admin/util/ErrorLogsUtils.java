@@ -171,7 +171,11 @@ public final class ErrorLogsUtils {
         return sb.toString();
     }
 
-    // 최상위 원인을 찾는 헬퍼 메소드
+    /**
+     * 최상위 Throwable을 찾는 헬퍼 메소드
+     * @param throwable
+     * @return
+     */
     private static Throwable getRootCause(Throwable throwable) {
         Throwable rootCause = throwable;
         // 최상위 원인 찾기
