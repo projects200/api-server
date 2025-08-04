@@ -6,6 +6,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.project200.undabang.common.properties.FirebaseProperties;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
@@ -15,7 +16,7 @@ import java.io.InputStream;
 
 @Slf4j
 @Configuration
-//@ConditionalOnProperty(name = "firebase.enabled", havingValue = "true")
+@ConditionalOnProperty(name = "firebase.enabled", havingValue = "true")
 public class FirebaseConfig {
 
     private final FirebaseProperties firebaseProperties;
