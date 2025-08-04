@@ -63,7 +63,7 @@ public class DecreaseExerciseJobListenerTest {
             jobListener.afterJob(jobExecution);
 
             // then
-            verify(notifyErrorToAdmin, never()).sendBatchErrorToSlack(any());
+            verify(notifyErrorToAdmin, never()).sendErrorToSlackApi(any());
         }
 
         @Test
@@ -92,7 +92,7 @@ public class DecreaseExerciseJobListenerTest {
                 // then
                 ArgumentCaptor<BatchErrorDto> dtoCaptor = ArgumentCaptor.forClass(BatchErrorDto.class);
 
-                verify(notifyErrorToAdmin).sendBatchErrorToSlack(dtoCaptor.capture());
+                verify(notifyErrorToAdmin).sendErrorToSlackApi(dtoCaptor.capture());
 
                 BatchErrorDto capturedDto = dtoCaptor.getValue();
 

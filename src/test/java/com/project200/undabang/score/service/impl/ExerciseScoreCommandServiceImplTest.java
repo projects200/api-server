@@ -213,7 +213,7 @@ class ExerciseScoreCommandServiceImplTest {
                     // then
                     ArgumentCaptor<MemberScoreErrorDto> dtoCaptor = ArgumentCaptor.forClass(MemberScoreErrorDto.class);
 
-                    verify(notifyErrorToAdmin).sendMemberScoreIncreaseErrorToSlack(dtoCaptor.capture());
+                    verify(notifyErrorToAdmin).sendErrorToSlackApi(dtoCaptor.capture());
 
                     MemberScoreErrorDto capturedDto = dtoCaptor.getValue();
 

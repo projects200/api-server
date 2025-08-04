@@ -68,7 +68,7 @@ public class ExerciseScoreCommandServiceImpl implements ExerciseScoreCommandServ
 
             // 슬랙 알림을 통해 개발자에게 비동기로 공지
             MemberScoreErrorDto dto = createMemberScoreErrorDto(e);
-            notifyErrorToAdmin.sendMemberScoreIncreaseErrorToSlack(dto);
+            notifyErrorToAdmin.sendErrorToSlackApi(dto);
 
             return 0; // 예외 발생 시 0점 반환
         }

@@ -54,7 +54,7 @@ public class DecreaseExerciseScoreJobListener implements JobExecutionListener {
                     .status(jobExecution.getStatus().toString())
                     .build();
 
-            notifyErrorToAdmin.sendBatchErrorToSlack(batchErrorDto);
+            notifyErrorToAdmin.sendErrorToSlackApi(batchErrorDto);
         } else {
             log.info(">>>> {} Job 종료. 상태 : {}, 소요시간 : {} <<<< ", jobName, jobExecution.getStatus(), durationInMills);
         }

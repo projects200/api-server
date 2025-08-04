@@ -36,7 +36,7 @@ class NotifyErrorToAdminImplTest {
             String expectedMessage = dto.formattingMessage();
 
             // when
-            notifyErrorToAdmin.sendBatchErrorToSlack(dto);
+            notifyErrorToAdmin.sendErrorToSlackApi(dto);
 
             // then
             verify(messageSender).send(expectedMessage);
@@ -59,7 +59,7 @@ class NotifyErrorToAdminImplTest {
             String expectedMessage = dto.formattingMessage();
 
             // when
-            notifyErrorToAdmin.sendMemberScoreIncreaseErrorToSlack(dto);
+            notifyErrorToAdmin.sendErrorToSlackApi(dto);
 
             // then
             verify(messageSender).send(expectedMessage);
