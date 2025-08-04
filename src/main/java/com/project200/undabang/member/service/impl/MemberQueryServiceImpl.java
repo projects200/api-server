@@ -47,8 +47,8 @@ public class MemberQueryServiceImpl implements MemberQueryService {
         return MemberScoreResponseDto.builder()
                 .memberId(member.getMemberId())
                 .memberScore(member.getMemberScore())
-                .maxScore(maxScore)
-                .minScore(minScore)
+                .exerciseScoreMaxPoints(maxScore)
+                .exerciseScoreMinPoints(minScore)
                 .build();
     }
 
