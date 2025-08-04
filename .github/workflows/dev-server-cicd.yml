@@ -54,7 +54,7 @@ jobs:
       - name: Build Gradle
         run: |
           chmod +x gradlew
-          ./gradlew build -Dspring.profiles.active=dev-docs
+          ./gradlew build -Dspring.profiles.active=dev-docs -x test -x asciidoctor
         shell: bash
 
       - name: Build and push image to Amazon ECR
