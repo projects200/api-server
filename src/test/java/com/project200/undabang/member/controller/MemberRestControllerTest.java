@@ -81,7 +81,7 @@ class MemberRestControllerTest extends AbstractRestDocSupport {
         BDDMockito.given(memberQueryService.getMemberScore()).willThrow(new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
         // when
-        this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/members/score")
+        String response = this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/members/score")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .headers(getCommonApiHeaders(testMemberId)))
