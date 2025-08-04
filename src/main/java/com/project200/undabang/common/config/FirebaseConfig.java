@@ -34,6 +34,8 @@ public class FirebaseConfig {
     public FirebaseMessaging firebaseMessaging() throws IOException {
         log.info("FCM 설정을 초기화합니다. (firebase.enabled=true)");
 
+        System.exit(1);
+
         String path = firebaseProperties.credentials().path();
         if (path == null || path.isBlank()) {
             throw new IOException("FCM 초기화 오류: 'firebase.credentials.path' 속성이 설정되지 않았습니다.");
