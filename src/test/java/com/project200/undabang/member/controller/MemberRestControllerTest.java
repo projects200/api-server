@@ -45,8 +45,8 @@ class MemberRestControllerTest extends AbstractRestDocSupport {
         MemberScoreResponseDto respDto = MemberScoreResponseDto.builder()
                 .memberId(testMemberId)
                 .memberScore(expectedScore)
-                .exerciseScoreMaxPoints(exerciseScoreMaxPoints)
-                .exerciseScoreMinPoints(exerciseScoreMinPoints)
+                .policyMaxScore(exerciseScoreMaxPoints)
+                .policyMinScore(exerciseScoreMinPoints)
                 .build();
 
         BDDMockito.given(memberQueryService.getMemberScore()).willReturn(respDto);
@@ -61,8 +61,8 @@ class MemberRestControllerTest extends AbstractRestDocSupport {
                                 responseFields(commonResponseFields(
                                         fieldWithPath("data.memberId").type(JsonFieldType.STRING).description("회원 식별자"),
                                         fieldWithPath("data.memberScore").type(JsonFieldType.NUMBER).description("회원 점수"),
-                                        fieldWithPath("data.exerciseScoreMaxPoints").type(JsonFieldType.NUMBER).description("회원이 가질 수 있는 최대 점수"),
-                                        fieldWithPath("data.exerciseScoreMinPoints").type(JsonFieldType.NUMBER).description("회원이 가질 수 있는 최소 점수")
+                                        fieldWithPath("data.policyMaxScore").type(JsonFieldType.NUMBER).description("회원이 가질 수 있는 최대 점수"),
+                                        fieldWithPath("data.policyMinScore").type(JsonFieldType.NUMBER).description("회원이 가질 수 있는 최소 점수")
                                 ))
                 )).andReturn().getResponse().getContentAsString();
 

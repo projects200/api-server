@@ -106,8 +106,8 @@ class MemberQueryServiceImplTest {
                 Assertions.assertThat(respDto).isNotNull();
                 Assertions.assertThat(respDto.getMemberScore()).isEqualTo(testMember.getMemberScore());
                 Assertions.assertThat(respDto.getMemberId()).isEqualTo(testMemberId);
-                Assertions.assertThat(respDto.getExerciseScoreMaxPoints()).isEqualTo(100);
-                Assertions.assertThat(respDto.getExerciseScoreMinPoints()).isEqualTo(0);
+                Assertions.assertThat(respDto.getPolicyMaxScore()).isEqualTo(100);
+                Assertions.assertThat(respDto.getPolicyMinScore()).isEqualTo(0);
 
                 then(memberRepository).should(times(1)).findByMemberIdAndMemberDeletedAtNull(testMemberId);
             }
@@ -132,8 +132,8 @@ class MemberQueryServiceImplTest {
                 Assertions.assertThat(respDto).isNotNull();
                 Assertions.assertThat(respDto.getMemberScore()).isEqualTo((byte)35);
                 Assertions.assertThat(respDto.getMemberId()).isEqualTo(testMemberId);
-                Assertions.assertThat(respDto.getExerciseScoreMaxPoints()).isEqualTo(100);
-                Assertions.assertThat(respDto.getExerciseScoreMinPoints()).isEqualTo(0);
+                Assertions.assertThat(respDto.getPolicyMaxScore()).isEqualTo(100);
+                Assertions.assertThat(respDto.getPolicyMinScore()).isEqualTo(0);
 
                 then(memberRepository).should(times(1)).findByMemberIdAndMemberDeletedAtNull(testMemberId);
             }

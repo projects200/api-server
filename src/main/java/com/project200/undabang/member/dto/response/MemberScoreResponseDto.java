@@ -14,6 +14,6 @@ import java.util.UUID;
 public class MemberScoreResponseDto {
     private UUID memberId;
     private byte memberScore;
-    private int exerciseScoreMaxPoints;
-    private int exerciseScoreMinPoints;
+    private int policyMaxScore;
+    private int policyMinScore;
 }
