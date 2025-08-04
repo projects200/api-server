@@ -7,6 +7,8 @@ import com.project200.undabang.member.dto.response.MemberRegistrationStatusRespo
 import com.project200.undabang.member.dto.response.MemberScoreResponseDto;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
+import com.project200.undabang.policy.entity.PolicyKey;
+import com.project200.undabang.policy.service.PolicyService;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -34,6 +36,9 @@ class MemberQueryServiceImplTest {
 
     @Mock
     private MemberRepository memberRepository;
+
+    @Mock
+    private PolicyService policyService;
 
     /**
      * 등록된 회원의 상태를 확인하는 테스트
@@ -85,20 +90,24 @@ class MemberQueryServiceImplTest {
         @Test
         @DisplayName("회원의 운동점수 기록 조회")
         void findMemberExerciseScore(){
-            UUID testMemberId = UUID.randomUUID();
-            Byte expectedScore = 50;
-            Member testMember = Member.builder().memberId(testMemberId).memberScore(expectedScore).build();
+            Member testMember = createMember();
+            UUID testMemberId = testMember.getMemberId();
 
             try (MockedStatic<UserContextHolder> ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
                 // given
                 given(UserContextHolder.getUserId()).willReturn(testMemberId);
                 given(memberRepository.findByMemberIdAndMemberDeletedAtNull(testMemberId)).willReturn(Optional.of(testMember));
+                given(policyService.getPolicyValueAsInt(PolicyKey.EXERCISE_SCORE_MAX_POINTS)).willReturn(100);
+                given(policyService.getPolicyValueAsInt(PolicyKey.EXERCISE_SCORE_MIN_POINTS)).willReturn(0);
 
                 MemberScoreResponseDto respDto = memberQueryService.getMemberScore();
 
+
                 Assertions.assertThat(respDto).isNotNull();
-                Assertions.assertThat(respDto.getMemberScore()).isEqualTo(expectedScore);
+                Assertions.assertThat(respDto.getMemberScore()).isEqualTo(testMember.getMemberScore());
                 Assertions.assertThat(respDto.getMemberId()).isEqualTo(testMemberId);
+                Assertions.assertThat(respDto.getMaxScore()).isEqualTo(100);
+                Assertions.assertThat(respDto.getMinScore()).isEqualTo(0);
 
                 then(memberRepository).should(times(1)).findByMemberIdAndMemberDeletedAtNull(testMemberId);
             }
@@ -115,12 +124,16 @@ class MemberQueryServiceImplTest {
                 // given
                 given(UserContextHolder.getUserId()).willReturn(testMemberId);
                 given(memberRepository.findByMemberIdAndMemberDeletedAtNull(testMemberId)).willReturn(Optional.of(testMember));
+                given(policyService.getPolicyValueAsInt(PolicyKey.EXERCISE_SCORE_MAX_POINTS)).willReturn(100);
+                given(policyService.getPolicyValueAsInt(PolicyKey.EXERCISE_SCORE_MIN_POINTS)).willReturn(0);
 
                 MemberScoreResponseDto respDto = memberQueryService.getMemberScore();
 
                 Assertions.assertThat(respDto).isNotNull();
                 Assertions.assertThat(respDto.getMemberScore()).isEqualTo((byte)35);
                 Assertions.assertThat(respDto.getMemberId()).isEqualTo(testMemberId);
+                Assertions.assertThat(respDto.getMaxScore()).isEqualTo(100);
+                Assertions.assertThat(respDto.getMinScore()).isEqualTo(0);
 
                 then(memberRepository).should(times(1)).findByMemberIdAndMemberDeletedAtNull(testMemberId);
             }
@@ -141,6 +154,13 @@ class MemberQueryServiceImplTest {
 
                 then(memberRepository).should(times(1)).findByMemberIdAndMemberDeletedAtNull(testMemberId);
             }
+        }
+
+        private Member createMember(){
+            return Member.builder()
+                    .memberId(UUID.randomUUID())
+                    .memberScore((byte) 50)
+                    .build();
         }
     }
 }

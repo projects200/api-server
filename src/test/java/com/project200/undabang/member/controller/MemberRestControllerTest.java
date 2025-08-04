@@ -39,10 +39,14 @@ class MemberRestControllerTest extends AbstractRestDocSupport {
         // given
         UUID testMemberId = UUID.randomUUID();
         Byte expectedScore = 55;
+        int maxScore = 100;
+        int minScore = 0;
 
         MemberScoreResponseDto respDto = MemberScoreResponseDto.builder()
                 .memberId(testMemberId)
                 .memberScore(expectedScore)
+                .maxScore(maxScore)
+                .minScore(minScore)
                 .build();
 
         BDDMockito.given(memberQueryService.getMemberScore()).willReturn(respDto);
@@ -56,7 +60,9 @@ class MemberRestControllerTest extends AbstractRestDocSupport {
                                 requestHeaders(HEADER_ACCESS_TOKEN),
                                 responseFields(commonResponseFields(
                                         fieldWithPath("data.memberId").type(JsonFieldType.STRING).description("회원 식별자"),
-                                        fieldWithPath("data.memberScore").type(JsonFieldType.NUMBER).description("회원 점수")
+                                        fieldWithPath("data.memberScore").type(JsonFieldType.NUMBER).description("회원 점수"),
+                                        fieldWithPath("data.maxScore").type(JsonFieldType.NUMBER).description("회원이 가질 수 있는 최대 점수"),
+                                        fieldWithPath("data.minScore").type(JsonFieldType.NUMBER).description("회원이 가질 수 있는 최소 점수")
                                 ))
                 )).andReturn().getResponse().getContentAsString();
 
@@ -71,12 +77,11 @@ class MemberRestControllerTest extends AbstractRestDocSupport {
     void getMemberScore_Failed() throws Exception{
         // given
         UUID testMemberId = UUID.randomUUID();
-        Byte expectedScore = 55;
 
         BDDMockito.given(memberQueryService.getMemberScore()).willThrow(new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
         // when
-        String response = this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/members/score")
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/members/score")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .headers(getCommonApiHeaders(testMemberId)))
