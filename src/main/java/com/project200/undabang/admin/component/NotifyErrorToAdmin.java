@@ -8,8 +8,5 @@ import com.project200.undabang.admin.entity.dto.CommonErrorDto;
  * 이를 통해 비즈니스 로직과 알림 인프라 기술 간의 결합도를 낮춥니다.
  */
 public interface NotifyErrorToAdmin {
-//    void sendBatchErrorToSlack(BatchErrorDto dto);
-//    void sendMemberScoreIncreaseErrorToSlack(MemberScoreErrorDto dto);
-
     void sendErrorToSlackApi(CommonErrorDto dto);
 }

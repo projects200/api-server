@@ -23,18 +23,6 @@ import org.springframework.stereotype.Component;
 public class NotifyErrorToAdminImpl implements NotifyErrorToAdmin {
     private final MessageSender slackMessageSender;
 
-//    // 배치 작업중 에러가 발생하는 경우 슬랙을 사용해 알림을 보내는 메소드 입니다.
-//    @Override
-//    public void sendBatchErrorToSlack(BatchErrorDto dto) {
-//        slackMessageSender.send(dto.formattingMessage());
-//    }
-//
-//    // 운동 기록 생성중 에러가 발생하여 점수 추가 로직이 실패했을 시, 슬랙을 사용해 알림을 보내는 메소드 입니다.
-//    @Override
-//    public void sendMemberScoreIncreaseErrorToSlack(MemberScoreErrorDto dto) {
-//        slackMessageSender.send(dto.formattingMessage());
-//    }
-
     // CommonErrorDto 를 상속받는 DTO 들이 Slack API에 에러 알림을 보낼 때 사용하는 메소드입니다.
     @Override
     public void sendErrorToSlackApi(CommonErrorDto dto) {
