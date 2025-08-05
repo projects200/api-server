@@ -261,3 +261,4 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/git,windows,macos,java,intellij
+/src/main/resources/firebase/undabang-firebase-adminsdk.json

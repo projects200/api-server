@@ -8,6 +8,8 @@ import com.project200.undabang.member.dto.response.MemberScoreResponseDto;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.member.service.MemberQueryService;
+import com.project200.undabang.policy.entity.PolicyKey;
+import com.project200.undabang.policy.service.PolicyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +22,8 @@ import java.util.UUID;
 public class MemberQueryServiceImpl implements MemberQueryService {
 
     private final MemberRepository memberRepository;
+
+    private final PolicyService policyService;
 
     @Override
     public MemberRegistrationStatusResponseDto getRegistrationStatus() {
@@ -37,10 +41,14 @@ public class MemberQueryServiceImpl implements MemberQueryService {
     @Override
     public MemberScoreResponseDto getMemberScore() {
         Member member = findMemberById();
+        int maxScore = policyService.getPolicyValueAsInt(PolicyKey.EXERCISE_SCORE_MAX_POINTS);
+        int minScore = policyService.getPolicyValueAsInt(PolicyKey.EXERCISE_SCORE_MIN_POINTS);
 
         return MemberScoreResponseDto.builder()
                 .memberId(member.getMemberId())
                 .memberScore(member.getMemberScore())
+                .policyMaxScore(maxScore)
+                .policyMinScore(minScore)
                 .build();
     }
 
