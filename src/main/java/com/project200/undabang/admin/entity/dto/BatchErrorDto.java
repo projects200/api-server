@@ -1,10 +1,13 @@
 package com.project200.undabang.admin.entity.dto;
 
+import com.project200.undabang.admin.util.ErrorLogsUtils;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
+import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobParameter;
 import org.springframework.batch.core.JobParameters;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @Getter
@@ -42,5 +45,25 @@ public class BatchErrorDto extends CommonErrorDto{
         }
 
         return sb.toString();
+    }
+
+    public static BatchErrorDto of(Throwable throwable, String serviceName, ErrorLevel errorLevel, String summary, String environment, JobExecution jobExecution){
+        String errorClassName = ErrorLogsUtils.findClassErrorHappened(throwable);
+        String actionGuide = ErrorLogsUtils.createActionGuide(throwable);
+        String stackTrace = ErrorLogsUtils.getStructuredStackTrace(throwable);
+
+        return BatchErrorDto.builder()
+                .serviceName(serviceName)
+                .className(errorClassName)
+                .errorLevel(errorLevel)
+                .summary(summary)
+                .errorOccurredAt(LocalDateTime.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS))
+                .stackTrace(stackTrace)
+                .environment(environment)
+                .actionGuide(actionGuide)
+                .jobName(jobExecution.getJobInstance().getJobName())
+                .jobParameters(jobExecution.getJobParameters())
+                .status(jobExecution.getStatus().toString())
+                .build();
     }
 }

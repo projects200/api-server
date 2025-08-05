@@ -1,8 +1,14 @@
 package com.project200.undabang.admin.entity.dto;
 
+import com.project200.undabang.admin.util.ErrorLogsUtils;
+import com.project200.undabang.common.context.UserContextHolder;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Getter
@@ -26,5 +32,31 @@ public class MemberScoreErrorDto extends CommonErrorDto{
         sb.append("*점수가 증가하지 않은 회원 식별자*: \n").append(this.getUserIdentifier()).append("\n");
 
         return sb.toString();
+    }
+
+    public static MemberScoreErrorDto of(Throwable throwable, String serviceName, ErrorLevel errorLevel, String summary, String environment){
+        UUID memberId = UserContextHolder.getUserId();
+
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        String requestUri = attributes.getRequest().getRequestURI();
+        String requestMethod = attributes.getRequest().getMethod();
+
+        String errorClassName = ErrorLogsUtils.findClassErrorHappened(throwable);
+        String stackTrace = ErrorLogsUtils.getStructuredStackTrace(throwable);
+        String actionGuide = ErrorLogsUtils.createActionGuide(throwable);
+
+        return MemberScoreErrorDto.builder()
+                .httpMethod(requestMethod)
+                .requestUri(requestUri)
+                .userIdentifier(memberId)
+                .serviceName(serviceName)
+                .className(errorClassName)
+                .errorLevel(errorLevel)
+                .summary(summary)
+                .errorOccurredAt(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS))
+                .environment(environment)
+                .stackTrace(stackTrace)
+                .actionGuide(actionGuide)
+                .build();
     }
 }

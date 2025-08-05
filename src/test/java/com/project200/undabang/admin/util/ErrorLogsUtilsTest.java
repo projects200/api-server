@@ -11,17 +11,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ErrorLogsUtilsTest {
 
-    // 테스트용 예외를 생성하는 헬퍼 메소드
-    private Exception createExceptionFromInsidePackage() {
-        // 이 테스트 클래스는 com.project200.undabang 패키지 내에 있으므로,
-        // 여기서 발생한 예외는 findClassErrorHappened 메소드의 탐지 대상이 됩니다.
-        try {
-            throw new IllegalStateException("테스트 예외 발생");
-        } catch (IllegalStateException e) {
-            return e;
-        }
-    }
-
     @Nested
     @DisplayName("findClassErrorHappened 메소드 테스트")
     class FindClassErrorHappenedTest{
@@ -168,6 +157,17 @@ class ErrorLogsUtilsTest {
 
             // then
             assertEquals("throwable 값이 없습니다.", result);
+        }
+    }
+
+    // 테스트용 예외를 생성하는 헬퍼 메소드
+    private Exception createExceptionFromInsidePackage() {
+        // 이 테스트 클래스는 com.project200.undabang 패키지 내에 있으므로,
+        // 여기서 발생한 예외는 findClassErrorHappened 메소드의 탐지 대상이 됩니다.
+        try {
+            throw new IllegalStateException("테스트 예외 발생");
+        } catch (IllegalStateException e) {
+            return e;
         }
     }
 }
