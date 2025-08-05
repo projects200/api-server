@@ -16,8 +16,8 @@ CONTAINER_NAME="server-dev"
 WORKING_DIR="/home/ec2-user/deploy/dev/zip"
 
 # 3. 작업 디렉토리가 존재하는지 확인하고, 없으면 생성 후 이동 (안정성 확보)
-mkdir -p $WORKING_DIR
-cd $WORKING_DIR
+mkdir -p "$WORKING_DIR"
+cd "$WORKING_DIR"
 
 echo "### 배포 시작: $(date)"
 
@@ -27,17 +27,17 @@ docker-compose down
 
 # 4. ECR에 명시적으로 로그인 (권한 문제 방지)
 echo "--> 2/6: AWS ECR 강제 로그인"
-aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin $ECR_REGISTRY
+aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin "$ECR_REGISTRY"
 
 # 5. 기존 'latest' 태그 이미지를 강제로 삭제 (보이지 않는 캐시 문제 해결)
 echo "--> 3/6: 로컬의 기존 'dev:latest' 이미지를 강제로 삭제"
 # || true : 이미지가 없어서 오류가 나도 스크립트가 중단되지 않도록 함
-docker rmi -f $IMAGE_NAME || true
+docker rmi -f "$IMAGE_NAME" || true
 
 # 6. 최신 이미지를 강제로 pull
 echo "--> 4/6: ECR에서 최신 'dev' 이미지를 강제로 pull"
 # 디스크 공간도 있고, 옛날 이미지도 없어서 무조건 새로 받음
-docker pull $IMAGE_NAME
+docker pull "$IMAGE_NAME"
 
 # 7. 최신 이미지로 서비스 시작
 echo "--> 5/6: 새로운 이미지로 'dev' 컨테이너 강제 재생성"
