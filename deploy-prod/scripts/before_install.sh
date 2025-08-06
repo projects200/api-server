@@ -12,8 +12,12 @@ aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS
 
 # 오래된 이미지 정리 (최신 2개 버전만 유지)
 #	CreatedAt 기준 정렬, 최신 2개 이미지를 제외, 나머지를 강제로 삭제
-echo "Cleaning up old Docker images..."
-docker images --format "{{.Repository}}:{{.Tag}} {{.CreatedAt}}" | grep "${ECR_REPOSITORY}" | sort -k2 | head -n -2 | awk '{print $1}' | xargs -r docker rmi -f
+#echo "Cleaning up old Docker images..."
+#docker images --format "{{.Repository}}:{{.Tag}} {{.CreatedAt}}" | grep "${ECR_REPOSITORY}" | sort -k2 | head -n -2 | awk '{print $1}' | xargs -r docker rmi -f
+
+# 사용하지 않는 모든 도커 이미지 정리 (디스크 용량 문제 근본 해결)
+echo "불필요한 이미지 정리"
+docker image prune -af
 
 echo "Cleaning up any orphaned 'server-prod-sub' container from previous (possibly failed) deployments..."
 # MAIN_PORT, SUB_PORT 등을 export하여 docker-compose가 변수를 인식하도록 함
