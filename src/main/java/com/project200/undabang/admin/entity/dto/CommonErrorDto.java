@@ -1,12 +1,11 @@
 package com.project200.undabang.admin.entity.dto;
 
+import com.project200.undabang.admin.util.ErrorLogsUtils;
 import lombok.Getter;
-import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 
 @Getter
-@SuperBuilder
 public abstract class CommonErrorDto {
     protected String serviceName; // 에러가 나는 서비스 이름
     protected String className; // 에러가 발생한 클래스 이름
@@ -16,6 +15,17 @@ public abstract class CommonErrorDto {
     protected String stackTrace; // 예외 발생 지점
     protected String environment; // 오류 발생 환경
     protected String actionGuide; // 개발자가 취해야할 조치 가이드 및 관련 문서 링크
+
+    protected CommonErrorDto(Throwable throwable, String serviceName, ErrorLevel errorLevel, String summary, String environment){
+        this.serviceName = serviceName;
+        this.errorLevel = errorLevel;
+        this.summary = summary;
+        this.errorOccurredAt = LocalDateTime.now();
+        this.environment = environment;
+        this.className = ErrorLogsUtils.findClassErrorHappened(throwable);
+        this.stackTrace = ErrorLogsUtils.getStructuredStackTrace(throwable);
+        this.actionGuide = ErrorLogsUtils.createActionGuide(throwable);
+    }
 
     public String formattingMessage(){
         StringBuilder sb = new StringBuilder();
