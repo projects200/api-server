@@ -12,7 +12,7 @@ import java.util.Map;
 
 @Getter
 @SuperBuilder
-public class BatchErrorDto extends CommonErrorDto{
+public class BatchErrorDto extends CommonErrorDto {
     private String jobName;
     private JobParameters jobParameters;
     private String status;
@@ -33,8 +33,8 @@ public class BatchErrorDto extends CommonErrorDto{
         return sb.toString();
     }
 
-    private String jobParametersToString(JobParameters jobParameters){
-        if(jobParameters == null || jobParameters.isEmpty()){
+    private String jobParametersToString(JobParameters jobParameters) {
+        if (jobParameters == null || jobParameters.isEmpty()){
             return "no parameters arrived";
         }
 
@@ -47,7 +47,7 @@ public class BatchErrorDto extends CommonErrorDto{
         return sb.toString();
     }
 
-    public static BatchErrorDto of(Throwable throwable, String serviceName, ErrorLevel errorLevel, String summary, String environment, JobExecution jobExecution){
+    public static BatchErrorDto of(Throwable throwable, String serviceName, ErrorLevel errorLevel, String summary, String environment, JobExecution jobExecution) {
         String errorClassName = ErrorLogsUtils.findClassErrorHappened(throwable);
         String actionGuide = ErrorLogsUtils.createActionGuide(throwable);
         String stackTrace = ErrorLogsUtils.getStructuredStackTrace(throwable);
