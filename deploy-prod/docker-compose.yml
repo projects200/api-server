@@ -7,7 +7,7 @@ services:
     ports:
       - "8080:8080"
     networks:
-      - server-network
+      - prod-server-network
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/system-monitor/health" ]
       interval: 10s
