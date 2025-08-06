@@ -11,5 +11,5 @@ services:
       - dev-server-network
 
 networks:
-  server-network:
+  dev-server-network:
     driver: bridge
