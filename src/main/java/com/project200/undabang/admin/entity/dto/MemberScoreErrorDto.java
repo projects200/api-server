@@ -13,7 +13,7 @@ public class MemberScoreErrorDto extends CommonErrorDto{
     private String httpMethod; // HTTP METHOD
     private UUID userIdentifier; // 유저 식별자 UUID
 
-    public MemberScoreErrorDto(Throwable throwable, String serviceName,  ErrorLevel errorLevel, String summary, String environment, String requestUri, String httpMethod, UUID userIdentifier) {
+    private MemberScoreErrorDto(Throwable throwable, String serviceName,  ErrorLevel errorLevel, String summary, String environment, String requestUri, String httpMethod, UUID userIdentifier) {
         super(throwable, serviceName, errorLevel, summary, environment);
         this.requestUri = requestUri;
         this.httpMethod = httpMethod;
