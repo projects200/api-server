@@ -13,7 +13,7 @@ public class BatchErrorDto extends CommonErrorDto {
     private JobParameters jobParameters;
     private String status;
 
-    private BatchErrorDto(Throwable throwable, String serviceName, ErrorLevel errorLevel, String summary, String environment, String jobName, JobParameters jobParameters, String status) {
+    public BatchErrorDto(Throwable throwable, String serviceName, ErrorLevel errorLevel, String summary, String environment, String jobName, JobParameters jobParameters, String status) {
         super(throwable, serviceName, errorLevel, summary, environment);
         this.jobName = jobName;
         this.jobParameters = jobParameters;
