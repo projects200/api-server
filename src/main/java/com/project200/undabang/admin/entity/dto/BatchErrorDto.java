@@ -13,11 +13,11 @@ public class BatchErrorDto extends CommonErrorDto {
     private JobParameters jobParameters;
     private String status;
 
-    public BatchErrorDto(Throwable throwable, String serviceName, ErrorLevel errorLevel, String summary, String environment, JobExecution jobExecution){
+    private BatchErrorDto(Throwable throwable, String serviceName, ErrorLevel errorLevel, String summary, String environment, String jobName, JobParameters jobParameters, String status) {
         super(throwable, serviceName, errorLevel, summary, environment);
-        this.jobName = jobExecution.getJobInstance().getJobName();
-        this.jobParameters = jobExecution.getJobParameters();
-        this.status = jobExecution.getStatus().toString();
+        this.jobName = jobName;
+        this.jobParameters = jobParameters;
+        this.status = status;
     }
 
 
@@ -52,6 +52,10 @@ public class BatchErrorDto extends CommonErrorDto {
     }
 
     public static BatchErrorDto of(Throwable throwable, String serviceName, ErrorLevel errorLevel, String summary, String environment, JobExecution jobExecution) {
-        return new BatchErrorDto(throwable, serviceName, errorLevel, summary, environment, jobExecution);
+        String jobName = jobExecution.getJobInstance().getJobName();
+        JobParameters jobParameters = jobExecution.getJobParameters();
+        String status = jobExecution.getStatus().toString();
+
+        return new BatchErrorDto(throwable, serviceName, errorLevel, summary, environment, jobName, jobParameters, status);
     }
 }
