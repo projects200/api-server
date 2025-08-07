@@ -34,7 +34,7 @@ class DecreaseExerciseScoreBatchSchedulerTest {
 
     @Test
     @DisplayName("스케줄러가 실행되면 JobLauncher 의 run 메소드를 올바른 파라미터와 함께 호출해야 함")
-    void runDecreaseExerciseScoreJob() {
+    void runDecreaseExerciseScoreJob() throws Exception{
         // given && when
         scheduler.runDecreaseExerciseScoreJob();
 

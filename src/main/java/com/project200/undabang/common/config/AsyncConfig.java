@@ -1,6 +1,7 @@
 package com.project200.undabang.common.config;
 
-import com.project200.undabang.common.properties.AsyncProperties;
+import com.project200.undabang.common.properties.BatchAsyncProperties;
+import com.project200.undabang.common.properties.SlackAsyncProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,7 +26,8 @@ import java.util.concurrent.Executor;
 @EnableAsync
 @RequiredArgsConstructor
 public class AsyncConfig {
-    private final AsyncProperties asyncProperties;
+    private final BatchAsyncProperties batchAsyncProperties;
+    private final SlackAsyncProperties slackAsyncProperties;
 
     /**
      * '운동 점수 감소' 배치 잡을 위한 전용 스레드 풀 Executor를 생성하여 빈으로 등록합니다.
@@ -35,12 +37,27 @@ public class AsyncConfig {
      */
     @Bean(name = "decreaseExerciseScoreBatchJobExecutor")
     public Executor decreaseExerciseScoreBatchJobExecutor(){
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(asyncProperties.getCorePoolSize()); // 핵심 쓰레드 수
-        executor.setMaxPoolSize(asyncProperties.getMaxPoolSize()); // 최대 쓰레드 수
-        executor.setQueueCapacity(asyncProperties.getQueueCapacity());
-        executor.setThreadNamePrefix(asyncProperties.getThreadNamePrefix()); // 쓰레드 이름 접두사
-        executor.initialize();
-        return executor;
+        ThreadPoolTaskExecutor batchAsyncExecutor = new ThreadPoolTaskExecutor();
+        batchAsyncExecutor.setCorePoolSize(batchAsyncProperties.getCorePoolSize()); // 핵심 쓰레드 수
+        batchAsyncExecutor.setMaxPoolSize(batchAsyncProperties.getMaxPoolSize()); // 최대 쓰레드 수
+        batchAsyncExecutor.setQueueCapacity(batchAsyncProperties.getQueueCapacity());
+        batchAsyncExecutor.setThreadNamePrefix(batchAsyncProperties.getThreadNamePrefix()); // 쓰레드 이름 접두사
+        batchAsyncExecutor.initialize();
+        return batchAsyncExecutor;
+    }
+
+    /**
+     * Slack 메시지 알림을 비동기로 전송하기 위해 전용 쓰레드풀을 생성하여 빈으로 등록합니다.
+     * 따라서 메시지 전송이 다른 비동기 작업에 영향을 주지 않고 독립된 쓰레드에서 실행되도록 보장합니다.
+     */
+    @Bean(name = "slackMessageSenderExecutor")
+    public Executor slackMessageSenderExecutor(){
+        ThreadPoolTaskExecutor slackAsyncExecutor = new ThreadPoolTaskExecutor();
+        slackAsyncExecutor.setCorePoolSize(slackAsyncProperties.getCorePoolSize()); // 핵심 쓰레드 수
+        slackAsyncExecutor.setMaxPoolSize(slackAsyncProperties.getMaxPoolSize()); // 최대 쓰레드 수
+        slackAsyncExecutor.setQueueCapacity(slackAsyncProperties.getQueueCapacity());
+        slackAsyncExecutor.setThreadNamePrefix(slackAsyncProperties.getThreadNamePrefix()); // 쓰레드 이름 접두사
+        slackAsyncExecutor.initialize();
+        return slackAsyncExecutor;
     }
 }

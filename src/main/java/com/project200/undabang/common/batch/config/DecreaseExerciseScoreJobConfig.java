@@ -53,6 +53,7 @@ public class DecreaseExerciseScoreJobConfig {
         return new JobBuilder("decreaseExerciseScoreJob", jobRepository)
                 .listener(decreaseExerciseScoreJobListener)
                 .start(decreaseExerciseScoreStep())
+                .preventRestart() // Job 재시작 방지
                 .build();
     }
 

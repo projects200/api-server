@@ -37,17 +37,13 @@ public class DecreaseExerciseScoreBatchScheduler {
      */
     @Async("decreaseExerciseScoreBatchJobExecutor")
     @Scheduled(cron = "0 0 3 * * ?")
-    public void runDecreaseExerciseScoreJob() {
+    public void runDecreaseExerciseScoreJob() throws Exception {
         log.info("운동 점수 감소 배치 Job Scheduler 진행");
 
-        try{
-            JobParameters jobParameters = new JobParametersBuilder()
-                    .addString("runDate", LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
-                    .toJobParameters();
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addString("runDate", LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                .toJobParameters();
 
-            jobLauncher.run(decreaseExerciseScoreJob, jobParameters);
-        }catch (Exception e){
-            log.error("운동 점수 감소 배치 Job 실행 중 오류 발생", e);
-        }
+        jobLauncher.run(decreaseExerciseScoreJob, jobParameters);
     }
 }
