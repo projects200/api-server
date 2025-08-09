@@ -13,10 +13,10 @@ drop table if exists policy_group_mappings;
 drop table if exists policy_groups;
 drop table if exists policies;
 
-DROP TABLE IF EXISTS `fcm_tokens`;
-DROP TABLE IF EXISTS `scenario_message_mappings`;
-DROP TABLE IF EXISTS `notification_messages`;
-DROP TABLE IF EXISTS `notification_scenarios`;
+DROP TABLE IF EXISTS fcm_tokens;
+DROP TABLE IF EXISTS scenario_message_mappings;
+DROP TABLE IF EXISTS notification_messages;
+DROP TABLE IF EXISTS notification_scenarios;
 
 drop table if exists chats;
 drop table if exists chatrooms;
@@ -184,7 +184,7 @@ create table if not exists members
     constraint member_nickname
         unique (member_nickname),
     constraint check_member_gender
-        check (`member_gender` in ('M','F','U'))
+        check (member_gender in ('M', 'F', 'U'))
 );
 
 create table if not exists chatrooms
@@ -223,7 +223,7 @@ create table if not exists exercises
         primary key,
     member_id              char(36)                                                     not null,
     exercise_started_at    datetime default CURRENT_TIMESTAMP                           not null,
-    exercise_ended_at      datetime default ((`exercise_started_at` + interval 1 hour)) not null,
+    exercise_ended_at datetime default ((exercise_started_at + interval 1 hour)) not null,
     exercise_detail        text                                                         null,
     exercise_title         varchar(255)                                                 not null,
     exercise_personal_type varchar(255)                                                 null comment '시스템이 아닌 개인 등록',
@@ -414,7 +414,7 @@ create table if not exists preferred_exercises
     constraint FK_pe_type
         foreign key (exercise_id) references exercise_types (exercise_id),
     constraint check_preferred_exercise_skill_level
-        check (`preferred_exercise_skill_level` in ('BEGINNER','NOVICE','INTERMEDIATE','EXPERT'))
+        check (preferred_exercise_skill_level in ('BEGINNER', 'NOVICE', 'INTERMEDIATE', 'EXPERT'))
 );
 
 create table if not exists reports
@@ -427,7 +427,7 @@ create table if not exists reports
     report_processed_at       datetime                              null,
     report_processing_content varchar(500)                          null,
     constraint check_report_processing_status
-        check (`report_processing_status` in ('PENDING','PROCESSING','COMPLETED','REJECTED','POSTPONED'))
+        check (report_processing_status in ('PENDING', 'PROCESSING', 'COMPLETED', 'REJECTED', 'POSTPONED'))
 );
 
 create table if not exists comment_reports
@@ -561,51 +561,51 @@ insert into BATCH_JOB_EXECUTION_SEQ (ID, UNIQUE_KEY) values (0, '0');
 insert into BATCH_JOB_SEQ (ID, UNIQUE_KEY) values (0, '0');
 insert into BATCH_STEP_EXECUTION_SEQ (ID, UNIQUE_KEY) values (0, '0');
 
-CREATE TABLE IF NOT EXISTS `fcm_tokens`
+CREATE TABLE IF NOT EXISTS fcm_tokens
 (
-    `fcm_token_id`           BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'AUTO_INCREMENT',
-    `member_id`              CHAR(36)     NOT NULL COMMENT 'UUID_SELF',
-    `fcm_token_value`        VARCHAR(255) NOT NULL COMMENT 'FCM 토큰 값, unique',
-    `fcm_token_user_agent`   VARCHAR(255) NULL COMMENT '디바이스 정보 (User Agent)',
-    `fcm_token_activated_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '마지막 활성 일시',
-    `fcm_token_created_at`   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
-    `fcm_token_deleted_at`   DATETIME     NULL COMMENT '삭제일시',
+    fcm_token_id           BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'AUTO_INCREMENT',
+    member_id              CHAR(36)     NOT NULL COMMENT 'UUID_SELF',
+    fcm_token_value        VARCHAR(255) NOT NULL COMMENT 'FCM 토큰 값, unique',
+    fcm_token_user_agent   VARCHAR(255) NULL COMMENT '디바이스 정보 (User Agent)',
+    fcm_token_activated_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '마지막 활성 일시',
+    fcm_token_created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    fcm_token_deleted_at   DATETIME     NULL COMMENT '삭제일시',
 
-    UNIQUE KEY `uk_fcm_token_value` (`fcm_token_value`),
-    CONSTRAINT `fk_fcm_tokens_to_members` FOREIGN KEY (`member_id`) REFERENCES `members` (`member_id`)
+    UNIQUE KEY uk_fcm_token_value (fcm_token_value),
+    CONSTRAINT fk_fcm_tokens_to_members FOREIGN KEY (member_id) REFERENCES members (member_id)
 );
 
-CREATE TABLE IF NOT EXISTS `notification_messages`
+CREATE TABLE IF NOT EXISTS notification_messages
 (
-    `message_id`         BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '메시지 ID',
-    `message_title`      VARCHAR(100)  NULL COMMENT '알림 제목',
-    `message_body`       VARCHAR(1000) NOT NULL COMMENT '알림 본문',
-    `message_image_url`  VARCHAR(255)  NULL COMMENT '알림 이미지 URL',
-    `message_link_url`   VARCHAR(255)  NULL COMMENT '알림 클릭 시 이동할 URL',
-    `message_created_at` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
-    `message_updated_at` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
-    `message_deleted_at` DATETIME      NULL COMMENT '삭제일시'
+    message_id         BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '메시지 ID',
+    message_title      VARCHAR(100)  NULL COMMENT '알림 제목',
+    message_body       VARCHAR(1000) NOT NULL COMMENT '알림 본문',
+    message_image_url  VARCHAR(255)  NULL COMMENT '알림 이미지 URL',
+    message_link_url   VARCHAR(255)  NULL COMMENT '알림 클릭 시 이동할 URL',
+    message_created_at DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    message_updated_at DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
+    message_deleted_at DATETIME      NULL COMMENT '삭제일시'
 );
 
-CREATE TABLE IF NOT EXISTS `notification_scenarios`
+CREATE TABLE IF NOT EXISTS notification_scenarios
 (
-    `scenario_id`          BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '시나리오 ID',
-    `scenario_code`        VARCHAR(50)  NOT NULL COMMENT '시나리오 코드 (애플리케이션에서 사용)',
-    `scenario_description` VARCHAR(255) NOT NULL COMMENT '시나리오 설명',
-    `scenario_is_enabled`  BOOLEAN      NOT NULL DEFAULT TRUE COMMENT '시나리오 활성화 여부',
-    `scenario_created_at`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
-    `scenario_updated_at`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
-    `scenario_deleted_at`  DATETIME     NULL COMMENT '삭제일시'
+    scenario_id          BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '시나리오 ID',
+    scenario_code        VARCHAR(50)  NOT NULL COMMENT '시나리오 코드 (애플리케이션에서 사용)',
+    scenario_description VARCHAR(255) NOT NULL COMMENT '시나리오 설명',
+    scenario_is_enabled  BOOLEAN      NOT NULL DEFAULT TRUE COMMENT '시나리오 활성화 여부',
+    scenario_created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    scenario_updated_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
+    scenario_deleted_at  DATETIME     NULL COMMENT '삭제일시'
 );
 
-CREATE TABLE IF NOT EXISTS `scenario_message_mappings`
+CREATE TABLE IF NOT EXISTS scenario_message_mappings
 (
-    `mapping_id`  BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL COMMENT '시나리오 메시지 매핑 ID',
-    `message_id`  BIGINT                            NOT NULL COMMENT '메시지 ID',
-    `scenario_id` BIGINT                            NOT NULL COMMENT '시나리오 ID',
+    mapping_id  BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL COMMENT '시나리오 메시지 매핑 ID',
+    message_id  BIGINT                            NOT NULL COMMENT '메시지 ID',
+    scenario_id BIGINT                            NOT NULL COMMENT '시나리오 ID',
 
-    CONSTRAINT `fk_map_to_messages` FOREIGN KEY (`message_id`) REFERENCES `notification_messages` (`message_id`),
-    CONSTRAINT `fk_map_to_scenarios` FOREIGN KEY (`scenario_id`) REFERENCES `notification_scenarios` (`scenario_id`)
+    CONSTRAINT fk_map_to_messages FOREIGN KEY (message_id) REFERENCES notification_messages (message_id),
+    CONSTRAINT fk_map_to_scenarios FOREIGN KEY (scenario_id) REFERENCES notification_scenarios (scenario_id)
 );
 
 -- 정책 테이블에 푸시 알림 관련 데이터 추가
