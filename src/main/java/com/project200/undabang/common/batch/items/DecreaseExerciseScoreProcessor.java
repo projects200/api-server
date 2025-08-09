@@ -4,7 +4,6 @@ import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.service.PolicyService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemProcessor;
 
 /**
@@ -15,7 +14,7 @@ import org.springframework.batch.item.ItemProcessor;
  * 처리된 Member 객체는 DecreaseExerciseScoreWriter로 전달되어 데이터베이스에 최종적으로 업데이트됩니다.
  */
 @Slf4j
-@StepScope  // 코드의 명시성을 위해 유지 (실제 적용은 @Bean 에서 적용됨)
+//@StepScope 코드의 명시성을 위해 유지 (실제 적용은 @Bean 에서 적용됨)
 public class DecreaseExerciseScoreProcessor implements ItemProcessor<Member, Member> {
     private final int decreasePoints;
 

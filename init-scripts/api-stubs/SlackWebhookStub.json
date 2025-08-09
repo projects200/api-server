@@ -1,0 +1,14 @@
+{
+  "name": "Slack Webhook Mock",
+  "request": {
+    "method": "POST",
+    "urlPath": "/mock/slack-webhook"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "text/plain"
+    },
+    "body": "ok"
+  }
+}

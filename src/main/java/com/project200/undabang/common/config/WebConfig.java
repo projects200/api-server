@@ -59,6 +59,10 @@ public class WebConfig implements WebMvcConfigurer {
                 .addResourceLocations("classpath:/static/docs/", "file:./build/docs/asciidoc/")
                 .setCachePeriod(3600)
                 .resourceChain(true);
+
+        // Favicon을 위한 리소스 핸들러
+        registry.addResourceHandler("/favicon.ico")
+                .addResourceLocations("classpath:/static/favicon/");
     }
 
 }
