@@ -9,6 +9,15 @@ drop table if exists BATCH_STEP_EXECUTION_SEQ;
 drop table if exists BATCH_JOB_EXECUTION_SEQ;
 drop table if exists BATCH_JOB_SEQ;
 
+drop table if exists policy_group_mappings;
+drop table if exists policy_groups;
+drop table if exists policies;
+
+DROP TABLE IF EXISTS fcm_tokens;
+DROP TABLE IF EXISTS scenario_message_mappings;
+DROP TABLE IF EXISTS notification_messages;
+DROP TABLE IF EXISTS notification_scenarios;
+
 drop table if exists chats;
 drop table if exists chatrooms;
 drop table if exists comment_reports;
@@ -22,9 +31,6 @@ drop table if exists member_locations;
 drop table if exists member_pictures;
 drop table if exists member_reports;
 drop table if exists member_report_subjects;
-drop table if exists policy_group_mappings;
-drop table if exists policy_groups;
-drop table if exists policies;
 drop table if exists post_pictures;
 drop table if exists pictures;
 drop table if exists post_reports;
@@ -178,7 +184,7 @@ create table if not exists members
     constraint member_nickname
         unique (member_nickname),
     constraint check_member_gender
-        check (`member_gender` in ('M','F','U'))
+        check (member_gender in ('M', 'F', 'U'))
 );
 
 create table if not exists chatrooms
@@ -217,7 +223,7 @@ create table if not exists exercises
         primary key,
     member_id              char(36)                                                     not null,
     exercise_started_at    datetime default CURRENT_TIMESTAMP                           not null,
-    exercise_ended_at      datetime default ((`exercise_started_at` + interval 1 hour)) not null,
+    exercise_ended_at datetime default ((exercise_started_at + interval 1 hour)) not null,
     exercise_detail        text                                                         null,
     exercise_title         varchar(255)                                                 not null,
     exercise_personal_type varchar(255)                                                 null comment '시스템이 아닌 개인 등록',
@@ -297,28 +303,28 @@ create table if not exists member_pictures
 );
 
 create table if not exists policies (
-    policy_id             int             not null    auto_increment primary key,
-    policy_key            varchar(100)    not null    unique comment '정책을 식별하는 키 (ex:SCORE_INITIAL)',
-    policy_value          varchar(255)    null comment '정책 값',
-    policy_unit           varchar(20)     null comment '정책 값의 단위',
-    policy_description    varchar(500)    null comment '관리자 페이지에 표시될 정책 설명',
-    policy_updated_at     datetime        not null default current_timestamp comment '마지막 수정 일시',
-    policy_created_at     datetime        not null default current_timestamp comment '생성일시'
+                                        policy_id          int          not null auto_increment primary key,
+                                        policy_key         varchar(100) not null unique comment '정책을 식별하는 키 (ex:SCORE_INITIAL)',
+                                        policy_value       varchar(255) null comment '정책 값',
+                                        policy_unit        varchar(20)  null comment '정책 값의 단위',
+                                        policy_description varchar(500) null comment '관리자 페이지에 표시될 정책 설명',
+                                        policy_updated_at  datetime     not null default current_timestamp comment '마지막 수정 일시',
+                                        policy_created_at  datetime     not null default current_timestamp comment '생성일시'
 );
 
 create table if not exists policy_groups (
-    policy_groups_id            int             not null    auto_increment primary key,
-    policy_groups_name          varchar(100)    not null    unique comment '정책 타입 이름',
-    policy_groups_created_at    datetime        not null    default current_timestamp comment '생성일시',
-    policy_groups_updated_at    datetime        not null    default current_timestamp comment '수정일시'
+                                             policy_groups_id         int          not null auto_increment primary key,
+                                             policy_groups_name       varchar(100) not null unique comment '정책 타입 이름',
+                                             policy_groups_created_at datetime     not null default current_timestamp comment '생성일시',
+                                             policy_groups_updated_at datetime     not null default current_timestamp comment '수정일시'
 );
 
 create table if not exists policy_group_mappings (
-    mapping_id                  int             not null    auto_increment primary key comment '정책 타입 매핑 id',
-    policy_id                 int             not null    comment '정책번호',
-    policy_groups_id             int             not null    comment '정책 그룹 번호',
-    foreign key (policy_id) references policies(policy_id),
-    foreign key (policy_groups_id) references policy_groups(policy_groups_id)
+                                                     mapping_id       int not null auto_increment primary key comment '정책 타입 매핑 id',
+                                                     policy_id        int not null comment '정책번호',
+                                                     policy_groups_id int not null comment '정책 그룹 번호',
+                                                     foreign key (policy_id) references policies (policy_id),
+                                                     foreign key (policy_groups_id) references policy_groups (policy_groups_id)
 );
 
 create table if not exists post_report_subjects
@@ -408,7 +414,7 @@ create table if not exists preferred_exercises
     constraint FK_pe_type
         foreign key (exercise_id) references exercise_types (exercise_id),
     constraint check_preferred_exercise_skill_level
-        check (`preferred_exercise_skill_level` in ('BEGINNER','NOVICE','INTERMEDIATE','EXPERT'))
+        check (preferred_exercise_skill_level in ('BEGINNER', 'NOVICE', 'INTERMEDIATE', 'EXPERT'))
 );
 
 create table if not exists reports
@@ -421,7 +427,7 @@ create table if not exists reports
     report_processed_at       datetime                              null,
     report_processing_content varchar(500)                          null,
     constraint check_report_processing_status
-        check (`report_processing_status` in ('PENDING','PROCESSING','COMPLETED','REJECTED','POSTPONED'))
+        check (report_processing_status in ('PENDING', 'PROCESSING', 'COMPLETED', 'REJECTED', 'POSTPONED'))
 );
 
 create table if not exists comment_reports
@@ -521,49 +527,137 @@ VALUES ('스팸홍보/도배입니다.'),
        ('불쾌한 표현이 있습니다.'),
        ('기타');
 
-INSERT INTO policies (policy_key, policy_value, policy_unit, policy_description)
+INSERT INTO policies (policy_id, policy_key, policy_value, policy_unit, policy_description)
 VALUES
     -- 점수 범위 정책
-    ('EXERCISE_SCORE_MAX_POINTS', '100', 'POINTS', '회원이 가질 수 있는 최대 운동 점수'),
-    ('EXERCISE_SCORE_MIN_POINTS', '0', 'POINTS', '회원이 가질 수 있는 최소 운동 점수'),
+    (1, 'EXERCISE_SCORE_MAX_POINTS', '100', 'POINTS', '회원이 가질 수 있는 최대 운동 점수'),
+    (2, 'EXERCISE_SCORE_MIN_POINTS', '0', 'POINTS', '회원이 가질 수 있는 최소 운동 점수'),
 
     -- 점수 획득 정책
-    ('SIGNUP_INITIAL_POINTS', '35', 'POINTS', '회원 가입 시 기본으로 부여되는 점수'),
-    ('POINTS_PER_EXERCISE', '3', 'POINTS', '운동 기록 1회당 부여되는 점수 (일 1회)'),
-    ('EXERCISE_RECORD_VALIDITY_PERIOD', '2', 'DAYS', '점수 획득이 가능한 운동 기록의 유효 기간. (단위: DAYS, HOURS, MINUTES)'),
-    ('EXERCISE_RECORD_MAX_PER_DAY', '1', 'COUNT', '하루에 기록할 수 있는 최대 운동 횟수'),
+    (3, 'SIGNUP_INITIAL_POINTS', '35', 'POINTS', '회원 가입 시 기본으로 부여되는 점수'),
+    (4, 'POINTS_PER_EXERCISE', '3', 'POINTS', '운동 기록 1회당 부여되는 점수 (일 1회)'),
+    (5, 'EXERCISE_RECORD_VALIDITY_PERIOD', '2', 'DAYS', '점수 획득이 가능한 운동 기록의 유효 기간. (단위: DAYS, HOURS, MINUTES)'),
+    (6, 'EXERCISE_RECORD_MAX_PER_DAY', '1', 'COUNT', '하루에 기록할 수 있는 최대 운동 횟수'),
 
     -- 점수 차감 (페널티) 정책
-    ('PENALTY_INACTIVITY_THRESHOLD_DAYS', '7', 'DAYS', '페널티가 시작되는 비활성 기준일 (이 기간 이상 운동 기록이 없을 경우)'),
-    ('PENALTY_SCORE_DECREMENT_POINTS', '1', 'POINTS', '비활성 상태일 때 매일 차감되는 점수');
+    (7, 'PENALTY_INACTIVITY_THRESHOLD_DAYS', '7', 'DAYS', '페널티가 시작되는 비활성 기준일 (이 기간 이상 운동 기록이 없을 경우)'),
+    (8, 'PENALTY_SCORE_DECREMENT_POINTS', '1', 'POINTS', '비활성 상태일 때 매일 차감되는 점수');
 
-INSERT INTO policy_groups (policy_groups_name) VALUES ('exercise-score');
+INSERT INTO policy_groups (policy_groups_id, policy_groups_name)
+VALUES (1, 'exercise-score');
 
 INSERT INTO policy_group_mappings (policy_id, policy_groups_id)
-SELECT
-    p.policy_id, -- (A) 조회된 각 정책의 ID
-    (SELECT pg.policy_groups_id FROM policy_groups pg WHERE pg.policy_groups_name = 'exercise-score') -- (B) 'exercise-score' 그룹의 ID
-FROM
-    policies p
-WHERE
-    p.policy_key IN (
-                       'EXERCISE_SCORE_MAX_POINTS',
-                       'EXERCISE_SCORE_MIN_POINTS',
-                       'SIGNUP_INITIAL_POINTS',
-                       'POINTS_PER_EXERCISE',
-                       'EXERCISE_RECORD_VALIDITY_PERIOD',
-                       'EXERCISE_RECORD_MAX_PER_DAY',
-                       'PENALTY_INACTIVITY_THRESHOLD_DAYS',
-                       'PENALTY_SCORE_DECREMENT_POINTS'
-        )
-  -- 이미 매핑된 데이터는 중복 삽입하지 않도록 방지하는 로직
-  AND NOT EXISTS (
-    SELECT 1 FROM policy_group_mappings pgm
-    WHERE pgm.policy_id = p.policy_id
-      AND pgm.policy_groups_id = (SELECT pg.policy_groups_id FROM policy_groups pg WHERE pg.policy_groups_name = 'exercise-score')
-);
+VALUES (1, 1),
+       (2, 1),
+       (3, 1),
+       (4, 1),
+       (5, 1),
+       (6, 1),
+       (7, 1),
+       (8, 1);
 
 -- 시퀀스 초기값 설정
 insert into BATCH_JOB_EXECUTION_SEQ (ID, UNIQUE_KEY) values (0, '0');
 insert into BATCH_JOB_SEQ (ID, UNIQUE_KEY) values (0, '0');
 insert into BATCH_STEP_EXECUTION_SEQ (ID, UNIQUE_KEY) values (0, '0');
+
+CREATE TABLE IF NOT EXISTS fcm_tokens
+(
+    fcm_token_id           BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'AUTO_INCREMENT',
+    member_id              CHAR(36)     NOT NULL COMMENT 'UUID_SELF',
+    fcm_token_value        VARCHAR(255) NOT NULL COMMENT 'FCM 토큰 값, unique',
+    fcm_token_user_agent   VARCHAR(255) NULL COMMENT '디바이스 정보 (User Agent)',
+    fcm_token_activated_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '마지막 활성 일시',
+    fcm_token_created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    fcm_token_deleted_at   DATETIME     NULL COMMENT '삭제일시',
+
+    UNIQUE KEY uk_fcm_token_value (fcm_token_value),
+    CONSTRAINT fk_fcm_tokens_to_members FOREIGN KEY (member_id) REFERENCES members (member_id)
+);
+
+CREATE TABLE IF NOT EXISTS notification_messages
+(
+    message_id         BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '메시지 ID',
+    message_title      VARCHAR(100)  NULL COMMENT '알림 제목',
+    message_body       VARCHAR(1000) NOT NULL COMMENT '알림 본문',
+    message_image_url  VARCHAR(255)  NULL COMMENT '알림 이미지 URL',
+    message_link_url   VARCHAR(255)  NULL COMMENT '알림 클릭 시 이동할 URL',
+    message_created_at DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    message_updated_at DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
+    message_deleted_at DATETIME      NULL COMMENT '삭제일시'
+);
+
+CREATE TABLE IF NOT EXISTS notification_scenarios
+(
+    scenario_id          BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '시나리오 ID',
+    scenario_code        VARCHAR(50)  NOT NULL COMMENT '시나리오 코드 (애플리케이션에서 사용)',
+    scenario_description VARCHAR(255) NOT NULL COMMENT '시나리오 설명',
+    scenario_is_enabled  BOOLEAN      NOT NULL DEFAULT TRUE COMMENT '시나리오 활성화 여부',
+    scenario_created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    scenario_updated_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
+    scenario_deleted_at  DATETIME     NULL COMMENT '삭제일시'
+);
+
+CREATE TABLE IF NOT EXISTS scenario_message_mappings
+(
+    mapping_id  BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL COMMENT '시나리오 메시지 매핑 ID',
+    message_id  BIGINT                            NOT NULL COMMENT '메시지 ID',
+    scenario_id BIGINT                            NOT NULL COMMENT '시나리오 ID',
+
+    CONSTRAINT fk_map_to_messages FOREIGN KEY (message_id) REFERENCES notification_messages (message_id),
+    CONSTRAINT fk_map_to_scenarios FOREIGN KEY (scenario_id) REFERENCES notification_scenarios (scenario_id)
+);
+
+-- 정책 테이블에 푸시 알림 관련 데이터 추가
+INSERT INTO policies (policy_id, policy_key, policy_value, policy_unit, policy_description)
+VALUES
+    -- 푸시 알림 전체 활성화 여부 (마스터 스위치)
+    (9, 'NOTIFICATION_ENABLED', 'true', 'BOOLEAN', '전체 푸시 알림 기능 활성화 여부 (true/false)'),
+
+    -- 점수 차감 전 알림 정책
+    (10, 'NOTIFICATION_PRE_INACTIVITY_START_DAYS', '2', 'DAYS', '점수 차감 D-day 며칠 전부터 알림을 보낼지'),
+    (11, 'NOTIFICATION_PRE_INACTIVITY_INTERVAL_DAYS', '1', 'DAYS', '점수 차감 전 알림을 며칠 간격으로 보낼지 (매일=1)'),
+
+    -- 점수 차감 후 알림 정책
+    (12, 'NOTIFICATION_POST_INACTIVITY_INTERVAL_DAYS', '7', 'DAYS', '점수 차감 시작 후 알림을 며칠 간격으로 보낼지 (일주일=7)'),
+
+    -- 알림 중단 정책
+    (13, 'NOTIFICATION_SCORE_THRESHOLD_MIN', '0', 'POINTS', '회원 점수가 이 값 이하일 경우 더 이상 알림을 보내지 않음'),
+
+    -- 알림 보내는 시간
+    (14, 'NOTIFICATION_SEND_TIME', '18', 'HOURS', '알림을 보내는 시간 (24시간 형식, 예: 18시 = 18)');
+
+INSERT INTO policy_groups(policy_groups_id, policy_groups_name)
+VALUES (2, 'notification');
+
+INSERT INTO policy_group_mappings (policy_id, policy_groups_id)
+VALUES (9, 2),  -- NOTIFICATION_ENABLED
+       (10, 2), -- NOTIFICATION_PRE_INACTIVITY_START_DAYS
+       (11, 2), -- NOTIFICATION_PRE_INACTIVITY_INTERVAL_DAYS
+       (12, 2), -- NOTIFICATION_POST_INACTIVITY_INTERVAL_DAYS
+       (13, 2), -- NOTIFICATION_SCORE_THRESHOLD_MIN
+       (14, 2);
+-- NOTIFICATION_SEND_TIME
+
+-- 3-1. 알림 시나리오 정의
+INSERT INTO notification_scenarios (scenario_code, scenario_description, scenario_is_enabled)
+VALUES ('PRE_INACTIVITY_REMINDER', '점수 차감 전 사용자에게 보내는 리마인드 알림', TRUE),
+       ('POST_INACTIVITY_NUDGE', '점수 차감 시작 후 사용자에게 보내는 복귀 유도 알림', TRUE);
+
+-- 3-2. 알림 메시지 내용 정의
+INSERT INTO notification_messages (message_id, message_title, message_body)
+VALUES (1, NULL, '잠깐! 소중한 운동 점수가 변동될 수 있어요. 가볍게라도 운동하고 지금의 점수를 지켜볼까요?'),
+       (2, NULL, '혹시… 저희 앱 삭제하신 줄 알았어요! 돌아오셔서 반가워요. 운동하러 가볼까요?'),
+       (3, NULL, '주문하신 커피가 식고 있어요… 운다방에 돌아와 주세요 🥺'),
+       (4, NULL, '점수 회복 챌린지 시작! 지난주보다 더 나은 점수를 위해, 오늘부터 다시 꾸준히 운동해 볼까요? 💪');
+
+-- 3-3. 시나리오와 메시지 매핑
+-- PRE_INACTIVITY_REMINDER 시나리오 (ID: 1)에는 메시지 (ID: 1)를 연결
+INSERT INTO scenario_message_mappings (scenario_id, message_id)
+VALUES (1, 1);
+
+-- POST_INACTIVITY_NUDGE 시나리오 (ID: 2)에는 메시지 (ID: 2, 3, 4)를 연결
+INSERT INTO scenario_message_mappings (scenario_id, message_id)
+VALUES (2, 2),
+       (2, 3),
+       (2, 4);
