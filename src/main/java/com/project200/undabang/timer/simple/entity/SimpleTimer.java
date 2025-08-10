@@ -2,7 +2,10 @@ package com.project200.undabang.timer.simple.entity;
 
 import com.project200.undabang.member.entity.Member;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Comment;
 
 import java.time.LocalDateTime;
 
@@ -19,22 +22,29 @@ public class SimpleTimer {
     @Column(name = "simple_timer_id")
     private Long id;
 
-    @Column(name = "simple_timer_order")
-    private Integer simpleTimerOrder;
-
-    @Column(name = "simple_timer_time")
-    private Integer simpleTimerTime;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
+    @Comment("심플 타이머 순서")
+    @Column(name = "simple_timer_order")
+    private Integer simpleTimerOrder;
+
+    @Comment("심플 타이머 시간")
+    @Column(name = "simple_timer_time")
+    private Integer simpleTimerTime;
+
+    @NotNull
+    @ColumnDefault("CURRENT_TIMESTAMP")
     @Builder.Default
     @Column(name = "simple_timer_created_at", nullable = false, updatable = false)
     private LocalDateTime simpleTimerCreatedAt = LocalDateTime.now();
 
-    @Column(name = "simple_timer_updated_at")
-    private LocalDateTime simpleTimerUpdatedAt;
+    @NotNull
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Builder.Default
+    @Column(name = "simple_timer_updated_at", nullable = false)
+    private LocalDateTime simpleTimerUpdatedAt = LocalDateTime.now();
 
     @Column(name = "simple_timer_deleted_at")
     private LocalDateTime simpleTimerDeletedAt;
