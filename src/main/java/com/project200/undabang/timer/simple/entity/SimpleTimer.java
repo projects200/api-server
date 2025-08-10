@@ -28,7 +28,7 @@ public class SimpleTimer {
 
     @Comment("심플 타이머 순서")
     @Column(name = "simple_timer_order")
-    private Integer simpleTimerOrder;
+    private Byte simpleTimerOrder;
 
     @Comment("심플 타이머 시간")
     @Column(name = "simple_timer_time")

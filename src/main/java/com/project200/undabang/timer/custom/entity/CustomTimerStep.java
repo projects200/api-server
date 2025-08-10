@@ -32,7 +32,7 @@ public class CustomTimerStep {
     @Comment("스텝 순서")
     @NotNull
     @Column(name = "custom_timer_steps_order", nullable = false)
-    private Integer customTimerStepOrder;
+    private Byte customTimerStepOrder;
 
     @Comment("스텝 시간")
     @NotNull
