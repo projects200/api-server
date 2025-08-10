@@ -481,7 +481,7 @@ create table if not exists custom_timers
     member_id               char(36)        not null comment 'UUID_SELF',
     custom_timer_name       varchar(100)    null comment '커스텀 타이머 이름',
     custom_timer_created_at datetime        not null default current_timestamp,
-    custom_timer_updated_at datetime        not null default current_timestamp,
+    custom_timer_updated_at datetime        not null default current_timestamp ON UPDATE CURRENT_TIMESTAMP,
     custom_timer_deleted_at datetime        null,
     foreign key (member_id) references members (member_id)
 );
@@ -491,9 +491,9 @@ create table if not exists simple_timers
     simple_timer_id             bigint       not null auto_increment primary key ,
     member_id                   char(36)     not null comment 'UUID_SELF',
     simple_timer_order          tinyint      null comment '심플 타이머 순서',
-    simple_timer_time           integer      null comment '심플 타이머 시간',
+    simple_timer_time           int          null comment '심플 타이머 시간',
     simple_timer_created_at     datetime     not null default current_timestamp,
-    simple_timer_updated_at     datetime     not null default current_timestamp,
+    simple_timer_updated_at     datetime     not null default current_timestamp ON UPDATE CURRENT_TIMESTAMP,
     simple_timer_deleted_at     datetime     null,
     foreign key (member_id) references members (member_id)
 );
@@ -504,9 +504,9 @@ create table if not exists custom_timer_steps
     custom_timer_id               bigint      not null comment 'AUTO_INCREMENT',
     custom_timer_steps_name       varchar(50) null     comment '스텝 이름',
     custom_timer_steps_order      tinyint     not null comment '스텝 순서',
-    custom_timer_steps_time       integer     not null comment '스텝 시간',
+    custom_timer_steps_time       int         not null comment '스텝 시간',
     custom_timer_steps_created_at datetime    not null default current_timestamp,
-    custom_timer_steps_updated_at datetime    not null default current_timestamp,
+    custom_timer_steps_updated_at datetime    not null default current_timestamp ON UPDATE CURRENT_TIMESTAMP,
     custom_timer_steps_deleted_at datetime    null,
     foreign key (custom_timer_id) references custom_timers (custom_timer_id)
 );
