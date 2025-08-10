@@ -24,4 +24,7 @@ public enum PolicyKey {
     NOTIFICATION_SCORE_THRESHOLD_MIN,               // 회원 점수가 이 값 이하일 경우 더 이상 알림을 보내지 않음
     NOTIFICATION_SEND_TIME,                         // 알림을 보내는 시간 (24시간 형식, 예: 18시 = 18)
 
+    // 심플 타이머
+    SIMPLE_TIMER_INIT_VALUES // 심플 타이머 초기값
+
 }
