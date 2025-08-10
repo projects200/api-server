@@ -700,3 +700,16 @@ INSERT INTO scenario_message_mappings (scenario_id, message_id)
 VALUES (2, 2),
        (2, 3),
        (2, 4);
+
+
+-- 'simple-timer' 정책 그룹을 생성
+INSERT INTO policy_groups (policy_groups_id, policy_groups_name)
+VALUES (3, 'simple-timer');
+
+-- SIMPLE_TIMER_INIT_VALUES 정책을 생성
+INSERT INTO policies (policy_id, policy_key, policy_value, policy_unit, policy_description)
+VALUES (15, 'SIMPLE_TIMER_INIT_VALUES', '{"init-counts": 6, "step": [{"no": 1, "seconds": 30}, {"no": 2, "seconds": 40}, {"no": 3, "seconds": 50}, {"no": 4, "seconds": 60}, {"no": 5, "seconds": 75}, {"no": 6, "seconds": 90}]}',
+        'SECONDS',  '심플 타이머의 초기 설정 값 (전체 JSON 구조로 저장. 회원 가입시 파싱해서 사용해야 함)');
+
+INSERT INTO policy_group_mappings (policy_id, policy_groups_id)
+VALUES (15, 3);
