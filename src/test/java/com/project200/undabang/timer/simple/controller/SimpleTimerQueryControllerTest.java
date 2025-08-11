@@ -41,7 +41,7 @@ class SimpleTimerQueryControllerTest extends AbstractRestDocSupport {
         public void getSimpleTimers() throws Exception{
             // given
             UUID memberId = UUID.randomUUID();
-            List<SimpleTimerRecord> recordList =createSimpleTimerRecordList(memberId);
+            List<SimpleTimerRecord> recordList =createSimpleTimerRecordList();
             GetSimpleTimerResponseDto expectedResponse = GetSimpleTimerResponseDto.builder()
                     .simpleTimerCount(recordList.size())
                     .simpleTimers(recordList)
