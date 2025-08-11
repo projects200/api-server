@@ -109,7 +109,7 @@ class SimpleTimerQueryControllerTest extends AbstractRestDocSupport {
             BDDMockito.then(simpleTimerQueryService).should(BDDMockito.times(1)).getSimpleTimers();
         }
 
-        private List<SimpleTimerRecord> createSimpleTimerRecordList(UUID memberId){
+        private List<SimpleTimerRecord> createSimpleTimerRecordList(){
             return List.of(
                     new SimpleTimerRecord(1L, (byte) 1, 30),
                     new SimpleTimerRecord(2L, (byte) 2, 40),
