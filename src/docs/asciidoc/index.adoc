@@ -132,3 +132,7 @@ include::overview/공통-개발-참고-사항.adoc[]
 === xref:정책-API.html[정책 API]
 
 - 정책 그룹 조회 API #GET# `/open/v1/policy-groups/{groupName}/policies`
+
+=== xref:심플-타이머API.html[심플 타이머 API]
+
+- 심플 타이머 조회 API #GET# `/api/v1/simple-timers`
