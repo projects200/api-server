@@ -12,7 +12,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GetSimpleTimerResponseDto {
-    public int simpleTimerCount;
     private int simpleTimerCount;
     private List<SimpleTimerRecord> simpleTimers;
 

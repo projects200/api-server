@@ -15,9 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -39,15 +39,10 @@ public class SimpleTimerQueryServiceImpl implements SimpleTimerQueryService {
     }
 
     private GetSimpleTimerResponseDto createSimpleTimerResponse(List<SimpleTimer> simpleTimerList){
-        List<SimpleTimerRecord> simpleTimerRecordList = new ArrayList<>();
-
-        for (SimpleTimer simpleTimer : simpleTimerList) {
-            SimpleTimerRecord record = SimpleTimerRecord.from(simpleTimer);
-            simpleTimerRecordList.add(record);
-        }
         List<SimpleTimerRecord> simpleTimerRecordList = simpleTimerList.stream()
                 .map(SimpleTimerRecord::from)
                 .collect(Collectors.toList());
+
         return GetSimpleTimerResponseDto.of(simpleTimerRecordList);
     }
 }
