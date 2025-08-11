@@ -75,9 +75,9 @@ class SimpleTimerQueryControllerTest extends AbstractRestDocSupport {
                                     fieldWithPath("data.simpleTimers[].simpleTimerId").type(NUMBER)
                                             .description("심플 타이머의 식별자 정보 입니다."),
                                     fieldWithPath("data.simpleTimers[].order").type(NUMBER)
-                                            .description("심플 타이머의 순서 정보 입니다"),
+                                            .description("심플 타이머의 순서 정보 입니다."),
                                     fieldWithPath("data.simpleTimers[].time").type(NUMBER)
-                                            .description("심플 타이머의 시간 정보 입니다.")
+                                            .description("심플 타이머의 시간 정보 입니다. 단위는 초 입니다.")
                             ))
                     ));
 
