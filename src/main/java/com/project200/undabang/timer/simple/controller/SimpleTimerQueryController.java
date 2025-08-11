@@ -17,7 +17,6 @@ public class SimpleTimerQueryController {
 
     @GetMapping("/v1/simple-timers")
     public ResponseEntity<CommonResponse<GetSimpleTimerResponseDto>> getSimpleTimers() {
-        GetSimpleTimerResponseDto responseDto = simpleTimerQueryService.getSimpleTimers();
-        return ResponseEntity.ok(CommonResponse.success(responseDto));
+        return ResponseEntity.ok(CommonResponse.success(simpleTimerQueryService.getSimpleTimers()));
     }
 }
