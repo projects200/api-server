@@ -13,7 +13,8 @@ import java.util.List;
 @AllArgsConstructor
 public class GetSimpleTimerResponseDto {
     public int simpleTimerCount;
-    public List<SimpleTimerRecord> simpleTimers;
+    private int simpleTimerCount;
+    private List<SimpleTimerRecord> simpleTimers;
 
     public static GetSimpleTimerResponseDto of(List<SimpleTimerRecord> simpleTimers){
         return GetSimpleTimerResponseDto.builder()

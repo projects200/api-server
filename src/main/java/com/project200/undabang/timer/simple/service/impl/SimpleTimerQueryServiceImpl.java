@@ -45,7 +45,9 @@ public class SimpleTimerQueryServiceImpl implements SimpleTimerQueryService {
             SimpleTimerRecord record = SimpleTimerRecord.from(simpleTimer);
             simpleTimerRecordList.add(record);
         }
-
+        List<SimpleTimerRecord> simpleTimerRecordList = simpleTimerList.stream()
+                .map(SimpleTimerRecord::from)
+                .collect(Collectors.toList());
         return GetSimpleTimerResponseDto.of(simpleTimerRecordList);
     }
 }
