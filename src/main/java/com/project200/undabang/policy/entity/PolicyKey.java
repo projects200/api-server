@@ -25,6 +25,7 @@ public enum PolicyKey {
     NOTIFICATION_SEND_TIME,                         // 알림을 보내는 시간 (24시간 형식, 예: 18시 = 18)
 
     // 심플 타이머
-    SIMPLE_TIMER_INIT_VALUES, // 심플 타이머 초기값. 회원 가입시 추가해줘야 함
+    SIMPLE_TIMER_INIT_COUNT, // 심플 타이머 초기 생성 갯수
+    SIMPLE_TIMER_INIT_VALUES, // 심플 타이머 초기 값. 회원 가입시 추가해줘야 함
 
 }
