@@ -705,10 +705,18 @@ VALUES (2, 2),
 INSERT INTO policy_groups (policy_groups_id, policy_groups_name)
 VALUES (3, 'simple-timer');
 
--- SIMPLE_TIMER_INIT_VALUES 정책을 생성
+-- SIMPLE_TIMER_INIT_COUNT 정책을 생성
 INSERT INTO policies (policy_id, policy_key, policy_value, policy_unit, policy_description)
-VALUES (15, 'SIMPLE_TIMER_INIT_VALUES', '{"init-counts" : 6, "seconds" : [30,40,50,60,75,90]}',
-        'JSON',  '심플 타이머의 초기 설정 값 (전체 JSON 구조로 저장. 회원 가입시 파싱해서 사용해야 함)');
+VALUES (15, 'SIMPLE_TIMER_INIT_COUNT', '6',
+        'COUNT',  '심플 타이머의 초기 설정 갯수');
 
 INSERT INTO policy_group_mappings (policy_id, policy_groups_id)
 VALUES (15, 3);
+
+-- SIMPLE_TIMER_INIT_VALUES 정책을 생성
+INSERT INTO policies (policy_id, policy_key, policy_value, policy_unit, policy_description)
+VALUES (16, 'SIMPLE_TIMER_INIT_VALUES', '30,40,50,60,75,90',
+        'SECONDS',  '심플 타이머의 초기 설정 값. 회원 가입시 추가해서 사용해야 함');
+
+INSERT INTO policy_group_mappings (policy_id, policy_groups_id)
+VALUES (16, 3);
