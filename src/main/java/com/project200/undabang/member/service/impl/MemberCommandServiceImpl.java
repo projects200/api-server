@@ -11,6 +11,7 @@ import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.member.service.MemberCommandService;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.service.PolicyService;
+import com.project200.undabang.timer.simple.service.SimpleTimerCommandService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,8 @@ public class MemberCommandServiceImpl implements MemberCommandService {
     private final MemberRepository memberRepository;
 
     private final PolicyService policyService;
+
+    private final SimpleTimerCommandService simpleTimerCommandService;
 
     /**
      * 회원 가입을 처리합니다.
@@ -62,6 +65,8 @@ public class MemberCommandServiceImpl implements MemberCommandService {
                         .build());
 
         memberRepository.save(member);
+        simpleTimerCommandService.createDefaultSimpleTimer();
+
         return SignUpResponseDto.of(member);
     }
 
