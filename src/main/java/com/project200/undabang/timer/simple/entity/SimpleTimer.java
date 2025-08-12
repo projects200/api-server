@@ -26,10 +26,6 @@ public class SimpleTimer {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    @Comment("심플 타이머 순서")
-    @Column(name = "simple_timer_order")
-    private Byte simpleTimerOrder;
-
     @Comment("심플 타이머 시간")
     @Column(name = "simple_timer_time")
     private Integer simpleTimerTime;
