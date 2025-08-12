@@ -81,7 +81,7 @@ class SimpleTimerQueryServiceImplTest {
             }
         }
 
-        private List<SimpleTimer> createSimpleTimerList(Member testUser){
+        private List<SimpleTimer> createSimpleTimerList(Member testUser) {
             return List.of(
                     SimpleTimer.builder()
                             .id(1L)
