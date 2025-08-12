@@ -84,7 +84,7 @@ class SimpleTimerQueryControllerTest extends AbstractRestDocSupport {
 
         @Test
         @DisplayName("회원의 심플 타이머 조회에 실패했다")
-        public void getSimpleTimers_Fail() throws Exception{
+        public void getSimpleTimers_Fail() throws Exception {
             // given
             UUID memberId = UUID.randomUUID();
             BDDMockito.given(simpleTimerQueryService.getSimpleTimers())
@@ -106,7 +106,7 @@ class SimpleTimerQueryControllerTest extends AbstractRestDocSupport {
             BDDMockito.then(simpleTimerQueryService).should(BDDMockito.times(1)).getSimpleTimers();
         }
 
-        private List<SimpleTimerRecord> createSimpleTimerRecordList(){
+        private List<SimpleTimerRecord> createSimpleTimerRecordList() {
             return List.of(
                     new SimpleTimerRecord(1L, 30),
                     new SimpleTimerRecord(2L, 40),
@@ -117,7 +117,4 @@ class SimpleTimerQueryControllerTest extends AbstractRestDocSupport {
             );
         }
     }
-
-
-
 }

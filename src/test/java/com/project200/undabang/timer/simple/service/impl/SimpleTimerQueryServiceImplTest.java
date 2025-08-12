@@ -48,7 +48,7 @@ class SimpleTimerQueryServiceImplTest {
             Member testUser = Member.builder().memberId(testUserId).build();
             List<SimpleTimer> simpleTimerList = createSimpleTimerList(testUser);
 
-            try(MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)){
+            try(MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(testUserId);
                 given(memberRepository.findById(testUserId)).willReturn(Optional.of(testUser));
                 given(simpleTimerRepository.findByMemberAndSimpleTimerDeletedAtNull(testUser)).willReturn(simpleTimerList);
@@ -70,7 +70,7 @@ class SimpleTimerQueryServiceImplTest {
         void getSimpleTimers_MemberNotFound() {
             // given
             UUID testUserId = UUID.randomUUID();
-            try(MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)){
+            try(MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(testUserId);
                 given(memberRepository.findById(testUserId)).willReturn(Optional.empty());
 
@@ -96,7 +96,4 @@ class SimpleTimerQueryServiceImplTest {
             );
         }
     }
-
-
-
 }
