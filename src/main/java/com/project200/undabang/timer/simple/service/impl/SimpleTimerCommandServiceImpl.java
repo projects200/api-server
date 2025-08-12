@@ -64,7 +64,7 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
         List<Integer> integerList = new ArrayList<>();
 
         for (String s : strArr) {
-            integerList.add(Integer.parseInt(s));
+            integerList.add(Integer.parseInt(s.trim()));
         }
 
         return integerList;
