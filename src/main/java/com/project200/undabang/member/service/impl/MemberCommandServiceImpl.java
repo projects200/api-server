@@ -64,8 +64,9 @@ public class MemberCommandServiceImpl implements MemberCommandService {
                         .memberBday(signUpRequestDto.getMemberBday())
                         .build());
 
-        memberRepository.save(member);
-        simpleTimerCommandService.createDefaultSimpleTimer();
+        Member savedMember = memberRepository.save(member);
+
+        simpleTimerCommandService.createDefaultSimpleTimer(savedMember);
 
         return SignUpResponseDto.of(member);
     }

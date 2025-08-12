@@ -1,10 +1,8 @@
 package com.project200.undabang.timer.simple.service.impl;
 
-import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.entity.Member;
-import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.service.PolicyService;
 import com.project200.undabang.timer.simple.entity.SimpleTimer;
@@ -16,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -25,7 +22,6 @@ import java.util.UUID;
 public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService {
     private final PolicyService policyService;
     private final SimpleTimerRepository simpleTimerRepository;
-    private final MemberRepository memberRepository;
 
     /**
      * 기본 심플 타이머를 생성하는 메서드입니다.
@@ -41,25 +37,31 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
      * 오류 발생 시 {@link CustomException} 예외를 발생시킵니다.
      */
     @Override
-    public void createDefaultSimpleTimer() {
+    public void createDefaultSimpleTimer(Member member) {
         int simpleTimerCount = policyService.getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_INIT_COUNT);
         String simpleTimerValue = policyService.getPolicyValueAsString(PolicyKey.SIMPLE_TIMER_INIT_VALUES);
 
-        List<Integer> timeList = List.of(simpleTimerValue.split(",")).stream()
-                .map(Integer::parseInt)
-                .toList();
+        List<Integer> timeList = getTimeList(simpleTimerValue);
 
         if (!verifyTimerSettings(simpleTimerCount, timeList)) {
-            log.error("정책에 설정된 타이머 갯수와 실제 값의 갯수가 다릅니다.");
+            log.error("정책에 설정된 타이머 개수와 실제 값의 개수가 다릅니다.");
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
 
-        UUID memberId = UserContextHolder.getUserId();
-        Member member = memberRepository.findById(memberId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-
         List<SimpleTimer> simpleTimerList = createSimpleTimerList(member, timeList);
-
         simpleTimerRepository.saveAll(simpleTimerList);
+    }
+
+    /**
+     * 입력받은 문자열을 분리하여 정수 리스트로 변환합니다.
+     *
+     * @param str 콤마(,)로 구분된 숫자 문자열
+     * @return 문자열에서 추출된 정수 값들의 리스트
+     */
+    private List<Integer> getTimeList(String str) {
+        return List.of(str.split(",")).stream()
+                .map(Integer::parseInt)
+                .toList();
     }
 
     /**
@@ -85,5 +87,4 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
     private boolean verifyTimerSettings(int simpleTimerCount, List<Integer> simpleTimerList) {
         return simpleTimerCount == simpleTimerList.size();
     }
-
 }

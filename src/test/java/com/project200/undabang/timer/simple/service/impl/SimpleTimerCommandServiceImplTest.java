@@ -4,7 +4,6 @@ import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.entity.Member;
-import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.service.PolicyService;
 import com.project200.undabang.timer.simple.entity.SimpleTimer;
@@ -21,7 +20,6 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.BDDMockito.given;
@@ -36,9 +34,6 @@ class SimpleTimerCommandServiceImplTest {
 
     @Mock
     private SimpleTimerRepository simpleTimerRepository;
-
-    @Mock
-    private MemberRepository memberRepository;
 
     @InjectMocks
     private SimpleTimerCommandServiceImpl simpleTimerCommandService;
@@ -58,10 +53,9 @@ class SimpleTimerCommandServiceImplTest {
                 given(UserContextHolder.getUserId()).willReturn(testMemberId);
                 given(policyService.getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_INIT_COUNT)).willReturn(6);
                 given(policyService.getPolicyValueAsString(PolicyKey.SIMPLE_TIMER_INIT_VALUES)).willReturn("30,40,50,60,75,90");
-                given(memberRepository.findById(testMemberId)).willReturn(Optional.of(testMember));
 
                 // when
-                simpleTimerCommandService.createDefaultSimpleTimer();
+                simpleTimerCommandService.createDefaultSimpleTimer(testMember);
 
                 // then
                 ArgumentCaptor<List<SimpleTimer>> captor = ArgumentCaptor.forClass(List.class);
@@ -84,6 +78,7 @@ class SimpleTimerCommandServiceImplTest {
         void throwsException_whenPolicyMismatch() {
             // given
             UUID testMemberId = UUID.randomUUID();
+            Member testMember = Member.builder().memberId(testMemberId).build();
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(testMemberId);
@@ -91,30 +86,10 @@ class SimpleTimerCommandServiceImplTest {
                 given(policyService.getPolicyValueAsString(PolicyKey.SIMPLE_TIMER_INIT_VALUES)).willReturn("30,40,50");
 
                 // when & then
-                Assertions.assertThatThrownBy(() -> simpleTimerCommandService.createDefaultSimpleTimer())
+                Assertions.assertThatThrownBy(() -> simpleTimerCommandService.createDefaultSimpleTimer(testMember))
                         .isInstanceOf(CustomException.class)
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INTERNAL_SERVER_ERROR);
             }
         }
-
-        @Test
-        @DisplayName("사용자를 찾을 수 없으면 예외를 발생시킨다.")
-        void throwsException_whenMemberNotFound() {
-            // given
-            UUID testMemberId = UUID.randomUUID();
-
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                given(UserContextHolder.getUserId()).willReturn(testMemberId);
-                given(policyService.getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_INIT_COUNT)).willReturn(6);
-                given(policyService.getPolicyValueAsString(PolicyKey.SIMPLE_TIMER_INIT_VALUES)).willReturn("30,40,50,60,75,90");
-                given(memberRepository.findById(testMemberId)).willReturn(Optional.empty());
-
-                // when & then
-                Assertions.assertThatThrownBy(() -> simpleTimerCommandService.createDefaultSimpleTimer())
-                        .isInstanceOf(CustomException.class)
-                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
-            }
-        }
     }
-
 }

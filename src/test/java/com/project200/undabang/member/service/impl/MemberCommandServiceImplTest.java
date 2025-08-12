@@ -171,7 +171,7 @@ class MemberCommandServiceImplTest {
         });
 
         Mockito.verify(memberRepository, Mockito.times(1)).save(Mockito.any(Member.class));
-        Mockito.verify(simpleTimerCommandService, Mockito.times(1)).createDefaultSimpleTimer();
+        Mockito.verify(simpleTimerCommandService, Mockito.times(1)).createDefaultSimpleTimer(member);
     }
 
     @Test
