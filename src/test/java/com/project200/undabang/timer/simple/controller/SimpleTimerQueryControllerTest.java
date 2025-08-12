@@ -62,7 +62,6 @@ class SimpleTimerQueryControllerTest extends AbstractRestDocSupport {
                             jsonPath("$.data.simpleTimerCount").value(expectedResponse.getSimpleTimerCount()),
                             jsonPath("$.data.simpleTimers").isArray(),
                             jsonPath("$.data.simpleTimers[0].simpleTimerId").value(recordList.get(0).simpleTimerId()),
-                            jsonPath("$.data.simpleTimers[0].order").value((int) recordList.get(0).order()),
                             jsonPath("$.data.simpleTimers[0].time").value(recordList.get(0).time())
                     )
                     .andDo(document.document(
@@ -71,11 +70,9 @@ class SimpleTimerQueryControllerTest extends AbstractRestDocSupport {
                                     fieldWithPath("data.simpleTimerCount").type(NUMBER)
                                             .description("심플 타이머 리스트의 크기를 담고있는 데이터 입니다."),
                                     fieldWithPath("data.simpleTimers").type(ARRAY)
-                                            .description("심플 타이머 리스트 입니다. 내용에는 식별자, 순서, 시간이 포함됩니다."),
+                                            .description("심플 타이머 리스트 입니다. 내용에는 심플 타이머 식별자, 타이머 시간이 포함됩니다."),
                                     fieldWithPath("data.simpleTimers[].simpleTimerId").type(NUMBER)
                                             .description("심플 타이머의 식별자 정보 입니다."),
-                                    fieldWithPath("data.simpleTimers[].order").type(NUMBER)
-                                            .description("심플 타이머의 순서 정보 입니다."),
                                     fieldWithPath("data.simpleTimers[].time").type(NUMBER)
                                             .description("심플 타이머의 시간 정보 입니다. 단위는 초 입니다.")
                             ))
@@ -111,12 +108,12 @@ class SimpleTimerQueryControllerTest extends AbstractRestDocSupport {
 
         private List<SimpleTimerRecord> createSimpleTimerRecordList(){
             return List.of(
-                    new SimpleTimerRecord(1L, (byte) 1, 30),
-                    new SimpleTimerRecord(2L, (byte) 2, 40),
-                    new SimpleTimerRecord(3L, (byte) 3, 50),
-                    new SimpleTimerRecord(4L, (byte) 4, 60),
-                    new SimpleTimerRecord(5L, (byte) 5, 75),
-                    new SimpleTimerRecord(6L, (byte) 6, 90)
+                    new SimpleTimerRecord(1L, 30),
+                    new SimpleTimerRecord(2L, 40),
+                    new SimpleTimerRecord(3L, 50),
+                    new SimpleTimerRecord(4L, 60),
+                    new SimpleTimerRecord(5L, 75),
+                    new SimpleTimerRecord(6L, 90)
             );
         }
     }

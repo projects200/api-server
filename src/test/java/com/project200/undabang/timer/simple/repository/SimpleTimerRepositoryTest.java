@@ -45,19 +45,19 @@ class SimpleTimerRepositoryTest {
             Member member1 = createAndSaveMember("testMember1");
             Member member2 = createAndSaveMember("testMember2");
 
-            SimpleTimer timer1 = createAndSaveSimpleTimer(member1, (byte) 1, 30);
-            SimpleTimer timer2 = createAndSaveSimpleTimer(member1, (byte) 2, 40);
-            SimpleTimer timer3 = createAndSaveSimpleTimer(member1, (byte) 3, 50);
-            SimpleTimer timer4 = createAndSaveSimpleTimer(member1, (byte) 4, 60);
-            SimpleTimer timer5 = createAndSaveSimpleTimer(member1, (byte) 5, 75);
-            SimpleTimer timer6 = createAndSaveSimpleTimer(member1, (byte) 6, 90);
+            SimpleTimer timer1 = createAndSaveSimpleTimer(member1, 30);
+            SimpleTimer timer2 = createAndSaveSimpleTimer(member1, 40);
+            SimpleTimer timer3 = createAndSaveSimpleTimer(member1, 50);
+            SimpleTimer timer4 = createAndSaveSimpleTimer(member1, 60);
+            SimpleTimer timer5 = createAndSaveSimpleTimer(member1, 75);
+            SimpleTimer timer6 = createAndSaveSimpleTimer(member1, 90);
 
-            createAndSaveSimpleTimer(member2, (byte) 1, 300); // 다른 회원의 타이머
+            createAndSaveSimpleTimer(member2, 300); // 다른 회원의 타이머
 
             flushAndClear();
 
             // when
-            List<SimpleTimer> foundTimers = simpleTimerRepository.findByMember(member1);
+            List<SimpleTimer> foundTimers = simpleTimerRepository.findByMemberAndSimpleTimerDeletedAtNull(member1);
 
             // then
             Assertions.assertThat(foundTimers).hasSize(6);
@@ -78,7 +78,7 @@ class SimpleTimerRepositoryTest {
             flushAndClear();
 
             // when
-            List<SimpleTimer> foundTimers = simpleTimerRepository.findByMember(member);
+            List<SimpleTimer> foundTimers = simpleTimerRepository.findByMemberAndSimpleTimerDeletedAtNull(member);
 
             // then
             assertThat(foundTimers).isNotNull();
@@ -95,13 +95,13 @@ class SimpleTimerRepositoryTest {
                 .memberBday(LocalDate.of(2000,1,1))
                 .build();
         em.persist(member);
+
         return member;
     }
 
-    private SimpleTimer createAndSaveSimpleTimer(Member member, byte order, int time){
+    private SimpleTimer createAndSaveSimpleTimer(Member member, int time){
         SimpleTimer timer = SimpleTimer.builder()
                 .member(member)
-                .simpleTimerOrder(order)
                 .simpleTimerTime(time)
                 .build();
         em.persist(timer);

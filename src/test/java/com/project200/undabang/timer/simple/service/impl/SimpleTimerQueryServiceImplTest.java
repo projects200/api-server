@@ -51,7 +51,7 @@ class SimpleTimerQueryServiceImplTest {
             try(MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)){
                 given(UserContextHolder.getUserId()).willReturn(testUserId);
                 given(memberRepository.findById(testUserId)).willReturn(Optional.of(testUser));
-                given(simpleTimerRepository.findByMember(testUser)).willReturn(simpleTimerList);
+                given(simpleTimerRepository.findByMemberAndSimpleTimerDeletedAtNull(testUser)).willReturn(simpleTimerList);
 
                 // when
                 GetSimpleTimerResponseDto responseDto = simpleTimerQueryService.getSimpleTimers();
@@ -61,7 +61,6 @@ class SimpleTimerQueryServiceImplTest {
                 Assertions.assertThat(responseDto.getSimpleTimerCount()).isEqualTo(simpleTimerList.size());
                 Assertions.assertThat(responseDto.getSimpleTimers()).hasSize(simpleTimerList.size());
                 Assertions.assertThat(responseDto.getSimpleTimers().get(0).simpleTimerId()).isEqualTo(simpleTimerList.get(0).getId());
-                Assertions.assertThat(responseDto.getSimpleTimers().get(0).order()).isEqualTo(simpleTimerList.get(0).getSimpleTimerOrder());
                 Assertions.assertThat(responseDto.getSimpleTimers().get(0).time()).isEqualTo(simpleTimerList.get(0).getSimpleTimerTime());
             }
         }
@@ -84,8 +83,16 @@ class SimpleTimerQueryServiceImplTest {
 
         private List<SimpleTimer> createSimpleTimerList(Member testUser){
             return List.of(
-                    SimpleTimer.builder().id(1L).member(testUser).simpleTimerOrder((byte) 1).simpleTimerTime(30).build(),
-                    SimpleTimer.builder().id(2L).member(testUser).simpleTimerOrder((byte) 2).simpleTimerTime(60).build()
+                    SimpleTimer.builder()
+                            .id(1L)
+                            .member(testUser)
+                            .simpleTimerTime(30)
+                            .build(),
+                    SimpleTimer.builder()
+                            .id(2L)
+                            .member(testUser)
+                            .simpleTimerTime(60)
+                            .build()
             );
         }
     }
