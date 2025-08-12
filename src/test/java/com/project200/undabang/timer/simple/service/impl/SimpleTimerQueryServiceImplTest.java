@@ -39,7 +39,7 @@ class SimpleTimerQueryServiceImplTest {
 
     @Nested
     @DisplayName("getSimpleTimers() 메소드는")
-    class Describe_getSimpleTimers{
+    class Describe_getSimpleTimers {
         @Test
         @DisplayName("유효한 사용자로 호출될 때, 회원의 심플 타이머 정보를 조합하여 반환한다")
         void getSimpleTimers() {
@@ -81,7 +81,7 @@ class SimpleTimerQueryServiceImplTest {
             }
         }
 
-        private List<SimpleTimer> createSimpleTimerList(Member testUser){
+        private List<SimpleTimer> createSimpleTimerList(Member testUser) {
             return List.of(
                     SimpleTimer.builder()
                             .id(1L)
