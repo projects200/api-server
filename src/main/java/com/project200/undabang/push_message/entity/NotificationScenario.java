@@ -1,4 +1,4 @@
-package com.project200.undabang.common.entity;
+package com.project200.undabang.push_message.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -41,17 +41,17 @@ public class NotificationScenario {
     @Column(name = "scenario_is_enabled", nullable = false)
     private Boolean scenarioIsEnabled = true;
 
+    @Builder.Default
     @NotNull
     @Comment("생성일시")
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "scenario_created_at", nullable = false)
-    private LocalDateTime scenarioCreatedAt;
+    @Column(name = "scenario_created_at", nullable = false, columnDefinition = "DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
+    private LocalDateTime scenarioCreatedAt = LocalDateTime.now();
 
+    @Builder.Default
     @NotNull
     @Comment("수정일시")
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "scenario_updated_at", nullable = false)
-    private LocalDateTime scenarioUpdatedAt;
+    @Column(name = "scenario_updated_at", nullable = false, columnDefinition = "DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
+    private LocalDateTime scenarioUpdatedAt = LocalDateTime.now();
 
     @Comment("삭제일시")
     @Column(name = "scenario_deleted_at")

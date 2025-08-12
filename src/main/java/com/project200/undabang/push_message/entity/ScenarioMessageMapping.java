@@ -1,4 +1,4 @@
-package com.project200.undabang.common.entity;
+package com.project200.undabang.push_message.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
