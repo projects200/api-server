@@ -490,7 +490,6 @@ create table if not exists simple_timers
 (
     simple_timer_id             bigint       not null auto_increment primary key ,
     member_id                   char(36)     not null comment 'UUID_SELF',
-    simple_timer_order          tinyint      null comment '심플 타이머 순서',
     simple_timer_time           int          null comment '심플 타이머 시간',
     simple_timer_created_at     datetime     not null default current_timestamp,
     simple_timer_updated_at     datetime     not null default current_timestamp ON UPDATE CURRENT_TIMESTAMP,
@@ -708,7 +707,7 @@ VALUES (3, 'simple-timer');
 
 -- SIMPLE_TIMER_INIT_VALUES 정책을 생성
 INSERT INTO policies (policy_id, policy_key, policy_value, policy_unit, policy_description)
-VALUES (15, 'SIMPLE_TIMER_INIT_VALUES', '{"init-counts": 6, "step": [{"no": 1, "seconds": 30}, {"no": 2, "seconds": 40}, {"no": 3, "seconds": 50}, {"no": 4, "seconds": 60}, {"no": 5, "seconds": 75}, {"no": 6, "seconds": 90}]}',
+VALUES (15, 'SIMPLE_TIMER_INIT_VALUES', '{"init-counts" : 6, "seconds" : [30,40,50,60,75,90]}',
         'JSON',  '심플 타이머의 초기 설정 값 (전체 JSON 구조로 저장. 회원 가입시 파싱해서 사용해야 함)');
 
 INSERT INTO policy_group_mappings (policy_id, policy_groups_id)
