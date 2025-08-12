@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface SimpleTimerRepository extends JpaRepository<SimpleTimer, Long> {
-    List<SimpleTimer> findByMember(Member member);
+    List<SimpleTimer> findByMemberAndSimpleTimerDeletedAtNull(Member member);
 }

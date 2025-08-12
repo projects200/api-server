@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -33,7 +32,7 @@ public class SimpleTimerQueryServiceImpl implements SimpleTimerQueryService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-        List<SimpleTimer> simpleTimerList = simpleTimerRepository.findByMember(member);
+        List<SimpleTimer> simpleTimerList = simpleTimerRepository.findByMemberAndSimpleTimerDeletedAtNull(member);
 
         return createSimpleTimerResponse(simpleTimerList);
     }
@@ -41,7 +40,7 @@ public class SimpleTimerQueryServiceImpl implements SimpleTimerQueryService {
     private GetSimpleTimerResponseDto createSimpleTimerResponse(List<SimpleTimer> simpleTimerList){
         List<SimpleTimerRecord> simpleTimerRecordList = simpleTimerList.stream()
                 .map(SimpleTimerRecord::from)
-                .collect(Collectors.toList());
+                .toList();
 
         return GetSimpleTimerResponseDto.of(simpleTimerRecordList);
     }
