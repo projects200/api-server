@@ -9,6 +9,7 @@ import com.project200.undabang.member.enums.MemberGender;
 import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.service.PolicyService;
+import com.project200.undabang.timer.simple.service.SimpleTimerCommandService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -38,6 +39,9 @@ class MemberCommandServiceImplTest {
 
     @Mock
     private PolicyService policyService;
+
+    @Mock
+    private SimpleTimerCommandService simpleTimerCommandService;
 
     private MockedStatic<UserContextHolder> userContextHolderMock;
     private final UUID TEST_UUID = UUID.randomUUID();
@@ -165,6 +169,9 @@ class MemberCommandServiceImplTest {
             softly.assertThat(result.getMemberBday()).isEqualTo(LocalDate.parse("2010-01-01"));
             softly.assertThat(result.getMemberCreatedAt()).isNotNull();
         });
+
+        Mockito.verify(memberRepository, Mockito.times(1)).save(Mockito.any(Member.class));
+        Mockito.verify(simpleTimerCommandService, Mockito.times(1)).createDefaultSimpleTimer();
     }
 
     @Test
