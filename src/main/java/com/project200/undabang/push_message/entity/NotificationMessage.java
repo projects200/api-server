@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Comment;
 
 import java.time.LocalDateTime;
@@ -45,13 +46,15 @@ public class NotificationMessage {
     @Builder.Default
     @NotNull
     @Comment("생성일시")
-    @Column(name = "message_created_at", nullable = false, columnDefinition = "DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Column(name = "message_created_at", nullable = false)
     private LocalDateTime messageCreatedAt = LocalDateTime.now();
 
     @Builder.Default
     @NotNull
     @Comment("수정일시")
-    @Column(name = "message_updated_at", nullable = false, columnDefinition = "DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Column(name = "message_updated_at", nullable = false)
     private LocalDateTime messageUpdatedAt = LocalDateTime.now();
 
     @Comment("삭제일시")

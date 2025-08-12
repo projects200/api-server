@@ -44,13 +44,15 @@ public class NotificationScenario {
     @Builder.Default
     @NotNull
     @Comment("생성일시")
-    @Column(name = "scenario_created_at", nullable = false, columnDefinition = "DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Column(name = "scenario_created_at", nullable = false)
     private LocalDateTime scenarioCreatedAt = LocalDateTime.now();
 
     @Builder.Default
     @NotNull
     @Comment("수정일시")
-    @Column(name = "scenario_updated_at", nullable = false, columnDefinition = "DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Column(name = "scenario_updated_at", nullable = false)
     private LocalDateTime scenarioUpdatedAt = LocalDateTime.now();
 
     @Comment("삭제일시")

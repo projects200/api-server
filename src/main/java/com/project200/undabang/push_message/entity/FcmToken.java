@@ -52,13 +52,15 @@ public class FcmToken {
     @Builder.Default
     @NotNull
     @Comment("마지막 활성 일시")
-    @Column(name = "fcm_token_activated_at", nullable = false, columnDefinition = "DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Column(name = "fcm_token_activated_at", nullable = false)
     private LocalDateTime fcmTokenActivatedAt = LocalDateTime.now();
 
     @Builder.Default
     @NotNull
     @Comment("생성일시")
-    @Column(name = "fcm_token_created_at", nullable = false, columnDefinition = "DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Column(name = "fcm_token_created_at", nullable = false)
     private LocalDateTime fcmTokenCreatedAt = LocalDateTime.now();
 
     @Comment("삭제일시")
