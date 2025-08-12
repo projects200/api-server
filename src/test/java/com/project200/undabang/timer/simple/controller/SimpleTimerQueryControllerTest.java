@@ -35,10 +35,10 @@ class SimpleTimerQueryControllerTest extends AbstractRestDocSupport {
     private SimpleTimerQueryService simpleTimerQueryService;
 
     @Nested
-    class GetSimpleTimer{
+    class GetSimpleTimer {
         @Test
         @DisplayName("회원의 심플 타이머 목록을 성공적으로 조회한다")
-        public void getSimpleTimers() throws Exception{
+        public void getSimpleTimers() throws Exception {
             // given
             UUID memberId = UUID.randomUUID();
             List<SimpleTimerRecord> recordList =createSimpleTimerRecordList();
@@ -49,7 +49,7 @@ class SimpleTimerQueryControllerTest extends AbstractRestDocSupport {
 
             BDDMockito.given(simpleTimerQueryService.getSimpleTimers()).willReturn(expectedResponse);
 
-            // when
+            // when & then
             mockMvc.perform(get("/api/v1/simple-timers")
                     .contentType(MediaType.APPLICATION_JSON)
                     .accept(MediaType.APPLICATION_JSON)
