@@ -44,4 +44,13 @@ public class SimpleTimer {
 
     @Column(name = "simple_timer_deleted_at")
     private LocalDateTime simpleTimerDeletedAt;
+
+    public static SimpleTimer of(Member member, Integer time) {
+        return SimpleTimer.builder()
+                .member(member)
+                .simpleTimerTime(time)
+                .simpleTimerCreatedAt(LocalDateTime.now())
+                .simpleTimerUpdatedAt(LocalDateTime.now())
+                .build();
+    }
 }
