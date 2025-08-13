@@ -1,8 +1,6 @@
 package com.project200.undabang.timer.simple.service.impl;
 
 import com.project200.undabang.common.context.UserContextHolder;
-import com.project200.undabang.common.web.exception.CustomException;
-import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.service.PolicyService;
@@ -72,10 +70,15 @@ class SimpleTimerCommandServiceImplTest {
                 Assertions.assertThat(savedTimers.get(5).getSimpleTimerTime()).isEqualTo(90);
             }
         }
+    }
+
+    @Nested
+    @DisplayName("getTimeList 메소드는")
+    class GetTimeListTest {
 
         @Test
-        @DisplayName("정책의 타이머 개수와 실제 값의 개수가 다르면 예외를 발생시킨다.")
-        void throwsException_whenPolicyMismatch() {
+        @DisplayName("정책의 타이머 개수보다 타이머 값이 적으면, 설정된 값 만큼만 타이머를 생성한다.")
+        void createLessTimerThanPolicyCount() {
             // given
             UUID testMemberId = UUID.randomUUID();
             Member testMember = Member.builder().memberId(testMemberId).build();
@@ -85,10 +88,75 @@ class SimpleTimerCommandServiceImplTest {
                 given(policyService.getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_INIT_COUNT)).willReturn(6);
                 given(policyService.getPolicyValueAsString(PolicyKey.SIMPLE_TIMER_INIT_VALUES)).willReturn("30,40,50");
 
-                // when & then
-                Assertions.assertThatThrownBy(() -> simpleTimerCommandService.createDefaultSimpleTimer(testMember))
-                        .isInstanceOf(CustomException.class)
-                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INTERNAL_SERVER_ERROR);
+                // when
+                simpleTimerCommandService.createDefaultSimpleTimer(testMember);
+
+                // then
+                ArgumentCaptor<List<SimpleTimer>> captor = ArgumentCaptor.forClass(List.class);
+                verify(simpleTimerRepository).saveAll(captor.capture());
+                List<SimpleTimer> savedTimers = captor.getValue();
+
+                Assertions.assertThat(savedTimers).hasSize(3);
+                Assertions.assertThat(savedTimers.get(0).getSimpleTimerTime()).isEqualTo(30);
+                Assertions.assertThat(savedTimers.get(1).getSimpleTimerTime()).isEqualTo(40);
+                Assertions.assertThat(savedTimers.get(2).getSimpleTimerTime()).isEqualTo(50);
+            }
+        }
+
+        @Test
+        @DisplayName("정책의 타이머 개수보다 타이머 값이 많으면, 설정된 개수 만큼만 타이머를 생성한다.")
+        void createMoreTimerThanPolicyCount() {
+            // given
+            UUID testMemberId = UUID.randomUUID();
+            Member testMember = Member.builder().memberId(testMemberId).build();
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(testMemberId);
+                given(policyService.getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_INIT_COUNT)).willReturn(3);
+                given(policyService.getPolicyValueAsString(PolicyKey.SIMPLE_TIMER_INIT_VALUES)).willReturn("30,40,50,60,75,90");
+
+                // when
+                simpleTimerCommandService.createDefaultSimpleTimer(testMember);
+
+                // then
+                ArgumentCaptor<List<SimpleTimer>> captor = ArgumentCaptor.forClass(List.class);
+                verify(simpleTimerRepository).saveAll(captor.capture());
+                List<SimpleTimer> savedTimers = captor.getValue();
+
+                Assertions.assertThat(savedTimers).hasSize(3);
+                Assertions.assertThat(savedTimers.get(0).getSimpleTimerTime()).isEqualTo(30);
+                Assertions.assertThat(savedTimers.get(1).getSimpleTimerTime()).isEqualTo(40);
+                Assertions.assertThat(savedTimers.get(2).getSimpleTimerTime()).isEqualTo(50);
+            }
+        }
+
+        @Test
+        @DisplayName("타이머 값 문자열에 공백이 포함되어 있어도 정상적으로 파싱하여 타이머를 생성한다.")
+        void createTimerWithWhitespaceValues() {
+            // given
+            UUID testMemberId = UUID.randomUUID();
+            Member testMember = Member.builder().memberId(testMemberId).build();
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(testMemberId);
+                given(policyService.getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_INIT_COUNT)).willReturn(6);
+                given(policyService.getPolicyValueAsString(PolicyKey.SIMPLE_TIMER_INIT_VALUES)).willReturn(" 30 , 40,  50 , 60 , 75 , 90 ");
+
+                // when
+                simpleTimerCommandService.createDefaultSimpleTimer(testMember);
+
+                // then
+                ArgumentCaptor<List<SimpleTimer>> captor = ArgumentCaptor.forClass(List.class);
+                verify(simpleTimerRepository).saveAll(captor.capture());
+                List<SimpleTimer> savedTimers = captor.getValue();
+
+                Assertions.assertThat(savedTimers).hasSize(6);
+                Assertions.assertThat(savedTimers.get(0).getSimpleTimerTime()).isEqualTo(30);
+                Assertions.assertThat(savedTimers.get(1).getSimpleTimerTime()).isEqualTo(40);
+                Assertions.assertThat(savedTimers.get(2).getSimpleTimerTime()).isEqualTo(50);
+                Assertions.assertThat(savedTimers.get(3).getSimpleTimerTime()).isEqualTo(60);
+                Assertions.assertThat(savedTimers.get(4).getSimpleTimerTime()).isEqualTo(75);
+                Assertions.assertThat(savedTimers.get(5).getSimpleTimerTime()).isEqualTo(90);
             }
         }
     }
