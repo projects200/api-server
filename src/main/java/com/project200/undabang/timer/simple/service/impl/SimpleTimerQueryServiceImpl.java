@@ -27,7 +27,7 @@ public class SimpleTimerQueryServiceImpl implements SimpleTimerQueryService {
     private final MemberRepository memberRepository;
 
     @Override
-    public GetSimpleTimerResponseDto getSimpleTimers(){
+    public GetSimpleTimerResponseDto getSimpleTimers() {
         UUID memberId = UserContextHolder.getUserId();
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
@@ -37,7 +37,7 @@ public class SimpleTimerQueryServiceImpl implements SimpleTimerQueryService {
         return createSimpleTimerResponse(simpleTimerList);
     }
 
-    private GetSimpleTimerResponseDto createSimpleTimerResponse(List<SimpleTimer> simpleTimerList){
+    private GetSimpleTimerResponseDto createSimpleTimerResponse(List<SimpleTimer> simpleTimerList) {
         List<SimpleTimerRecord> simpleTimerRecordList = simpleTimerList.stream()
                 .map(SimpleTimerRecord::from)
                 .toList();

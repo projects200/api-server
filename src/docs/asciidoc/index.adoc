@@ -97,6 +97,10 @@ include::overview/공통-개발-참고-사항.adoc[]
 
 - 회원 등록 상태 조회 API #GET# `/auth/v1/registration-status`
 
+- 로그인 API #POST# `/api/v1/login`
+
+- 로그아웃 API #POST# `/api/v1/logout`
+
 === xref:회원-API.html[회원 API]
 
 - 회원 운동 점수 조회 API #GET# `/api/v1/members/score`

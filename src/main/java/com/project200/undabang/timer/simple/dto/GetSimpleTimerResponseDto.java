@@ -15,7 +15,7 @@ public class GetSimpleTimerResponseDto {
     private int simpleTimerCount;
     private List<SimpleTimerRecord> simpleTimers;
 
-    public static GetSimpleTimerResponseDto of(List<SimpleTimerRecord> simpleTimers){
+    public static GetSimpleTimerResponseDto of(List<SimpleTimerRecord> simpleTimers) {
         return GetSimpleTimerResponseDto.builder()
                 .simpleTimerCount(simpleTimers.size())
                 .simpleTimers(simpleTimers)
