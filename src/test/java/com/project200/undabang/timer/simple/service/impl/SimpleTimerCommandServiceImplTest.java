@@ -58,7 +58,7 @@ class SimpleTimerCommandServiceImplTest {
 
             // when
             // Member 객체 대신 MemberSignedUpEvent 객체를 파라미터로 전달
-            simpleTimerCommandService.createDefaultSimpleTimer(event);
+            simpleTimerCommandService.createDefaultSimpleTimer(testMemberId);
 
             // then
             ArgumentCaptor<List<SimpleTimer>> captor = ArgumentCaptor.forClass(List.class);
@@ -86,7 +86,7 @@ class SimpleTimerCommandServiceImplTest {
             given(memberRepository.findById(testMemberId)).willReturn(Optional.empty());
 
             // when & then
-            Assertions.assertThatThrownBy(() -> simpleTimerCommandService.createDefaultSimpleTimer(event));
+            Assertions.assertThatThrownBy(() -> simpleTimerCommandService.createDefaultSimpleTimer(testMemberId));
         }
     }
 
@@ -109,7 +109,7 @@ class SimpleTimerCommandServiceImplTest {
 
             // when
             // Member 객체 대신 MemberSignedUpEvent 객체를 파라미터로 전달
-            simpleTimerCommandService.createDefaultSimpleTimer(event);
+            simpleTimerCommandService.createDefaultSimpleTimer(testMemberId);
 
             // then
             ArgumentCaptor<List<SimpleTimer>> captor = ArgumentCaptor.forClass(List.class);
@@ -137,7 +137,7 @@ class SimpleTimerCommandServiceImplTest {
 
             // when
             // Member 객체 대신 MemberSignedUpEvent 객체를 파라미터로 전달
-            simpleTimerCommandService.createDefaultSimpleTimer(event);
+            simpleTimerCommandService.createDefaultSimpleTimer(testMemberId);
 
             // then
             ArgumentCaptor<List<SimpleTimer>> captor = ArgumentCaptor.forClass(List.class);
@@ -165,7 +165,7 @@ class SimpleTimerCommandServiceImplTest {
 
             // when
             // Member 객체 대신 MemberSignedUpEvent 객체를 파라미터로 전달
-            simpleTimerCommandService.createDefaultSimpleTimer(event);
+            simpleTimerCommandService.createDefaultSimpleTimer(testMemberId);
 
             // then
             ArgumentCaptor<List<SimpleTimer>> captor = ArgumentCaptor.forClass(List.class);

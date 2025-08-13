@@ -1,7 +1,7 @@
 package com.project200.undabang.timer.simple.service;
 
-import com.project200.undabang.member.dto.event.MemberSignedUpEvent;
+import java.util.UUID;
 
 public interface SimpleTimerCommandService {
-    void createDefaultSimpleTimer(MemberSignedUpEvent event);
+    void createDefaultSimpleTimer(UUID memberId);
 }
