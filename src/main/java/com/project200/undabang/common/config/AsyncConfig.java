@@ -38,7 +38,7 @@ public class AsyncConfig {
      * 이를 통해 해당 배치 잡이 다른 비동기 작업에 영향을 주지 않고 독립적인 스레드에서 실행되도록 보장합니다.
      */
     @Bean(name = "decreaseExerciseScoreBatchJobExecutor")
-    public Executor decreaseExerciseScoreBatchJobExecutor(){
+    public Executor decreaseExerciseScoreBatchJobExecutor() {
         return createThreadPoolTaskExecutor(batchAsyncProperties.getThreadNamePrefix(),
                 batchAsyncProperties.getCorePoolSize(),
                 batchAsyncProperties.getMaxPoolSize(),
@@ -50,7 +50,7 @@ public class AsyncConfig {
      * 따라서 메시지 전송이 다른 비동기 작업에 영향을 주지 않고 독립된 쓰레드에서 실행되도록 보장합니다.
      */
     @Bean(name = "slackMessageSenderExecutor")
-    public Executor slackMessageSenderExecutor(){
+    public Executor slackMessageSenderExecutor() {
         return createThreadPoolTaskExecutor(slackAsyncProperties.getThreadNamePrefix(),
                 slackAsyncProperties.getCorePoolSize(),
                 slackAsyncProperties.getMaxPoolSize(),

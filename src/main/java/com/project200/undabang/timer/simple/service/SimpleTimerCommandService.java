@@ -1,7 +1,7 @@
 package com.project200.undabang.timer.simple.service;
 
-import com.project200.undabang.member.entity.Member;
+import com.project200.undabang.member.dto.event.MemberSignedUpEvent;
 
 public interface SimpleTimerCommandService {
-    void createDefaultSimpleTimer(Member member);
+    void createDefaultSimpleTimer(MemberSignedUpEvent event);
 }
