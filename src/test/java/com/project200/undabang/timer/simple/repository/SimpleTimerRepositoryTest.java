@@ -86,7 +86,7 @@ class SimpleTimerRepositoryTest {
         }
     }
 
-    private Member createAndSaveMember(String nickname){
+    private Member createAndSaveMember(String nickname) {
         Member member = Member.builder()
                 .memberId(UUID.randomUUID())
                 .memberEmail(nickname + "@email.com")
@@ -99,7 +99,7 @@ class SimpleTimerRepositoryTest {
         return member;
     }
 
-    private SimpleTimer createAndSaveSimpleTimer(Member member, int time){
+    private SimpleTimer createAndSaveSimpleTimer(Member member, int time) {
         SimpleTimer timer = SimpleTimer.builder()
                 .member(member)
                 .simpleTimerTime(time)
@@ -108,7 +108,7 @@ class SimpleTimerRepositoryTest {
         return timer;
     }
 
-    private void flushAndClear(){
+    private void flushAndClear() {
         em.flush();
         em.clear();
     }

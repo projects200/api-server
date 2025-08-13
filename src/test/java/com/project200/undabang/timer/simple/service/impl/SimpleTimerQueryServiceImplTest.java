@@ -39,7 +39,7 @@ class SimpleTimerQueryServiceImplTest {
 
     @Nested
     @DisplayName("getSimpleTimers() 메소드는")
-    class Describe_getSimpleTimers{
+    class Describe_getSimpleTimers {
         @Test
         @DisplayName("유효한 사용자로 호출될 때, 회원의 심플 타이머 정보를 조합하여 반환한다")
         void getSimpleTimers() {
@@ -48,7 +48,7 @@ class SimpleTimerQueryServiceImplTest {
             Member testUser = Member.builder().memberId(testUserId).build();
             List<SimpleTimer> simpleTimerList = createSimpleTimerList(testUser);
 
-            try(MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)){
+            try(MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(testUserId);
                 given(memberRepository.findById(testUserId)).willReturn(Optional.of(testUser));
                 given(simpleTimerRepository.findByMemberAndSimpleTimerDeletedAtNull(testUser)).willReturn(simpleTimerList);
@@ -70,7 +70,7 @@ class SimpleTimerQueryServiceImplTest {
         void getSimpleTimers_MemberNotFound() {
             // given
             UUID testUserId = UUID.randomUUID();
-            try(MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)){
+            try(MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(testUserId);
                 given(memberRepository.findById(testUserId)).willReturn(Optional.empty());
 
@@ -96,7 +96,4 @@ class SimpleTimerQueryServiceImplTest {
             );
         }
     }
-
-
-
 }

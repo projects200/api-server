@@ -1,5 +1,6 @@
-package com.project200.undabang.member.entity;
+package com.project200.undabang.push_message.entity;
 
+import com.project200.undabang.member.entity.Member;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -41,20 +42,52 @@ public class FcmToken {
     @Column(name = "fcm_token_user_agent")
     private String fcmTokenUserAgent;
 
+    @Builder.Default
+    @NotNull
+    @Comment("토큰 활성화 여부")
+    @ColumnDefault("1")
+    @Column(name = "fcm_token_is_active", nullable = false)
+    private Boolean fcmTokenIsActive = true;
+
+    @Builder.Default
     @NotNull
     @Comment("마지막 활성 일시")
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "fcm_token_activated_at", nullable = false)
-    private LocalDateTime fcmTokenActivatedAt;
+    private LocalDateTime fcmTokenActivatedAt = LocalDateTime.now();
 
+    @Builder.Default
     @NotNull
     @Comment("생성일시")
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "fcm_token_created_at", nullable = false)
-    private LocalDateTime fcmTokenCreatedAt;
+    private LocalDateTime fcmTokenCreatedAt = LocalDateTime.now();
 
     @Comment("삭제일시")
     @Column(name = "fcm_token_deleted_at")
     private LocalDateTime fcmTokenDeletedAt;
+
+    public void activate() {
+        this.fcmTokenIsActive = true;
+        this.fcmTokenActivatedAt = LocalDateTime.now();
+    }
+
+    public void deactivate() {
+        this.fcmTokenIsActive = false;
+        this.fcmTokenActivatedAt = LocalDateTime.now();
+    }
+
+    public void delete() {
+        this.fcmTokenDeletedAt = LocalDateTime.now();
+        this.fcmTokenIsActive = false;
+    }
+
+    public boolean isActive() {
+        return this.fcmTokenIsActive;
+    }
+
+    public boolean isDeleted() {
+        return this.fcmTokenDeletedAt != null;
+    }
 
 }
