@@ -66,6 +66,8 @@ public class MemberCommandServiceImpl implements MemberCommandService {
 
         Member savedMember = memberRepository.save(member);
 
+        // 회원가입시 정책에 저장되어있는 심플타이머를 회원별로 추가해주는 기능
+        // 해당 기능이 실패했다고 회원가입이 실패하면 안되므로, 비동기 작업을 통해 구현하였다.
         simpleTimerCommandService.createDefaultSimpleTimer(savedMember);
 
         return SignUpResponseDto.of(member);

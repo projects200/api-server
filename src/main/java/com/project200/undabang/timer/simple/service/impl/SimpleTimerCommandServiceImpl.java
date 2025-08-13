@@ -8,6 +8,7 @@ import com.project200.undabang.timer.simple.repository.SimpleTimerRepository;
 import com.project200.undabang.timer.simple.service.SimpleTimerCommandService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,7 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
      * @param member 초기화된 심플 타이머와 연관된 회원 객체
      */
     @Override
+    @Async(value = "generalPurposeAsyncExecutor")
     public void createDefaultSimpleTimer(Member member) {
         int simpleTimerCount = policyService.getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_INIT_COUNT);
         String simpleTimerValue = policyService.getPolicyValueAsString(PolicyKey.SIMPLE_TIMER_INIT_VALUES);
