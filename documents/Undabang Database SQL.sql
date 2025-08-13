@@ -57,16 +57,16 @@ create table if not exists BATCH_JOB_EXECUTION_SEQ
 
 create table if not exists BATCH_JOB_INSTANCE
 (
-    JOB_INSTANCE_ID bigint       not null   primary key,
+    JOB_INSTANCE_ID bigint not null primary key,
     VERSION         bigint       null,
     JOB_NAME        varchar(100) not null,
     JOB_KEY         varchar(32)  not null,
-    constraint JOB_INST_UN  unique (JOB_NAME, JOB_KEY)
+    constraint JOB_INST_UN unique (JOB_NAME, JOB_KEY)
 );
 
 create table if not exists BATCH_JOB_EXECUTION
 (
-    JOB_EXECUTION_ID           bigint        not null        primary key,
+    JOB_EXECUTION_ID bigint not null primary key,
     VERSION                    bigint        null,
     JOB_INSTANCE_ID            bigint        not null,
     CREATE_TIME                datetime(6)   not null,
@@ -224,15 +224,15 @@ create table if not exists exercises
 (
     exercise_id            bigint auto_increment
         primary key,
-    member_id              char(36)                                                     not null,
-    exercise_started_at    datetime default CURRENT_TIMESTAMP                           not null,
-    exercise_ended_at datetime default ((exercise_started_at + interval 1 hour)) not null,
-    exercise_detail        text                                                         null,
-    exercise_title         varchar(255)                                                 not null,
-    exercise_personal_type varchar(255)                                                 null comment '시스템이 아닌 개인 등록',
-    exercise_created_at    datetime default CURRENT_TIMESTAMP                           not null,
-    exercise_deleted_at    datetime                                                     null,
-    exercise_location      varchar(255)                                                 null,
+    member_id              char(36)                                                   not null,
+    exercise_started_at    datetime default CURRENT_TIMESTAMP                         not null,
+    exercise_ended_at      datetime default ((exercise_started_at + interval 1 hour)) not null,
+    exercise_detail        text                                                       null,
+    exercise_title         varchar(255)                                               not null,
+    exercise_personal_type varchar(255)                                               null comment '시스템이 아닌 개인 등록',
+    exercise_created_at    datetime default CURRENT_TIMESTAMP                         not null,
+    exercise_deleted_at    datetime                                                   null,
+    exercise_location      varchar(255)                                               null,
     constraint FK_ex_member
         foreign key (member_id) references members (member_id)
 );
@@ -305,29 +305,32 @@ create table if not exists member_pictures
         foreign key (picture_id) references pictures (picture_id)
 );
 
-create table if not exists policies (
-                                        policy_id          int          not null auto_increment primary key,
-                                        policy_key         varchar(100) not null unique comment '정책을 식별하는 키 (ex:SCORE_INITIAL)',
-                                        policy_value       varchar(255) null comment '정책 값',
-                                        policy_unit        varchar(20)  null comment '정책 값의 단위',
-                                        policy_description varchar(500) null comment '관리자 페이지에 표시될 정책 설명',
-                                        policy_updated_at  datetime     not null default current_timestamp comment '마지막 수정 일시',
-                                        policy_created_at  datetime     not null default current_timestamp comment '생성일시'
+create table if not exists policies
+(
+    policy_id          int          not null auto_increment primary key,
+    policy_key         varchar(100) not null unique comment '정책을 식별하는 키 (ex:SCORE_INITIAL)',
+    policy_value       varchar(255) null comment '정책 값',
+    policy_unit        varchar(20)  null comment '정책 값의 단위',
+    policy_description varchar(500) null comment '관리자 페이지에 표시될 정책 설명',
+    policy_updated_at  datetime     not null default current_timestamp comment '마지막 수정 일시',
+    policy_created_at  datetime     not null default current_timestamp comment '생성일시'
 );
 
-create table if not exists policy_groups (
-                                             policy_groups_id         int          not null auto_increment primary key,
-                                             policy_groups_name       varchar(100) not null unique comment '정책 타입 이름',
-                                             policy_groups_created_at datetime     not null default current_timestamp comment '생성일시',
-                                             policy_groups_updated_at datetime     not null default current_timestamp comment '수정일시'
+create table if not exists policy_groups
+(
+    policy_groups_id         int          not null auto_increment primary key,
+    policy_groups_name       varchar(100) not null unique comment '정책 타입 이름',
+    policy_groups_created_at datetime     not null default current_timestamp comment '생성일시',
+    policy_groups_updated_at datetime     not null default current_timestamp comment '수정일시'
 );
 
-create table if not exists policy_group_mappings (
-                                                     mapping_id       int not null auto_increment primary key comment '정책 타입 매핑 id',
-                                                     policy_id        int not null comment '정책번호',
-                                                     policy_groups_id int not null comment '정책 그룹 번호',
-                                                     foreign key (policy_id) references policies (policy_id),
-                                                     foreign key (policy_groups_id) references policy_groups (policy_groups_id)
+create table if not exists policy_group_mappings
+(
+    mapping_id       int not null auto_increment primary key comment '정책 타입 매핑 id',
+    policy_id        int not null comment '정책번호',
+    policy_groups_id int not null comment '정책 그룹 번호',
+    foreign key (policy_id) references policies (policy_id),
+    foreign key (policy_groups_id) references policy_groups (policy_groups_id)
 );
 
 create table if not exists post_report_subjects
@@ -477,23 +480,23 @@ create table if not exists post_reports
 
 create table if not exists custom_timers
 (
-    custom_timer_id         bigint          not null   auto_increment  primary key,
-    member_id               char(36)        not null comment 'UUID_SELF',
-    custom_timer_name       varchar(100)    null comment '커스텀 타이머 이름',
-    custom_timer_created_at datetime        not null default current_timestamp,
-    custom_timer_updated_at datetime        not null default current_timestamp ON UPDATE CURRENT_TIMESTAMP,
-    custom_timer_deleted_at datetime        null,
+    custom_timer_id         bigint       not null auto_increment primary key,
+    member_id               char(36)     not null comment 'UUID_SELF',
+    custom_timer_name       varchar(100) null comment '커스텀 타이머 이름',
+    custom_timer_created_at datetime     not null default current_timestamp,
+    custom_timer_updated_at datetime     not null default current_timestamp ON UPDATE CURRENT_TIMESTAMP,
+    custom_timer_deleted_at datetime     null,
     foreign key (member_id) references members (member_id)
 );
 
 create table if not exists simple_timers
 (
-    simple_timer_id             bigint       not null auto_increment primary key ,
-    member_id                   char(36)     not null comment 'UUID_SELF',
-    simple_timer_time           int          null comment '심플 타이머 시간',
-    simple_timer_created_at     datetime     not null default current_timestamp,
-    simple_timer_updated_at     datetime     not null default current_timestamp ON UPDATE CURRENT_TIMESTAMP,
-    simple_timer_deleted_at     datetime     null,
+    simple_timer_id         bigint   not null auto_increment primary key,
+    member_id               char(36) not null comment 'UUID_SELF',
+    simple_timer_time       int      null comment '심플 타이머 시간',
+    simple_timer_created_at datetime not null default current_timestamp,
+    simple_timer_updated_at datetime not null default current_timestamp ON UPDATE CURRENT_TIMESTAMP,
+    simple_timer_deleted_at datetime null,
     foreign key (member_id) references members (member_id)
 );
 
@@ -501,7 +504,7 @@ create table if not exists custom_timer_steps
 (
     custom_timer_steps_id         bigint      not null auto_increment primary key,
     custom_timer_id               bigint      not null comment 'AUTO_INCREMENT',
-    custom_timer_steps_name       varchar(50) null     comment '스텝 이름',
+    custom_timer_steps_name varchar(50) null comment '스텝 이름',
     custom_timer_steps_order      tinyint     not null comment '스텝 순서',
     custom_timer_steps_time       int         not null comment '스텝 시간',
     custom_timer_steps_created_at datetime    not null default current_timestamp,
@@ -595,9 +598,12 @@ VALUES (1, 1),
        (8, 1);
 
 -- 시퀀스 초기값 설정
-insert into BATCH_JOB_EXECUTION_SEQ (ID, UNIQUE_KEY) values (0, '0');
-insert into BATCH_JOB_SEQ (ID, UNIQUE_KEY) values (0, '0');
-insert into BATCH_STEP_EXECUTION_SEQ (ID, UNIQUE_KEY) values (0, '0');
+insert into BATCH_JOB_EXECUTION_SEQ (ID, UNIQUE_KEY)
+values (0, '0');
+insert into BATCH_JOB_SEQ (ID, UNIQUE_KEY)
+values (0, '0');
+insert into BATCH_STEP_EXECUTION_SEQ (ID, UNIQUE_KEY)
+values (0, '0');
 
 CREATE TABLE IF NOT EXISTS fcm_tokens
 (
@@ -605,6 +611,7 @@ CREATE TABLE IF NOT EXISTS fcm_tokens
     member_id              CHAR(36)     NOT NULL COMMENT 'UUID_SELF',
     fcm_token_value        VARCHAR(255) NOT NULL COMMENT 'FCM 토큰 값, unique',
     fcm_token_user_agent   VARCHAR(255) NULL COMMENT '디바이스 정보 (User Agent)',
+    fcm_token_is_active BOOLEAN NOT NULL DEFAULT TRUE COMMENT '토큰 활성화 여부',
     fcm_token_activated_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '마지막 활성 일시',
     fcm_token_created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
     fcm_token_deleted_at   DATETIME     NULL COMMENT '삭제일시',
@@ -708,7 +715,7 @@ VALUES (3, 'simple-timer');
 -- SIMPLE_TIMER_INIT_COUNT 정책을 생성
 INSERT INTO policies (policy_id, policy_key, policy_value, policy_unit, policy_description)
 VALUES (15, 'SIMPLE_TIMER_INIT_COUNT', '6',
-        'COUNT',  '심플 타이머의 초기 설정 갯수');
+        'COUNT', '심플 타이머의 초기 설정 갯수');
 
 INSERT INTO policy_group_mappings (policy_id, policy_groups_id)
 VALUES (15, 3);
@@ -716,7 +723,7 @@ VALUES (15, 3);
 -- SIMPLE_TIMER_INIT_VALUES 정책을 생성
 INSERT INTO policies (policy_id, policy_key, policy_value, policy_unit, policy_description)
 VALUES (16, 'SIMPLE_TIMER_INIT_VALUES', '30,40,50,60,75,90',
-        'SECONDS',  '심플 타이머의 초기 설정 값. 회원 가입시 추가해서 사용해야 함');
+        'SECONDS', '심플 타이머의 초기 설정 값. 회원 가입시 추가해서 사용해야 함');
 
 INSERT INTO policy_group_mappings (policy_id, policy_groups_id)
 VALUES (16, 3);

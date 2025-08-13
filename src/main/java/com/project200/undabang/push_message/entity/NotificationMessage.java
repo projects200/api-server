@@ -1,4 +1,4 @@
-package com.project200.undabang.common.entity;
+package com.project200.undabang.push_message.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -43,17 +43,19 @@ public class NotificationMessage {
     @Column(name = "message_link_url")
     private String messageLinkUrl;
 
+    @Builder.Default
     @NotNull
     @Comment("생성일시")
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "message_created_at", nullable = false)
-    private LocalDateTime messageCreatedAt;
+    private LocalDateTime messageCreatedAt = LocalDateTime.now();
 
+    @Builder.Default
     @NotNull
     @Comment("수정일시")
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "message_updated_at", nullable = false)
-    private LocalDateTime messageUpdatedAt;
+    private LocalDateTime messageUpdatedAt = LocalDateTime.now();
 
     @Comment("삭제일시")
     @Column(name = "message_deleted_at")
