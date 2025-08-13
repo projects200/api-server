@@ -1,7 +1,8 @@
 package com.project200.undabang.timer.simple.service.impl;
 
-import com.project200.undabang.common.context.UserContextHolder;
+import com.project200.undabang.member.dto.event.MemberSignedUpEvent;
 import com.project200.undabang.member.entity.Member;
+import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.service.PolicyService;
 import com.project200.undabang.timer.simple.entity.SimpleTimer;
@@ -14,14 +15,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,6 +32,9 @@ class SimpleTimerCommandServiceImplTest {
 
     @Mock
     private SimpleTimerRepository simpleTimerRepository;
+
+    @Mock
+    private MemberRepository memberRepository;
 
     @InjectMocks
     private SimpleTimerCommandServiceImpl simpleTimerCommandService;
@@ -46,29 +49,44 @@ class SimpleTimerCommandServiceImplTest {
             // given
             UUID testMemberId = UUID.randomUUID();
             Member testMember = Member.builder().memberId(testMemberId).build();
+            MemberSignedUpEvent event = new MemberSignedUpEvent(testMemberId);
 
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                given(UserContextHolder.getUserId()).willReturn(testMemberId);
-                given(policyService.getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_INIT_COUNT)).willReturn(6);
-                given(policyService.getPolicyValueAsString(PolicyKey.SIMPLE_TIMER_INIT_VALUES)).willReturn("30,40,50,60,75,90");
+            // MemberRepository.findById 호출 시 testMember를 반환하도록 설정
+            given(memberRepository.findById(testMemberId)).willReturn(Optional.of(testMember));
+            given(policyService.getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_INIT_COUNT)).willReturn(6);
+            given(policyService.getPolicyValueAsString(PolicyKey.SIMPLE_TIMER_INIT_VALUES)).willReturn("30,40,50,60,75,90");
 
-                // when
-                simpleTimerCommandService.createDefaultSimpleTimer(testMember);
+            // when
+            // Member 객체 대신 MemberSignedUpEvent 객체를 파라미터로 전달
+            simpleTimerCommandService.createDefaultSimpleTimer(event);
 
-                // then
-                ArgumentCaptor<List<SimpleTimer>> captor = ArgumentCaptor.forClass(List.class);
-                verify(simpleTimerRepository).saveAll(captor.capture());
-                List<SimpleTimer> savedTimers = captor.getValue();
+            // then
+            ArgumentCaptor<List<SimpleTimer>> captor = ArgumentCaptor.forClass(List.class);
+            verify(simpleTimerRepository).saveAll(captor.capture());
+            List<SimpleTimer> savedTimers = captor.getValue();
 
-                Assertions.assertThat(savedTimers).hasSize(6);
-                Assertions.assertThat(savedTimers.get(0).getMember()).isEqualTo(testMember);
-                Assertions.assertThat(savedTimers.get(0).getSimpleTimerTime()).isEqualTo(30);
-                Assertions.assertThat(savedTimers.get(1).getSimpleTimerTime()).isEqualTo(40);
-                Assertions.assertThat(savedTimers.get(2).getSimpleTimerTime()).isEqualTo(50);
-                Assertions.assertThat(savedTimers.get(3).getSimpleTimerTime()).isEqualTo(60);
-                Assertions.assertThat(savedTimers.get(4).getSimpleTimerTime()).isEqualTo(75);
-                Assertions.assertThat(savedTimers.get(5).getSimpleTimerTime()).isEqualTo(90);
-            }
+            Assertions.assertThat(savedTimers).hasSize(6);
+            Assertions.assertThat(savedTimers.get(0).getMember()).isEqualTo(testMember);
+            Assertions.assertThat(savedTimers.get(0).getSimpleTimerTime()).isEqualTo(30);
+            Assertions.assertThat(savedTimers.get(1).getSimpleTimerTime()).isEqualTo(40);
+            Assertions.assertThat(savedTimers.get(2).getSimpleTimerTime()).isEqualTo(50);
+            Assertions.assertThat(savedTimers.get(3).getSimpleTimerTime()).isEqualTo(60);
+            Assertions.assertThat(savedTimers.get(4).getSimpleTimerTime()).isEqualTo(75);
+            Assertions.assertThat(savedTimers.get(5).getSimpleTimerTime()).isEqualTo(90);
+        }
+
+        @Test
+        @DisplayName("회원 정보가 존재하지 않을경우 CUSTOM_EXCEPTION 을 반환한다.")
+        void createDefaultSimpleTimer_memberNotFoundException() {
+            // given
+            UUID testMemberId = UUID.randomUUID();
+            MemberSignedUpEvent event = new MemberSignedUpEvent(testMemberId);
+
+            // MemberRepository.findById 호출 시 Optional.empty() 반환
+            given(memberRepository.findById(testMemberId)).willReturn(Optional.empty());
+
+            // when & then
+            Assertions.assertThatThrownBy(() -> simpleTimerCommandService.createDefaultSimpleTimer(event));
         }
     }
 
@@ -82,25 +100,26 @@ class SimpleTimerCommandServiceImplTest {
             // given
             UUID testMemberId = UUID.randomUUID();
             Member testMember = Member.builder().memberId(testMemberId).build();
+            MemberSignedUpEvent event = new MemberSignedUpEvent(testMemberId); // MemberSignedUpEvent 객체 생성
 
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                given(UserContextHolder.getUserId()).willReturn(testMemberId);
-                given(policyService.getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_INIT_COUNT)).willReturn(6);
-                given(policyService.getPolicyValueAsString(PolicyKey.SIMPLE_TIMER_INIT_VALUES)).willReturn("30,40,50");
+            // MemberRepository.findById 호출 시 testMember를 반환하도록 설정
+            given(memberRepository.findById(testMemberId)).willReturn(Optional.of(testMember));
+            given(policyService.getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_INIT_COUNT)).willReturn(6);
+            given(policyService.getPolicyValueAsString(PolicyKey.SIMPLE_TIMER_INIT_VALUES)).willReturn("30,40,50");
 
-                // when
-                simpleTimerCommandService.createDefaultSimpleTimer(testMember);
+            // when
+            // Member 객체 대신 MemberSignedUpEvent 객체를 파라미터로 전달
+            simpleTimerCommandService.createDefaultSimpleTimer(event);
 
-                // then
-                ArgumentCaptor<List<SimpleTimer>> captor = ArgumentCaptor.forClass(List.class);
-                verify(simpleTimerRepository).saveAll(captor.capture());
-                List<SimpleTimer> savedTimers = captor.getValue();
+            // then
+            ArgumentCaptor<List<SimpleTimer>> captor = ArgumentCaptor.forClass(List.class);
+            verify(simpleTimerRepository).saveAll(captor.capture());
+            List<SimpleTimer> savedTimers = captor.getValue();
 
-                Assertions.assertThat(savedTimers).hasSize(3);
-                Assertions.assertThat(savedTimers.get(0).getSimpleTimerTime()).isEqualTo(30);
-                Assertions.assertThat(savedTimers.get(1).getSimpleTimerTime()).isEqualTo(40);
-                Assertions.assertThat(savedTimers.get(2).getSimpleTimerTime()).isEqualTo(50);
-            }
+            Assertions.assertThat(savedTimers).hasSize(3);
+            Assertions.assertThat(savedTimers.get(0).getSimpleTimerTime()).isEqualTo(30);
+            Assertions.assertThat(savedTimers.get(1).getSimpleTimerTime()).isEqualTo(40);
+            Assertions.assertThat(savedTimers.get(2).getSimpleTimerTime()).isEqualTo(50);
         }
 
         @Test
@@ -109,25 +128,26 @@ class SimpleTimerCommandServiceImplTest {
             // given
             UUID testMemberId = UUID.randomUUID();
             Member testMember = Member.builder().memberId(testMemberId).build();
+            MemberSignedUpEvent event = new MemberSignedUpEvent(testMemberId); // MemberSignedUpEvent 객체 생성
 
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                given(UserContextHolder.getUserId()).willReturn(testMemberId);
-                given(policyService.getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_INIT_COUNT)).willReturn(3);
-                given(policyService.getPolicyValueAsString(PolicyKey.SIMPLE_TIMER_INIT_VALUES)).willReturn("30,40,50,60,75,90");
+            // MemberRepository.findById 호출 시 testMember를 반환하도록 설정
+            given(memberRepository.findById(testMemberId)).willReturn(Optional.of(testMember));
+            given(policyService.getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_INIT_COUNT)).willReturn(3);
+            given(policyService.getPolicyValueAsString(PolicyKey.SIMPLE_TIMER_INIT_VALUES)).willReturn("30,40,50,60,75,90");
 
-                // when
-                simpleTimerCommandService.createDefaultSimpleTimer(testMember);
+            // when
+            // Member 객체 대신 MemberSignedUpEvent 객체를 파라미터로 전달
+            simpleTimerCommandService.createDefaultSimpleTimer(event);
 
-                // then
-                ArgumentCaptor<List<SimpleTimer>> captor = ArgumentCaptor.forClass(List.class);
-                verify(simpleTimerRepository).saveAll(captor.capture());
-                List<SimpleTimer> savedTimers = captor.getValue();
+            // then
+            ArgumentCaptor<List<SimpleTimer>> captor = ArgumentCaptor.forClass(List.class);
+            verify(simpleTimerRepository).saveAll(captor.capture());
+            List<SimpleTimer> savedTimers = captor.getValue();
 
-                Assertions.assertThat(savedTimers).hasSize(3);
-                Assertions.assertThat(savedTimers.get(0).getSimpleTimerTime()).isEqualTo(30);
-                Assertions.assertThat(savedTimers.get(1).getSimpleTimerTime()).isEqualTo(40);
-                Assertions.assertThat(savedTimers.get(2).getSimpleTimerTime()).isEqualTo(50);
-            }
+            Assertions.assertThat(savedTimers).hasSize(3);
+            Assertions.assertThat(savedTimers.get(0).getSimpleTimerTime()).isEqualTo(30);
+            Assertions.assertThat(savedTimers.get(1).getSimpleTimerTime()).isEqualTo(40);
+            Assertions.assertThat(savedTimers.get(2).getSimpleTimerTime()).isEqualTo(50);
         }
 
         @Test
@@ -136,28 +156,29 @@ class SimpleTimerCommandServiceImplTest {
             // given
             UUID testMemberId = UUID.randomUUID();
             Member testMember = Member.builder().memberId(testMemberId).build();
+            MemberSignedUpEvent event = new MemberSignedUpEvent(testMemberId); // MemberSignedUpEvent 객체 생성
 
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                given(UserContextHolder.getUserId()).willReturn(testMemberId);
-                given(policyService.getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_INIT_COUNT)).willReturn(6);
-                given(policyService.getPolicyValueAsString(PolicyKey.SIMPLE_TIMER_INIT_VALUES)).willReturn(" 30 , 40,  50 , 60 , 75 , 90 ");
+            // MemberRepository.findById 호출 시 testMember를 반환하도록 설정
+            given(memberRepository.findById(testMemberId)).willReturn(Optional.of(testMember));
+            given(policyService.getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_INIT_COUNT)).willReturn(6);
+            given(policyService.getPolicyValueAsString(PolicyKey.SIMPLE_TIMER_INIT_VALUES)).willReturn(" 30 , 40,  50 , 60 , 75 , 90 ");
 
-                // when
-                simpleTimerCommandService.createDefaultSimpleTimer(testMember);
+            // when
+            // Member 객체 대신 MemberSignedUpEvent 객체를 파라미터로 전달
+            simpleTimerCommandService.createDefaultSimpleTimer(event);
 
-                // then
-                ArgumentCaptor<List<SimpleTimer>> captor = ArgumentCaptor.forClass(List.class);
-                verify(simpleTimerRepository).saveAll(captor.capture());
-                List<SimpleTimer> savedTimers = captor.getValue();
+            // then
+            ArgumentCaptor<List<SimpleTimer>> captor = ArgumentCaptor.forClass(List.class);
+            verify(simpleTimerRepository).saveAll(captor.capture());
+            List<SimpleTimer> savedTimers = captor.getValue();
 
-                Assertions.assertThat(savedTimers).hasSize(6);
-                Assertions.assertThat(savedTimers.get(0).getSimpleTimerTime()).isEqualTo(30);
-                Assertions.assertThat(savedTimers.get(1).getSimpleTimerTime()).isEqualTo(40);
-                Assertions.assertThat(savedTimers.get(2).getSimpleTimerTime()).isEqualTo(50);
-                Assertions.assertThat(savedTimers.get(3).getSimpleTimerTime()).isEqualTo(60);
-                Assertions.assertThat(savedTimers.get(4).getSimpleTimerTime()).isEqualTo(75);
-                Assertions.assertThat(savedTimers.get(5).getSimpleTimerTime()).isEqualTo(90);
-            }
+            Assertions.assertThat(savedTimers).hasSize(6);
+            Assertions.assertThat(savedTimers.get(0).getSimpleTimerTime()).isEqualTo(30);
+            Assertions.assertThat(savedTimers.get(1).getSimpleTimerTime()).isEqualTo(40);
+            Assertions.assertThat(savedTimers.get(2).getSimpleTimerTime()).isEqualTo(50);
+            Assertions.assertThat(savedTimers.get(3).getSimpleTimerTime()).isEqualTo(60);
+            Assertions.assertThat(savedTimers.get(4).getSimpleTimerTime()).isEqualTo(75);
+            Assertions.assertThat(savedTimers.get(5).getSimpleTimerTime()).isEqualTo(90);
         }
     }
 }

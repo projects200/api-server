@@ -2,6 +2,7 @@ package com.project200.undabang.member.service.impl;
 
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
+import com.project200.undabang.member.dto.event.MemberSignedUpEvent;
 import com.project200.undabang.member.dto.request.SignUpRequestDto;
 import com.project200.undabang.member.dto.response.SignUpResponseDto;
 import com.project200.undabang.member.entity.Member;
@@ -9,17 +10,14 @@ import com.project200.undabang.member.enums.MemberGender;
 import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.service.PolicyService;
-import com.project200.undabang.timer.simple.service.SimpleTimerCommandService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -27,6 +25,7 @@ import java.util.UUID;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 class MemberCommandServiceImplTest {
@@ -41,7 +40,7 @@ class MemberCommandServiceImplTest {
     private PolicyService policyService;
 
     @Mock
-    private SimpleTimerCommandService simpleTimerCommandService;
+    private ApplicationEventPublisher eventPublisher;
 
     private MockedStatic<UserContextHolder> userContextHolderMock;
     private final UUID TEST_UUID = UUID.randomUUID();
@@ -170,8 +169,13 @@ class MemberCommandServiceImplTest {
             softly.assertThat(result.getMemberCreatedAt()).isNotNull();
         });
 
-        Mockito.verify(memberRepository, Mockito.times(1)).save(Mockito.any(Member.class));
-        Mockito.verify(simpleTimerCommandService, Mockito.times(1)).createDefaultSimpleTimer(member);
+        Mockito.verify(memberRepository, times(1)).save(Mockito.any(Member.class));
+
+        // 이벤트 발행 검증
+        ArgumentCaptor<MemberSignedUpEvent> eventCaptor = ArgumentCaptor.forClass(MemberSignedUpEvent.class);
+        Mockito.verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
+        MemberSignedUpEvent publishedEvent = eventCaptor.getValue();
+        assertEquals(TEST_UUID, publishedEvent.memberId());
     }
 
     @Test
