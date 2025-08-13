@@ -1,6 +1,7 @@
 package com.project200.undabang.common.config;
 
 import com.project200.undabang.common.properties.BatchAsyncProperties;
+import com.project200.undabang.common.properties.GeneralAsyncProperties;
 import com.project200.undabang.common.properties.SlackAsyncProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -28,6 +29,7 @@ import java.util.concurrent.Executor;
 public class AsyncConfig {
     private final BatchAsyncProperties batchAsyncProperties;
     private final SlackAsyncProperties slackAsyncProperties;
+    private final GeneralAsyncProperties generalAsyncProperties;
 
     /**
      * '운동 점수 감소' 배치 잡을 위한 전용 스레드 풀 Executor를 생성하여 빈으로 등록합니다.
@@ -37,13 +39,10 @@ public class AsyncConfig {
      */
     @Bean(name = "decreaseExerciseScoreBatchJobExecutor")
     public Executor decreaseExerciseScoreBatchJobExecutor(){
-        ThreadPoolTaskExecutor batchAsyncExecutor = new ThreadPoolTaskExecutor();
-        batchAsyncExecutor.setCorePoolSize(batchAsyncProperties.getCorePoolSize()); // 핵심 쓰레드 수
-        batchAsyncExecutor.setMaxPoolSize(batchAsyncProperties.getMaxPoolSize()); // 최대 쓰레드 수
-        batchAsyncExecutor.setQueueCapacity(batchAsyncProperties.getQueueCapacity());
-        batchAsyncExecutor.setThreadNamePrefix(batchAsyncProperties.getThreadNamePrefix()); // 쓰레드 이름 접두사
-        batchAsyncExecutor.initialize();
-        return batchAsyncExecutor;
+        return createThreadPoolTaskExecutor(batchAsyncProperties.getThreadNamePrefix(),
+                batchAsyncProperties.getCorePoolSize(),
+                batchAsyncProperties.getMaxPoolSize(),
+                batchAsyncProperties.getQueueCapacity());
     }
 
     /**
@@ -52,12 +51,41 @@ public class AsyncConfig {
      */
     @Bean(name = "slackMessageSenderExecutor")
     public Executor slackMessageSenderExecutor(){
-        ThreadPoolTaskExecutor slackAsyncExecutor = new ThreadPoolTaskExecutor();
-        slackAsyncExecutor.setCorePoolSize(slackAsyncProperties.getCorePoolSize()); // 핵심 쓰레드 수
-        slackAsyncExecutor.setMaxPoolSize(slackAsyncProperties.getMaxPoolSize()); // 최대 쓰레드 수
-        slackAsyncExecutor.setQueueCapacity(slackAsyncProperties.getQueueCapacity());
-        slackAsyncExecutor.setThreadNamePrefix(slackAsyncProperties.getThreadNamePrefix()); // 쓰레드 이름 접두사
-        slackAsyncExecutor.initialize();
-        return slackAsyncExecutor;
+        return createThreadPoolTaskExecutor(slackAsyncProperties.getThreadNamePrefix(),
+                slackAsyncProperties.getCorePoolSize(),
+                slackAsyncProperties.getMaxPoolSize(),
+                slackAsyncProperties.getQueueCapacity());
+    }
+
+    /**
+     * 일반적인 비동기 작업을 처리하기 위한 스레드 풀 Executor를 생성하여 빈으로 등록합니다.
+     * 이 Executor는 다양한 비동기 작업에서 재사용할 수 있도록 설계되었습니다.
+     */
+    @Bean(name = "generalPurposeAsyncExecutor")
+    public Executor generalPurposeAsyncExecutor() {
+        return createThreadPoolTaskExecutor(generalAsyncProperties.getThreadNamePrefix(),
+                generalAsyncProperties.getCorePoolSize(),
+                generalAsyncProperties.getMaxPoolSize(),
+                generalAsyncProperties.getQueueCapacity());
+    }
+
+    /**
+     * ThreadPoolTaskExecutor를 생성 및 초기화하는 메서드입니다.
+     * 주어진 매개변수를 기반으로 스레드 풀의 구성 요소를 설정합니다.
+     *
+     * @param threadNamePrefix 생성된 스레드의 이름에 적용할 접두사
+     * @param corePoolSize     스레드 풀에서 유지할 기본 스레드 수
+     * @param maxPoolSize      스레드 풀에서 유지할 최대 스레드 수
+     * @param queueCapacity    작업 요청을 저장할 대기열의 크기
+     * @return 초기화된 ThreadPoolTaskExecutor 인스턴스
+     */
+    private ThreadPoolTaskExecutor createThreadPoolTaskExecutor(String threadNamePrefix, int corePoolSize, int maxPoolSize, int queueCapacity) {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(corePoolSize);
+        executor.setMaxPoolSize(maxPoolSize);
+        executor.setQueueCapacity(queueCapacity);
+        executor.setThreadNamePrefix(threadNamePrefix);
+        executor.initialize();
+        return executor;
     }
 }

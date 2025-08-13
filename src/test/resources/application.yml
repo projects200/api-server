@@ -91,3 +91,8 @@ async:
       max-pool-size: 5
       queue-capacity: 10
       thread-name-prefix: "slackMessageSender-"
+    general:
+      core-pool-size: 5
+      max-pool-size: 5
+      queue-capacity: 10
+      thread-name-prefix: "general-"
