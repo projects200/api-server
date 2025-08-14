@@ -21,10 +21,13 @@ import static com.project200.undabang.configuration.DocumentFormatGenerator.getT
 import static com.project200.undabang.configuration.HeadersGenerator.getCommonApiHeaders;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -35,6 +38,87 @@ class SimpleTimerCommandControllerTest extends AbstractRestDocSupport {
 
     @MockitoBean
     private SimpleTimerCommandService simpleTimerCommandService;
+
+    @Nested
+    @DisplayName("심플 타이머 삭제 API")
+    class DeleteSimpleTimer {
+
+        @Test
+        @DisplayName("성공: 유효한 요청 시 심플 타이머를 성공적으로 삭제하고 200 Ok를 반환한다")
+        void deleteSimpleTimer_Success() throws Exception {
+            // given
+            Long simpleTimerId = 1L;
+            UUID memberId = UUID.randomUUID();
+
+            // 실제로 삭제하지 않기위해 willDoNothing() 사용
+            willDoNothing().given(simpleTimerCommandService).deleteSimpleTimer(simpleTimerId);
+
+            // when & then
+            mockMvc.perform(delete("/api/v1/simple-timers/{simpleTimerId}", simpleTimerId)
+                            .headers(getCommonApiHeaders(memberId)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.succeed").value(true))
+                    .andExpect(jsonPath("$.code").value("DELETED"))
+                    .andExpect(jsonPath("$.message").value("리소스가 성공적으로 삭제되었습니다."))
+                    .andExpect(jsonPath("$.data").doesNotExist())
+                    .andDo(print())
+                    .andDo(document.document(
+                            requestHeaders(
+                                    RestDocsUtils.HEADER_ACCESS_TOKEN
+                            ),
+                            pathParameters(
+                                    parameterWithName("simpleTimerId").attributes(getTypeFormat(JsonFieldType.NUMBER))
+                                            .description("삭제할 심플 타이머의 ID를 의미합니다.")
+                            ),
+                            responseFields(
+                                    RestDocsUtils.commonResponseFieldsOnly()
+                            )
+                    ));
+
+            BDDMockito.then(simpleTimerCommandService).should().deleteSimpleTimer(simpleTimerId);
+        }
+
+
+        @Test
+        @DisplayName("실패: 존재하지 않는 타이머 ID로 요청하면 404 Not Found를 반환한다")
+        void deleteSimpleTimer_Fail_NotFound() throws Exception {
+            // given
+            Long nonExistentTimerId = 999L;
+            UUID memberId = UUID.randomUUID();
+
+            willThrow(new CustomException(ErrorCode.SIMPLE_TIMER_NOT_EXIST))
+                    .given(simpleTimerCommandService).deleteSimpleTimer(nonExistentTimerId);
+
+            // when & then
+            mockMvc.perform(delete("/api/v1/simple-timers/{simpleTimerId}", nonExistentTimerId)
+                            .headers(getCommonApiHeaders(memberId)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value(ErrorCode.SIMPLE_TIMER_NOT_EXIST.getCode()))
+                    .andExpect(jsonPath("$.message").value(ErrorCode.SIMPLE_TIMER_NOT_EXIST.getMessage()));
+
+            BDDMockito.then(simpleTimerCommandService).should().deleteSimpleTimer(nonExistentTimerId);
+        }
+
+        @Test
+        @DisplayName("실패: 존재하지 않는 회원 ID로 요청하면 404 Not Found를 반환한다")
+        void deleteSimpleTimer_Fail_MemberNotFound() throws Exception {
+            // given
+            Long simpleTimerId = 1L;
+            UUID nonExistentMemberId = UUID.randomUUID();
+
+            willThrow(new CustomException(ErrorCode.MEMBER_NOT_FOUND))
+                    .given(simpleTimerCommandService).deleteSimpleTimer(simpleTimerId);
+
+            // when & then
+            mockMvc.perform(delete("/api/v1/simple-timers/{simpleTimerId}", simpleTimerId)
+                            .headers(getCommonApiHeaders(nonExistentMemberId)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value(ErrorCode.MEMBER_NOT_FOUND.getCode()))
+                    .andExpect(jsonPath("$.message").value(ErrorCode.MEMBER_NOT_FOUND.getMessage()));
+
+            BDDMockito.then(simpleTimerCommandService).should().deleteSimpleTimer(simpleTimerId);
+        }
+    }
 
     @Nested
     @DisplayName("심플 타이머 수정 API")
@@ -94,8 +178,7 @@ class SimpleTimerCommandControllerTest extends AbstractRestDocSupport {
                             .contentType(MediaType.APPLICATION_JSON)
                             .headers(getCommonApiHeaders(memberId))
                             .content(objectMapper.writeValueAsString(requestDto)))
-                    .andExpect(status().isBadRequest())
-                    .andDo(print());
+                    .andExpect(status().isBadRequest());
 
             BDDMockito.then(simpleTimerCommandService).shouldHaveNoInteractions();
         }
@@ -118,8 +201,7 @@ class SimpleTimerCommandControllerTest extends AbstractRestDocSupport {
                             .content(objectMapper.writeValueAsString(requestDto)))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.code").value(ErrorCode.SIMPLE_TIMER_NOT_EXIST.getCode()))
-                    .andExpect(jsonPath("$.message").value(ErrorCode.SIMPLE_TIMER_NOT_EXIST.getMessage()))
-                    .andDo(print());
+                    .andExpect(jsonPath("$.message").value(ErrorCode.SIMPLE_TIMER_NOT_EXIST.getMessage()));
 
             BDDMockito.then(simpleTimerCommandService).should().updateSimpleTimer(eq(nonExistentTimerId), any(SimpleTimerUpdateRequestDto.class));
         }

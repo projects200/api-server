@@ -51,6 +51,63 @@ class SimpleTimerCommandServiceImplTest {
     private SimpleTimerCommandServiceImpl simpleTimerCommandService;
 
     @Nested
+    @DisplayName("deleteSimpleTimer 메소드는")
+    class DeleteSimpleTimerTest {
+
+        @Test
+        @DisplayName("정상적인 요청 시 타이머를 성공적으로 논리적 삭제한다")
+        void deleteSimpleTimer_Success() {
+            // given
+            Long simpleTimerId = 1L;
+            UUID memberId = UUID.randomUUID();
+            Member member = Member.builder().memberId(memberId).build();
+            SimpleTimer existingTimer = SimpleTimer.of(member, 180);
+
+            // 삭제 전에는 deletedAt 필드가 null인지 확인
+            assertThat(existingTimer.getSimpleTimerDeletedAt()).isNull();
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
+
+                given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+                given(simpleTimerRepository.findByIdAndMemberAndSimpleTimerDeletedAtNull(simpleTimerId, member))
+                        .willReturn(Optional.of(existingTimer));
+
+                // when
+                simpleTimerCommandService.deleteSimpleTimer(simpleTimerId);
+
+                // then
+                // 서비스 메소드 호출 후 deletedAt 필드에 값이 설정되었는지 확인
+                assertThat(existingTimer.getSimpleTimerDeletedAt()).isNotNull();
+                then(memberRepository).should().findById(memberId);
+                then(simpleTimerRepository).should().findByIdAndMemberAndSimpleTimerDeletedAtNull(simpleTimerId, member);
+            }
+        }
+
+        @Test
+        @DisplayName("삭제하려는 타이머가 존재하지 않으면 CustomException(SIMPLE_TIMER_NOT_EXIST)을 발생시킨다")
+        void deleteSimpleTimer_Fail_TimerNotExist() {
+            // given
+            Long nonExistentTimerId = 999L;
+            UUID memberId = UUID.randomUUID();
+            Member member = Member.builder().memberId(memberId).build();
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
+
+                given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+                given(simpleTimerRepository.findByIdAndMemberAndSimpleTimerDeletedAtNull(nonExistentTimerId, member))
+                        .willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> simpleTimerCommandService.deleteSimpleTimer(nonExistentTimerId))
+                        .isInstanceOf(CustomException.class)
+                        .hasMessage(ErrorCode.SIMPLE_TIMER_NOT_EXIST.getMessage());
+            }
+        }
+    }
+
+    @Nested
     @DisplayName("updateSimpleTimer 메소드는")
     class UpdateSimpleTimerTest {
 
