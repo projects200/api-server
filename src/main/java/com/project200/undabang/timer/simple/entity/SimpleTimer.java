@@ -53,4 +53,11 @@ public class SimpleTimer {
                 .simpleTimerUpdatedAt(LocalDateTime.now())
                 .build();
     }
+
+    public void updateSimpleTimer(Integer time) {
+        if (this.simpleTimerTime != time) {
+            this.simpleTimerTime = time;
+            this.simpleTimerUpdatedAt = LocalDateTime.now();
+        }
+    }
 }

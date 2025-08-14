@@ -5,7 +5,7 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
-import com.project200.undabang.timer.simple.dto.GetSimpleTimerResponseDto;
+import com.project200.undabang.timer.simple.dto.response.GetSimpleTimerResponseDto;
 import com.project200.undabang.timer.simple.entity.SimpleTimer;
 import com.project200.undabang.timer.simple.repository.SimpleTimerRepository;
 import org.assertj.core.api.Assertions;

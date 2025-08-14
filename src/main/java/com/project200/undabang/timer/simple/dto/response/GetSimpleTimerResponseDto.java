@@ -1,4 +1,4 @@
-package com.project200.undabang.timer.simple.dto;
+package com.project200.undabang.timer.simple.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

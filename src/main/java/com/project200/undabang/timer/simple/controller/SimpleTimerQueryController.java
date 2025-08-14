@@ -1,7 +1,7 @@
 package com.project200.undabang.timer.simple.controller;
 
 import com.project200.undabang.common.web.response.CommonResponse;
-import com.project200.undabang.timer.simple.dto.GetSimpleTimerResponseDto;
+import com.project200.undabang.timer.simple.dto.response.GetSimpleTimerResponseDto;
 import com.project200.undabang.timer.simple.service.SimpleTimerQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

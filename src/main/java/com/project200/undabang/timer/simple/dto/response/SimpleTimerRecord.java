@@ -1,4 +1,4 @@
-package com.project200.undabang.timer.simple.dto;
+package com.project200.undabang.timer.simple.dto.response;
 
 import com.project200.undabang.timer.simple.entity.SimpleTimer;
 
