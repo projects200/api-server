@@ -30,16 +30,20 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
     private final MemberRepository memberRepository;
 
     /**
+     * 주어진 심플 타이머 ID를 기반으로 해당 심플 타이머를 삭제하는 메서드입니다.
+     */
+    @Override
+    public void deleteSimpleTimer(Long simpleTimerId) {
+        SimpleTimer timer = getSimpleTimerBelongsToMember(simpleTimerId);
+        timer.deleteSimpleTimer();
+    }
+
+    /**
      * 지정된 심플 타이머 ID와 요청 데이터를 기반으로 심플 타이머를 업데이트하는 메서드입니다.
      */
     @Override
     public void updateSimpleTimer(Long simpleTimerId, SimpleTimerUpdateRequestDto dto) {
-        UUID memberId = UserContextHolder.getUserId();
-        Member member = memberRepository.findById(memberId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-
-        SimpleTimer timer = simpleTimerRepository.findByIdAndMemberAndSimpleTimerDeletedAtNull(simpleTimerId, member).orElseThrow(
-                () -> new CustomException(ErrorCode.SIMPLE_TIMER_NOT_EXIST));
-
+        SimpleTimer timer = getSimpleTimerBelongsToMember(simpleTimerId);
         timer.updateSimpleTimer(dto.getTime());
     }
 
@@ -75,6 +79,17 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
         }
 
         return integerList;
+    }
+
+    /**
+     * 주어진 심플 타이머 ID와 현재 회원 정보를 기반으로 해당 회원에게 속한 심플 타이머를 반환합니다.
+     */
+    private SimpleTimer getSimpleTimerBelongsToMember(Long simpleTimerId) {
+        UUID memberId = UserContextHolder.getUserId();
+        Member member = memberRepository.findById(memberId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        return simpleTimerRepository.findByIdAndMemberAndSimpleTimerDeletedAtNull(simpleTimerId, member).orElseThrow(
+                () -> new CustomException(ErrorCode.SIMPLE_TIMER_NOT_EXIST));
     }
 
     /**
