@@ -61,34 +61,51 @@ class SimpleTimerCommandServiceImplTest {
             Long simpleTimerId = 1L;
             UUID memberId = UUID.randomUUID();
             Member member = Member.builder().memberId(memberId).build();
-            SimpleTimer existingTimer = SimpleTimer.of(member, 180);
+            SimpleTimer timer = SimpleTimer.builder().id(simpleTimerId).member(member).simpleTimerTime(30).build();
 
-            // 삭제 전에는 deletedAt 필드가 null인지 확인
-            assertThat(existingTimer.getSimpleTimerDeletedAt()).isNull();
-
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
-
+            try (MockedStatic<UserContextHolder> mocked = mockStatic(UserContextHolder.class)) {
+                mocked.when(UserContextHolder::getUserId).thenReturn(memberId);
                 given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-                given(simpleTimerRepository.findByIdAndMemberAndSimpleTimerDeletedAtNull(simpleTimerId, member))
-                        .willReturn(Optional.of(existingTimer));
+                // 삭제 가능한 타이머가 2개 이상 있다고 가정
+                given(simpleTimerRepository.countDistinctByMemberAndSimpleTimerDeletedAtNull(member)).willReturn(2);
+                given(simpleTimerRepository.findByIdAndMemberAndSimpleTimerDeletedAtNull(simpleTimerId, member)).willReturn(Optional.of(timer));
 
                 // when
                 simpleTimerCommandService.deleteSimpleTimer(simpleTimerId);
 
                 // then
-                // 서비스 메소드 호출 후 deletedAt 필드에 값이 설정되었는지 확인
-                assertThat(existingTimer.getSimpleTimerDeletedAt()).isNotNull();
-                then(memberRepository).should().findById(memberId);
                 then(simpleTimerRepository).should().findByIdAndMemberAndSimpleTimerDeletedAtNull(simpleTimerId, member);
+                assertThat(timer.getSimpleTimerDeletedAt()).isNotNull();
             }
         }
 
         @Test
-        @DisplayName("삭제하려는 타이머가 존재하지 않으면 CustomException(SIMPLE_TIMER_NOT_EXIST)을 발생시킨다")
-        void deleteSimpleTimer_Fail_TimerNotExist() {
+        @DisplayName("요청한 사용자가 존재하지 않으면 CustomException(MEMBER_NOT_FOUND)을 발생시킨다")
+        void deleteSimpleTimer_Fail_MemberNotFound() {
             // given
-            Long nonExistentTimerId = 999L;
+            Long simpleTimerId = 1L;
+            UUID memberId = UUID.randomUUID();
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
+
+                given(memberRepository.findById(memberId)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> simpleTimerCommandService.deleteSimpleTimer(simpleTimerId))
+                        .isInstanceOf(CustomException.class)
+                        .hasMessage(ErrorCode.MEMBER_NOT_FOUND.getMessage());
+
+                then(simpleTimerRepository).should(never()).countDistinctByMemberAndSimpleTimerDeletedAtNull(any(Member.class));
+                then(simpleTimerRepository).should(never()).findByIdAndMemberAndSimpleTimerDeletedAtNull(anyLong(), any(Member.class));
+            }
+        }
+
+        @Test
+        @DisplayName("남은 타이머가 1개일 때 삭제를 시도하면 SIMPLE_TIMER_MIN_COUNT_VIOLATION을 발생시킨다")
+        void deleteSimpleTimer_Fail_LastTimer() {
+            // given
+            Long simpleTimerId = 1L;
             UUID memberId = UUID.randomUUID();
             Member member = Member.builder().memberId(memberId).build();
 
@@ -96,13 +113,40 @@ class SimpleTimerCommandServiceImplTest {
                 ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
 
                 given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-                given(simpleTimerRepository.findByIdAndMemberAndSimpleTimerDeletedAtNull(nonExistentTimerId, member))
-                        .willReturn(Optional.empty());
+                // 회원의 타이머 개수가 1개라고 가정
+                given(simpleTimerRepository.countDistinctByMemberAndSimpleTimerDeletedAtNull(member)).willReturn(1);
+
+                // when & then
+                assertThatThrownBy(() -> simpleTimerCommandService.deleteSimpleTimer(simpleTimerId))
+                        .isInstanceOf(CustomException.class)
+                        .hasMessage(ErrorCode.SIMPLE_TIMER_MIN_COUNT_VIOLATION.getMessage());
+
+                // 타이머를 찾는 로직이나 삭제 로직이 호출되지 않았는지 검증
+                then(simpleTimerRepository).should(never()).findByIdAndMemberAndSimpleTimerDeletedAtNull(anyLong(), any(Member.class));
+            }
+        }
+
+        @Test
+        @DisplayName("삭제하려는 타이머가 존재하지 않으면 SIMPLE_TIMER_NOT_EXIST 예외를 발생시킨다")
+        void deleteSimpleTimer_Fail_TimerNotExist() {
+            // given
+            Long nonExistentTimerId = 999L;
+            UUID memberId = UUID.randomUUID();
+            Member member = Member.builder().memberId(memberId).build();
+
+            try (MockedStatic<UserContextHolder> mocked = mockStatic(UserContextHolder.class)) {
+                mocked.when(UserContextHolder::getUserId).thenReturn(memberId);
+                given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+                // 삭제 가능한 타이머가 2개 이상 있다고 가정
+                given(simpleTimerRepository.countDistinctByMemberAndSimpleTimerDeletedAtNull(member)).willReturn(2);
+                given(simpleTimerRepository.findByIdAndMemberAndSimpleTimerDeletedAtNull(nonExistentTimerId, member)).willReturn(Optional.empty());
 
                 // when & then
                 assertThatThrownBy(() -> simpleTimerCommandService.deleteSimpleTimer(nonExistentTimerId))
                         .isInstanceOf(CustomException.class)
                         .hasMessage(ErrorCode.SIMPLE_TIMER_NOT_EXIST.getMessage());
+
+                then(simpleTimerRepository).should().findByIdAndMemberAndSimpleTimerDeletedAtNull(nonExistentTimerId, member);
             }
         }
     }
