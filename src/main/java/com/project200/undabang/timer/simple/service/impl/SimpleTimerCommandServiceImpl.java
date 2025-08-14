@@ -99,17 +99,6 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
     }
 
     /**
-     * 주어진 심플 타이머 ID와 현재 회원 정보를 기반으로 해당 회원에게 속한 심플 타이머를 반환합니다.
-     */
-    private SimpleTimer getSimpleTimerBelongsToMember(Long simpleTimerId) {
-        UUID memberId = UserContextHolder.getUserId();
-        Member member = memberRepository.findById(memberId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-
-        return simpleTimerRepository.findByIdAndMemberAndSimpleTimerDeletedAtNull(simpleTimerId, member).orElseThrow(
-                () -> new CustomException(ErrorCode.SIMPLE_TIMER_NOT_EXIST));
-    }
-
-    /**
      * 회원과 시간 리스트를 기반으로 심플 타이머 객체 리스트를 생성합니다.
      */
     private List<SimpleTimer> createSimpleTimerList(Member member, List<Integer> timeList) {
