@@ -55,7 +55,7 @@ public class SimpleTimer {
     }
 
     public void updateSimpleTimer(Integer time) {
-        if (this.simpleTimerTime != time) {
+        if (!time.equals(this.simpleTimerTime)) {
             this.simpleTimerTime = time;
             this.simpleTimerUpdatedAt = LocalDateTime.now();
         }

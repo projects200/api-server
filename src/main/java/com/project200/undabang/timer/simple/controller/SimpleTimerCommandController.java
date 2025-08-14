@@ -19,7 +19,6 @@ public class SimpleTimerCommandController {
                                                                   @Valid @RequestBody SimpleTimerUpdateRequestDto dto) {
 
         simpleTimerCommandService.updateSimpleTimer(simpleTimerId, dto);
-
         return ResponseEntity.ok(CommonResponse.update(null));
     }
 }

@@ -1,10 +1,14 @@
 package com.project200.undabang.timer.simple.service.impl;
 
+import com.project200.undabang.common.context.UserContextHolder;
+import com.project200.undabang.common.web.exception.CustomException;
+import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.dto.event.MemberSignedUpEvent;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.service.PolicyService;
+import com.project200.undabang.timer.simple.dto.request.SimpleTimerUpdateRequestDto;
 import com.project200.undabang.timer.simple.entity.SimpleTimer;
 import com.project200.undabang.timer.simple.repository.SimpleTimerRepository;
 import org.assertj.core.api.Assertions;
@@ -15,14 +19,21 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class SimpleTimerCommandServiceImplTest {
@@ -38,6 +49,118 @@ class SimpleTimerCommandServiceImplTest {
 
     @InjectMocks
     private SimpleTimerCommandServiceImpl simpleTimerCommandService;
+
+    @Nested
+    @DisplayName("updateSimpleTimer 메소드는")
+    class UpdateSimpleTimerTest {
+
+        @Test
+        @DisplayName("정상적인 요청 시 타이머 시간을 성공적으로 수정한다")
+        void updateSimpleTimer_Success() {
+            // given
+            Long simpleTimerId = 1L;
+            int newTime = 300;
+            SimpleTimerUpdateRequestDto requestDto = new SimpleTimerUpdateRequestDto(newTime);
+
+            UUID memberId = UUID.randomUUID();
+            Member member = Member.builder().memberId(memberId).build();
+            SimpleTimer existingTimer = SimpleTimer.of(member, 180);
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
+
+                given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+                given(simpleTimerRepository.findByIdAndMemberAndSimpleTimerDeletedAtNull(simpleTimerId, member))
+                        .willReturn(Optional.of(existingTimer));
+
+                // when
+                simpleTimerCommandService.updateSimpleTimer(simpleTimerId, requestDto);
+
+                // then
+                assertThat(existingTimer.getSimpleTimerTime()).isEqualTo(newTime);
+                then(memberRepository).should().findById(memberId);
+                then(simpleTimerRepository).should().findByIdAndMemberAndSimpleTimerDeletedAtNull(simpleTimerId, member);
+            }
+        }
+
+        @Test
+        @DisplayName("동일한 시간으로 수정 요청 시 타이머 시간이 변경되지 않는다")
+        void updateSimpleTimer_NoChangeWhenTimeIsSame() {
+            // given
+            Long simpleTimerId = 1L;
+            int existingTime = 180;
+            SimpleTimerUpdateRequestDto requestDto = new SimpleTimerUpdateRequestDto(existingTime);
+
+            UUID memberId = UUID.randomUUID();
+            Member member = Member.builder().memberId(memberId).build();
+            SimpleTimer existingTimer = SimpleTimer.of(member, existingTime);
+            // 원본 업데이트 시간을 저장
+            LocalDateTime originalUpdatedAt = existingTimer.getSimpleTimerUpdatedAt();
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
+
+                given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+                given(simpleTimerRepository.findByIdAndMemberAndSimpleTimerDeletedAtNull(simpleTimerId, member))
+                        .willReturn(Optional.of(existingTimer));
+
+                // when
+                simpleTimerCommandService.updateSimpleTimer(simpleTimerId, requestDto);
+
+                // then
+                // 시간이 동일하므로, 엔티티의 시간과 업데이트 시간은 변경되지 않아야 함
+                assertThat(existingTimer.getSimpleTimerTime()).isEqualTo(existingTime);
+                assertThat(existingTimer.getSimpleTimerUpdatedAt()).isEqualTo(originalUpdatedAt);
+                then(memberRepository).should().findById(memberId);
+                then(simpleTimerRepository).should().findByIdAndMemberAndSimpleTimerDeletedAtNull(simpleTimerId, member);
+            }
+        }
+
+        @Test
+        @DisplayName("수정하려는 타이머가 존재하지 않으면 CustomException(SIMPLE_TIMER_NOT_EXIST)을 발생시킨다")
+        void updateSimpleTimer_Fail_TimerNotExist() {
+            // given
+            Long nonExistentTimerId = 999L;
+            SimpleTimerUpdateRequestDto requestDto = new SimpleTimerUpdateRequestDto(300);
+            UUID memberId = UUID.randomUUID();
+            Member member = Member.builder().memberId(memberId).build();
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
+
+                given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+                given(simpleTimerRepository.findByIdAndMemberAndSimpleTimerDeletedAtNull(nonExistentTimerId, member))
+                        .willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> simpleTimerCommandService.updateSimpleTimer(nonExistentTimerId, requestDto))
+                        .isInstanceOf(CustomException.class)
+                        .hasMessage(ErrorCode.SIMPLE_TIMER_NOT_EXIST.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("요청한 사용자가 존재하지 않으면 CustomException(MEMBER_NOT_FOUND)을 발생시킨다")
+        void updateSimpleTimer_Fail_MemberNotFound() {
+            // given
+            Long simpleTimerId = 1L;
+            SimpleTimerUpdateRequestDto requestDto = new SimpleTimerUpdateRequestDto(300);
+            UUID memberId = UUID.randomUUID();
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
+
+                given(memberRepository.findById(memberId)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> simpleTimerCommandService.updateSimpleTimer(simpleTimerId, requestDto))
+                        .isInstanceOf(CustomException.class)
+                        .hasMessage(ErrorCode.MEMBER_NOT_FOUND.getMessage());
+
+                then(simpleTimerRepository).should(never()).findByIdAndMemberAndSimpleTimerDeletedAtNull(anyLong(), any(Member.class));
+            }
+        }
+    }
 
     @Nested
     @DisplayName("createDefaultSimpleTimer 메소드는")

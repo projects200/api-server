@@ -29,6 +29,9 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
     private final SimpleTimerRepository simpleTimerRepository;
     private final MemberRepository memberRepository;
 
+    /**
+     * 지정된 심플 타이머 ID와 요청 데이터를 기반으로 심플 타이머를 업데이트하는 메서드입니다.
+     */
     @Override
     public void updateSimpleTimer(Long simpleTimerId, SimpleTimerUpdateRequestDto dto) {
         UUID memberId = UserContextHolder.getUserId();
