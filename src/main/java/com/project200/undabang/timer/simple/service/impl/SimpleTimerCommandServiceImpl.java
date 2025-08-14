@@ -7,7 +7,9 @@ import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.service.PolicyService;
+import com.project200.undabang.timer.simple.dto.request.SimpleTimerCreateRequestDto;
 import com.project200.undabang.timer.simple.dto.request.SimpleTimerUpdateRequestDto;
+import com.project200.undabang.timer.simple.dto.response.SimpleTimerCreateResponseDto;
 import com.project200.undabang.timer.simple.entity.SimpleTimer;
 import com.project200.undabang.timer.simple.repository.SimpleTimerRepository;
 import com.project200.undabang.timer.simple.service.SimpleTimerCommandService;
@@ -28,6 +30,27 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
     private final PolicyService policyService;
     private final SimpleTimerRepository simpleTimerRepository;
     private final MemberRepository memberRepository;
+
+    @Override
+    public SimpleTimerCreateResponseDto createSimpleTimer(SimpleTimerCreateRequestDto requestDto) {
+        Member member = memberRepository.findById(UserContextHolder.getUserId())
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        int count = simpleTimerRepository.countDistinctByMemberAndSimpleTimerDeletedAtNull(member);
+
+        if (count == 6) {
+            throw new CustomException(ErrorCode.SIMPLE_TIMER_MAX_COUNT_VIOLATION);
+        }
+
+        SimpleTimer timer = SimpleTimer.of(member, requestDto.getTime());
+        SimpleTimer savedTimer = simpleTimerRepository.save(timer);
+
+        SimpleTimerCreateResponseDto responseDto = SimpleTimerCreateResponseDto.builder()
+                .simpleTimerId(savedTimer.getId())
+                .build();
+
+        return responseDto;
+    }
 
     /**
      * 주어진 심플 타이머 ID를 기반으로 심플 타이머를 삭제하는 메서드입니다.
