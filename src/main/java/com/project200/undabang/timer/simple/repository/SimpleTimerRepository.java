@@ -9,6 +9,5 @@ import java.util.Optional;
 
 public interface SimpleTimerRepository extends JpaRepository<SimpleTimer, Long> {
     List<SimpleTimer> findByMemberAndSimpleTimerDeletedAtNull(Member member);
-
     Optional<SimpleTimer> findByIdAndMemberAndSimpleTimerDeletedAtNull(Long id, Member member);
 }
