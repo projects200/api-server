@@ -54,7 +54,6 @@ class SimpleTimerCommandControllerTest extends AbstractRestDocSupport {
             mockMvc.perform(patch("/api/v1/simple-timers/{simpleTimerId}", simpleTimerId)
                             .contentType(MediaType.APPLICATION_JSON)
                             .headers(getCommonApiHeaders(memberId))
-                            .param("simpleTimerId", simpleTimerId.toString())
                             .content(objectMapper.writeValueAsString(requestDto)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.succeed").value(true))
@@ -94,7 +93,6 @@ class SimpleTimerCommandControllerTest extends AbstractRestDocSupport {
             mockMvc.perform(patch("/api/v1/simple-timers/{simpleTimerId}", simpleTimerId)
                             .contentType(MediaType.APPLICATION_JSON)
                             .headers(getCommonApiHeaders(memberId))
-                            .param("simpleTimerId", simpleTimerId.toString())
                             .content(objectMapper.writeValueAsString(requestDto)))
                     .andExpect(status().isBadRequest())
                     .andDo(print());
@@ -117,7 +115,6 @@ class SimpleTimerCommandControllerTest extends AbstractRestDocSupport {
             mockMvc.perform(patch("/api/v1/simple-timers/{simpleTimerId}", nonExistentTimerId)
                             .contentType(MediaType.APPLICATION_JSON)
                             .headers(getCommonApiHeaders(memberId))
-                            .param("simpleTimerId", nonExistentTimerId.toString())
                             .content(objectMapper.writeValueAsString(requestDto)))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.code").value(ErrorCode.SIMPLE_TIMER_NOT_EXIST.getCode()))
