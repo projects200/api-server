@@ -25,7 +25,7 @@ operation::update-simple-timer/update-simple-timer_-success[snippets="request-he
 
 |===
 |상태 코드|설명
-|200|심플 타이머 정보가 성공적으로 조회되었습니다.
+|200|심플 타이머 정보가 성공적으로 수정되었습니다.
 |400|입력 정보가 정확하지 않습니다.
 |404|회원이 존재하지 않습니다. +
 심플 타이머가 존재하지 않습니다.
