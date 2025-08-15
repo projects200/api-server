@@ -7,6 +7,7 @@ import com.project200.undabang.timer.simple.dto.response.SimpleTimerCreateRespon
 import com.project200.undabang.timer.simple.service.SimpleTimerCommandService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +19,7 @@ public class SimpleTimerCommandController {
 
     @PostMapping("/v1/simple-timers")
     public ResponseEntity<CommonResponse<SimpleTimerCreateResponseDto>> createSimpleTimer(@Valid @RequestBody SimpleTimerCreateRequestDto dto) {
-        return ResponseEntity.ok(CommonResponse.create(simpleTimerCommandService.createSimpleTimer(dto)));
+        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(simpleTimerCommandService.createSimpleTimer(dto)));
     }
 
     @PatchMapping("/v1/simple-timers/{simpleTimerId}")
