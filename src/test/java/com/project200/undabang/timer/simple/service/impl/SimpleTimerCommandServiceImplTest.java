@@ -102,7 +102,7 @@ class SimpleTimerCommandServiceImplTest {
         }
 
         @Test
-        @DisplayName("남은 타이머가 1개일 때 삭제를 시도하면 SIMPLE_TIMER_MIN_COUNT_VIOLATION을 발생시킨다")
+        @DisplayName("남은 타이머가 0개일 때 삭제를 시도하면 SIMPLE_TIMER_MIN_COUNT_VIOLATION을 발생시킨다")
         void deleteSimpleTimer_Fail_LastTimer() {
             // given
             Long simpleTimerId = 1L;
@@ -113,8 +113,8 @@ class SimpleTimerCommandServiceImplTest {
                 ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
 
                 given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-                // 회원의 타이머 개수가 1개라고 가정
-                given(simpleTimerRepository.countDistinctByMemberAndSimpleTimerDeletedAtNull(member)).willReturn(1);
+                // 회원의 타이머 개수가 0개라고 가정
+                given(simpleTimerRepository.countDistinctByMemberAndSimpleTimerDeletedAtNull(member)).willReturn(0);
 
                 // when & then
                 assertThatThrownBy(() -> simpleTimerCommandService.deleteSimpleTimer(simpleTimerId))
