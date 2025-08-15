@@ -63,7 +63,7 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
 
         int count = simpleTimerRepository.countDistinctByMemberAndSimpleTimerDeletedAtNull(member);
 
-        if (count == 1) {
+        if (count == 0) {
             throw new CustomException(ErrorCode.SIMPLE_TIMER_MIN_COUNT_VIOLATION);
         }
 
