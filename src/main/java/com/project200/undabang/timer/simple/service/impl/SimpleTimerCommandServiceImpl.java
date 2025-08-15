@@ -31,6 +31,15 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
     private final SimpleTimerRepository simpleTimerRepository;
     private final MemberRepository memberRepository;
 
+    private static final int MAX_SIMPLE_TIMER_COUNT = 6;
+    private static final int MIN_SIMPLE_TIMER_COUNT = 0;
+
+
+    /**
+     * 심플 타이머를 생성하는 메서드입니다.
+     * 요청 데이터를 기반으로 새로운 심플 타이머를 생성하고 저장합니다.
+     * 회원별로 생성 가능한 최대 심플 타이머 개수를 초과하면 예외를 발생시킵니다.
+     */
     @Override
     public SimpleTimerCreateResponseDto createSimpleTimer(SimpleTimerCreateRequestDto requestDto) {
         Member member = memberRepository.findById(UserContextHolder.getUserId())
@@ -38,7 +47,7 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
 
         int count = simpleTimerRepository.countDistinctByMemberAndSimpleTimerDeletedAtNull(member);
 
-        if (count == 6) {
+        if (count >= MAX_SIMPLE_TIMER_COUNT) {
             throw new CustomException(ErrorCode.SIMPLE_TIMER_MAX_COUNT_VIOLATION);
         }
 
@@ -63,7 +72,7 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
 
         int count = simpleTimerRepository.countDistinctByMemberAndSimpleTimerDeletedAtNull(member);
 
-        if (count == 0) {
+        if (count <= MIN_SIMPLE_TIMER_COUNT) {
             throw new CustomException(ErrorCode.SIMPLE_TIMER_MIN_COUNT_VIOLATION);
         }
 
