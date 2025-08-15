@@ -68,10 +68,10 @@ class CustomTimerQueryControllerTest extends AbstractRestDocSupport {
                     .andDo(document.document(
                             requestHeaders(HEADER_ACCESS_TOKEN),
                             responseFields(commonResponseFields(
-                                    fieldWithPath("data.customTimerCount").type(NUMBER).description("커스텀 타이머 개수"),
-                                    fieldWithPath("data.customTimers").type(ARRAY).description("커스텀 타이머 목록"),
-                                    fieldWithPath("data.customTimers[].customTimerId").type(NUMBER).description("커스텀 타이머 ID"),
-                                    fieldWithPath("data.customTimers[].customTimerName").type(STRING).description("커스텀 타이머 이름")
+                                    fieldWithPath("data.customTimerCount").type(NUMBER).description("커스텀 타이머 리스트의 크기를 담고있는 데이터 입니다."),
+                                    fieldWithPath("data.customTimers").type(ARRAY).description("커스텀 타이머 리스트 입니다. 내용에는 커스텀 타이머 식별자, 커스텀 타이머 이름이 포함됩니다."),
+                                    fieldWithPath("data.customTimers[].customTimerId").type(NUMBER).description("커스텀 타이머의 식별자 정보입니다."),
+                                    fieldWithPath("data.customTimers[].customTimerName").type(STRING).description("커스텀 타이머의 이름 입니다.")
                             ))
                     ));
 
