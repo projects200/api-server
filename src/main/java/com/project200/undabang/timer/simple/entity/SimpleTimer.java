@@ -8,6 +8,7 @@ import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Comment;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @Getter
@@ -52,5 +53,12 @@ public class SimpleTimer {
                 .simpleTimerCreatedAt(LocalDateTime.now())
                 .simpleTimerUpdatedAt(LocalDateTime.now())
                 .build();
+    }
+
+    public void updateSimpleTimer(Integer time) {
+        if (!Objects.equals(this.simpleTimerTime, time)) {
+            this.simpleTimerTime = time;
+            this.simpleTimerUpdatedAt = LocalDateTime.now();
+        }
     }
 }

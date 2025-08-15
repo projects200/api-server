@@ -1,11 +1,13 @@
 package com.project200.undabang.timer.simple.service.impl;
 
+import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.service.PolicyService;
+import com.project200.undabang.timer.simple.dto.request.SimpleTimerUpdateRequestDto;
 import com.project200.undabang.timer.simple.entity.SimpleTimer;
 import com.project200.undabang.timer.simple.repository.SimpleTimerRepository;
 import com.project200.undabang.timer.simple.service.SimpleTimerCommandService;
@@ -26,6 +28,20 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
     private final PolicyService policyService;
     private final SimpleTimerRepository simpleTimerRepository;
     private final MemberRepository memberRepository;
+
+    /**
+     * 지정된 심플 타이머 ID와 요청 데이터를 기반으로 심플 타이머를 업데이트하는 메서드입니다.
+     */
+    @Override
+    public void updateSimpleTimer(Long simpleTimerId, SimpleTimerUpdateRequestDto dto) {
+        UUID memberId = UserContextHolder.getUserId();
+        Member member = memberRepository.findById(memberId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        SimpleTimer timer = simpleTimerRepository.findByIdAndMemberAndSimpleTimerDeletedAtNull(simpleTimerId, member).orElseThrow(
+                () -> new CustomException(ErrorCode.SIMPLE_TIMER_NOT_EXIST));
+
+        timer.updateSimpleTimer(dto.getTime());
+    }
 
     /**
      * 주어진 회원 ID를 기반으로 기본 심플 타이머를 생성하는 메서드입니다.
