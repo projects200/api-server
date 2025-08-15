@@ -58,7 +58,9 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
                 .simpleTimerId(savedTimer.getId())
                 .build();
 
-        return responseDto;
+        return SimpleTimerCreateResponseDto.builder()
+                .simpleTimerId(savedTimer.getId())
+                .build();
     }
 
     /**
