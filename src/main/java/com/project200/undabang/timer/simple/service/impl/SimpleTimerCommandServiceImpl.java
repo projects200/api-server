@@ -54,10 +54,6 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
         SimpleTimer timer = SimpleTimer.of(member, requestDto.getTime());
         SimpleTimer savedTimer = simpleTimerRepository.save(timer);
 
-        SimpleTimerCreateResponseDto responseDto = SimpleTimerCreateResponseDto.builder()
-                .simpleTimerId(savedTimer.getId())
-                .build();
-
         return SimpleTimerCreateResponseDto.builder()
                 .simpleTimerId(savedTimer.getId())
                 .build();
