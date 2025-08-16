@@ -25,36 +25,28 @@ public class CustomTimerQueryServiceImpl implements CustomTimerQueryService {
     private final MemberRepository memberRepository;
 
     /**
-     * 현재 회원 ID를 기반으로 삭제되지 않은 사용자 정의 타이머의 목록을 반환합니다.
+     * 현재 사용자 ID를 기반으로 해당 사용자가 생성한 사용자 정의 타이머 목록을 반환합니다.
+     * 목록에는 삭제되지 않은 타이머만 포함되며, 각 타이머는 CustomTimerRecord 형태로 매핑됩니다.
      */
     @Override
     public GetCustomTimerListResponse getCustomTimerList() {
         UUID memberId = UserContextHolder.getUserId();
         Member member = memberRepository.findById(memberId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-        List<CustomTimerRecord> recordList = createCustomTimerList(member);
+        List<CustomTimerRecord> recordList = findActiveTimersAndMapToRecords(member);
 
-        return createCustomTimerListResponse(recordList);
+        return GetCustomTimerListResponse.from(recordList);
     }
 
     /**
-     * 주어진 사용자 정의 타이머 기록 목록을 기반으로 사용자 정의 타이머 목록 응답 객체를 생성합니다.
+     * 주어진 회원 정보를 기반으로 사용자 정의 타이머의 목록중 삭제되지 않은 타이머를
+     * CustomTimerRecord 형태로 변환하여 반환합니다.
      */
-    private GetCustomTimerListResponse createCustomTimerListResponse(List<CustomTimerRecord> recordList) {
-        return GetCustomTimerListResponse.builder()
-                .customTimerCount(recordList.size())
-                .customTimers(recordList)
-                .build();
-    }
+    private List<CustomTimerRecord> findActiveTimersAndMapToRecords(Member member) {
+        List<CustomTimer> customTimerList = customTimerRepository.findAllByMemberAndCustomTimerDeletedAtNull(member);
 
-    /**
-     * 지정된 회원의 삭제되지 않은 사용자 정의 타이머 목록을 생성합니다.
-     */
-    private List<CustomTimerRecord> createCustomTimerList(Member member) {
-        List<CustomTimer> findCustomTimerList = customTimerRepository.findByMemberAndCustomTimerDeletedAtNull(member);
-
-        return findCustomTimerList.stream()
-                .map(customTimer -> CustomTimerRecord.of(customTimer.getId(), customTimer.getCustomTimerName()))
+        return customTimerList.stream()
+                .map(customTimer -> new CustomTimerRecord(customTimer.getId(), customTimer.getCustomTimerName()))
                 .toList();
     }
 }

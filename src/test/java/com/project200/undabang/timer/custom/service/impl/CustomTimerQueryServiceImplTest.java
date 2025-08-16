@@ -52,7 +52,7 @@ class CustomTimerQueryServiceImplTest {
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(testUserId);
                 given(memberRepository.findById(testUserId)).willReturn(Optional.of(testUser));
-                given(customTimerRepository.findByMemberAndCustomTimerDeletedAtNull(testUser)).willReturn(customTimerList);
+                given(customTimerRepository.findAllByMemberAndCustomTimerDeletedAtNull(testUser)).willReturn(customTimerList);
 
                 // when
                 GetCustomTimerListResponse response = customTimerQueryService.getCustomTimerList();

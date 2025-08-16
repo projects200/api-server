@@ -77,7 +77,7 @@ class CustomTimerRepositoryTest {
             flushAndClear();
 
             // when
-            List<CustomTimer> foundTimers = customTimerRepository.findByMemberAndCustomTimerDeletedAtNull(member1);
+            List<CustomTimer> foundTimers = customTimerRepository.findAllByMemberAndCustomTimerDeletedAtNull(member1);
 
             // then
             assertThat(foundTimers).hasSize(2);
@@ -93,7 +93,7 @@ class CustomTimerRepositoryTest {
             flushAndClear();
 
             // when
-            List<CustomTimer> foundTimers = customTimerRepository.findByMemberAndCustomTimerDeletedAtNull(member);
+            List<CustomTimer> foundTimers = customTimerRepository.findAllByMemberAndCustomTimerDeletedAtNull(member);
 
             // then
             assertThat(foundTimers).isNotNull().isEmpty();
@@ -114,7 +114,7 @@ class CustomTimerRepositoryTest {
             flushAndClear();
 
             // when
-            List<CustomTimer> foundTimers = customTimerRepository.findByMemberAndCustomTimerDeletedAtNull(member);
+            List<CustomTimer> foundTimers = customTimerRepository.findAllByMemberAndCustomTimerDeletedAtNull(member);
 
             // then
             assertThat(foundTimers).hasSize(1);
