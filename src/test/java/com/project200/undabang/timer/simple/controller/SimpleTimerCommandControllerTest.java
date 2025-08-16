@@ -119,26 +119,6 @@ class SimpleTimerCommandControllerTest extends AbstractRestDocSupport {
             BDDMockito.then(simpleTimerCommandService).should().deleteSimpleTimer(simpleTimerId);
         }
 
-        @Test
-        @DisplayName("실패: 남은 타이머가 1개일 때 삭제를 시도하면 409 Conflict를 반환한다")
-        void deleteSimpleTimer_Fail_LastTimer() throws Exception {
-            // given
-            Long simpleTimerId = 1L;
-            UUID memberId = UUID.randomUUID();
-
-            // 서비스 레이어에서 CANNOT_DELETE_LAST_SIMPLE_TIMER 예외를 발생시킨다고 가정
-            willThrow(new CustomException(ErrorCode.SIMPLE_TIMER_MIN_COUNT_VIOLATION))
-                    .given(simpleTimerCommandService).deleteSimpleTimer(simpleTimerId);
-
-            // when & then
-            mockMvc.perform(delete("/api/v1/simple-timers/{simpleTimerId}", simpleTimerId)
-                            .headers(getCommonApiHeaders(memberId)))
-                    .andExpect(status().isConflict())
-                    .andExpect(jsonPath("$.code").value(ErrorCode.SIMPLE_TIMER_MIN_COUNT_VIOLATION.getCode()))
-                    .andExpect(jsonPath("$.message").value(ErrorCode.SIMPLE_TIMER_MIN_COUNT_VIOLATION.getMessage()));
-
-            BDDMockito.then(simpleTimerCommandService).should().deleteSimpleTimer(simpleTimerId);
-        }
     }
 
     @Nested

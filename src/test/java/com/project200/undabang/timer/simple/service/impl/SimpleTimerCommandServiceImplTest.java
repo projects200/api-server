@@ -67,7 +67,6 @@ class SimpleTimerCommandServiceImplTest {
                 mocked.when(UserContextHolder::getUserId).thenReturn(memberId);
                 given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
                 // 삭제 가능한 타이머가 2개 이상 있다고 가정
-                given(simpleTimerRepository.countDistinctByMemberAndSimpleTimerDeletedAtNull(member)).willReturn(2);
                 given(simpleTimerRepository.findByIdAndMemberAndSimpleTimerDeletedAtNull(simpleTimerId, member)).willReturn(Optional.of(timer));
 
                 // when
@@ -96,32 +95,6 @@ class SimpleTimerCommandServiceImplTest {
                         .isInstanceOf(CustomException.class)
                         .hasMessage(ErrorCode.MEMBER_NOT_FOUND.getMessage());
 
-                then(simpleTimerRepository).should(never()).countDistinctByMemberAndSimpleTimerDeletedAtNull(any(Member.class));
-                then(simpleTimerRepository).should(never()).findByIdAndMemberAndSimpleTimerDeletedAtNull(anyLong(), any(Member.class));
-            }
-        }
-
-        @Test
-        @DisplayName("남은 타이머가 0개일 때 삭제를 시도하면 SIMPLE_TIMER_MIN_COUNT_VIOLATION을 발생시킨다")
-        void deleteSimpleTimer_Fail_LastTimer() {
-            // given
-            Long simpleTimerId = 1L;
-            UUID memberId = UUID.randomUUID();
-            Member member = Member.builder().memberId(memberId).build();
-
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
-
-                given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-                // 회원의 타이머 개수가 0개라고 가정
-                given(simpleTimerRepository.countDistinctByMemberAndSimpleTimerDeletedAtNull(member)).willReturn(0);
-
-                // when & then
-                assertThatThrownBy(() -> simpleTimerCommandService.deleteSimpleTimer(simpleTimerId))
-                        .isInstanceOf(CustomException.class)
-                        .hasMessage(ErrorCode.SIMPLE_TIMER_MIN_COUNT_VIOLATION.getMessage());
-
-                // 타이머를 찾는 로직이나 삭제 로직이 호출되지 않았는지 검증
                 then(simpleTimerRepository).should(never()).findByIdAndMemberAndSimpleTimerDeletedAtNull(anyLong(), any(Member.class));
             }
         }
@@ -138,7 +111,6 @@ class SimpleTimerCommandServiceImplTest {
                 mocked.when(UserContextHolder::getUserId).thenReturn(memberId);
                 given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
                 // 삭제 가능한 타이머가 2개 이상 있다고 가정
-                given(simpleTimerRepository.countDistinctByMemberAndSimpleTimerDeletedAtNull(member)).willReturn(2);
                 given(simpleTimerRepository.findByIdAndMemberAndSimpleTimerDeletedAtNull(nonExistentTimerId, member)).willReturn(Optional.empty());
 
                 // when & then
