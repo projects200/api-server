@@ -31,7 +31,6 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
 
     /**
      * 주어진 심플 타이머 ID를 기반으로 심플 타이머를 삭제하는 메서드입니다.
-     * 단, 삭제 가능한 심플 타이머가 최소 하나 이상 존재해야 합니다.
      */
     @Override
     public void deleteSimpleTimer(Long simpleTimerId) {
