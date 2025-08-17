@@ -70,6 +70,7 @@ public class FcmToken {
     public void activate() {
         this.fcmTokenIsActive = true;
         this.fcmTokenActivatedAt = LocalDateTime.now();
+        this.fcmTokenDeletedAt = null;
     }
 
     public void deactivate() {
