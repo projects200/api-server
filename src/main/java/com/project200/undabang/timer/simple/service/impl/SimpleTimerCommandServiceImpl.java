@@ -32,7 +32,6 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
     private final MemberRepository memberRepository;
 
     private static final int MAX_SIMPLE_TIMER_COUNT = 6;
-    private static final int MIN_SIMPLE_TIMER_COUNT = 0;
 
 
     /**
@@ -61,18 +60,11 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
 
     /**
      * 주어진 심플 타이머 ID를 기반으로 심플 타이머를 삭제하는 메서드입니다.
-     * 단, 삭제 가능한 심플 타이머가 최소 하나 이상 존재해야 합니다.
      */
     @Override
     public void deleteSimpleTimer(Long simpleTimerId) {
         Member member = memberRepository.findById(UserContextHolder.getUserId())
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-
-        int count = simpleTimerRepository.countDistinctByMemberAndSimpleTimerDeletedAtNull(member);
-
-        if (count <= MIN_SIMPLE_TIMER_COUNT) {
-            throw new CustomException(ErrorCode.SIMPLE_TIMER_MIN_COUNT_VIOLATION);
-        }
 
         SimpleTimer timer = simpleTimerRepository.findByIdAndMemberAndSimpleTimerDeletedAtNull(simpleTimerId, member)
                 .orElseThrow(() -> new CustomException(ErrorCode.SIMPLE_TIMER_NOT_EXIST));
