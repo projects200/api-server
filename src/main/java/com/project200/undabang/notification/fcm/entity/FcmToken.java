@@ -1,4 +1,4 @@
-package com.project200.undabang.push_message.entity;
+package com.project200.undabang.notification.fcm.entity;
 
 import com.project200.undabang.member.entity.Member;
 import jakarta.persistence.*;

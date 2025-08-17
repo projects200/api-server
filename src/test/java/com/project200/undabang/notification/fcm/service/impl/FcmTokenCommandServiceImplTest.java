@@ -1,8 +1,8 @@
-package com.project200.undabang.push_message.service.impl;
+package com.project200.undabang.notification.fcm.service.impl;
 
 import com.project200.undabang.member.entity.Member;
-import com.project200.undabang.push_message.entity.FcmToken;
-import com.project200.undabang.push_message.repository.FcmTokenRepository;
+import com.project200.undabang.notification.fcm.entity.FcmToken;
+import com.project200.undabang.notification.fcm.repository.FcmTokenRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

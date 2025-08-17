@@ -1,4 +1,4 @@
-package com.project200.undabang.push_message.service;
+package com.project200.undabang.notification.fcm.service;
 
 import com.project200.undabang.member.entity.Member;
 

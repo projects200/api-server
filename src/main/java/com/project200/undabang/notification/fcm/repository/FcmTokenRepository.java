@@ -1,6 +1,6 @@
-package com.project200.undabang.push_message.repository;
+package com.project200.undabang.notification.fcm.repository;
 
-import com.project200.undabang.push_message.entity.FcmToken;
+import com.project200.undabang.notification.fcm.entity.FcmToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.lang.NonNull;
 
