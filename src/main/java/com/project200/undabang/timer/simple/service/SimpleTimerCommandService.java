@@ -10,6 +10,5 @@ public interface SimpleTimerCommandService {
     SimpleTimerCreateResponseDto createSimpleTimer(SimpleTimerCreateRequestDto dto);
     void createDefaultSimpleTimer(UUID memberId);
     void updateSimpleTimer(Long simpleTimerId, SimpleTimerUpdateRequestDto dto);
-
     void deleteSimpleTimer(Long simpleTimerId);
 }
