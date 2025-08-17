@@ -7,4 +7,5 @@ import java.util.UUID;
 public interface SimpleTimerCommandService {
     void createDefaultSimpleTimer(UUID memberId);
     void updateSimpleTimer(Long simpleTimerId, SimpleTimerUpdateRequestDto dto);
+    void deleteSimpleTimer(Long simpleTimerId);
 }

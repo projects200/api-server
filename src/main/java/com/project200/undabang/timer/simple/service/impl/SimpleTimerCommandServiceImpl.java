@@ -30,6 +30,20 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
     private final MemberRepository memberRepository;
 
     /**
+     * 주어진 심플 타이머 ID를 기반으로 심플 타이머를 삭제하는 메서드입니다.
+     */
+    @Override
+    public void deleteSimpleTimer(Long simpleTimerId) {
+        Member member = memberRepository.findById(UserContextHolder.getUserId())
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        SimpleTimer timer = simpleTimerRepository.findByIdAndMemberAndSimpleTimerDeletedAtNull(simpleTimerId, member)
+                .orElseThrow(() -> new CustomException(ErrorCode.SIMPLE_TIMER_NOT_EXIST));
+
+        timer.deleteSimpleTimer();
+    }
+
+    /**
      * 지정된 심플 타이머 ID와 요청 데이터를 기반으로 심플 타이머를 업데이트하는 메서드입니다.
      */
     @Override

@@ -142,3 +142,5 @@ include::overview/공통-개발-참고-사항.adoc[]
 - 심플 타이머 조회 API #GET# `/api/v1/simple-timers`
 
 - 심플 타이머 수정 API #PATCH# `/api/v1/simple-timers/{simpleTimerId}`
+
+- 심플 타이머 삭제 API #DELETE# `/api/v1/simple-timers/{simpleTimerId}`
