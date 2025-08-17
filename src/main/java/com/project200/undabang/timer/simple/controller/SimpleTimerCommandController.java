@@ -21,4 +21,10 @@ public class SimpleTimerCommandController {
         simpleTimerCommandService.updateSimpleTimer(simpleTimerId, dto);
         return ResponseEntity.ok(CommonResponse.update(null));
     }
+
+    @DeleteMapping("/v1/simple-timers/{simpleTimerId}")
+    public ResponseEntity<CommonResponse<Void>> deleteSimpleTimer(@PathVariable("simpleTimerId") Long simpleTimerId) {
+        simpleTimerCommandService.deleteSimpleTimer(simpleTimerId);
+        return ResponseEntity.ok(CommonResponse.delete(null));
+    }
 }

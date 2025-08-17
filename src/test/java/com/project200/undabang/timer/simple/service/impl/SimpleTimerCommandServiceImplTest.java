@@ -51,6 +51,79 @@ class SimpleTimerCommandServiceImplTest {
     private SimpleTimerCommandServiceImpl simpleTimerCommandService;
 
     @Nested
+    @DisplayName("deleteSimpleTimer 메소드는")
+    class DeleteSimpleTimerTest {
+
+        @Test
+        @DisplayName("정상적인 요청 시 타이머를 성공적으로 논리적 삭제한다")
+        void deleteSimpleTimer_Success() {
+            // given
+            Long simpleTimerId = 1L;
+            UUID memberId = UUID.randomUUID();
+            Member member = Member.builder().memberId(memberId).build();
+            SimpleTimer timer = SimpleTimer.builder().id(simpleTimerId).member(member).simpleTimerTime(30).build();
+
+            try (MockedStatic<UserContextHolder> mocked = mockStatic(UserContextHolder.class)) {
+                mocked.when(UserContextHolder::getUserId).thenReturn(memberId);
+                given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+                // 삭제 가능한 타이머가 2개 이상 있다고 가정
+                given(simpleTimerRepository.findByIdAndMemberAndSimpleTimerDeletedAtNull(simpleTimerId, member)).willReturn(Optional.of(timer));
+
+                // when
+                simpleTimerCommandService.deleteSimpleTimer(simpleTimerId);
+
+                // then
+                then(simpleTimerRepository).should().findByIdAndMemberAndSimpleTimerDeletedAtNull(simpleTimerId, member);
+                assertThat(timer.getSimpleTimerDeletedAt()).isNotNull();
+            }
+        }
+
+        @Test
+        @DisplayName("요청한 사용자가 존재하지 않으면 CustomException(MEMBER_NOT_FOUND)을 발생시킨다")
+        void deleteSimpleTimer_Fail_MemberNotFound() {
+            // given
+            Long simpleTimerId = 1L;
+            UUID memberId = UUID.randomUUID();
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
+
+                given(memberRepository.findById(memberId)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> simpleTimerCommandService.deleteSimpleTimer(simpleTimerId))
+                        .isInstanceOf(CustomException.class)
+                        .hasMessage(ErrorCode.MEMBER_NOT_FOUND.getMessage());
+
+                then(simpleTimerRepository).should(never()).findByIdAndMemberAndSimpleTimerDeletedAtNull(anyLong(), any(Member.class));
+            }
+        }
+
+        @Test
+        @DisplayName("삭제하려는 타이머가 존재하지 않으면 SIMPLE_TIMER_NOT_EXIST 예외를 발생시킨다")
+        void deleteSimpleTimer_Fail_TimerNotExist() {
+            // given
+            Long nonExistentTimerId = 999L;
+            UUID memberId = UUID.randomUUID();
+            Member member = Member.builder().memberId(memberId).build();
+
+            try (MockedStatic<UserContextHolder> mocked = mockStatic(UserContextHolder.class)) {
+                mocked.when(UserContextHolder::getUserId).thenReturn(memberId);
+                given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+                // 삭제 가능한 타이머가 2개 이상 있다고 가정
+                given(simpleTimerRepository.findByIdAndMemberAndSimpleTimerDeletedAtNull(nonExistentTimerId, member)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> simpleTimerCommandService.deleteSimpleTimer(nonExistentTimerId))
+                        .isInstanceOf(CustomException.class)
+                        .hasMessage(ErrorCode.SIMPLE_TIMER_NOT_EXIST.getMessage());
+
+                then(simpleTimerRepository).should().findByIdAndMemberAndSimpleTimerDeletedAtNull(nonExistentTimerId, member);
+            }
+        }
+    }
+
+    @Nested
     @DisplayName("updateSimpleTimer 메소드는")
     class UpdateSimpleTimerTest {
 

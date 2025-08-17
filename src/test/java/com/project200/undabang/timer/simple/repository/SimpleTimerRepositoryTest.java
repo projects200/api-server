@@ -3,7 +3,6 @@ package com.project200.undabang.timer.simple.repository;
 import com.project200.undabang.configuration.TestQuerydslConfig;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.enums.MemberGender;
-import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.timer.simple.entity.SimpleTimer;
 import jakarta.persistence.EntityManager;
 import org.assertj.core.api.Assertions;
@@ -31,9 +30,6 @@ class SimpleTimerRepositoryTest {
 
     @Autowired
     private SimpleTimerRepository simpleTimerRepository;
-
-    @Autowired
-    private MemberRepository memberRepository;
 
     @Nested
     @DisplayName("findByMemberAndSimpleTimerDeletedAtNull 메소드는")

@@ -61,4 +61,8 @@ public class SimpleTimer {
             this.simpleTimerUpdatedAt = LocalDateTime.now();
         }
     }
+
+    public void deleteSimpleTimer() {
+        this.simpleTimerDeletedAt = LocalDateTime.now();
+    }
 }
