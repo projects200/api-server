@@ -3,8 +3,8 @@ package com.project200.undabang.timer.custom.controller;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
+import com.project200.undabang.timer.custom.dto.response.CustomTimerListResponse;
 import com.project200.undabang.timer.custom.dto.response.CustomTimerRecord;
-import com.project200.undabang.timer.custom.dto.response.GetCustomTimerListResponse;
 import com.project200.undabang.timer.custom.service.CustomTimerQueryService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -44,7 +44,7 @@ class CustomTimerQueryControllerTest extends AbstractRestDocSupport {
             // given
             UUID memberId = UUID.randomUUID();
             List<CustomTimerRecord> recordList = createCustomTimerRecordList();
-            GetCustomTimerListResponse expectedResponse = GetCustomTimerListResponse.builder()
+            CustomTimerListResponse expectedResponse = CustomTimerListResponse.builder()
                     .customTimerCount(recordList.size())
                     .customTimers(recordList)
                     .build();

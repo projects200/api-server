@@ -5,7 +5,7 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
-import com.project200.undabang.timer.custom.dto.response.GetCustomTimerListResponse;
+import com.project200.undabang.timer.custom.dto.response.CustomTimerListResponse;
 import com.project200.undabang.timer.custom.entity.CustomTimer;
 import com.project200.undabang.timer.custom.repository.CustomTimerRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -55,7 +55,7 @@ class CustomTimerQueryServiceImplTest {
                 given(customTimerRepository.findAllByMemberAndCustomTimerDeletedAtNull(testUser)).willReturn(customTimerList);
 
                 // when
-                GetCustomTimerListResponse response = customTimerQueryService.getCustomTimerList();
+                CustomTimerListResponse response = customTimerQueryService.getCustomTimerList();
 
                 // then
                 assertThat(response).isNotNull();

@@ -1,7 +1,7 @@
 package com.project200.undabang.timer.custom.controller;
 
 import com.project200.undabang.common.web.response.CommonResponse;
-import com.project200.undabang.timer.custom.dto.response.GetCustomTimerListResponse;
+import com.project200.undabang.timer.custom.dto.response.CustomTimerListResponse;
 import com.project200.undabang.timer.custom.service.CustomTimerQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +16,7 @@ public class CustomTimerQueryController {
     private final CustomTimerQueryService customTimerQueryService;
 
     @GetMapping("/v1/custom-timers")
-    public ResponseEntity<CommonResponse<GetCustomTimerListResponse>> getCustomTimerList() {
+    public ResponseEntity<CommonResponse<CustomTimerListResponse>> getCustomTimerList() {
 
         return ResponseEntity.ok(CommonResponse.success(customTimerQueryService.getCustomTimerList()));
     }
