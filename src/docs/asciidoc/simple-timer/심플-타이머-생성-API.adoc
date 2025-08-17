@@ -29,6 +29,6 @@ operation::create-simple-timer/create-simple-timer_-success[snippets="request-he
 |201|심플 타이머가 성공적으로 생성되었습니다.
 |400|입력 정보가 정확하지 않습니다.
 |404|회원이 존재하지 않습니다.
-|409|심플 타이머를 추가할 수 없습니다.
+|409|최대 심플 타이머 개수(6개)를 초과했습니다.
 |===
 
