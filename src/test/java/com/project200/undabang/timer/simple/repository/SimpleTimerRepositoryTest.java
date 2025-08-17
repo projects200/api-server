@@ -31,6 +31,19 @@ class SimpleTimerRepositoryTest {
     @Autowired
     private SimpleTimerRepository simpleTimerRepository;
 
+    private Member createAndSaveMember(String nickname) {
+        Member member = Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberEmail(nickname + "@email.com")
+                .memberNickname(nickname)
+                .memberGender(MemberGender.UNKNOWN)
+                .memberBday(LocalDate.of(2000, 1, 1))
+                .build();
+        em.persist(member);
+
+        return member;
+    }
+
     @Nested
     @DisplayName("findByMemberAndSimpleTimerDeletedAtNull 메소드는")
     class Describe_findByMemberAndSimpleTimerDeletedAtNull {
@@ -175,17 +188,50 @@ class SimpleTimerRepositoryTest {
         }
     }
 
-    private Member createAndSaveMember(String nickname) {
-        Member member = Member.builder()
-                .memberId(UUID.randomUUID())
-                .memberEmail(nickname + "@email.com")
-                .memberNickname(nickname)
-                .memberGender(MemberGender.UNKNOWN)
-                .memberBday(LocalDate.of(2000,1,1))
-                .build();
-        em.persist(member);
+    @Nested
+    @DisplayName("countByMemberAndSimpleTimerDeletedAtNull 메소드는")
+    class Describe_countByMemberAndSimpleTimerDeletedAtNull {
 
-        return member;
+        @Test
+        @DisplayName("주어진 회원의 삭제되지 않은 심플 타이머 개수를 반환한다")
+        void it_returns_the_count_of_non_deleted_timers() {
+            // given
+            Member member = createAndSaveMember("testMember");
+            Member otherMember = createAndSaveMember("otherMember");
+
+            createAndSaveSimpleTimer(member, 10);
+            createAndSaveSimpleTimer(member, 20);
+            createAndSaveSimpleTimer(otherMember, 30); // 다른 회원의 타이머
+
+            SimpleTimer deletedTimer = SimpleTimer.builder()
+                    .member(member)
+                    .simpleTimerTime(40)
+                    .simpleTimerDeletedAt(LocalDateTime.now())
+                    .build();
+            em.persist(deletedTimer);
+
+            flushAndClear();
+
+            // when
+            int count = simpleTimerRepository.countByMemberAndSimpleTimerDeletedAtNull(member);
+
+            // then
+            assertThat(count).isEqualTo(2);
+        }
+
+        @Test
+        @DisplayName("회원이 심플 타이머를 가지고 있지 않으면 0을 반환한다")
+        void it_returns_zero_when_member_has_no_timers() {
+            // given
+            Member member = createAndSaveMember("testMember");
+            flushAndClear();
+
+            // when
+            int count = simpleTimerRepository.countByMemberAndSimpleTimerDeletedAtNull(member);
+
+            // then
+            assertThat(count).isZero();
+        }
     }
 
     private SimpleTimer createAndSaveSimpleTimer(Member member, int time) {

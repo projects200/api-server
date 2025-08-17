@@ -31,31 +31,19 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
     private final SimpleTimerRepository simpleTimerRepository;
     private final MemberRepository memberRepository;
 
-    private static final int MAX_SIMPLE_TIMER_COUNT = 6;
-
-
     /**
-     * 심플 타이머를 생성하는 메서드입니다.
-     * 요청 데이터를 기반으로 새로운 심플 타이머를 생성하고 저장합니다.
-     * 회원별로 생성 가능한 최대 심플 타이머 개수를 초과하면 예외를 발생시킵니다.
+     * 지정된 요청 데이터를 사용하여 새 심플 타이머를 생성하는 메서드입니다.
      */
     @Override
     public SimpleTimerCreateResponseDto createSimpleTimer(SimpleTimerCreateRequestDto requestDto) {
         Member member = memberRepository.findById(UserContextHolder.getUserId())
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-        int count = simpleTimerRepository.countDistinctByMemberAndSimpleTimerDeletedAtNull(member);
+        checkSimpleTimerCountLimit(member);
 
-        if (count >= MAX_SIMPLE_TIMER_COUNT) {
-            throw new CustomException(ErrorCode.SIMPLE_TIMER_MAX_COUNT_VIOLATION);
-        }
+        SimpleTimer savedTimer = simpleTimerRepository.save(SimpleTimer.of(member, requestDto.getTime()));
 
-        SimpleTimer timer = SimpleTimer.of(member, requestDto.getTime());
-        SimpleTimer savedTimer = simpleTimerRepository.save(timer);
-
-        return SimpleTimerCreateResponseDto.builder()
-                .simpleTimerId(savedTimer.getId())
-                .build();
+        return SimpleTimerCreateResponseDto.from(savedTimer);
     }
 
     /**
@@ -101,6 +89,19 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
 
         List<SimpleTimer> simpleTimerList = createSimpleTimerList(member, timeList);
         simpleTimerRepository.saveAll(simpleTimerList);
+    }
+
+    /**
+     * 주어진 회원의 기존 심플 타이머 수와 정책에 정의된 최대 심플 타이머 수를 비교하여
+     * 제한을 초과했는지 검증하는 메서드입니다. 제한을 초과한 경우 예외를 발생시킵니다.
+     */
+    private void checkSimpleTimerCountLimit(Member member) {
+        int count = simpleTimerRepository.countByMemberAndSimpleTimerDeletedAtNull(member);
+        int simpleTimerMaxCount = policyService.getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_MAX_COUNT);
+
+        if (count >= simpleTimerMaxCount) {
+            throw new CustomException(ErrorCode.SIMPLE_TIMER_MAX_COUNT_VIOLATION);
+        }
     }
 
     /**

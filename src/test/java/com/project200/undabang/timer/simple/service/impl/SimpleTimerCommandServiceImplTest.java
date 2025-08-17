@@ -69,8 +69,9 @@ class SimpleTimerCommandServiceImplTest {
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
                 given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+                given(policyService.getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_MAX_COUNT)).willReturn(6);
                 // 현재 타이머 개수가 최대치(6) 미만이라고 가정
-                given(simpleTimerRepository.countDistinctByMemberAndSimpleTimerDeletedAtNull(member)).willReturn(5);
+                given(simpleTimerRepository.countByMemberAndSimpleTimerDeletedAtNull(member)).willReturn(5);
                 given(simpleTimerRepository.save(any(SimpleTimer.class))).willReturn(savedTimer);
 
                 // when
@@ -79,7 +80,8 @@ class SimpleTimerCommandServiceImplTest {
                 // then
                 assertThat(responseDto.getSimpleTimerId()).isEqualTo(savedTimer.getId());
                 then(memberRepository).should().findById(memberId);
-                then(simpleTimerRepository).should().countDistinctByMemberAndSimpleTimerDeletedAtNull(member);
+                then(policyService).should().getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_MAX_COUNT);
+                then(simpleTimerRepository).should().countByMemberAndSimpleTimerDeletedAtNull(member);
                 then(simpleTimerRepository).should().save(any(SimpleTimer.class));
             }
         }
@@ -95,14 +97,17 @@ class SimpleTimerCommandServiceImplTest {
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
                 given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-                // 현재 타이머 개수가 최대치(6)라고 가정
-                given(simpleTimerRepository.countDistinctByMemberAndSimpleTimerDeletedAtNull(member)).willReturn(6);
+                given(policyService.getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_MAX_COUNT)).willReturn(6);
+                given(simpleTimerRepository.countByMemberAndSimpleTimerDeletedAtNull(member)).willReturn(6);
 
                 // when & then
                 assertThatThrownBy(() -> simpleTimerCommandService.createSimpleTimer(requestDto))
                         .isInstanceOf(CustomException.class)
                         .hasMessage(ErrorCode.SIMPLE_TIMER_MAX_COUNT_VIOLATION.getMessage());
 
+                then(memberRepository).should().findById(memberId);
+                then(policyService).should().getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_MAX_COUNT);
+                then(simpleTimerRepository).should().countByMemberAndSimpleTimerDeletedAtNull(member);
                 then(simpleTimerRepository).should(never()).save(any(SimpleTimer.class));
             }
         }
@@ -123,7 +128,8 @@ class SimpleTimerCommandServiceImplTest {
                         .isInstanceOf(CustomException.class)
                         .hasMessage(ErrorCode.MEMBER_NOT_FOUND.getMessage());
 
-                then(simpleTimerRepository).should(never()).countDistinctByMemberAndSimpleTimerDeletedAtNull(any(Member.class));
+                then(policyService).shouldHaveNoInteractions();
+                then(simpleTimerRepository).should(never()).countByMemberAndSimpleTimerDeletedAtNull(any(Member.class));
                 then(simpleTimerRepository).should(never()).save(any(SimpleTimer.class));
             }
         }

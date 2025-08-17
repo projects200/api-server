@@ -727,3 +727,11 @@ VALUES (16, 'SIMPLE_TIMER_INIT_VALUES', '30,40,50,60,75,90',
 
 INSERT INTO policy_group_mappings (policy_id, policy_groups_id)
 VALUES (16, 3);
+
+-- SIMPLE_TIMER_MAX_COUNT 정책을 생성
+INSERT INTO policies (policy_id, policy_key, policy_value, policy_unit, policy_description)
+VALUES (17, 'SIMPLE_TIMER_MAX_COUNT', '6',
+        'COUNT', '심플 타이머가 가질 수 있는 최대 갯수');
+
+INSERT INTO policy_group_mappings (policy_id, policy_groups_id)
+VALUES (17, 3);
