@@ -8,7 +8,9 @@ import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.service.PolicyService;
+import com.project200.undabang.timer.simple.dto.request.SimpleTimerCreateRequestDto;
 import com.project200.undabang.timer.simple.dto.request.SimpleTimerUpdateRequestDto;
+import com.project200.undabang.timer.simple.dto.response.SimpleTimerCreateResponseDto;
 import com.project200.undabang.timer.simple.entity.SimpleTimer;
 import com.project200.undabang.timer.simple.repository.SimpleTimerRepository;
 import org.assertj.core.api.Assertions;
@@ -49,6 +51,89 @@ class SimpleTimerCommandServiceImplTest {
 
     @InjectMocks
     private SimpleTimerCommandServiceImpl simpleTimerCommandService;
+
+    @Nested
+    @DisplayName("createSimpleTimer 메소드는")
+    class CreateSimpleTimerTest {
+
+        @Test
+        @DisplayName("정상적인 요청 시 타이머를 성공적으로 생성한다")
+        void createSimpleTimer_Success() {
+            // given
+            int time = 120;
+            SimpleTimerCreateRequestDto requestDto = SimpleTimerCreateRequestDto.builder().time(time).build();
+            UUID memberId = UUID.randomUUID();
+            Member member = Member.builder().memberId(memberId).build();
+            SimpleTimer savedTimer = SimpleTimer.builder().id(1L).member(member).simpleTimerTime(time).build();
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
+                given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+                given(policyService.getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_MAX_COUNT)).willReturn(6);
+                // 현재 타이머 개수가 최대치(6) 미만이라고 가정
+                given(simpleTimerRepository.countByMemberAndSimpleTimerDeletedAtNull(member)).willReturn(5);
+                given(simpleTimerRepository.save(any(SimpleTimer.class))).willReturn(savedTimer);
+
+                // when
+                SimpleTimerCreateResponseDto responseDto = simpleTimerCommandService.createSimpleTimer(requestDto);
+
+                // then
+                assertThat(responseDto.getSimpleTimerId()).isEqualTo(savedTimer.getId());
+                then(memberRepository).should().findById(memberId);
+                then(policyService).should().getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_MAX_COUNT);
+                then(simpleTimerRepository).should().countByMemberAndSimpleTimerDeletedAtNull(member);
+                then(simpleTimerRepository).should().save(any(SimpleTimer.class));
+            }
+        }
+
+        @Test
+        @DisplayName("타이머 개수가 최대치(6개)일 경우 CustomException(SIMPLE_TIMER_MAX_COUNT_VIOLATION)을 발생시킨다")
+        void createSimpleTimer_Fail_MaxCountViolation() {
+            // given
+            SimpleTimerCreateRequestDto requestDto = SimpleTimerCreateRequestDto.builder().time(120).build();
+            UUID memberId = UUID.randomUUID();
+            Member member = Member.builder().memberId(memberId).build();
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
+                given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+                given(policyService.getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_MAX_COUNT)).willReturn(6);
+                given(simpleTimerRepository.countByMemberAndSimpleTimerDeletedAtNull(member)).willReturn(6);
+
+                // when & then
+                assertThatThrownBy(() -> simpleTimerCommandService.createSimpleTimer(requestDto))
+                        .isInstanceOf(CustomException.class)
+                        .hasMessage(ErrorCode.SIMPLE_TIMER_MAX_COUNT_VIOLATION.getMessage());
+
+                then(memberRepository).should().findById(memberId);
+                then(policyService).should().getPolicyValueAsInt(PolicyKey.SIMPLE_TIMER_MAX_COUNT);
+                then(simpleTimerRepository).should().countByMemberAndSimpleTimerDeletedAtNull(member);
+                then(simpleTimerRepository).should(never()).save(any(SimpleTimer.class));
+            }
+        }
+
+        @Test
+        @DisplayName("요청한 사용자가 존재하지 않으면 CustomException(MEMBER_NOT_FOUND)을 발생시킨다")
+        void createSimpleTimer_Fail_MemberNotFound() {
+            // given
+            SimpleTimerCreateRequestDto requestDto = SimpleTimerCreateRequestDto.builder().time(120).build();
+            UUID memberId = UUID.randomUUID();
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
+                given(memberRepository.findById(memberId)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> simpleTimerCommandService.createSimpleTimer(requestDto))
+                        .isInstanceOf(CustomException.class)
+                        .hasMessage(ErrorCode.MEMBER_NOT_FOUND.getMessage());
+
+                then(policyService).shouldHaveNoInteractions();
+                then(simpleTimerRepository).should(never()).countByMemberAndSimpleTimerDeletedAtNull(any(Member.class));
+                then(simpleTimerRepository).should(never()).save(any(SimpleTimer.class));
+            }
+        }
+    }
 
     @Nested
     @DisplayName("deleteSimpleTimer 메소드는")
