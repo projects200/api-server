@@ -8,6 +8,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface SimpleTimerRepository extends JpaRepository<SimpleTimer, Long> {
-    List<SimpleTimer> findByMemberAndSimpleTimerDeletedAtNull(Member member);
+    List<SimpleTimer> findByMemberAndSimpleTimerDeletedAtNullOrderBySimpleTimerTimeAsc(Member member);
     Optional<SimpleTimer> findByIdAndMemberAndSimpleTimerDeletedAtNull(Long id, Member member);
 }
