@@ -1,0 +1,35 @@
+== 심플 타이머 생성 API
+
+=== 설명
+
+- #POST# `/api/v1/simple-timers`
+- 심플 타이머 생성 API는 사용자가 심플 타이머의 시간을 생성하는 기능을 제공합니다.
+- 사용자가 생성할 수 있는 시간은 1 ~ 3599(초) 사이의 양수값입니다.
+
+=== 개발 이력
+
+- Sprint 9 (2025-08-15): 기능 개발이 완료되었습니다.
+
+=== 개발 참고 사항
+
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+- 심플 타이머 추가 시 6개를 초과할 경우 409 에러가 발생됩니다.
+
+=== 코드 샘플
+
+operation::create-simple-timer/create-simple-timer_-success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+
+operation::create-simple-timer/create-simple-timer_-success[snippets="request-headers,response-fields"]
+
+==== 응답 상태 코드
+
+|===
+|상태 코드|설명
+|201|심플 타이머가 성공적으로 생성되었습니다.
+|400|입력 정보가 정확하지 않습니다.
+|404|회원이 존재하지 않습니다.
+|409|최대 심플 타이머 개수(6개)를 초과했습니다.
+|===
+
