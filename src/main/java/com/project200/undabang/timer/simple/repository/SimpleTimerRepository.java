@@ -10,4 +10,6 @@ import java.util.Optional;
 public interface SimpleTimerRepository extends JpaRepository<SimpleTimer, Long> {
     List<SimpleTimer> findByMemberAndSimpleTimerDeletedAtNullOrderBySimpleTimerTimeAsc(Member member);
     Optional<SimpleTimer> findByIdAndMemberAndSimpleTimerDeletedAtNull(Long id, Member member);
+
+    int countByMemberAndSimpleTimerDeletedAtNull(Member member);
 }
