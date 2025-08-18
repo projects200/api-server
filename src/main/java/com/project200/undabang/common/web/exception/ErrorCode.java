@@ -43,7 +43,10 @@ public enum ErrorCode {
     POLICY_NOT_FOUND(500, "POLICY_NOT_FOUND", "정책을 찾을 수 없습니다."),
 
     // 심플 타이머 관련 에러
-    SIMPLE_TIMER_NOT_EXIST(404, "SIMPLE_TIMER_NOT_EXIST", "존재하지 않는 타이머 입니다.");
+    SIMPLE_TIMER_NOT_EXIST(404, "SIMPLE_TIMER_NOT_EXIST", "존재하지 않는 타이머 입니다."),
+
+    // 커스텀 타이머 관련 에러
+    CUSTOM_TIMER_NOT_FOUND(404, "CUSTOM_TIMER_NOT_FOUND", "존재하지 않는 타이머 입니다.");
 
     private final HttpStatusCode status;
     private final String code;
