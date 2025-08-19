@@ -735,3 +735,24 @@ VALUES (17, 'SIMPLE_TIMER_MAX_COUNT', '6',
 
 INSERT INTO policy_group_mappings (policy_id, policy_groups_id)
 VALUES (17, 3);
+
+-- 'custom-timer' 정책 그룹을 생성
+INSERT INTO policy_groups (policy_groups_id, policy_groups_name)
+VALUES (4, 'custom-timer');
+
+
+-- CUSTOM_TIMER_STEP_MAX_COUNT 정책을 생성
+INSERT INTO policies (policy_id, policy_key, policy_value, policy_unit, policy_description)
+VALUES (18, 'CUSTOM_TIMER_STEP_MAX_COUNT', '50',
+        'COUNT', '커스텀 타이머 스텝이 가질 수 있는 최대 갯수');
+
+INSERT INTO policy_group_mappings (policy_id, policy_groups_id)
+VALUES (18, 4);
+
+-- CUSTOM_TIMER_STEP_MIN_COUNT 정책을 생성
+INSERT INTO policies (policy_id, policy_key, policy_value, policy_unit, policy_description)
+VALUES (19, 'CUSTOM_TIMER_STEP_MIN_COUNT', '1',
+        'COUNT', '커스텀 타이머 스텝이 가질 수 있는 최소 갯수');
+
+INSERT INTO policy_group_mappings (policy_id, policy_groups_id)
+VALUES (19, 4);
