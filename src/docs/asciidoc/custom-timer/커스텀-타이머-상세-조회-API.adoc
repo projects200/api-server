@@ -1,0 +1,33 @@
+== 커스텀 타이머 상세 조회 API
+
+=== 설명
+
+- #GET# `/api/v1/custom-timers/{customTimerId}`
+- 커스텀 타이머 상세 조회 API는 사용자가 자신이 저장한 커스텀 타이머와 커스텀 타이머 스텝들을 조회하는 기능을 제공합니다.
+
+=== 개발 이력
+
+- Sprint 9 (2025-08-18): 기능 개발이 완료되었습니다.
+
+=== 개발 참고 사항
+
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+
+operation::get-custom-timer-detail/get-custom-timer-detail_-success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+
+operation::get-custom-timer-detail/get-custom-timer-detail_-success[snippets="request-headers,response-fields"]
+
+==== 응답 상태 코드
+
+|===
+|상태 코드|설명
+|200|커스텀 타이머 및 스텝들의 상세 정보가 성공적으로 조회되었습니다.
+|403|접근 권한이 없습니다.
+|404|회원 정보가 올바르지 않습니다. +
+커스텀 타이머가 존재하지 않습니다.
+|===
+

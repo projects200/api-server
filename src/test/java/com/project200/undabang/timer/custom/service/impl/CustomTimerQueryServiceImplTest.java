@@ -5,9 +5,12 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
+import com.project200.undabang.timer.custom.dto.response.CustomTimerDetailResponse;
 import com.project200.undabang.timer.custom.dto.response.CustomTimerListResponse;
 import com.project200.undabang.timer.custom.entity.CustomTimer;
+import com.project200.undabang.timer.custom.entity.CustomTimerStep;
 import com.project200.undabang.timer.custom.repository.CustomTimerRepository;
+import com.project200.undabang.timer.custom.repository.CustomTimerStepRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,6 +31,10 @@ import static org.mockito.Mockito.mockStatic;
 
 @ExtendWith(MockitoExtension.class)
 class CustomTimerQueryServiceImplTest {
+
+    @Mock
+    private CustomTimerStepRepository customTimerStepRepository;
+
     @Mock
     private CustomTimerRepository customTimerRepository;
 
@@ -36,6 +43,75 @@ class CustomTimerQueryServiceImplTest {
 
     @InjectMocks
     private CustomTimerQueryServiceImpl customTimerQueryService;
+
+    @Nested
+    @DisplayName("getCustomTimerDetail() 메소드는")
+    class Describe_getCustomTimerDetail {
+
+        @Test
+        @DisplayName("정상적으로 타이머 상세 정보를 반환한다")
+        void returns_detail_response() {
+            // given
+            UUID userId = UUID.randomUUID();
+            Member member = Member.builder().memberId(userId).build();
+            CustomTimer timer = CustomTimer.builder().id(1L).member(member).customTimerName("타이머").build();
+            CustomTimerStep step = CustomTimerStep.builder().id(10L).customTimer(timer).customTimerStepName("스텝1").customTimerStepOrder((byte) 1).customTimerStepTime(60).build();
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(userId);
+                given(memberRepository.findById(userId)).willReturn(Optional.of(member));
+                given(customTimerRepository.findById(1L)).willReturn(Optional.of(timer));
+                given(customTimerStepRepository.findAllByCustomTimerAndCustomTimerStepDeletedAtNull(timer)).willReturn(List.of(step));
+
+                // when
+                CustomTimerDetailResponse response = customTimerQueryService.getCustomTimerDetail(1L);
+
+                // then
+                assertThat(response).isNotNull();
+                assertThat(response.getCustomTimerId()).isEqualTo(timer.getId());
+                assertThat(response.getCustomTimerName()).isEqualTo(timer.getCustomTimerName());
+                assertThat(response.getCustomTimerSteps()).hasSize(1);
+                assertThat(response.getCustomTimerSteps().get(0).customTimerStepName()).isEqualTo("스텝1");
+            }
+        }
+
+        @Test
+        @DisplayName("타이머가 존재하지 않으면 예외를 던진다")
+        void throws_when_timer_not_found() {
+            UUID userId = UUID.randomUUID();
+            Member member = Member.builder().memberId(userId).build();
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(userId);
+                given(memberRepository.findById(userId)).willReturn(Optional.of(member));
+                given(customTimerRepository.findById(1L)).willReturn(Optional.empty());
+
+                assertThatThrownBy(() -> customTimerQueryService.getCustomTimerDetail(1L))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.CUSTOM_TIMER_NOT_FOUND);
+            }
+        }
+
+        @Test
+        @DisplayName("타이머 소유자가 아니면 권한 예외를 던진다")
+        void throws_when_not_owner() {
+            UUID userId = UUID.randomUUID();
+            UUID otherUserId = UUID.randomUUID();
+            Member member = Member.builder().memberId(userId).build();
+            Member otherMember = Member.builder().memberId(otherUserId).build();
+            CustomTimer timer = CustomTimer.builder().id(1L).member(otherMember).customTimerName("타이머").build();
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(userId);
+                given(memberRepository.findById(userId)).willReturn(Optional.of(member));
+                given(customTimerRepository.findById(1L)).willReturn(Optional.of(timer));
+
+                assertThatThrownBy(() -> customTimerQueryService.getCustomTimerDetail(1L))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.AUTHORIZATION_DENIED);
+            }
+        }
+    }
 
     @Nested
     @DisplayName("getCustomTimerList() 메소드는")
