@@ -49,4 +49,13 @@ public class CustomTimer {
     @Builder.Default
     @OneToMany(mappedBy = "customTimer")
     private List<CustomTimerStep> customTimerSteps = new ArrayList<>();
+
+    public static CustomTimer of(Member member, String customTimerName) {
+        return CustomTimer.builder()
+                .member(member)
+                .customTimerName(customTimerName)
+                .customTimerCreatedAt(LocalDateTime.now())
+                .customTimerUpdatedAt(LocalDateTime.now())
+                .build();
+    }
 }

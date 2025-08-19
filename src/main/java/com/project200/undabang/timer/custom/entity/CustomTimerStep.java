@@ -53,4 +53,15 @@ public class CustomTimerStep {
 
     @Column(name = "custom_timer_steps_deleted_at")
     private LocalDateTime customTimerStepDeletedAt;
+
+    public static CustomTimerStep of(CustomTimer customTimer, String customTimerStepName, byte customTimerStepOrder, Integer customTimerStepTime) {
+        return CustomTimerStep.builder()
+                .customTimer(customTimer)
+                .customTimerStepName(customTimerStepName)
+                .customTimerStepOrder(customTimerStepOrder)
+                .customTimerStepTime(customTimerStepTime)
+                .customTimerStepCreatedAt(LocalDateTime.now())
+                .customTimerStepUpdatedAt(LocalDateTime.now())
+                .build();
+    }
 }
