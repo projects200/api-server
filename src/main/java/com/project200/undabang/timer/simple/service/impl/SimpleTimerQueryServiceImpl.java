@@ -5,7 +5,7 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
-import com.project200.undabang.timer.simple.dto.response.GetSimpleTimerResponseDto;
+import com.project200.undabang.timer.simple.dto.response.SimpleTimerListResponse;
 import com.project200.undabang.timer.simple.dto.response.SimpleTimerRecord;
 import com.project200.undabang.timer.simple.entity.SimpleTimer;
 import com.project200.undabang.timer.simple.repository.SimpleTimerRepository;
@@ -27,21 +27,21 @@ public class SimpleTimerQueryServiceImpl implements SimpleTimerQueryService {
     private final MemberRepository memberRepository;
 
     @Override
-    public GetSimpleTimerResponseDto getSimpleTimers() {
+    public SimpleTimerListResponse getSimpleTimers() {
         UUID memberId = UserContextHolder.getUserId();
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-        List<SimpleTimer> simpleTimerList = simpleTimerRepository.findByMemberAndSimpleTimerDeletedAtNull(member);
+        List<SimpleTimer> simpleTimerList = simpleTimerRepository.findByMemberAndSimpleTimerDeletedAtNullOrderBySimpleTimerTimeAsc(member);
 
         return createSimpleTimerResponse(simpleTimerList);
     }
 
-    private GetSimpleTimerResponseDto createSimpleTimerResponse(List<SimpleTimer> simpleTimerList) {
+    private SimpleTimerListResponse createSimpleTimerResponse(List<SimpleTimer> simpleTimerList) {
         List<SimpleTimerRecord> simpleTimerRecordList = simpleTimerList.stream()
                 .map(SimpleTimerRecord::from)
                 .toList();
 
-        return GetSimpleTimerResponseDto.of(simpleTimerRecordList);
+        return SimpleTimerListResponse.of(simpleTimerRecordList);
     }
 }

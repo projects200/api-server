@@ -2,7 +2,7 @@ package com.project200.undabang.timer.simple.controller;
 
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
-import com.project200.undabang.timer.simple.dto.response.GetSimpleTimerResponseDto;
+import com.project200.undabang.timer.simple.dto.response.SimpleTimerListResponse;
 import com.project200.undabang.timer.simple.dto.response.SimpleTimerRecord;
 import com.project200.undabang.timer.simple.service.SimpleTimerQueryService;
 import org.junit.jupiter.api.DisplayName;
@@ -42,7 +42,7 @@ class SimpleTimerQueryControllerTest extends AbstractRestDocSupport {
             // given
             UUID memberId = UUID.randomUUID();
             List<SimpleTimerRecord> recordList =createSimpleTimerRecordList();
-            GetSimpleTimerResponseDto expectedResponse = GetSimpleTimerResponseDto.builder()
+            SimpleTimerListResponse expectedResponse = SimpleTimerListResponse.builder()
                     .simpleTimerCount(recordList.size())
                     .simpleTimers(recordList)
                     .build();
