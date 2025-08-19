@@ -43,7 +43,7 @@ public enum ErrorCode {
     POLICY_NOT_FOUND(500, "POLICY_NOT_FOUND", "정책을 찾을 수 없습니다."),
 
     // 심플 타이머 관련 에러
-    SIMPLE_TIMER_NOT_EXIST(404, "SIMPLE_TIMER_NOT_EXIST", "존재하지 않는 타이머 입니다."),
+    SIMPLE_TIMER_NOT_FOUND(404, "SIMPLE_TIMER_NOT_FOUND", "존재하지 않는 타이머 입니다."),
     SIMPLE_TIMER_MAX_COUNT_VIOLATION(409, "SIMPLE_TIMER_MAX_COUNT_VIOLATION", "최대 심플 타이머 개수(6개)를 초과했습니다."),
 
     // 커스텀 타이머 관련 에러

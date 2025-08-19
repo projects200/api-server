@@ -175,15 +175,15 @@ class SimpleTimerCommandControllerTest extends AbstractRestDocSupport {
             Long nonExistentTimerId = 999L;
             UUID memberId = UUID.randomUUID();
 
-            willThrow(new CustomException(ErrorCode.SIMPLE_TIMER_NOT_EXIST))
+            willThrow(new CustomException(ErrorCode.SIMPLE_TIMER_NOT_FOUND))
                     .given(simpleTimerCommandService).deleteSimpleTimer(nonExistentTimerId);
 
             // when & then
             mockMvc.perform(delete("/api/v1/simple-timers/{simpleTimerId}", nonExistentTimerId)
                             .headers(getCommonApiHeaders(memberId)))
                     .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.code").value(ErrorCode.SIMPLE_TIMER_NOT_EXIST.getCode()))
-                    .andExpect(jsonPath("$.message").value(ErrorCode.SIMPLE_TIMER_NOT_EXIST.getMessage()));
+                    .andExpect(jsonPath("$.code").value(ErrorCode.SIMPLE_TIMER_NOT_FOUND.getCode()))
+                    .andExpect(jsonPath("$.message").value(ErrorCode.SIMPLE_TIMER_NOT_FOUND.getMessage()));
 
             BDDMockito.then(simpleTimerCommandService).should().deleteSimpleTimer(nonExistentTimerId);
         }
@@ -281,7 +281,7 @@ class SimpleTimerCommandControllerTest extends AbstractRestDocSupport {
             UUID memberId = UUID.randomUUID();
             SimpleTimerUpdateRequestDto requestDto = new SimpleTimerUpdateRequestDto(180);
 
-            BDDMockito.willThrow(new CustomException(ErrorCode.SIMPLE_TIMER_NOT_EXIST))
+            BDDMockito.willThrow(new CustomException(ErrorCode.SIMPLE_TIMER_NOT_FOUND))
                     .given(simpleTimerCommandService).updateSimpleTimer(eq(nonExistentTimerId), any(SimpleTimerUpdateRequestDto.class));
 
             // when & then
@@ -290,8 +290,8 @@ class SimpleTimerCommandControllerTest extends AbstractRestDocSupport {
                             .headers(getCommonApiHeaders(memberId))
                             .content(objectMapper.writeValueAsString(requestDto)))
                     .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.code").value(ErrorCode.SIMPLE_TIMER_NOT_EXIST.getCode()))
-                    .andExpect(jsonPath("$.message").value(ErrorCode.SIMPLE_TIMER_NOT_EXIST.getMessage()));
+                    .andExpect(jsonPath("$.code").value(ErrorCode.SIMPLE_TIMER_NOT_FOUND.getCode()))
+                    .andExpect(jsonPath("$.message").value(ErrorCode.SIMPLE_TIMER_NOT_FOUND.getMessage()));
 
             BDDMockito.then(simpleTimerCommandService).should().updateSimpleTimer(eq(nonExistentTimerId), any(SimpleTimerUpdateRequestDto.class));
         }

@@ -55,7 +55,7 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
         SimpleTimer timer = simpleTimerRepository.findByIdAndMemberAndSimpleTimerDeletedAtNull(simpleTimerId, member)
-                .orElseThrow(() -> new CustomException(ErrorCode.SIMPLE_TIMER_NOT_EXIST));
+                .orElseThrow(() -> new CustomException(ErrorCode.SIMPLE_TIMER_NOT_FOUND));
 
         timer.deleteSimpleTimer();
     }
@@ -69,7 +69,7 @@ public class SimpleTimerCommandServiceImpl implements SimpleTimerCommandService 
         Member member = memberRepository.findById(memberId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
         SimpleTimer timer = simpleTimerRepository.findByIdAndMemberAndSimpleTimerDeletedAtNull(simpleTimerId, member).orElseThrow(
-                () -> new CustomException(ErrorCode.SIMPLE_TIMER_NOT_EXIST));
+                () -> new CustomException(ErrorCode.SIMPLE_TIMER_NOT_FOUND));
 
         timer.updateSimpleTimer(dto.getTime());
     }
