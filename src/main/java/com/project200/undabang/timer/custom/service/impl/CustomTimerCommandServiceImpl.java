@@ -35,6 +35,13 @@ public class CustomTimerCommandServiceImpl implements CustomTimerCommandService 
     private final MemberRepository memberRepository;
     private final PolicyService policyService;
 
+    /**
+     * 이 구현체는 다음의 순서로 커스텀 타이머를 생성합니다:
+     * 요청한 사용자의 유효성을 확인합니다.
+     * 커스텀 타이머 스텝의 개수와 순서의 유효성을 검증합니다.
+     * {@link CustomTimer} 엔티티를 먼저 저장합니다.
+     * 연관된 {@link CustomTimerStep} 엔티티들을 일괄 저장합니다.
+     */
     @Override
     public CustomTimerCreateResponse createCustomTimer(CustomTimerCreateRequest dto) {
         Member member = getMember(UserContextHolder.getUserId());
@@ -50,6 +57,9 @@ public class CustomTimerCommandServiceImpl implements CustomTimerCommandService 
         return new CustomTimerCreateResponse(savedTimer.getId());
     }
 
+    /**
+     * 커스텀 타이머 스텝의 순서(order)가 중복되지 않는지 검증합니다.
+     */
     private void validateCustomTimerStepOrder(List<CustomTimerStepCreateRequest> request) {
         List<Byte> orders = request.stream()
                 .map(CustomTimerStepCreateRequest::getCustomTimerStepOrder)
@@ -62,6 +72,9 @@ public class CustomTimerCommandServiceImpl implements CustomTimerCommandService 
         }
     }
 
+    /**
+     * 커스텀 타이머 스텝의 개수가 정책에서 정의한 범위 내에 있는지 검증합니다.
+     */
     private void checkCustomTimerCountLimit(List<CustomTimerStepCreateRequest> request) {
         int minStepCount = policyService.getPolicyValueAsInt(PolicyKey.CUSTOM_TIMER_STEP_MIN_COUNT);
         int maxStepCount = policyService.getPolicyValueAsInt(PolicyKey.CUSTOM_TIMER_STEP_MAX_COUNT);
@@ -74,6 +87,9 @@ public class CustomTimerCommandServiceImpl implements CustomTimerCommandService 
         }
     }
 
+    /**
+     * DTO 리스트를 {@link CustomTimerStep} 엔티티 리스트로 변환하고 데이터베이스에 일괄 저장합니다.
+     */
     private void createStepTimerList(CustomTimer customTimer, List<CustomTimerStepCreateRequest> requestList) {
         List<CustomTimerStep> customTimerStepList = requestList.stream()
                 .map(req -> req.toEntity(customTimer))
@@ -82,6 +98,9 @@ public class CustomTimerCommandServiceImpl implements CustomTimerCommandService 
         customTimerStepRepository.saveAll(customTimerStepList);
     }
 
+    /**
+     * 주어진 ID로 회원 엔티티를 조회합니다. 회원이 존재하지 않을 경우 예외를 발생시킵니다.
+     */
     private Member getMember(UUID memberId) {
         return memberRepository.findById(memberId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
     }
