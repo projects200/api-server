@@ -5,7 +5,10 @@ import com.project200.undabang.timer.custom.entity.CustomTimer;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface CustomTimerRepository extends JpaRepository<CustomTimer, Long> {
     List<CustomTimer> findAllByMemberAndCustomTimerDeletedAtNull(Member member);
+
+    Optional<CustomTimer> findByIdAndMemberAndCustomTimerDeletedAtNull(Long id, Member member);
 }

@@ -8,10 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -23,6 +20,13 @@ public class CustomTimerCommandController {
     public ResponseEntity<CommonResponse<CustomTimerCreateResponse>> createCustomTimer(@Valid @RequestBody CustomTimerCreateRequest request) {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(customTimerCommandService.createCustomTimer(request)));
+    }
+
+    @DeleteMapping("/v1/custom-timers/{customTimerId}")
+    public ResponseEntity<CommonResponse<Void>> deleteCustomTimer(@PathVariable Long customTimerId) {
+
+        customTimerCommandService.deleteCustomTimer(customTimerId);
+        return ResponseEntity.ok(CommonResponse.delete(null));
     }
 
 }

@@ -5,4 +5,6 @@ import com.project200.undabang.timer.custom.dto.response.CustomTimerCreateRespon
 
 public interface CustomTimerCommandService {
     CustomTimerCreateResponse createCustomTimer(CustomTimerCreateRequest dto);
+
+    void deleteCustomTimer(Long customTimerId);
 }

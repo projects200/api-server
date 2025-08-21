@@ -34,6 +34,21 @@ public class CustomTimerCommandServiceImpl implements CustomTimerCommandService 
     private final PolicyService policyService;
 
     /**
+     * 주어진 사용자와 타이머 ID를 기반으로 커스텀 타이머를 삭제합니다.
+     * 타이머와 연관된 모든 스텝도 함께 삭제됩니다.
+     */
+    @Override
+    public void deleteCustomTimer(Long customTimerId) {
+        Member member = getMember(UserContextHolder.getUserId());
+
+        CustomTimer customTimer = getCustomTimer(member, customTimerId);
+        List<CustomTimerStep> customTimerSteps = customTimerStepRepository.findAllByCustomTimerAndCustomTimerStepDeletedAtNull(customTimer);
+
+        customTimerSteps.forEach(CustomTimerStep::deleteCustomTimerStep);
+        customTimer.deleteCustomTimer();
+    }
+
+    /**
      * 이 구현체는 다음의 순서로 커스텀 타이머를 생성합니다:
      * 요청한 사용자의 유효성을 확인합니다.
      * 커스텀 타이머 스텝의 개수와 순서의 유효성을 검증합니다.
@@ -98,5 +113,14 @@ public class CustomTimerCommandServiceImpl implements CustomTimerCommandService 
      */
     private Member getMember(UUID memberId) {
         return memberRepository.findById(memberId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+    }
+
+    /**
+     * 주어진 사용자와 타이머 ID를 기반으로 커스텀 타이머를 조회합니다.
+     * 타이머가 존재하지 않거나 삭제된 상태일 경우 {@link CustomException}을 발생시킵니다.
+     */
+    private CustomTimer getCustomTimer(Member member, Long customTimerId) {
+        return customTimerRepository.findByIdAndMemberAndCustomTimerDeletedAtNull(customTimerId, member)
+                .orElseThrow(() -> new CustomException(ErrorCode.CUSTOM_TIMER_NOT_FOUND));
     }
 }

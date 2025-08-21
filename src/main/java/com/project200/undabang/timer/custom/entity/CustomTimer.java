@@ -58,4 +58,8 @@ public class CustomTimer {
                 .customTimerUpdatedAt(LocalDateTime.now())
                 .build();
     }
+
+    public void deleteCustomTimer() {
+        this.customTimerDeletedAt = LocalDateTime.now();
+    }
 }
