@@ -20,9 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -58,17 +56,14 @@ public class CustomTimerCommandServiceImpl implements CustomTimerCommandService 
     }
 
     /**
-     * 커스텀 타이머 스텝의 순서(order)가 중복되지 않는지 검증합니다.
+     * 커스텀 타이머 스텝의 순서가 정확한지 검증합니다.
      */
     private void validateCustomTimerStepOrder(List<CustomTimerStepCreateRequest> request) {
-        List<Byte> orders = request.stream()
-                .map(CustomTimerStepCreateRequest::getCustomTimerStepOrder)
-                .toList();
-
-        Set<Byte> uniqueOrders = new HashSet<>(orders);
-
-        if (orders.size() != uniqueOrders.size()) {
-            throw new CustomException(ErrorCode.CUSTOM_TIMER_STEP_ORDER_DUPLICATED);
+        // CustomTimerStepOrder 순서검사
+        for (int i = 0; i < request.size(); i++) {
+            if (request.get(i).getCustomTimerStepOrder() != i) {
+                throw new CustomException(ErrorCode.CUSTOM_TIMER_STEP_ORDER_INVALID);
+            }
         }
     }
 

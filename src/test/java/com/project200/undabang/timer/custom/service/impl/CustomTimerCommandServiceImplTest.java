@@ -40,10 +40,13 @@ class CustomTimerCommandServiceImplTest {
 
     @Mock
     private CustomTimerRepository customTimerRepository;
+
     @Mock
     private CustomTimerStepRepository customTimerStepRepository;
+
     @Mock
     private MemberRepository memberRepository;
+
     @Mock
     private PolicyService policyService;
 
@@ -55,7 +58,7 @@ class CustomTimerCommandServiceImplTest {
     }
 
     private CustomTimerCreateRequest createRequest(int stepCount) {
-        List<CustomTimerStepCreateRequest> steps = IntStream.range(1, stepCount + 1)
+        List<CustomTimerStepCreateRequest> steps = IntStream.range(0, stepCount)
                 .mapToObj(i -> new CustomTimerStepCreateRequest(
                         "스텝 " + i,
                         (byte) i,
@@ -100,7 +103,7 @@ class CustomTimerCommandServiceImplTest {
                 ArgumentCaptor<List<CustomTimerStep>> stepsCaptor = ArgumentCaptor.forClass(List.class);
                 verify(customTimerStepRepository, times(1)).saveAll(stepsCaptor.capture());
                 assertThat(stepsCaptor.getValue()).hasSize(3);
-                assertThat(stepsCaptor.getValue().get(0).getCustomTimerStepName()).isEqualTo("스텝 1");
+                assertThat(stepsCaptor.getValue().get(0).getCustomTimerStepName()).isEqualTo("스텝 0");
             }
         }
 
@@ -171,36 +174,33 @@ class CustomTimerCommandServiceImplTest {
         }
 
         @Test
-        @DisplayName("타이머 스텝 순서가 중복되면 CustomException을 던진다")
-        void shouldThrowException_whenStepOrderIsDuplicated() {
+        @DisplayName("타이머 스텝 리스트가 order 필드 기준으로 정렬되어 있지 않으면 CustomException을 던진다")
+        void shouldThrowException_whenStepListIsNotSortedByOrder() {
             // given
             UUID testUserId = UUID.randomUUID();
             Member testUser = createTestUser(testUserId);
 
-            // 순서(order)가 '1'로 중복되는 스텝 리스트 생성
-            List<CustomTimerStepCreateRequest> duplicateOrderSteps = List.of(
-                    new CustomTimerStepCreateRequest("스텝 1-A", (byte) 1, 60),
-                    new CustomTimerStepCreateRequest("스텝 2", (byte) 2, 60),
-                    new CustomTimerStepCreateRequest("스텝 1-B", (byte) 1, 30) // 중복된 순서
+            // 순서는 1,2,3으로 구성되어 있지만 리스트 내 순서가 뒤섞인 경우
+            List<CustomTimerStepCreateRequest> unsortedSteps = List.of(
+                    new CustomTimerStepCreateRequest("스텝 1", (byte) 0, 60),
+                    new CustomTimerStepCreateRequest("스텝 3", (byte) 2, 60), // << 순서가 맞지 않음
+                    new CustomTimerStepCreateRequest("스텝 2", (byte) 1, 30)
             );
-            CustomTimerCreateRequest request = new CustomTimerCreateRequest("중복 순서 타이머", duplicateOrderSteps);
+            CustomTimerCreateRequest request = new CustomTimerCreateRequest("정렬 안된 타이머", unsortedSteps);
 
             try (MockedStatic<UserContextHolder> mockedContext = mockStatic(UserContextHolder.class)) {
                 mockedContext.when(UserContextHolder::getUserId).thenReturn(testUserId);
                 given(memberRepository.findById(testUserId)).willReturn(Optional.of(testUser));
-                // 스텝 개수 정책 검증은 통과하도록 설정
                 given(policyService.getPolicyValueAsInt(any(PolicyKey.class))).willReturn(1).willReturn(10);
 
                 // when & then
                 assertThatThrownBy(() -> customTimerCommandService.createCustomTimer(request))
                         .isInstanceOf(CustomException.class)
-                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.CUSTOM_TIMER_STEP_ORDER_DUPLICATED);
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.CUSTOM_TIMER_STEP_ORDER_INVALID);
 
-                // 예외 발생 후 DB 저장 로직이 호출되지 않았는지 검증
                 verify(customTimerRepository, never()).save(any());
                 verify(customTimerStepRepository, never()).saveAll(any());
             }
         }
     }
-
 }

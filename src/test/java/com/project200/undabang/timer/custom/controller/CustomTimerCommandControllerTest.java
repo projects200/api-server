@@ -45,9 +45,9 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
 
             // 요청 본문 DTO 생성
             List<CustomTimerStepCreateRequest> steps = List.of(
-                    new CustomTimerStepCreateRequest("데드리프트", (byte) 1, 180),
-                    new CustomTimerStepCreateRequest("휴식", (byte) 2, 60),
-                    new CustomTimerStepCreateRequest("스쿼트", (byte) 3, 120)
+                    new CustomTimerStepCreateRequest("데드리프트", (byte) 0, 180),
+                    new CustomTimerStepCreateRequest("휴식", (byte) 1, 60),
+                    new CustomTimerStepCreateRequest("스쿼트", (byte) 2, 120)
             );
             CustomTimerCreateRequest request = new CustomTimerCreateRequest("3대 운동 루틴", steps);
 
