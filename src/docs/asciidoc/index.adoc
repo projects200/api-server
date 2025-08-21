@@ -154,3 +154,5 @@ include::overview/공통-개발-참고-사항.adoc[]
 - 커스텀 타이머 상세 조회 API #GET# `/api/v1/custom-timers/{customTimerId}`
 
 - 커스텀 타이머 생성 API #POST# `/api/v1/custom-timers`
+
+- 커스텀 타이머 삭제 API #DELETE# `/api/v1/custom-timers/{customTimerId}`
