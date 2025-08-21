@@ -29,6 +29,6 @@ operation::create-custom-timer/create-custom-timer_-success[snippets="request-he
 |404| 회원 정보가 올바르지 않습니다.
 |409| 최소 1개 이상의 커스텀 타이머 스텝을 보유해야 합니다. +
 최대 커스텀 타이머 스텝 개수(50개)를 초과했습니다. +
-스텝 순서가 중복되었습니다.
+스텝 순서가 잘못되었습니다.
 |===
 

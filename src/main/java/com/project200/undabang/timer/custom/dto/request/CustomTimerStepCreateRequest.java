@@ -16,6 +16,7 @@ public class CustomTimerStepCreateRequest {
     private String customTimerStepName;
 
     @NotNull
+    @PositiveOrZero(message = "커스텀 타이머 스텝의 시작 순서는 0보다 작아서는 안됩니다.")
     private Byte customTimerStepOrder;
 
     @NotNull

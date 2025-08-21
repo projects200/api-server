@@ -13,10 +13,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CustomTimerDetailResponse {
-    List<CustomTimerStepRecord> customTimerSteps;
     private long customTimerId;
     private String customTimerName;
     private int customTimerStepCount;
+    List<CustomTimerStepRecord> customTimerSteps;
 
     public static CustomTimerDetailResponse from(CustomTimer customTimer, List<CustomTimerStepRecord> customTimerSteps) {
         return CustomTimerDetailResponse.builder()
