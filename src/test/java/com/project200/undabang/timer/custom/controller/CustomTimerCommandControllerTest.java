@@ -35,11 +35,11 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
 
     @Nested
     @DisplayName("커스텀 타이머 생성 성공")
-    class CustomTimerCreateSuccess {
+    class CreateCustomTimer {
 
         @Test
         @DisplayName("커스텀 타이머를 성공적으로 생성한다")
-        void shouldCreateCustomTimerSuccessfully() throws Exception {
+        void createCustomTimer_Success() throws Exception {
             // given
             UUID memberId = UUID.randomUUID();
 
