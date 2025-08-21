@@ -3,7 +3,6 @@ package com.project200.undabang.timer.custom.repository;
 import com.project200.undabang.configuration.TestQuerydslConfig;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.enums.MemberGender;
-import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.timer.custom.entity.CustomTimer;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
@@ -29,35 +28,6 @@ class CustomTimerRepositoryTest {
 
     @Autowired
     private CustomTimerRepository customTimerRepository;
-
-    @Autowired
-    private MemberRepository memberRepository;
-
-    private Member createAndSaveMember(String nickname) {
-        Member member = Member.builder()
-                .memberId(UUID.randomUUID())
-                .memberEmail(nickname + "@email.com")
-                .memberNickname(nickname)
-                .memberGender(MemberGender.UNKNOWN)
-                .memberBday(LocalDate.of(2000, 1, 1))
-                .build();
-        em.persist(member);
-        return member;
-    }
-
-    private CustomTimer createAndSaveCustomTimer(Member member, String name) {
-        CustomTimer timer = CustomTimer.builder()
-                .member(member)
-                .customTimerName(name)
-                .build();
-        em.persist(timer);
-        return timer;
-    }
-
-    private void flushAndClear() {
-        em.flush();
-        em.clear();
-    }
 
     @Nested
     @DisplayName("findByMemberAndCustomTimerDeletedAtNull 메소드는")
@@ -120,5 +90,31 @@ class CustomTimerRepositoryTest {
             assertThat(foundTimers).hasSize(1);
             assertThat(foundTimers.get(0).getId()).isEqualTo(activeTimer.getId());
         }
+    }
+
+    private Member createAndSaveMember(String nickname) {
+        Member member = Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberEmail(nickname + "@email.com")
+                .memberNickname(nickname)
+                .memberGender(MemberGender.UNKNOWN)
+                .memberBday(LocalDate.of(2000, 1, 1))
+                .build();
+        em.persist(member);
+        return member;
+    }
+
+    private CustomTimer createAndSaveCustomTimer(Member member, String name) {
+        CustomTimer timer = CustomTimer.builder()
+                .member(member)
+                .customTimerName(name)
+                .build();
+        em.persist(timer);
+        return timer;
+    }
+
+    private void flushAndClear() {
+        em.flush();
+        em.clear();
     }
 }

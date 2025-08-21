@@ -185,7 +185,7 @@ class SimpleTimerCommandServiceImplTest {
         }
 
         @Test
-        @DisplayName("삭제하려는 타이머가 존재하지 않으면 SIMPLE_TIMER_NOT_EXIST 예외를 발생시킨다")
+        @DisplayName("삭제하려는 타이머가 존재하지 않으면 SIMPLE_TIMER_NOT_FOUND 예외를 발생시킨다")
         void deleteSimpleTimer_Fail_TimerNotExist() {
             // given
             Long nonExistentTimerId = 999L;
@@ -201,7 +201,7 @@ class SimpleTimerCommandServiceImplTest {
                 // when & then
                 assertThatThrownBy(() -> simpleTimerCommandService.deleteSimpleTimer(nonExistentTimerId))
                         .isInstanceOf(CustomException.class)
-                        .hasMessage(ErrorCode.SIMPLE_TIMER_NOT_EXIST.getMessage());
+                        .hasMessage(ErrorCode.SIMPLE_TIMER_NOT_FOUND.getMessage());
 
                 then(simpleTimerRepository).should().findByIdAndMemberAndSimpleTimerDeletedAtNull(nonExistentTimerId, member);
             }
@@ -275,7 +275,7 @@ class SimpleTimerCommandServiceImplTest {
         }
 
         @Test
-        @DisplayName("수정하려는 타이머가 존재하지 않으면 CustomException(SIMPLE_TIMER_NOT_EXIST)을 발생시킨다")
+        @DisplayName("수정하려는 타이머가 존재하지 않으면 CustomException(SIMPLE_TIMER_NOT_FOUND)을 발생시킨다")
         void updateSimpleTimer_Fail_TimerNotExist() {
             // given
             Long nonExistentTimerId = 999L;
@@ -293,7 +293,7 @@ class SimpleTimerCommandServiceImplTest {
                 // when & then
                 assertThatThrownBy(() -> simpleTimerCommandService.updateSimpleTimer(nonExistentTimerId, requestDto))
                         .isInstanceOf(CustomException.class)
-                        .hasMessage(ErrorCode.SIMPLE_TIMER_NOT_EXIST.getMessage());
+                        .hasMessage(ErrorCode.SIMPLE_TIMER_NOT_FOUND.getMessage());
             }
         }
 
