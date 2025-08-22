@@ -64,8 +64,4 @@ public class CustomTimerStep {
                 .customTimerStepUpdatedAt(LocalDateTime.now())
                 .build();
     }
-
-    public void deleteCustomTimerStep() {
-        this.customTimerStepDeletedAt = LocalDateTime.now();
-    }
 }
