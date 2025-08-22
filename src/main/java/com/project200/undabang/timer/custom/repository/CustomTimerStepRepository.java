@@ -6,6 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface CustomTimerStepRepository extends JpaRepository<CustomTimerStep, Long> {
+public interface CustomTimerStepRepository extends JpaRepository<CustomTimerStep, Long>, CustomTimerStepRepositoryCustom {
     List<CustomTimerStep> findAllByCustomTimerAndCustomTimerStepDeletedAtNull(CustomTimer customTimer);
 }

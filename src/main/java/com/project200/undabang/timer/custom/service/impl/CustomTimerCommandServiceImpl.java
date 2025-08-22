@@ -40,12 +40,11 @@ public class CustomTimerCommandServiceImpl implements CustomTimerCommandService 
     @Override
     public void deleteCustomTimer(Long customTimerId) {
         Member member = getMember(UserContextHolder.getUserId());
-
         CustomTimer customTimer = getCustomTimer(member, customTimerId);
-        List<CustomTimerStep> customTimerSteps = customTimerStepRepository.findAllByCustomTimerAndCustomTimerStepDeletedAtNull(customTimer);
 
-        customTimerSteps.forEach(CustomTimerStep::deleteCustomTimerStep);
         customTimer.deleteCustomTimer();
+        // 벌크 연산을 사용하여 DB 접근 최소화 및 성능 향상
+        customTimerStepRepository.softDeleteAllByCustomTimer(customTimer);
     }
 
     /**

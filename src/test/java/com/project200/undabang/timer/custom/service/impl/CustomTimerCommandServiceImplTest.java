@@ -73,28 +73,24 @@ class CustomTimerCommandServiceImplTest {
     class Describe_deleteCustomTimer {
 
         @Test
-        @DisplayName("유효한 회원과 타이머 ID가 주어지면 타이머와 스텝을 삭제한다")
+        @DisplayName("유효한 회원과 타이머 ID가 주어지면 타이머 삭제 로직을 올바르게 호출한다.")
         void shouldDeleteTimerAndSteps_whenValidRequest() {
             // given
             UUID userId = UUID.randomUUID();
             Member member = Member.builder().memberId(userId).build();
             Long timerId = 1L;
             CustomTimer timer = CustomTimer.builder().id(timerId).member(member).build();
-            CustomTimerStep step = CustomTimerStep.builder().customTimer(timer).build();
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(userId);
                 given(memberRepository.findById(userId)).willReturn(Optional.of(member));
                 given(customTimerRepository.findByIdAndMemberAndCustomTimerDeletedAtNull(timerId, member))
                         .willReturn(Optional.of(timer));
-                given(customTimerStepRepository.findAllByCustomTimerAndCustomTimerStepDeletedAtNull(timer))
-                        .willReturn(List.of(step));
-
                 // when
                 customTimerCommandService.deleteCustomTimer(timerId);
 
                 // then
-                verify(customTimerStepRepository, times(1)).findAllByCustomTimerAndCustomTimerStepDeletedAtNull(timer);
+                verify(customTimerStepRepository, times(1)).softDeleteAllByCustomTimer(timer);
                 // saveAll, save 호출 검증은 제거
             }
         }
@@ -138,7 +134,7 @@ class CustomTimerCommandServiceImplTest {
                         .isInstanceOf(CustomException.class)
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.CUSTOM_TIMER_NOT_FOUND);
 
-                verify(customTimerStepRepository, never()).findAllByCustomTimerAndCustomTimerStepDeletedAtNull(any());
+                verify(customTimerStepRepository, never()).softDeleteAllByCustomTimer(any());
             }
         }
     }
