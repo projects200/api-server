@@ -28,4 +28,8 @@ public enum PolicyKey {
     SIMPLE_TIMER_INIT_COUNT, // 심플 타이머 초기 생성 갯수
     SIMPLE_TIMER_INIT_VALUES, // 심플 타이머 초기 값. 회원 가입시 추가해줘야 함
     SIMPLE_TIMER_MAX_COUNT, // 심플 타이머 최대 보유 갯수
+
+    // 커스텀 타이머
+    CUSTOM_TIMER_STEP_MAX_COUNT, // 커스텀 타이머 스텝 최대 보유 갯수
+    CUSTOM_TIMER_STEP_MIN_COUNT, // 커스텀 타이머 스텝 최소 보유 갯수
 }
