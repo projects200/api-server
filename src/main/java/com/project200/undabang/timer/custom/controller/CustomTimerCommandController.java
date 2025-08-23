@@ -23,6 +23,13 @@ public class CustomTimerCommandController {
         return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(customTimerCommandService.createCustomTimer(request)));
     }
 
+    @DeleteMapping("/v1/custom-timers/{customTimerId}")
+    public ResponseEntity<CommonResponse<Void>> deleteCustomTimer(@PathVariable Long customTimerId) {
+
+        customTimerCommandService.deleteCustomTimer(customTimerId);
+        return ResponseEntity.ok(CommonResponse.delete(null));
+    }
+
     @PatchMapping("/v1/custom-timers/{customTimerId}")
     public ResponseEntity<CommonResponse<Void>> updateCustomTimerName(@PathVariable("customTimerId") Long customTimerId,
                                                                       @Valid @RequestBody CustomTimerNameUpdateRequest request) {

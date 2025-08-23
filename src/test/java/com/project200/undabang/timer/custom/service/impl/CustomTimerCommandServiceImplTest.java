@@ -69,6 +69,77 @@ class CustomTimerCommandServiceImplTest {
     }
 
     @Nested
+    @DisplayName("deleteCustomTimer() 메소드는")
+    class Describe_deleteCustomTimer {
+
+        @Test
+        @DisplayName("유효한 회원과 타이머 ID가 주어지면 타이머 삭제 로직을 올바르게 호출한다.")
+        void shouldDeleteTimerAndSteps_whenValidRequest() {
+            // given
+            UUID userId = UUID.randomUUID();
+            Member member = Member.builder().memberId(userId).build();
+            Long timerId = 1L;
+            CustomTimer timer = CustomTimer.builder().id(timerId).member(member).build();
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(userId);
+                given(memberRepository.findById(userId)).willReturn(Optional.of(member));
+                given(customTimerRepository.findByIdAndMemberAndCustomTimerDeletedAtNull(timerId, member))
+                        .willReturn(Optional.of(timer));
+                // when
+                customTimerCommandService.deleteCustomTimer(timerId);
+
+                // then
+                verify(customTimerStepRepository, times(1)).softDeleteAllByCustomTimer(timer);
+                // saveAll, save 호출 검증은 제거
+            }
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 회원이면 CustomException(MEMBER_NOT_FOUND)을 던진다")
+        void shouldThrowException_whenMemberNotFound() {
+            // given
+            UUID userId = UUID.randomUUID();
+            Long timerId = 1L;
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(userId);
+                given(memberRepository.findById(userId)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> customTimerCommandService.deleteCustomTimer(timerId))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
+
+                verify(customTimerRepository, never()).findByIdAndMemberAndCustomTimerDeletedAtNull(any(), any());
+            }
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 타이머면 CustomException(CUSTOM_TIMER_NOT_FOUND)을 던진다")
+        void shouldThrowException_whenTimerNotFound() {
+            // given
+            UUID userId = UUID.randomUUID();
+            Member member = Member.builder().memberId(userId).build();
+            Long timerId = 1L;
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(userId);
+                given(memberRepository.findById(userId)).willReturn(Optional.of(member));
+                given(customTimerRepository.findByIdAndMemberAndCustomTimerDeletedAtNull(timerId, member))
+                        .willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> customTimerCommandService.deleteCustomTimer(timerId))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.CUSTOM_TIMER_NOT_FOUND);
+
+                verify(customTimerStepRepository, never()).softDeleteAllByCustomTimer(any());
+            }
+        }
+    }
+
+    @Nested
     @DisplayName("createCustomTimer() 메소드는")
     class Describe_createCustomTimer {
 
@@ -188,8 +259,8 @@ class CustomTimerCommandServiceImplTest {
             );
             CustomTimerCreateRequest request = new CustomTimerCreateRequest("정렬 안된 타이머", unsortedSteps);
 
-            try (MockedStatic<UserContextHolder> mockedContext = mockStatic(UserContextHolder.class)) {
-                mockedContext.when(UserContextHolder::getUserId).thenReturn(testUserId);
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(testUserId);
                 given(memberRepository.findById(testUserId)).willReturn(Optional.of(testUser));
                 given(policyService.getPolicyValueAsInt(any(PolicyKey.class))).willReturn(1).willReturn(10);
 

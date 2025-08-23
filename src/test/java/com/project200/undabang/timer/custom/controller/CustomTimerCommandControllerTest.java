@@ -1,6 +1,9 @@
 package com.project200.undabang.timer.custom.controller;
 
+import com.project200.undabang.common.web.exception.CustomException;
+import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
+import com.project200.undabang.configuration.RestDocsUtils;
 import com.project200.undabang.timer.custom.dto.request.CustomTimerCreateRequest;
 import com.project200.undabang.timer.custom.dto.request.CustomTimerStepCreateRequest;
 import com.project200.undabang.timer.custom.dto.response.CustomTimerCreateResponse;
@@ -10,20 +13,26 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
 import java.util.UUID;
 
+import static com.project200.undabang.configuration.DocumentFormatGenerator.getTypeFormat;
 import static com.project200.undabang.configuration.HeadersGenerator.getCommonApiHeaders;
 import static com.project200.undabang.configuration.RestDocsUtils.HEADER_ACCESS_TOKEN;
 import static com.project200.undabang.configuration.RestDocsUtils.commonResponseFields;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.*;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -32,6 +41,67 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
 
     @MockitoBean
     private CustomTimerCommandService customTimerCommandService;
+
+    @Nested
+    @DisplayName("커스텀 타이머 삭제 API")
+    class DeleteCustomTimer {
+
+        @Test
+        @DisplayName("정상적으로 커스텀 타이머를 삭제한다")
+        void deleteCustomTimer_Success() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long timerId = 1L;
+
+            // 실제로 삭제하지 않기위해 willDoNothing() 사용
+            willDoNothing().given(customTimerCommandService).deleteCustomTimer(timerId);
+
+            // when & then
+            mockMvc.perform(delete("/api/v1/custom-timers/{customTimerId}", timerId)
+                            .headers(getCommonApiHeaders(memberId)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.succeed").value(true))
+                    .andExpect(jsonPath("$.code").value("DELETED"))
+                    .andExpect(jsonPath("$.message").value("리소스가 성공적으로 삭제되었습니다."))
+                    .andExpect(jsonPath("$.data").doesNotExist())
+                    .andDo(print())
+                    .andDo(document.document(
+                            requestHeaders(
+                                    RestDocsUtils.HEADER_ACCESS_TOKEN
+                            ),
+                            pathParameters(
+                                    parameterWithName("customTimerId").attributes(getTypeFormat(JsonFieldType.NUMBER))
+                                            .description("삭제할 커스텀 타이머의 ID를 의미합니다.")
+                            ),
+                            responseFields(
+                                    RestDocsUtils.commonResponseFieldsOnly()
+                            )
+                    ));
+
+            then(customTimerCommandService).should().deleteCustomTimer(timerId);
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 타이머 삭제 시 404 에러를 반환한다")
+        void deleteCustomTimer_NotFound() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long timerId = 999L;
+
+            // 서비스 계층에서 예외 발생하도록 설정
+            doThrow(new CustomException(ErrorCode.CUSTOM_TIMER_NOT_FOUND))
+                    .when(customTimerCommandService).deleteCustomTimer(timerId);
+
+            // when & then
+            mockMvc.perform(delete("/api/v1/custom-timers/{customTimerId}", timerId)
+                            .headers(getCommonApiHeaders(memberId)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.succeed").value(false))
+                    .andExpect(jsonPath("$.code").value(ErrorCode.CUSTOM_TIMER_NOT_FOUND.name()));
+
+            then(customTimerCommandService).should().deleteCustomTimer(timerId);
+        }
+    }
 
     @Nested
     @DisplayName("커스텀 타이머 생성 성공")
