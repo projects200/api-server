@@ -34,9 +34,15 @@ public class CustomTimerCommandServiceImpl implements CustomTimerCommandService 
     private final MemberRepository memberRepository;
     private final PolicyService policyService;
 
+    /**
+     * 주어진 사용자와 커스텀 타이머 ID를 기반으로 커스텀 타이머의 이름을 업데이트합니다.
+     */
     @Override
     public void updateCustomTimerName(Long customTimerId, CustomTimerNameUpdateRequest request) {
         Member member = getMember(UserContextHolder.getUserId());
+        CustomTimer customTimer = getCustomTimer(member, customTimerId);
+
+        customTimer.updateCustomTimerName(request.getCustomTimerName());
     }
 
     /**

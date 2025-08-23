@@ -62,4 +62,9 @@ public class CustomTimer {
     public void deleteCustomTimer() {
         this.customTimerDeletedAt = LocalDateTime.now();
     }
+
+    public void updateCustomTimerName(String customTimerName) {
+        this.customTimerName = customTimerName;
+        this.customTimerUpdatedAt = LocalDateTime.now();
+    }
 }
