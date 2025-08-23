@@ -54,11 +54,10 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
             // given
             UUID memberId = UUID.randomUUID();
             Long timerId = 1L;
-            CustomTimerNameUpdateRequest request = new CustomTimerNameUpdateRequest("수정된 타이머 이름");
+            CustomTimerNameUpdateRequest request = new CustomTimerNameUpdateRequest("새로운 타이머 이름.");
 
             // 서비스 계층의 void 메소드는 willDoNothing()으로 모킹
-            willDoNothing().given(customTimerCommandService)
-                    .updateCustomTimerName(eq(timerId), any(CustomTimerNameUpdateRequest.class));
+            willDoNothing().given(customTimerCommandService).updateCustomTimerName(eq(timerId), any(CustomTimerNameUpdateRequest.class));
 
             // when & then
             mockMvc.perform(patch("/api/v1/custom-timers/{customTimerId}", timerId)
