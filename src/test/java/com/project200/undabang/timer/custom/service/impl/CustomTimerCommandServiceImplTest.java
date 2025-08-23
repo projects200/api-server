@@ -8,6 +8,7 @@ import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.service.PolicyService;
 import com.project200.undabang.timer.custom.dto.request.CustomTimerCreateRequest;
+import com.project200.undabang.timer.custom.dto.request.CustomTimerNameUpdateRequest;
 import com.project200.undabang.timer.custom.dto.request.CustomTimerStepCreateRequest;
 import com.project200.undabang.timer.custom.dto.response.CustomTimerCreateResponse;
 import com.project200.undabang.timer.custom.entity.CustomTimer;
@@ -53,19 +54,12 @@ class CustomTimerCommandServiceImplTest {
     @InjectMocks
     private CustomTimerCommandServiceImpl customTimerCommandService;
 
-    private Member createTestUser(UUID userId) {
-        return Member.builder().memberId(userId).build();
-    }
-
-    private CustomTimerCreateRequest createRequest(int stepCount) {
-        List<CustomTimerStepCreateRequest> steps = IntStream.range(0, stepCount)
-                .mapToObj(i -> new CustomTimerStepCreateRequest(
-                        "스텝 " + i,
-                        (byte) i,
-                        60
-                ))
-                .toList();
-        return new CustomTimerCreateRequest("테스트 타이머", steps);
+    private CustomTimer createCustomTimer(Long timerId, Member member, String initialName) {
+        return CustomTimer.builder()
+                .id(timerId)
+                .member(member)
+                .customTimerName(initialName)
+                .build();
     }
 
     @Nested
@@ -135,6 +129,103 @@ class CustomTimerCommandServiceImplTest {
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.CUSTOM_TIMER_NOT_FOUND);
 
                 verify(customTimerStepRepository, never()).softDeleteAllByCustomTimer(any());
+            }
+        }
+    }
+
+    private CustomTimerNameUpdateRequest createUpdateRequest(String newName) {
+        return new CustomTimerNameUpdateRequest(newName);
+    }
+
+    private Member createTestUser(UUID userId) {
+        return Member.builder().memberId(userId).build();
+    }
+
+    private CustomTimerCreateRequest createRequest(int stepCount) {
+        List<CustomTimerStepCreateRequest> steps = IntStream.range(0, stepCount)
+                .mapToObj(i -> new CustomTimerStepCreateRequest(
+                        "스텝 " + i,
+                        (byte) i,
+                        60
+                ))
+                .toList();
+        return new CustomTimerCreateRequest("테스트 타이머", steps);
+    }
+
+    @Nested
+    @DisplayName("updateCustomTimerName() 메소드는")
+    class Describe_updateCustomTimerName {
+
+        @Test
+        @DisplayName("유효한 요청이 주어지면, 타이머 이름을 성공적으로 변경한다")
+        void shouldUpdateTimerName_whenRequestIsValid() {
+            // given
+            Long timerId = 1L;
+            UUID userId = UUID.randomUUID();
+            Member member = createTestUser(userId); // 기존 헬퍼 메서드 사용
+            CustomTimerNameUpdateRequest request = createUpdateRequest("새로운 타이머 이름");
+            CustomTimer originalTimer = createCustomTimer(timerId, member, "기존 타이머 이름");
+
+            // 엔티티의 실제 메소드 호출을 검증하기 위해 Spy 객체 생성
+            CustomTimer spiedTimer = spy(originalTimer);
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(userId);
+
+                given(memberRepository.findById(userId)).willReturn(Optional.of(member));
+                given(customTimerRepository.findByIdAndMemberAndCustomTimerDeletedAtNull(timerId, member))
+                        .willReturn(Optional.of(spiedTimer));
+
+                // when
+                customTimerCommandService.updateCustomTimerName(timerId, request);
+
+                // then
+                ArgumentCaptor<String> nameCaptor = ArgumentCaptor.forClass(String.class);
+                verify(spiedTimer, times(1)).updateCustomTimerName(nameCaptor.capture());
+                assertThat(nameCaptor.getValue()).isEqualTo(request.getCustomTimerName());
+            }
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 회원 ID로 요청하면, CustomException(MEMBER_NOT_FOUND)을 던진다")
+        void shouldThrowException_whenMemberNotFound() {
+            // given
+            Long timerId = 1L;
+            UUID userId = UUID.randomUUID();
+            CustomTimerNameUpdateRequest request = createUpdateRequest("새로운 타이머 이름");
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(userId);
+                given(memberRepository.findById(userId)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> customTimerCommandService.updateCustomTimerName(timerId, request))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
+
+                verify(customTimerRepository, never()).findByIdAndMemberAndCustomTimerDeletedAtNull(any(), any());
+            }
+        }
+
+        @Test
+        @DisplayName("회원의 소유가 아닌 타이머 ID로 요청하면, CustomException(CUSTOM_TIMER_NOT_FOUND)을 던진다")
+        void shouldThrowException_whenTimerNotFoundOrNotOwned() {
+            // given
+            Long timerId = 1L;
+            UUID userId = UUID.randomUUID();
+            Member member = createTestUser(userId);
+            CustomTimerNameUpdateRequest request = createUpdateRequest("새로운 타이머 이름");
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(userId);
+                given(memberRepository.findById(userId)).willReturn(Optional.of(member));
+                given(customTimerRepository.findByIdAndMemberAndCustomTimerDeletedAtNull(timerId, member))
+                        .willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> customTimerCommandService.updateCustomTimerName(timerId, request))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.CUSTOM_TIMER_NOT_FOUND);
             }
         }
     }

@@ -5,6 +5,7 @@ import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
 import com.project200.undabang.configuration.RestDocsUtils;
 import com.project200.undabang.timer.custom.dto.request.CustomTimerCreateRequest;
+import com.project200.undabang.timer.custom.dto.request.CustomTimerNameUpdateRequest;
 import com.project200.undabang.timer.custom.dto.request.CustomTimerStepCreateRequest;
 import com.project200.undabang.timer.custom.dto.response.CustomTimerCreateResponse;
 import com.project200.undabang.timer.custom.service.CustomTimerCommandService;
@@ -27,6 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.doThrow;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
@@ -41,6 +43,98 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
 
     @MockitoBean
     private CustomTimerCommandService customTimerCommandService;
+
+    @Nested
+    @DisplayName("커스텀 타이머 이름 수정 API")
+    class UpdateCustomTimerName {
+
+        @Test
+        @DisplayName("정상적으로 커스텀 타이머의 이름을 수정한다")
+        void updateCustomTimerName_Success() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long timerId = 1L;
+            CustomTimerNameUpdateRequest request = new CustomTimerNameUpdateRequest("수정된 타이머 이름");
+
+            // 서비스 계층의 void 메소드는 willDoNothing()으로 모킹
+            willDoNothing().given(customTimerCommandService)
+                    .updateCustomTimerName(eq(timerId), any(CustomTimerNameUpdateRequest.class));
+
+            // when & then
+            mockMvc.perform(patch("/api/v1/custom-timers/{customTimerId}", timerId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.succeed").value(true))
+                    .andExpect(jsonPath("$.code").value("UPDATED"))
+                    .andExpect(jsonPath("$.message").value("리소스가 성공적으로 수정되었습니다."))
+                    .andExpect(jsonPath("$.data").doesNotExist())
+                    .andDo(print())
+                    .andDo(document.document(
+                            requestHeaders(
+                                    RestDocsUtils.HEADER_ACCESS_TOKEN
+                            ),
+                            pathParameters(
+                                    parameterWithName("customTimerId").attributes(getTypeFormat(JsonFieldType.NUMBER))
+                                            .description("수정할 커스텀 타이머의 ID를 의미합니다.")
+                            ),
+                            requestFields(
+                                    fieldWithPath("customTimerName").description("새롭게 변경할 커스텀 타이머의 이름입니다.")
+                            ),
+                            responseFields(
+                                    RestDocsUtils.commonResponseFieldsOnly()
+                            )
+                    ));
+
+            // 서비스 메소드가 정확한 인자와 함께 1번 호출되었는지 검증
+            then(customTimerCommandService).should().updateCustomTimerName(eq(timerId), any(CustomTimerNameUpdateRequest.class));
+        }
+
+        @Test
+        @DisplayName("타이머 이름이 비어있으면(@NotBlank) 400 에러를 반환한다")
+        void updateCustomTimerName_ValidationFail_BlankName() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long timerId = 1L;
+            CustomTimerNameUpdateRequest request = new CustomTimerNameUpdateRequest("");
+
+            // when & then
+            mockMvc.perform(patch("/api/v1/custom-timers/{customTimerId}", timerId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest()); // 400 Bad Request 기대
+
+            // 유효성 검사 단계에서 실패했으므로 서비스 계층은 호출되지 않아야 함
+            then(customTimerCommandService).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 타이머의 이름 수정 시 404 에러를 반환한다")
+        void updateCustomTimerName_NotFound() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long nonExistentTimerId = 999L;
+            CustomTimerNameUpdateRequest request = new CustomTimerNameUpdateRequest("수정될 리 없는 이름");
+
+            // 서비스 계층에서 예외가 발생하도록 설정
+            doThrow(new CustomException(ErrorCode.CUSTOM_TIMER_NOT_FOUND))
+                    .when(customTimerCommandService)
+                    .updateCustomTimerName(eq(nonExistentTimerId), any(CustomTimerNameUpdateRequest.class));
+
+            // when & then
+            mockMvc.perform(patch("/api/v1/custom-timers/{customTimerId}", nonExistentTimerId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.succeed").value(false))
+                    .andExpect(jsonPath("$.code").value(ErrorCode.CUSTOM_TIMER_NOT_FOUND.name()));
+
+            then(customTimerCommandService).should().updateCustomTimerName(eq(nonExistentTimerId), any(CustomTimerNameUpdateRequest.class));
+        }
+    }
 
     @Nested
     @DisplayName("커스텀 타이머 삭제 API")
