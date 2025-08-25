@@ -1,5 +1,6 @@
 package com.project200.undabang.notification.fcm.dto;
 
+import com.google.firebase.messaging.Notification;
 import jakarta.validation.constraints.NotBlank;
 
 /**
@@ -21,4 +22,11 @@ public record NotificationPayload(
 
         String imageUrl
 ) {
+    public Notification toNotification() {
+        return Notification.builder()
+                .setTitle(title)
+                .setBody(body)
+                .setImage(imageUrl)
+                .build();
+    }
 }

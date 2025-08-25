@@ -2,6 +2,8 @@ package com.project200.undabang.notification.fcm.service;
 
 import com.project200.undabang.notification.fcm.dto.NotificationPayload;
 
+import java.util.List;
+
 /**
  * 알림 발송 기능을 정의하는 인터페이스입니다.
  */
@@ -13,5 +15,12 @@ public interface NotificationService {
      * @param request 알림 발송에 필요한 정보 (타겟 토큰, 제목, 내용 등)
      */
     void sendNotification(NotificationPayload request);
+
+    /**
+     * 지정된 요청 목록에 따라 다수의 사용자에게 알림을 발송합니다.
+     *
+     * @param requests 알림 발송에 필요한 정보 목록 (타겟 토큰, 제목, 내용 등)
+     */
+    void sendNotification(List<NotificationPayload> requests);
 
 }
