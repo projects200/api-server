@@ -45,5 +45,4 @@ public class CustomTimerCommandController {
         customTimerCommandService.updateCustomTimer(customTimerId, request);
         return ResponseEntity.ok(CommonResponse.update(null));
     }
-
 }

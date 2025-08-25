@@ -8,6 +8,5 @@ public interface CustomTimerCommandService {
     CustomTimerCreateResponse createCustomTimer(CustomTimerCreateRequest dto);
     void deleteCustomTimer(Long customTimerId);
     void updateCustomTimerName(Long customTimerId, CustomTimerNameUpdateRequest request);
-
     void updateCustomTimer(Long customTimerId, CustomTimerCreateRequest request);
 }

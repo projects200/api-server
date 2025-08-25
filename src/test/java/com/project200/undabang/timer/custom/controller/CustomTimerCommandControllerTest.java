@@ -32,8 +32,7 @@ import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuild
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -43,6 +42,342 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
 
     @MockitoBean
     private CustomTimerCommandService customTimerCommandService;
+
+    @Nested
+    @DisplayName("커스텀 타이머 생성 성공")
+    class CreateCustomTimer {
+
+        @Test
+        @DisplayName("커스텀 타이머를 성공적으로 생성한다")
+        void createCustomTimer_Success() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+
+            // 요청 본문 DTO 생성
+            List<CustomTimerStepCreateRequest> steps = List.of(
+                    new CustomTimerStepCreateRequest("데드리프트", (byte) 0, 180),
+                    new CustomTimerStepCreateRequest("휴식", (byte) 1, 60),
+                    new CustomTimerStepCreateRequest("스쿼트", (byte) 2, 120)
+            );
+            CustomTimerCreateRequest request = new CustomTimerCreateRequest("3대 운동 루틴", steps);
+
+            // 서비스 계층의 응답 객체 생성
+            CustomTimerCreateResponse expectedResponse = new CustomTimerCreateResponse(1L);
+
+            // 서비스 메소드가 어떤 요청이든(any) 받으면, 미리 정의된 응답을 반환하도록 설정
+            given(customTimerCommandService.createCustomTimer(any(CustomTimerCreateRequest.class)))
+                    .willReturn(expectedResponse);
+
+            // when & then
+            mockMvc.perform(post("/api/v1/custom-timers") // POST 요청
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(request))) // 요청 본문 추가
+                    .andExpectAll(
+                            status().isCreated(), // 201 Created 상태 코드를 기대
+                            jsonPath("$.succeed").value(true),
+                            jsonPath("$.code").value("CREATED"),
+                            jsonPath("$.data.customTimerId").value(expectedResponse.customTimerId())
+                    )
+                    .andDo(document.document(
+                            requestHeaders(HEADER_ACCESS_TOKEN),
+                            // 요청 본문의 필드를 문서화합니다.
+                            requestFields(
+                                    fieldWithPath("customTimerName").description("생성할 커스텀 타이머의 이름입니다."),
+                                    fieldWithPath("customTimerSteps").description("커스텀 타이머에 포함될 스텝 목록입니다."),
+                                    fieldWithPath("customTimerSteps[].customTimerStepName").description("스텝의 이름입니다."),
+                                    fieldWithPath("customTimerSteps[].customTimerStepOrder").description("스텝의 순서입니다."),
+                                    fieldWithPath("customTimerSteps[].customTimerStepTime").description("스텝의 시간(초)입니다.")
+                            ),
+                            // 응답 본문의 필드를 문서화합니다.
+                            responseFields(commonResponseFields(
+                                    fieldWithPath("data.customTimerId").description("새롭게 생성된 커스텀 타이머의 ID입니다.")
+                            ))
+                    ));
+
+            // 서비스 메소드가 정확히 1번 호출되었는지 검증
+            then(customTimerCommandService).should().createCustomTimer(any(CustomTimerCreateRequest.class));
+            then(customTimerCommandService).shouldHaveNoMoreInteractions();
+        }
+
+        @Test
+        @DisplayName("타이머 이름이 비어있으면 400 에러를 반환한다")
+        void shouldFail_whenNameIsBlank() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            List<CustomTimerStepCreateRequest> steps = List.of(new CustomTimerStepCreateRequest("스텝 1", (byte) 1, 30));
+            CustomTimerCreateRequest request = new CustomTimerCreateRequest("", steps); // Invalid: blank name
+
+            // when & then
+            mockMvc.perform(post("/api/v1/custom-timers")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+
+            then(customTimerCommandService).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("타이머 스텝 리스트가 null이면 400 에러를 반환한다")
+        void shouldFail_whenStepsListIsNull() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            CustomTimerCreateRequest request = new CustomTimerCreateRequest("유효한 이름", null); // Invalid: null steps
+
+            // when & then
+            mockMvc.perform(post("/api/v1/custom-timers")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+
+            then(customTimerCommandService).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("타이머 스텝의 이름이 비어있으면(@Valid) 400 에러를 반환한다")
+        void shouldFail_whenNestedStepNameIsBlank() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            List<CustomTimerStepCreateRequest> steps = List.of(
+                    new CustomTimerStepCreateRequest("", (byte) 1, 30) // Invalid: blank step name
+            );
+            CustomTimerCreateRequest request = new CustomTimerCreateRequest("유효한 이름", steps);
+
+            // when & then
+            mockMvc.perform(post("/api/v1/custom-timers")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+
+            then(customTimerCommandService).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("타이머 스텝의 시간이 1보다 작으면(@Min) 400 에러를 반환한다")
+        void shouldFail_whenNestedStepTimeIsInvalid() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            List<CustomTimerStepCreateRequest> steps = List.of(
+                    new CustomTimerStepCreateRequest("유효한 스텝 이름", (byte) 1, 0) // Invalid: time is 0
+            );
+            CustomTimerCreateRequest request = new CustomTimerCreateRequest("유효한 이름", steps);
+
+            // when & then
+            mockMvc.perform(post("/api/v1/custom-timers")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+
+            then(customTimerCommandService).shouldHaveNoInteractions();
+        }
+    }
+
+    @Nested
+    @DisplayName("커스텀 타이머 삭제 API")
+    class DeleteCustomTimer {
+
+        @Test
+        @DisplayName("정상적으로 커스텀 타이머를 삭제한다")
+        void deleteCustomTimer_Success() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long timerId = 1L;
+
+            // 실제로 삭제하지 않기위해 willDoNothing() 사용
+            willDoNothing().given(customTimerCommandService).deleteCustomTimer(timerId);
+
+            // when & then
+            mockMvc.perform(delete("/api/v1/custom-timers/{customTimerId}", timerId)
+                            .headers(getCommonApiHeaders(memberId)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.succeed").value(true))
+                    .andExpect(jsonPath("$.code").value("DELETED"))
+                    .andExpect(jsonPath("$.message").value("리소스가 성공적으로 삭제되었습니다."))
+                    .andExpect(jsonPath("$.data").doesNotExist())
+                    .andDo(print())
+                    .andDo(document.document(
+                            requestHeaders(
+                                    RestDocsUtils.HEADER_ACCESS_TOKEN
+                            ),
+                            pathParameters(
+                                    parameterWithName("customTimerId").attributes(getTypeFormat(JsonFieldType.NUMBER))
+                                            .description("삭제할 커스텀 타이머의 ID를 의미합니다.")
+                            ),
+                            responseFields(
+                                    RestDocsUtils.commonResponseFieldsOnly()
+                            )
+                    ));
+
+            then(customTimerCommandService).should().deleteCustomTimer(timerId);
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 타이머 삭제 시 404 에러를 반환한다")
+        void deleteCustomTimer_NotFound() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long timerId = 999L;
+
+            // 서비스 계층에서 예외 발생하도록 설정
+            doThrow(new CustomException(ErrorCode.CUSTOM_TIMER_NOT_FOUND))
+                    .when(customTimerCommandService).deleteCustomTimer(timerId);
+
+            // when & then
+            mockMvc.perform(delete("/api/v1/custom-timers/{customTimerId}", timerId)
+                            .headers(getCommonApiHeaders(memberId)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.succeed").value(false))
+                    .andExpect(jsonPath("$.code").value(ErrorCode.CUSTOM_TIMER_NOT_FOUND.name()));
+
+            then(customTimerCommandService).should().deleteCustomTimer(timerId);
+        }
+    }
+
+    @Nested
+    @DisplayName("커스텀 타이머 전체 수정 API")
+    class UpdateCustomTimer {
+
+        @Test
+        @DisplayName("정상적으로 커스텀 타이머를 수정한다 (이름 변경 + 스텝 교체)")
+        void updateCustomTimer_Success() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long timerId = 1L;
+
+            // 요청 본문 DTO 생성
+            List<CustomTimerStepCreateRequest> newSteps = List.of(
+                    new CustomTimerStepCreateRequest("새로운 스텝 1", (byte) 0, 120),
+                    new CustomTimerStepCreateRequest("새로운 휴식", (byte) 1, 30)
+            );
+            CustomTimerCreateRequest request = new CustomTimerCreateRequest("새로운 타이머 이름", newSteps);
+
+            // 서비스 계층의 void 메소드는 willDoNothing()으로 모킹
+            willDoNothing().given(customTimerCommandService)
+                    .updateCustomTimer(eq(timerId), any(CustomTimerCreateRequest.class));
+
+            // when & then
+            mockMvc.perform(put("/api/v1/custom-timers/{customTimerId}", timerId) // PUT 요청
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.succeed").value(true))
+                    .andExpect(jsonPath("$.code").value("UPDATED"))
+                    .andExpect(jsonPath("$.message").value("리소스가 성공적으로 수정되었습니다."))
+                    .andExpect(jsonPath("$.data").doesNotExist())
+                    .andDo(print())
+                    .andDo(document.document(
+                            requestHeaders(
+                                    RestDocsUtils.HEADER_ACCESS_TOKEN
+                            ),
+                            pathParameters(
+                                    parameterWithName("customTimerId").attributes(getTypeFormat(JsonFieldType.NUMBER))
+                                            .description("수정할 커스텀 타이머의 ID입니다.")
+                            ),
+                            requestFields(
+                                    fieldWithPath("customTimerName").description("생성할 커스텀 타이머의 이름입니다. 커스텀 타이머 이름은 최소 1글자, 최대 100글자 이내여야 합니다."),
+                                    fieldWithPath("customTimerSteps").description("커스텀 타이머에 포함될 스텝 목록입니다."),
+                                    fieldWithPath("customTimerSteps[].customTimerStepName").description("스텝의 이름입니다. 커스텀 타이머 스텝 이름은 최소 1글자, 최대 50글자 이내여야 합니다."),
+                                    fieldWithPath("customTimerSteps[].customTimerStepOrder").description("스텝의 순서입니다. 커스텀 타이머의 순서는 0~49 이내의 연속적인 정수여야 합니다."),
+                                    fieldWithPath("customTimerSteps[].customTimerStepTime").description("스텝의 시간(초)입니다. 커스텀 타이머의 시간은 1 ~ 3599 이내의 값을 입력해야 합니다.")
+                            ),
+                            responseFields(
+                                    RestDocsUtils.commonResponseFieldsOnly()
+                            )
+                    ));
+
+            // 서비스 메소드가 정확한 인자와 함께 1번 호출되었는지 검증
+            then(customTimerCommandService).should()
+                    .updateCustomTimer(eq(timerId), any(CustomTimerCreateRequest.class));
+        }
+
+        @Test
+        @DisplayName("타이머 이름이 비어있으면(@NotBlank) 400 에러를 반환한다")
+        void updateCustomTimer_ValidationFail_BlankName() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long timerId = 1L;
+            List<CustomTimerStepCreateRequest> steps = List.of(new CustomTimerStepCreateRequest("유효한 스텝", (byte) 0, 30));
+            // 유효성 검사에 실패할 요청 DTO (이름이 비어있음)
+            CustomTimerCreateRequest request = new CustomTimerCreateRequest("", steps);
+
+            // when & then
+            mockMvc.perform(put("/api/v1/custom-timers/{customTimerId}", timerId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+
+            // 유효성 검사 단계에서 실패했으므로 서비스 계층은 호출되지 않아야 함
+            then(customTimerCommandService).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 타이머 수정 시 404 에러를 반환한다")
+        void updateCustomTimer_NotFound() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long nonExistentTimerId = 999L;
+            CustomTimerCreateRequest request = new CustomTimerCreateRequest("유효한 이름", List.of(new CustomTimerStepCreateRequest("유효한 스텝", (byte) 0, 30)));
+
+            // 서비스 계층에서 예외가 발생하도록 설정
+            doThrow(new CustomException(ErrorCode.CUSTOM_TIMER_NOT_FOUND))
+                    .when(customTimerCommandService)
+                    .updateCustomTimer(eq(nonExistentTimerId), any(CustomTimerCreateRequest.class));
+
+            // when & then
+            mockMvc.perform(put("/api/v1/custom-timers/{customTimerId}", nonExistentTimerId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.succeed").value(false))
+                    .andExpect(jsonPath("$.code").value(ErrorCode.CUSTOM_TIMER_NOT_FOUND.name()));
+
+            // 예외는 발생했지만 서비스 메소드 자체는 호출되었음을 검증
+            then(customTimerCommandService).should()
+                    .updateCustomTimer(eq(nonExistentTimerId), any(CustomTimerCreateRequest.class));
+        }
+
+        @Test
+        @DisplayName("스텝 개수가 정책상 최대치를 초과하면 409 Conflict 에러를 반환한다")
+        void updateCustomTimer_Conflict_MaxStepsExceeded() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long timerId = 1L;
+
+            // 정책 위반을 유발할 요청 DTO (스텝이 너무 많음)
+            List<CustomTimerStepCreateRequest> tooManySteps = List.of(
+                    new CustomTimerStepCreateRequest("스텝 1", (byte) 0, 30),
+                    new CustomTimerStepCreateRequest("스텝 2", (byte) 1, 30),
+                    new CustomTimerStepCreateRequest("스텝 3", (byte) 2, 30)
+            );
+            CustomTimerCreateRequest request = new CustomTimerCreateRequest("스텝이 너무 많은 타이머", tooManySteps);
+
+            // 서비스 계층에서 '정책 위반' 예외가 발생하도록 설정
+            doThrow(new CustomException(ErrorCode.CUSTOM_TIMER_STEP_MAX_COUNT_VIOLATION))
+                    .when(customTimerCommandService)
+                    .updateCustomTimer(eq(timerId), any(CustomTimerCreateRequest.class));
+
+            // when & then
+            mockMvc.perform(put("/api/v1/custom-timers/{customTimerId}", timerId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isConflict()) // 409 Conflict 상태 코드를 기대
+                    .andExpect(jsonPath("$.succeed").value(false))
+                    .andExpect(jsonPath("$.code").value(ErrorCode.CUSTOM_TIMER_STEP_MAX_COUNT_VIOLATION.name()));
+
+            // 서비스 메소드 자체는 호출되었음을 검증
+            then(customTimerCommandService).should()
+                    .updateCustomTimer(eq(timerId), any(CustomTimerCreateRequest.class));
+        }
+    }
 
     @Nested
     @DisplayName("커스텀 타이머 이름 수정 API")
@@ -132,206 +467,6 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
                     .andExpect(jsonPath("$.code").value(ErrorCode.CUSTOM_TIMER_NOT_FOUND.name()));
 
             then(customTimerCommandService).should().updateCustomTimerName(eq(nonExistentTimerId), any(CustomTimerNameUpdateRequest.class));
-        }
-    }
-
-    @Nested
-    @DisplayName("커스텀 타이머 삭제 API")
-    class DeleteCustomTimer {
-
-        @Test
-        @DisplayName("정상적으로 커스텀 타이머를 삭제한다")
-        void deleteCustomTimer_Success() throws Exception {
-            // given
-            UUID memberId = UUID.randomUUID();
-            Long timerId = 1L;
-
-            // 실제로 삭제하지 않기위해 willDoNothing() 사용
-            willDoNothing().given(customTimerCommandService).deleteCustomTimer(timerId);
-
-            // when & then
-            mockMvc.perform(delete("/api/v1/custom-timers/{customTimerId}", timerId)
-                            .headers(getCommonApiHeaders(memberId)))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.succeed").value(true))
-                    .andExpect(jsonPath("$.code").value("DELETED"))
-                    .andExpect(jsonPath("$.message").value("리소스가 성공적으로 삭제되었습니다."))
-                    .andExpect(jsonPath("$.data").doesNotExist())
-                    .andDo(print())
-                    .andDo(document.document(
-                            requestHeaders(
-                                    RestDocsUtils.HEADER_ACCESS_TOKEN
-                            ),
-                            pathParameters(
-                                    parameterWithName("customTimerId").attributes(getTypeFormat(JsonFieldType.NUMBER))
-                                            .description("삭제할 커스텀 타이머의 ID를 의미합니다.")
-                            ),
-                            responseFields(
-                                    RestDocsUtils.commonResponseFieldsOnly()
-                            )
-                    ));
-
-            then(customTimerCommandService).should().deleteCustomTimer(timerId);
-        }
-
-        @Test
-        @DisplayName("존재하지 않는 타이머 삭제 시 404 에러를 반환한다")
-        void deleteCustomTimer_NotFound() throws Exception {
-            // given
-            UUID memberId = UUID.randomUUID();
-            Long timerId = 999L;
-
-            // 서비스 계층에서 예외 발생하도록 설정
-            doThrow(new CustomException(ErrorCode.CUSTOM_TIMER_NOT_FOUND))
-                    .when(customTimerCommandService).deleteCustomTimer(timerId);
-
-            // when & then
-            mockMvc.perform(delete("/api/v1/custom-timers/{customTimerId}", timerId)
-                            .headers(getCommonApiHeaders(memberId)))
-                    .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.succeed").value(false))
-                    .andExpect(jsonPath("$.code").value(ErrorCode.CUSTOM_TIMER_NOT_FOUND.name()));
-
-            then(customTimerCommandService).should().deleteCustomTimer(timerId);
-        }
-    }
-
-    @Nested
-    @DisplayName("커스텀 타이머 생성 성공")
-    class CreateCustomTimer {
-
-        @Test
-        @DisplayName("커스텀 타이머를 성공적으로 생성한다")
-        void createCustomTimer_Success() throws Exception {
-            // given
-            UUID memberId = UUID.randomUUID();
-
-            // 요청 본문 DTO 생성
-            List<CustomTimerStepCreateRequest> steps = List.of(
-                    new CustomTimerStepCreateRequest("데드리프트", (byte) 0, 180),
-                    new CustomTimerStepCreateRequest("휴식", (byte) 1, 60),
-                    new CustomTimerStepCreateRequest("스쿼트", (byte) 2, 120)
-            );
-            CustomTimerCreateRequest request = new CustomTimerCreateRequest("3대 운동 루틴", steps);
-
-            // 서비스 계층의 응답 객체 생성
-            CustomTimerCreateResponse expectedResponse = new CustomTimerCreateResponse(1L);
-
-            // 서비스 메소드가 어떤 요청이든(any) 받으면, 미리 정의된 응답을 반환하도록 설정
-            given(customTimerCommandService.createCustomTimer(any(CustomTimerCreateRequest.class)))
-                    .willReturn(expectedResponse);
-
-            // when & then
-            mockMvc.perform(post("/api/v1/custom-timers") // POST 요청
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .accept(MediaType.APPLICATION_JSON)
-                            .headers(getCommonApiHeaders(memberId))
-                            .content(objectMapper.writeValueAsString(request))) // 요청 본문 추가
-                    .andExpectAll(
-                            status().isCreated(), // 201 Created 상태 코드를 기대
-                            jsonPath("$.succeed").value(true),
-                            jsonPath("$.code").value("CREATED"),
-                            jsonPath("$.data.customTimerId").value(expectedResponse.customTimerId())
-                    )
-                    .andDo(document.document(
-                            requestHeaders(HEADER_ACCESS_TOKEN),
-                            // 요청 본문의 필드를 문서화합니다.
-                            requestFields(
-                                    fieldWithPath("customTimerName").description("생성할 커스텀 타이머의 이름입니다."),
-                                    fieldWithPath("customTimerSteps").description("커스텀 타이머에 포함될 스텝 목록입니다."),
-                                    fieldWithPath("customTimerSteps[].customTimerStepName").description("스텝의 이름입니다."),
-                                    fieldWithPath("customTimerSteps[].customTimerStepOrder").description("스텝의 순서입니다."),
-                                    fieldWithPath("customTimerSteps[].customTimerStepTime").description("스텝의 시간(초)입니다.")
-                            ),
-                            // 응답 본문의 필드를 문서화합니다.
-                            responseFields(commonResponseFields(
-                                    fieldWithPath("data.customTimerId").description("새롭게 생성된 커스텀 타이머의 ID입니다.")
-                            ))
-                    ));
-
-            // 서비스 메소드가 정확히 1번 호출되었는지 검증
-            then(customTimerCommandService).should().createCustomTimer(any(CustomTimerCreateRequest.class));
-            then(customTimerCommandService).shouldHaveNoMoreInteractions();
-        }
-    }
-
-    @Nested
-    @DisplayName("커스텀 타이머 생성 실패")
-    class CreateFailure {
-
-        @Test
-        @DisplayName("타이머 이름이 비어있으면 400 에러를 반환한다")
-        void shouldFail_whenNameIsBlank() throws Exception {
-            // given
-            UUID memberId = UUID.randomUUID();
-            List<CustomTimerStepCreateRequest> steps = List.of(new CustomTimerStepCreateRequest("스텝 1", (byte) 1, 30));
-            CustomTimerCreateRequest request = new CustomTimerCreateRequest("", steps); // Invalid: blank name
-
-            // when & then
-            mockMvc.perform(post("/api/v1/custom-timers")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .headers(getCommonApiHeaders(memberId))
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isBadRequest());
-
-            then(customTimerCommandService).shouldHaveNoInteractions();
-        }
-
-        @Test
-        @DisplayName("타이머 스텝 리스트가 null이면 400 에러를 반환한다")
-        void shouldFail_whenStepsListIsNull() throws Exception {
-            // given
-            UUID memberId = UUID.randomUUID();
-            CustomTimerCreateRequest request = new CustomTimerCreateRequest("유효한 이름", null); // Invalid: null steps
-
-            // when & then
-            mockMvc.perform(post("/api/v1/custom-timers")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .headers(getCommonApiHeaders(memberId))
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isBadRequest());
-
-            then(customTimerCommandService).shouldHaveNoInteractions();
-        }
-
-        @Test
-        @DisplayName("타이머 스텝의 이름이 비어있으면(@Valid) 400 에러를 반환한다")
-        void shouldFail_whenNestedStepNameIsBlank() throws Exception {
-            // given
-            UUID memberId = UUID.randomUUID();
-            List<CustomTimerStepCreateRequest> steps = List.of(
-                    new CustomTimerStepCreateRequest("", (byte) 1, 30) // Invalid: blank step name
-            );
-            CustomTimerCreateRequest request = new CustomTimerCreateRequest("유효한 이름", steps);
-
-            // when & then
-            mockMvc.perform(post("/api/v1/custom-timers")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .headers(getCommonApiHeaders(memberId))
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isBadRequest());
-
-            then(customTimerCommandService).shouldHaveNoInteractions();
-        }
-
-        @Test
-        @DisplayName("타이머 스텝의 시간이 1보다 작으면(@Min) 400 에러를 반환한다")
-        void shouldFail_whenNestedStepTimeIsInvalid() throws Exception {
-            // given
-            UUID memberId = UUID.randomUUID();
-            List<CustomTimerStepCreateRequest> steps = List.of(
-                    new CustomTimerStepCreateRequest("유효한 스텝 이름", (byte) 1, 0) // Invalid: time is 0
-            );
-            CustomTimerCreateRequest request = new CustomTimerCreateRequest("유효한 이름", steps);
-
-            // when & then
-            mockMvc.perform(post("/api/v1/custom-timers")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .headers(getCommonApiHeaders(memberId))
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isBadRequest());
-
-            then(customTimerCommandService).shouldHaveNoInteractions();
         }
     }
 }
