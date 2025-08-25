@@ -70,7 +70,8 @@ public class CustomTimerCommandServiceImpl implements CustomTimerCommandService 
     }
 
     /**
-     * 주어진 사용자와 커스텀 타이머 ID를 기반으로 기존의 커스텀 타이머를 업데이트합니다.
+     * 주어진 커스텀 타이머 ID와 요청 데이터로 커스텀 타이머를 업데이트합니다.
+     * 요청된 타이머 스텝의 유효성을 검사하고, 기존 스텝을 삭제한 후 새로운 스텝을 추가합니다.
      */
     @Override
     public void updateCustomTimer(Long customTimerId, CustomTimerCreateRequest request) {

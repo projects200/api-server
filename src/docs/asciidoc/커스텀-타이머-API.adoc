@@ -27,4 +27,6 @@ include::custom-timer/커스텀-타이머-생성-API.adoc[]
 
 include::custom-timer/커스텀-타이머-삭제-API.adoc[]
 
+include::custom-timer/커스텀-타이머-수정-API.adoc[]
+
 include::custom-timer/커스텀-타이머-이름-수정-API.adoc[]
