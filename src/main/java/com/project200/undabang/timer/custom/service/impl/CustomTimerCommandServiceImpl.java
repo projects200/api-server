@@ -8,6 +8,7 @@ import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.service.PolicyService;
 import com.project200.undabang.timer.custom.dto.request.CustomTimerCreateRequest;
+import com.project200.undabang.timer.custom.dto.request.CustomTimerNameUpdateRequest;
 import com.project200.undabang.timer.custom.dto.request.CustomTimerStepCreateRequest;
 import com.project200.undabang.timer.custom.dto.response.CustomTimerCreateResponse;
 import com.project200.undabang.timer.custom.entity.CustomTimer;
@@ -32,6 +33,17 @@ public class CustomTimerCommandServiceImpl implements CustomTimerCommandService 
     private final CustomTimerStepRepository customTimerStepRepository;
     private final MemberRepository memberRepository;
     private final PolicyService policyService;
+
+    /**
+     * 주어진 사용자와 커스텀 타이머 ID를 기반으로 커스텀 타이머의 이름을 업데이트합니다.
+     */
+    @Override
+    public void updateCustomTimerName(Long customTimerId, CustomTimerNameUpdateRequest request) {
+        Member member = getMember(UserContextHolder.getUserId());
+        CustomTimer customTimer = getCustomTimer(member, customTimerId);
+
+        customTimer.updateCustomTimerName(request.getCustomTimerName());
+    }
 
     /**
      * 주어진 사용자와 타이머 ID를 기반으로 커스텀 타이머를 삭제합니다.

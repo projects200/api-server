@@ -16,6 +16,7 @@ public class CustomTimerStepRepositoryImpl implements CustomTimerStepRepositoryC
 
     /**
      * 지정된 CustomTimer와 연관된 모든 CustomTimerStep 엔터티를 논리적으로 삭제합니다.
+     *
      * @param customTimer 논리적으로 삭제할 CustomTimerStep과 연관된 CustomTimer 객체
      */
     @Override

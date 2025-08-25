@@ -9,5 +9,6 @@ import java.util.Optional;
 
 public interface CustomTimerRepository extends JpaRepository<CustomTimer, Long> {
     List<CustomTimer> findAllByMemberAndCustomTimerDeletedAtNull(Member member);
+
     Optional<CustomTimer> findByIdAndMemberAndCustomTimerDeletedAtNull(Long id, Member member);
 }

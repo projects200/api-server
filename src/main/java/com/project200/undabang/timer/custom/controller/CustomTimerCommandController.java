@@ -2,6 +2,7 @@ package com.project200.undabang.timer.custom.controller;
 
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.timer.custom.dto.request.CustomTimerCreateRequest;
+import com.project200.undabang.timer.custom.dto.request.CustomTimerNameUpdateRequest;
 import com.project200.undabang.timer.custom.dto.response.CustomTimerCreateResponse;
 import com.project200.undabang.timer.custom.service.CustomTimerCommandService;
 import jakarta.validation.Valid;
@@ -27,6 +28,14 @@ public class CustomTimerCommandController {
 
         customTimerCommandService.deleteCustomTimer(customTimerId);
         return ResponseEntity.ok(CommonResponse.delete(null));
+    }
+
+    @PatchMapping("/v1/custom-timers/{customTimerId}")
+    public ResponseEntity<CommonResponse<Void>> updateCustomTimerName(@PathVariable("customTimerId") Long customTimerId,
+                                                                      @Valid @RequestBody CustomTimerNameUpdateRequest request) {
+
+        customTimerCommandService.updateCustomTimerName(customTimerId, request);
+        return ResponseEntity.ok(CommonResponse.update(null));
     }
 
 }
