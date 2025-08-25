@@ -11,12 +11,12 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class GetSimpleTimerResponseDto {
+public class SimpleTimerListResponse {
     private int simpleTimerCount;
     private List<SimpleTimerRecord> simpleTimers;
 
-    public static GetSimpleTimerResponseDto of(List<SimpleTimerRecord> simpleTimers) {
-        return GetSimpleTimerResponseDto.builder()
+    public static SimpleTimerListResponse of(List<SimpleTimerRecord> simpleTimers) {
+        return SimpleTimerListResponse.builder()
                 .simpleTimerCount(simpleTimers.size())
                 .simpleTimers(simpleTimers)
                 .build();

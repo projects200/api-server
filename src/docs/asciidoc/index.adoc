@@ -141,6 +141,8 @@ include::overview/공통-개발-참고-사항.adoc[]
 
 - 심플 타이머 조회 API #GET# `/api/v1/simple-timers`
 
+- 심플 타이머 생성 API #POST# `/api/v1/simple-timers`
+
 - 심플 타이머 수정 API #PATCH# `/api/v1/simple-timers/{simpleTimerId}`
 
 - 심플 타이머 삭제 API #DELETE# `/api/v1/simple-timers/{simpleTimerId}`
@@ -148,3 +150,11 @@ include::overview/공통-개발-참고-사항.adoc[]
 === xref:커스텀-타이머-API.html[커스텀 타이머 API]
 
 - 커스텀 타이머 리스트 조회 API #GET# `/api/v1/custom-timers`
+
+- 커스텀 타이머 상세 조회 API #GET# `/api/v1/custom-timers/{customTimerId}`
+
+- 커스텀 타이머 생성 API #POST# `/api/v1/custom-timers`
+
+- 커스텀 타이머 삭제 API #DELETE# `/api/v1/custom-timers/{customTimerId}`
+
+- 커스텀 타이머 이름 수정 API #PATCH# `/api/v1/custom-timers/{customTimerId}`

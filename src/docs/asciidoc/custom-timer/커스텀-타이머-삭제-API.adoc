@@ -1,0 +1,32 @@
+== 커스텀 타이머 삭제 API
+
+=== 설명
+
+- #DELETE# `/api/v1/custom-timers/{customTimerId}`
+- 커스텀 타이머 삭제 API는 사용자가 자신이 생성한 커스텀 타이머와 커스텀 타이머 스텝들을 삭제하는 기능을 제공합니다.
+
+=== 개발 이력
+
+- Sprint 10 (2025-08-22): 기능 개발이 완료되었습니다.
+
+=== 개발 참고 사항
+
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+
+operation::delete-custom-timer/delete-custom-timer_-success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+
+operation::delete-custom-timer/delete-custom-timer_-success[snippets="request-headers,response-fields"]
+
+==== 응답 상태 코드
+
+|===
+|상태 코드|설명
+|200| 커스텀 타이머가 성공적으로 삭제되었습니다.
+|404| 회원 정보가 올바르지 않습니다. +
+존재하지 않는 타이머입니다.
+|===
+

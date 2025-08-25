@@ -5,7 +5,7 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
-import com.project200.undabang.timer.simple.dto.response.GetSimpleTimerResponseDto;
+import com.project200.undabang.timer.simple.dto.response.SimpleTimerListResponse;
 import com.project200.undabang.timer.simple.entity.SimpleTimer;
 import com.project200.undabang.timer.simple.repository.SimpleTimerRepository;
 import org.assertj.core.api.Assertions;
@@ -51,10 +51,10 @@ class SimpleTimerQueryServiceImplTest {
             try(MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(testUserId);
                 given(memberRepository.findById(testUserId)).willReturn(Optional.of(testUser));
-                given(simpleTimerRepository.findByMemberAndSimpleTimerDeletedAtNull(testUser)).willReturn(simpleTimerList);
+                given(simpleTimerRepository.findByMemberAndSimpleTimerDeletedAtNullOrderBySimpleTimerTimeAsc(testUser)).willReturn(simpleTimerList);
 
                 // when
-                GetSimpleTimerResponseDto responseDto = simpleTimerQueryService.getSimpleTimers();
+                SimpleTimerListResponse responseDto = simpleTimerQueryService.getSimpleTimers();
 
                 // then
                 Assertions.assertThat(responseDto).isNotNull();

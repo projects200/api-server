@@ -3,8 +3,10 @@ package com.project200.undabang.timer.custom.controller;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
+import com.project200.undabang.timer.custom.dto.response.CustomTimerDetailResponse;
 import com.project200.undabang.timer.custom.dto.response.CustomTimerListResponse;
 import com.project200.undabang.timer.custom.dto.response.CustomTimerRecord;
+import com.project200.undabang.timer.custom.dto.response.CustomTimerStepRecord;
 import com.project200.undabang.timer.custom.service.CustomTimerQueryService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -33,6 +35,88 @@ class CustomTimerQueryControllerTest extends AbstractRestDocSupport {
 
     @MockitoBean
     private CustomTimerQueryService customTimerQueryService;
+
+    @Nested
+    @DisplayName("GET /api/v1/custom-timers/{customTimerId} API는")
+    class GetCustomTimerDetail {
+
+        @Test
+        @DisplayName("정상적으로 커스텀 타이머 상세 정보를 반환한다")
+        void getCustomTimerDetail_Success() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long customTimerId = 1L;
+            List<CustomTimerStepRecord> steps = List.of(
+                    new CustomTimerStepRecord(10L, "운동1", (byte) 1, 60),
+                    new CustomTimerStepRecord(11L, "휴식1", (byte) 2, 30),
+                    new CustomTimerStepRecord(12L, "운동2", (byte) 3, 60),
+                    new CustomTimerStepRecord(13L, "휴식2", (byte) 4, 30)
+            );
+            CustomTimerDetailResponse response = CustomTimerDetailResponse.builder()
+                    .customTimerId(customTimerId)
+                    .customTimerName("타이머")
+                    .customTimerStepCount(steps.size())
+                    .customTimerSteps(steps)
+                    .build();
+
+            BDDMockito.given(customTimerQueryService.getCustomTimerDetail(customTimerId)).willReturn(response);
+
+            // when & then
+            mockMvc.perform(get("/api/v1/custom-timers/{customTimerId}", customTimerId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId)))
+                    .andExpectAll(
+                            status().isOk(),
+                            jsonPath("$.succeed").value(true),
+                            jsonPath("$.code").value("SUCCESS"),
+                            jsonPath("$.data.customTimerId").value(customTimerId),
+                            jsonPath("$.data.customTimerName").value("타이머"),
+                            jsonPath("$.data.customTimerStepCount").value(4),
+                            jsonPath("$.data.customTimerSteps").isArray(),
+                            jsonPath("$.data.customTimerSteps[0].customTimerStepName").value("운동1")
+                    )
+                    .andDo(document.document(
+                            requestHeaders(HEADER_ACCESS_TOKEN),
+                            responseFields(commonResponseFields(
+                                    fieldWithPath("data.customTimerId").type(NUMBER).description("커스텀 타이머 식별자 입니다."),
+                                    fieldWithPath("data.customTimerName").type(STRING).description("커스텀 타이머 이름 입니다."),
+                                    fieldWithPath("data.customTimerStepCount").type(NUMBER).description("커스텀 타이머 스텝 리스트의 크기를 담고있는 데이터 입니다."),
+                                    fieldWithPath("data.customTimerSteps").type(ARRAY).description("커스텀 타이머 스텝 리스트 입니다. 내용에는 스텝의 식별자, 이름, 순서, 시간이 포함됩니다"),
+                                    fieldWithPath("data.customTimerSteps[].customTimerStepId").type(NUMBER).description("커스텀 타이머 스텝의 식별자 정보입니다."),
+                                    fieldWithPath("data.customTimerSteps[].customTimerStepName").type(STRING).description("커스텀 타이머 스텝의 이름 정보입니다."),
+                                    fieldWithPath("data.customTimerSteps[].customTimerStepOrder").type(NUMBER).description("커스텀 타이머 스텝의 순서 정보입니다."),
+                                    fieldWithPath("data.customTimerSteps[].customTimerStepTime").type(NUMBER).description("커스텀 타이머 스텝의 시간 정보를 의미합니다. 단위는 초 입니다.")
+                            ))
+                    ));
+
+            BDDMockito.then(customTimerQueryService).should(BDDMockito.times(1)).getCustomTimerDetail(customTimerId);
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 타이머 조회 시 실패한다")
+        void getCustomTimerDetail_Fail_NotFound() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long customTimerId = 999L;
+            BDDMockito.given(customTimerQueryService.getCustomTimerDetail(customTimerId))
+                    .willThrow(new CustomException(ErrorCode.CUSTOM_TIMER_NOT_FOUND));
+
+            // when & then
+            mockMvc.perform(get("/api/v1/custom-timers/{customTimerId}", customTimerId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId)))
+                    .andExpectAll(
+                            status().isNotFound(),
+                            jsonPath("$.succeed").value(false),
+                            jsonPath("$.code").value(ErrorCode.CUSTOM_TIMER_NOT_FOUND.getCode()),
+                            jsonPath("$.message").value(ErrorCode.CUSTOM_TIMER_NOT_FOUND.getMessage())
+                    );
+
+            BDDMockito.then(customTimerQueryService).should(BDDMockito.times(1)).getCustomTimerDetail(customTimerId);
+        }
+    }
 
     @Nested
     @DisplayName("GET /api/v1/custom-timers API는")
