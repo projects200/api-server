@@ -79,7 +79,7 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
                                             .description("수정할 커스텀 타이머의 ID를 의미합니다.")
                             ),
                             requestFields(
-                                    fieldWithPath("customTimerName").description("새롭게 변경할 커스텀 타이머의 이름입니다.")
+                                    fieldWithPath("customTimerName").description("새롭게 변경할 커스텀 타이머의 이름입니다. 커스텀 타이머 이름은 최소 1글자, 최대 100글자 이내여야 합니다.")
                             ),
                             responseFields(
                                     RestDocsUtils.commonResponseFieldsOnly()
@@ -237,11 +237,11 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
                             requestHeaders(HEADER_ACCESS_TOKEN),
                             // 요청 본문의 필드를 문서화합니다.
                             requestFields(
-                                    fieldWithPath("customTimerName").description("생성할 커스텀 타이머의 이름입니다."),
+                                    fieldWithPath("customTimerName").description("생성할 커스텀 타이머의 이름입니다. 커스텀 타이머 이름은 최소 1글자, 최대 100글자 이내여야 합니다."),
                                     fieldWithPath("customTimerSteps").description("커스텀 타이머에 포함될 스텝 목록입니다."),
-                                    fieldWithPath("customTimerSteps[].customTimerStepName").description("스텝의 이름입니다."),
-                                    fieldWithPath("customTimerSteps[].customTimerStepOrder").description("스텝의 순서입니다."),
-                                    fieldWithPath("customTimerSteps[].customTimerStepTime").description("스텝의 시간(초)입니다.")
+                                    fieldWithPath("customTimerSteps[].customTimerStepName").description("스텝의 이름입니다. 커스텀 타이머 스텝 이름은 최소 1글자, 최대 50글자 이내여야 합니다."),
+                                    fieldWithPath("customTimerSteps[].customTimerStepOrder").description("스텝의 순서입니다. 커스텀 타이머의 순서는 0~49 이내의 연속적인 정수여야 합니다."),
+                                    fieldWithPath("customTimerSteps[].customTimerStepTime").description("스텝의 시간(초)입니다. 커스텀 타이머의 시간은 1 ~ 3599 이내의 값을 입력해야 합니다.")
                             ),
                             // 응답 본문의 필드를 문서화합니다.
                             responseFields(commonResponseFields(
