@@ -53,6 +53,6 @@ slack:
 
 
 firebase:
-  enabled: true
+  enabled: false
   credentials:
     path: "classpath:firebase/undabang-firebase-adminsdk.json"
