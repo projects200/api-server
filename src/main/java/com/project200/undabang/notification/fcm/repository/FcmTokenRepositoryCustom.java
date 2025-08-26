@@ -3,7 +3,7 @@ package com.project200.undabang.notification.fcm.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-public interface FcmTokenQueryRepository {
+public interface FcmTokenRepositoryCustom {
 
     /**
      * 현재 비활성 상태로 인해 점수가 감소되고 있는 회원들의 FCM 토큰 목록을 페이징하여 조회합니다.

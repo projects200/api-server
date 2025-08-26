@@ -3,10 +3,9 @@ package com.project200.undabang.notification.fcm.repository.impl;
 import com.project200.undabang.exercise.entity.QExercise;
 import com.project200.undabang.member.entity.QMember;
 import com.project200.undabang.notification.fcm.entity.QFcmToken;
-import com.project200.undabang.notification.fcm.repository.FcmTokenQueryRepository;
+import com.project200.undabang.notification.fcm.repository.FcmTokenRepositoryCustom;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.DateTimeExpression;
-import com.querydsl.core.types.dsl.Wildcard;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +22,7 @@ import java.util.List;
 @Slf4j
 @Repository
 @RequiredArgsConstructor
-public class FcmTokenQueryRepositoryImpl implements FcmTokenQueryRepository {
+public class FcmTokenRepositoryImpl implements FcmTokenRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
 
@@ -44,6 +43,7 @@ public class FcmTokenQueryRepositoryImpl implements FcmTokenQueryRepository {
                 .then(member.memberCreatedAt)
                 .otherwise(exercise.exerciseCreatedAt.max());
 
+        // --- 3. 기본 쿼리 작성 ---
         JPAQuery<?> baseQuery = queryFactory
                 .from(member)
                 .leftJoin(exercise).on(
@@ -72,13 +72,13 @@ public class FcmTokenQueryRepositoryImpl implements FcmTokenQueryRepository {
         log.info("페이징 처리된 FCM 토큰 개수: {}, 페이지 정보: {}", tokens.size(), pageable);
 
         // --- 5. 전체 카운트 조회 ---
-        Long total = baseQuery.clone()
-                .select(Wildcard.count)
-                .fetchOne();
+        long total = baseQuery.clone()
+                .select(member.memberId) // fcmTokenValue 대신 가벼운 memberId를 조회
+                .fetch().size();
 
         log.info("전체 비활성 회원 수: {}", total);
 
         // --- 6. Page 객체 생성 ---
-        return new PageImpl<>(tokens, pageable, total != null ? total : 0L);
+        return new PageImpl<>(tokens, pageable, total);
     }
 }

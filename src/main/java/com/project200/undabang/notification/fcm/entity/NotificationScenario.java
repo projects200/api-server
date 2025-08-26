@@ -22,11 +22,11 @@ public class NotificationScenario {
     @Column(name = "scenario_id", nullable = false)
     private Long id;
 
-    @Size(max = 50)
     @NotNull
+    @Enumerated(EnumType.STRING)
     @Comment("시나리오 코드 (애플리케이션에서 사용)")
     @Column(name = "scenario_code", nullable = false, length = 50)
-    private String scenarioCode;
+    private ScenarioCode scenarioCode;
 
     @Size(max = 255)
     @NotNull
@@ -34,6 +34,7 @@ public class NotificationScenario {
     @Column(name = "scenario_description", nullable = false)
     private String scenarioDescription;
 
+    // 현재 사용 안함
     @Builder.Default
     @NotNull
     @Comment("시나리오 활성화 여부")

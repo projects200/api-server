@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -29,6 +30,7 @@ public class NotificationBatchServiceImpl implements NotificationBatchService {
     // 매일 오후 6시에 실행
     @Scheduled(cron = "0 0 18 * * ?")
     @Override
+    @Transactional(readOnly = true)
     public void sendInactivityNotifications() {
         log.info("비활성 회원 알림 배치 작업을 시작합니다.");
         sendPreInactiveNotifications();

@@ -4,8 +4,7 @@ import com.project200.undabang.configuration.TestQuerydslConfig;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.notification.fcm.entity.FcmToken;
-import com.project200.undabang.notification.fcm.repository.FcmTokenQueryRepository;
-import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.project200.undabang.notification.fcm.repository.FcmTokenRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -19,6 +18,8 @@ import org.springframework.data.domain.Pageable;
 
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,13 +27,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
 @Import(TestQuerydslConfig.class)
 @DisplayName("FcmTokenQueryRepositoryImpl 클래스")
-class FcmTokenQueryRepositoryImplTest {
+class FcmTokenRepositoryImplTest {
 
     @Autowired
     private EntityManager em;
 
     @Autowired
-    private JPAQueryFactory queryFactory;
+    FcmTokenRepository fcmTokenRepository;
 
     private Member createAndPersistMember(String email, String nickname, LocalDateTime createdAt) {
         Member member = Member.builder()
@@ -45,7 +46,6 @@ class FcmTokenQueryRepositoryImplTest {
         em.persist(member);
         return member;
     }
-
 
     // --- Helper Methods ---
 
@@ -79,7 +79,6 @@ class FcmTokenQueryRepositoryImplTest {
         @DisplayName("다양한 조건의 사용자가 있을 때 정확한 비활성 대상만 필터링하여 FCM 토큰을 반환한다")
         void shouldReturnTokensOfInactiveMembersOnly() {
             // given
-            FcmTokenQueryRepository fcmTokenQueryRepository = new FcmTokenQueryRepositoryImpl(queryFactory);
             int penaltyThresholdDays = 7;
             LocalDateTime now = LocalDateTime.now();
 
@@ -129,10 +128,10 @@ class FcmTokenQueryRepositoryImplTest {
             em.flush();
             em.clear();
 
-            Pageable pageable = PageRequest.of(0, 10);
+            Pageable pageable = PageRequest.of(0, 500);
 
             // when
-            Page<String> result = fcmTokenQueryRepository.findFcmTokensForInactiveMembers(penaltyThresholdDays, pageable);
+            Page<String> result = fcmTokenRepository.findFcmTokensForInactiveMembers(penaltyThresholdDays, pageable);
 
             // then
             assertThat(result).as("결과 페이지는 null이 아니어야 합니다.").isNotNull();
@@ -146,7 +145,6 @@ class FcmTokenQueryRepositoryImplTest {
         void givenMemberWithNoExercise_whenQuerying_thenShouldNotThrowSqlError() {
             // given: 이 테스트는 'Unknown column in having clause' 오류가 발생했던 특정 시나리오를 검증합니다.
             // H2 DB는 문법에 너그러워 오류를 재현하지는 않지만, 로직의 정확성은 검증할 수 있습니다.
-            FcmTokenQueryRepository fcmTokenQueryRepository = new FcmTokenQueryRepositoryImpl(queryFactory);
             int penaltyThresholdDays = 7;
             LocalDateTime now = LocalDateTime.now();
 
@@ -156,16 +154,58 @@ class FcmTokenQueryRepositoryImplTest {
             em.flush();
             em.clear();
 
-            Pageable pageable = PageRequest.of(0, 10);
+            Pageable pageable = PageRequest.of(0, 500);
 
             // when: 테스트 메소드 호출
-            Page<String> result = fcmTokenQueryRepository.findFcmTokensForInactiveMembers(penaltyThresholdDays, pageable);
+            Page<String> result = fcmTokenRepository.findFcmTokensForInactiveMembers(penaltyThresholdDays, pageable);
 
             // then: 결과 검증
             // 이 테스트가 성공하면, GROUP BY 절에 memberCreatedAt이 올바르게 추가되어
             // MySQL과 같은 엄격한 DB에서도 SQL 오류가 발생하지 않음을 보증합니다.
             assertThat(result).isNotNull();
             assertThat(result.getTotalElements()).as("운동 기록 없는 비활성 사용자 0명이 조회되어야 합니다.").isZero();
+        }
+
+        @Test
+        @DisplayName("여러 회원이 다수의 활성 토큰을 가질 때 페이징이 정확하게 동작한다")
+        void shouldHandlePaginationCorrectlyWhenMultipleTokensExist() {
+            // given
+            int penaltyThresholdDays = 7;
+            LocalDateTime now = LocalDateTime.now();
+            int memberCount = 4;
+            int tokensPerMember = 3;
+            List<String> allExpectedTokens = new ArrayList<>();
+
+            for (int i = 0; i < memberCount; i++) {
+                Member member = createAndPersistMember("inactive" + i + "@test.com", "inactive" + i, now.minusDays(8));
+                for (int j = 0; j < tokensPerMember; j++) {
+                    String tokenValue = "token-" + i + "-" + j;
+                    createAndPersistFcmToken(member, tokenValue, true, now.plusDays(30));
+                    allExpectedTokens.add(tokenValue);
+                }
+            }
+
+            em.flush();
+            em.clear();
+
+            // when
+            Pageable pageable = PageRequest.of(0, 5);
+            List<String> allFetchedTokens = new ArrayList<>();
+            Page<String> currentPage;
+
+            do {
+                currentPage = fcmTokenRepository.findFcmTokensForInactiveMembers(penaltyThresholdDays, pageable);
+                allFetchedTokens.addAll(currentPage.getContent());
+                pageable = pageable.next();
+            } while (currentPage.hasNext());
+
+
+            // then
+            assertThat(currentPage).as("마지막 페이지 정보는 null이 아니어야 합니다.").isNotNull();
+            assertThat(currentPage.getTotalElements()).as("전체 토큰 수는 12개여야 합니다.").isEqualTo(12);
+            assertThat(allFetchedTokens.size()).as("페이징을 통해 조회된 전체 토큰 수는 12개여야 합니다.").isEqualTo(12);
+            assertThat(allFetchedTokens).as("조회된 모든 토큰이 기대한 토큰 목록과 일치해야 합니다.")
+                    .containsExactlyInAnyOrderElementsOf(allExpectedTokens);
         }
     }
 }
