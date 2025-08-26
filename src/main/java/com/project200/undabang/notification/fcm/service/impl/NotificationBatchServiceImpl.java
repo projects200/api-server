@@ -1,7 +1,10 @@
 package com.project200.undabang.notification.fcm.service.impl;
 
+import com.project200.undabang.notification.fcm.dto.NotificationContent;
 import com.project200.undabang.notification.fcm.dto.NotificationPayload;
+import com.project200.undabang.notification.fcm.entity.ScenarioCode;
 import com.project200.undabang.notification.fcm.repository.FcmTokenRepository;
+import com.project200.undabang.notification.fcm.repository.NotificationMessageRepository;
 import com.project200.undabang.notification.fcm.service.NotificationBatchService;
 import com.project200.undabang.notification.fcm.service.NotificationService;
 import com.project200.undabang.policy.entity.PolicyKey;
@@ -26,6 +29,7 @@ public class NotificationBatchServiceImpl implements NotificationBatchService {
     private final FcmTokenRepository fcmTokenRepository;
     private final PolicyService policyService;  // 정책 조회 서비스
     private final NotificationService notificationService; // FCM 메시지를 실제로 보내는 서비스
+    private final NotificationMessageRepository notificationMessageRepository;
 
     // 매일 오후 6시에 실행
     @Scheduled(cron = "0 0 18 * * ?")
@@ -33,8 +37,12 @@ public class NotificationBatchServiceImpl implements NotificationBatchService {
     @Transactional(readOnly = true)
     public void sendInactivityNotifications() {
         log.info("비활성 회원 알림 배치 작업을 시작합니다.");
+        // 점수 감소되고 있는 회원들에게 독려 메시지 발송
         sendPreInactiveNotifications();
-        // 필요하다면 점수 감소 로직도 여기에 추가
+
+        // 점수 감소되기 직전인 회원들에게 독려 메시지 발송
+        // 향후 추가
+
         log.info("비활성 회원 알림 배치 작업을 종료합니다.");
     }
 
@@ -43,6 +51,9 @@ public class NotificationBatchServiceImpl implements NotificationBatchService {
         int pageNumber = 0;
 
         int penaltyThresholdDays = policyService.getPolicyValueAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS);
+
+        NotificationContent randomMessageByScenario =
+                notificationMessageRepository.findRandomMessageByScenario(ScenarioCode.POST_INACTIVITY_NUDGE);
 
         // 500개씩 끊어서 토큰 조회
         do {
@@ -59,9 +70,9 @@ public class NotificationBatchServiceImpl implements NotificationBatchService {
                 List<NotificationPayload> notifications = tokens.stream()
                         .map(token -> new NotificationPayload(
                                 token,
-                                "운다방",
-                                "잠깐! 소중한 운동 점수가 변동될 수 있어요. 가볍게라도 운동하고 지금의 점수를 지켜볼까요?",
-                                null
+                                randomMessageByScenario.title(),
+                                randomMessageByScenario.body(),
+                                randomMessageByScenario.imageUrl()
                         ))
                         .toList();
 
