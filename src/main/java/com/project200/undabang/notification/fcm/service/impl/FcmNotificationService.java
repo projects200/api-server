@@ -41,11 +41,13 @@ public class FcmNotificationService implements NotificationService {
     // 지정된 요청에 따라 단일 사용자에게 FCM 알림을 발송
     @Override
     public void sendNotification(NotificationPayload request) {
+        // 1. 메시지 구성
         Message message = Message.builder()
                 .setToken(request.targetUserToken())
                 .setNotification(request.toNotification())
                 .build();
 
+        // 2. 로그 기록
         StringBuilder logMessage = new StringBuilder()
                 .append("[알림 발송] FCM 단건 알림 발송을 비동기적으로 요청합니다. ")
                 .append("To: ").append(request.targetUserToken());
@@ -54,8 +56,10 @@ public class FcmNotificationService implements NotificationService {
         if (request.imageUrl() != null) logMessage.append(", Image URL: ").append(request.imageUrl());
         log.info(logMessage.toString());
 
+        // 3. 단일 메시지 비동기 발송
         ApiFuture<String> future = firebaseMessaging.sendAsync(message);
 
+        // 4. 콜백 추가
         ApiFutures.addCallback(future, new ApiFutureCallback<>() {
             @Override
             public void onSuccess(String messageId) {
@@ -84,6 +88,7 @@ public class FcmNotificationService implements NotificationService {
             return;
         }
 
+        // 1. 메시지 구성
         List<Message> messages = requests.stream()
                 .map(request -> Message.builder()
                         .setToken(request.targetUserToken())
@@ -91,10 +96,13 @@ public class FcmNotificationService implements NotificationService {
                         .build())
                 .toList();
 
+        // 2. 로그 기록
         log.info("[알림 발송] FCM 다중 알림 발송을 비동기적으로 요청합니다. 총 {}건", messages.size());
 
+        // 3. 다중 메시지 비동기 발송
         ApiFuture<BatchResponse> future = firebaseMessaging.sendEachAsync(messages);
 
+        // 4. 콜백 추가
         ApiFutures.addCallback(future, new ApiFutureCallback<>() {
             @Override
             public void onSuccess(BatchResponse batchResponse) {
