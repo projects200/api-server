@@ -20,7 +20,7 @@ operation::create-custom-timer/create-custom-timer_-success[snippets="curl-reque
 
 === 매개 변수
 
-operation::create-custom-timer/create-custom-timer_-success[snippets="request-headers,response-fields"]
+operation::create-custom-timer/create-custom-timer_-success[snippets="request-headers,request-fields,response-fields"]
 
 ==== 응답 상태 코드
 

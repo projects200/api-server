@@ -19,7 +19,7 @@ operation::update-custom-timer-name/update-custom-timer-name_-success[snippets="
 
 === 매개 변수
 
-operation::update-custom-timer-name/update-custom-timer-name_-success[snippets="request-headers,path-parameters,response-fields"]
+operation::update-custom-timer-name/update-custom-timer-name_-success[snippets="request-headers,path-parameters,request-fields,response-fields"]
 
 ==== 응답 상태 코드
 
