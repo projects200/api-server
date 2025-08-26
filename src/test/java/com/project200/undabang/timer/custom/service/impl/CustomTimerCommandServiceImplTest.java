@@ -137,21 +137,6 @@ class CustomTimerCommandServiceImplTest {
         return new CustomTimerNameUpdateRequest(newName);
     }
 
-    private Member createTestUser(UUID userId) {
-        return Member.builder().memberId(userId).build();
-    }
-
-    private CustomTimerCreateRequest createRequest(int stepCount) {
-        List<CustomTimerStepCreateRequest> steps = IntStream.range(0, stepCount)
-                .mapToObj(i -> new CustomTimerStepCreateRequest(
-                        "스텝 " + i,
-                        (byte) i,
-                        60
-                ))
-                .toList();
-        return new CustomTimerCreateRequest("테스트 타이머", steps);
-    }
-
     @Nested
     @DisplayName("updateCustomTimerName() 메소드는")
     class Describe_updateCustomTimerName {
@@ -230,6 +215,21 @@ class CustomTimerCommandServiceImplTest {
         }
     }
 
+    private Member createTestUser(UUID userId) {
+        return Member.builder().memberId(userId).build();
+    }
+
+    private CustomTimerCreateRequest createRequest(int stepCount) {
+        List<CustomTimerStepCreateRequest> steps = IntStream.range(0, stepCount)
+                .mapToObj(i -> new CustomTimerStepCreateRequest(
+                        "스텝 " + i,
+                        (byte) i,
+                        60
+                ))
+                .toList();
+        return new CustomTimerCreateRequest("테스트 타이머", steps);
+    }
+
     @Nested
     @DisplayName("createCustomTimer() 메소드는")
     class Describe_createCustomTimer {
@@ -257,6 +257,9 @@ class CustomTimerCommandServiceImplTest {
                 assertThat(response).isNotNull();
                 assertThat(response.customTimerId()).isEqualTo(1L);
 
+                verify(policyService, times(1)).getPolicyValueAsInt(PolicyKey.CUSTOM_TIMER_STEP_MIN_COUNT);
+                verify(policyService, times(1)).getPolicyValueAsInt(PolicyKey.CUSTOM_TIMER_STEP_MAX_COUNT);
+
                 ArgumentCaptor<CustomTimer> timerCaptor = ArgumentCaptor.forClass(CustomTimer.class);
                 verify(customTimerRepository, times(1)).save(timerCaptor.capture());
                 assertThat(timerCaptor.getValue().getMember()).isEqualTo(testUser);
@@ -265,7 +268,6 @@ class CustomTimerCommandServiceImplTest {
                 ArgumentCaptor<List<CustomTimerStep>> stepsCaptor = ArgumentCaptor.forClass(List.class);
                 verify(customTimerStepRepository, times(1)).saveAll(stepsCaptor.capture());
                 assertThat(stepsCaptor.getValue()).hasSize(3);
-                assertThat(stepsCaptor.getValue().get(0).getCustomTimerStepName()).isEqualTo("스텝 0");
             }
         }
 
@@ -353,7 +355,6 @@ class CustomTimerCommandServiceImplTest {
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(testUserId);
                 given(memberRepository.findById(testUserId)).willReturn(Optional.of(testUser));
-                given(policyService.getPolicyValueAsInt(any(PolicyKey.class))).willReturn(1).willReturn(10);
 
                 // when & then
                 assertThatThrownBy(() -> customTimerCommandService.createCustomTimer(request))
@@ -361,6 +362,85 @@ class CustomTimerCommandServiceImplTest {
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.CUSTOM_TIMER_STEP_ORDER_INVALID);
 
                 verify(customTimerRepository, never()).save(any());
+                verify(customTimerStepRepository, never()).saveAll(any());
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("updateCustomTimer() 메소드는")
+    class Describe_updateCustomTimer {
+
+        @Test
+        @DisplayName("유효한 요청이 주어지면, 타이머 이름 변경 및 스텝 교체를 성공적으로 수행한다")
+        void shouldUpdateNameAndReplaceSteps_whenRequestIsValid() {
+            // given
+            UUID userId = UUID.randomUUID();
+            Member member = createTestUser(userId);
+            Long timerId = 1L;
+            CustomTimerCreateRequest request = createRequest(2); // 2개의 새 스텝으로 교체 요청
+
+            // 엔티티의 실제 메소드 호출을 검증하기 위해 Spy 객체 사용
+            CustomTimer originalTimer = spy(CustomTimer.builder()
+                    .id(timerId)
+                    .member(member)
+                    .customTimerName("오래된 이름")
+                    .build());
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(userId);
+
+                // --- Mocking ---
+                // 1. 사용자 및 타이머 조회 성공
+                given(memberRepository.findById(userId)).willReturn(Optional.of(member));
+                given(customTimerRepository.findByIdAndMemberAndCustomTimerDeletedAtNull(timerId, member))
+                        .willReturn(Optional.of(originalTimer));
+                // 2. 유효성 검사 통과를 위한 정책 모킹
+                given(policyService.getPolicyValueAsInt(any(PolicyKey.class))).willReturn(1).willReturn(10);
+
+                // when
+                customTimerCommandService.updateCustomTimer(timerId, request);
+
+                // then
+                // 1. 타이머 이름이 올바르게 업데이트 되었는지 검증
+                verify(originalTimer, times(1)).updateCustomTimerName(request.getCustomTimerName());
+
+                // 2. 기존 스텝들이 삭제 처리 되었는지 검증
+                verify(customTimerStepRepository, times(1)).softDeleteAllByCustomTimer(originalTimer);
+
+                // 3. 새로운 스텝들이 저장 처리 되었는지 검증
+                ArgumentCaptor<List<CustomTimerStep>> stepsCaptor = ArgumentCaptor.forClass(List.class);
+                verify(customTimerStepRepository, times(1)).saveAll(stepsCaptor.capture());
+                assertThat(stepsCaptor.getValue()).hasSize(2); // 요청한 대로 2개의 스텝이 생성되었는지 확인
+                assertThat(stepsCaptor.getValue().get(0).getCustomTimerStepName()).isEqualTo("스텝 0");
+            }
+        }
+
+        @Test
+        @DisplayName("스텝 개수가 정책상 최소치보다 적으면 CustomException을 던지고 아무 작업도 수행하지 않는다")
+        void shouldThrowExceptionAndDoNothing_whenStepCountIsBelowMin() {
+            // given
+            UUID userId = UUID.randomUUID();
+            Member member = createTestUser(userId);
+            Long timerId = 1L;
+            CustomTimerCreateRequest request = createRequest(1); // 정책 위반 (2개 미만)
+            CustomTimer timer = spy(CustomTimer.builder().id(timerId).member(member).build());
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(userId);
+                given(memberRepository.findById(userId)).willReturn(Optional.of(member));
+                given(customTimerRepository.findByIdAndMemberAndCustomTimerDeletedAtNull(timerId, member))
+                        .willReturn(Optional.of(timer));
+                given(policyService.getPolicyValueAsInt(PolicyKey.CUSTOM_TIMER_STEP_MIN_COUNT)).willReturn(2); // 정책: 최소 2개
+
+                // when & then
+                assertThatThrownBy(() -> customTimerCommandService.updateCustomTimer(timerId, request))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.CUSTOM_TIMER_STEP_MIN_COUNT_VIOLATION);
+
+                // 예외 발생 후 DB 변경 작업이 전혀 호출되지 않았는지 검증 (중요)
+                verify(timer, never()).updateCustomTimerName(anyString());
+                verify(customTimerStepRepository, never()).softDeleteAllByCustomTimer(any());
                 verify(customTimerStepRepository, never()).saveAll(any());
             }
         }

@@ -35,14 +35,24 @@ public class CustomTimerCommandServiceImpl implements CustomTimerCommandService 
     private final PolicyService policyService;
 
     /**
-     * 주어진 사용자와 커스텀 타이머 ID를 기반으로 커스텀 타이머의 이름을 업데이트합니다.
+     * 이 구현체는 다음의 순서로 커스텀 타이머를 생성합니다:
+     * 요청한 사용자의 유효성을 확인합니다.
+     * 커스텀 타이머 스텝의 개수와 순서의 유효성을 검증합니다.
+     * {@link CustomTimer} 엔티티를 먼저 저장합니다.
+     * 연관된 {@link CustomTimerStep} 엔티티들을 일괄 저장합니다.
      */
     @Override
-    public void updateCustomTimerName(Long customTimerId, CustomTimerNameUpdateRequest request) {
+    public CustomTimerCreateResponse createCustomTimer(CustomTimerCreateRequest dto) {
         Member member = getMember(UserContextHolder.getUserId());
-        CustomTimer customTimer = getCustomTimer(member, customTimerId);
 
-        customTimer.updateCustomTimerName(request.getCustomTimerName());
+        validateCustomTimerSteps(dto.getCustomTimerSteps());
+
+        CustomTimer customTimer = CustomTimer.of(member, dto.getCustomTimerName());
+        CustomTimer savedTimer = customTimerRepository.save(customTimer);
+
+        createStepTimerList(savedTimer, dto.getCustomTimerSteps());
+
+        return new CustomTimerCreateResponse(savedTimer.getId());
     }
 
     /**
@@ -60,32 +70,51 @@ public class CustomTimerCommandServiceImpl implements CustomTimerCommandService 
     }
 
     /**
-     * 이 구현체는 다음의 순서로 커스텀 타이머를 생성합니다:
-     * 요청한 사용자의 유효성을 확인합니다.
-     * 커스텀 타이머 스텝의 개수와 순서의 유효성을 검증합니다.
-     * {@link CustomTimer} 엔티티를 먼저 저장합니다.
-     * 연관된 {@link CustomTimerStep} 엔티티들을 일괄 저장합니다.
+     * 주어진 커스텀 타이머 ID와 요청 데이터로 커스텀 타이머를 업데이트합니다.
+     * 요청된 타이머 스텝의 유효성을 검사하고, 기존 스텝을 삭제한 후 새로운 스텝을 추가합니다.
      */
     @Override
-    public CustomTimerCreateResponse createCustomTimer(CustomTimerCreateRequest dto) {
+    public void updateCustomTimer(Long customTimerId, CustomTimerCreateRequest request) {
         Member member = getMember(UserContextHolder.getUserId());
+        CustomTimer customTimer = getCustomTimer(member, customTimerId);
 
-        checkCustomTimerCountLimit(dto.getCustomTimerSteps());
-        validateCustomTimerStepOrder(dto.getCustomTimerSteps());
+        // 커스텀 타이머 스텝 제약사항 검사
+        validateCustomTimerSteps(request.getCustomTimerSteps());
 
-        CustomTimer customTimer = CustomTimer.of(member, dto.getCustomTimerName());
-        CustomTimer savedTimer = customTimerRepository.save(customTimer);
+        // 커스텀 타이머 이름 변경
+        customTimer.updateCustomTimerName(request.getCustomTimerName());
 
-        createStepTimerList(savedTimer, dto.getCustomTimerSteps());
+        // 커스텀 타이머 스텝 전체 논리적 삭제
+        customTimerStepRepository.softDeleteAllByCustomTimer(customTimer);
 
-        return new CustomTimerCreateResponse(savedTimer.getId());
+        // 커스텀 타이머 스텝 추가
+        createStepTimerList(customTimer, request.getCustomTimerSteps());
+    }
+
+    /**
+     * 주어진 사용자와 커스텀 타이머 ID를 기반으로 커스텀 타이머의 이름을 업데이트합니다.
+     */
+    @Override
+    public void updateCustomTimerName(Long customTimerId, CustomTimerNameUpdateRequest request) {
+        Member member = getMember(UserContextHolder.getUserId());
+        CustomTimer customTimer = getCustomTimer(member, customTimerId);
+
+        customTimer.updateCustomTimerName(request.getCustomTimerName());
+    }
+
+    /**
+     * 스텝 관련 유효성 검사를 하나의 메서드로 묶음
+     * create, update에서 재활용 가능한 형태로 변경
+     */
+    private void validateCustomTimerSteps(List<CustomTimerStepCreateRequest> steps) {
+        validateCustomTimerStepOrder(steps);
+        checkCustomTimerCountLimit(steps);
     }
 
     /**
      * 커스텀 타이머 스텝의 순서가 정확한지 검증합니다.
      */
     private void validateCustomTimerStepOrder(List<CustomTimerStepCreateRequest> request) {
-        // CustomTimerStepOrder 순서검사
         for (int i = 0; i < request.size(); i++) {
             if (request.get(i).getCustomTimerStepOrder() != i) {
                 throw new CustomException(ErrorCode.CUSTOM_TIMER_STEP_ORDER_INVALID);
