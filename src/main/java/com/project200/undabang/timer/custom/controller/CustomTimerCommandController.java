@@ -38,4 +38,11 @@ public class CustomTimerCommandController {
         return ResponseEntity.ok(CommonResponse.update(null));
     }
 
+    @PutMapping("/v1/custom-timers/{customTimerId}")
+    public ResponseEntity<CommonResponse<Void>> updateCustomTimer(@PathVariable("customTimerId") Long customTimerId,
+                                                                  @Valid @RequestBody CustomTimerCreateRequest request) {
+
+        customTimerCommandService.updateCustomTimer(customTimerId, request);
+        return ResponseEntity.ok(CommonResponse.update(null));
+    }
 }
