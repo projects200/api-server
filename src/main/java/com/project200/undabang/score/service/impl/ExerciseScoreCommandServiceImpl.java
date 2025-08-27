@@ -1,5 +1,8 @@
 package com.project200.undabang.score.service.impl;
 
+import com.project200.undabang.admin.component.NotifyErrorToAdmin;
+import com.project200.undabang.admin.entity.dto.ErrorLevel;
+import com.project200.undabang.admin.entity.dto.MemberScoreErrorDto;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
 import com.project200.undabang.member.entity.Member;
@@ -10,6 +13,7 @@ import com.project200.undabang.score.service.ExerciseScoreCommandService;
 import com.project200.undabang.score.validation.ExercisePolicyValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +29,10 @@ public class ExerciseScoreCommandServiceImpl implements ExerciseScoreCommandServ
     private final ExerciseRepository exerciseRepository;
     private final PolicyService policyService;
     private final ExercisePolicyValidator exercisePolicyValidator;
+    private final NotifyErrorToAdmin notifyErrorToAdmin;
+
+    @Value("${spring.profiles.active}")
+    private String profile;
 
     /**
      * 운동 기록에 대한 점수 부여를 처리합니다.
@@ -51,6 +59,15 @@ public class ExerciseScoreCommandServiceImpl implements ExerciseScoreCommandServ
         } catch (Exception e) {
             log.error("운동 기록 점수 부여 중 오류 발생. exerciseId: {}, memberId: {}",
                     exercise.getId(), exercise.getMember().getMemberId(), e);
+
+            String serviceName = "ExerciseScoreCommandServiceImpl";
+            String summary = "운동기록 생성 시 점수가 추가되지 않았습니다.";
+            String environment = profile;
+
+            // 슬랙 알림을 통해 개발자에게 비동기로 공지
+            MemberScoreErrorDto dto = MemberScoreErrorDto.of(e,serviceName, ErrorLevel.ERROR, summary, environment);
+            notifyErrorToAdmin.sendErrorToSlackApi(dto);
+
             return 0; // 예외 발생 시 0점 반환
         }
     }

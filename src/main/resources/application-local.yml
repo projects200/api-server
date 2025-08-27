@@ -46,6 +46,12 @@ app:
 cors:
   allowed-origins: http://localhost:3000
 
+slack:
+  webhook:
+    url:  "http://localhost:7777/mock/slack-webhook"
+    enabled:  true
+
+
 firebase:
   enabled: false
   credentials:

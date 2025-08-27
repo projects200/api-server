@@ -18,6 +18,8 @@ public enum ErrorCode {
     USER_ID_HEADER_MISSING(401, "USER_ID_HEADER_MISSING", "X-USER-ID 헤더가 누락되었습니다."),
     USER_EMAIL_HEADER_MISSING(401, "USER_EMAIL_HEADER_MISSING", "X-USER-EMAIL 헤더가 누락되었습니다."),
     INVALID_USER_ID_FORMAT(400, "INVALID_USER_ID_FORMAT", "X-USER-ID 헤더는 유효한 UUID 형식이어야 합니다."),
+    LOGIN_FAILED(401, "LOGIN_FAILED", "로그인에 실패했습니다. 일치하는 회원을 찾을 수 없습니다."),
+    LOGOUT_FAILED(401, "LOGOUT_FAILED", "로그아웃에 실패했습니다. 일치하는 회원을 찾을 수 없습니다."),
 
     // 사용자 관련 에러
     MEMBER_NOT_FOUND(404, "USER_NOT_FOUND", "해당 사용자를 찾을 수 없습니다."),
@@ -38,7 +40,17 @@ public enum ErrorCode {
 
     // 정책 관련 에러
     POLICY_NOT_EXIST(404, "POLICY_NOT_EXIST", "존재하지 않는 정책명 입니다."),
-    POLICY_NOT_FOUND(500, "POLICY_NOT_FOUND", "정책을 찾을 수 없습니다.");
+    POLICY_NOT_FOUND(500, "POLICY_NOT_FOUND", "정책을 찾을 수 없습니다."),
+
+    // 심플 타이머 관련 에러
+    SIMPLE_TIMER_NOT_FOUND(404, "SIMPLE_TIMER_NOT_FOUND", "존재하지 않는 타이머 입니다."),
+    SIMPLE_TIMER_MAX_COUNT_VIOLATION(409, "SIMPLE_TIMER_MAX_COUNT_VIOLATION", "최대 심플 타이머 개수(6개)를 초과했습니다."),
+
+    // 커스텀 타이머 관련 에러
+    CUSTOM_TIMER_NOT_FOUND(404, "CUSTOM_TIMER_NOT_FOUND", "존재하지 않는 타이머 입니다."),
+    CUSTOM_TIMER_STEP_MIN_COUNT_VIOLATION(409, "CUSTOM_TIMER_MIN_COUNT_VIOLATION", "최소 1개 이상의 커스텀 타이머 스텝을 보유해야 합니다."),
+    CUSTOM_TIMER_STEP_MAX_COUNT_VIOLATION(409, "CUSTOM_TIMER_STEP_MAX_COUNT_VIOLATION", "최대 커스텀 타이머 스텝 개수(50개)를 초과했습니다."),
+    CUSTOM_TIMER_STEP_ORDER_INVALID(409, "CUSTOM_TIMER_STEP_ORDER_INVALID", "스텝 순서가 잘못되었습니다.");
 
     private final HttpStatusCode status;
     private final String code;

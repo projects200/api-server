@@ -7,7 +7,7 @@ plugins {
 }
 
 group = 'com.project200'
-version = '0.2.2-SNAPSHOT'
+version = '0.3.0-SNAPSHOT'
 
 java {
     toolchain {
@@ -58,6 +58,9 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
+    // Slack API Client 의존성 추가
+    implementation 'com.slack.api:slack-api-client:1.45.3'
+
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
@@ -87,6 +90,9 @@ dependencies {
     testImplementation 'io.awspring.cloud:spring-cloud-aws-testcontainers'
     testImplementation 'org.testcontainers:localstack'
     testImplementation 'org.testcontainers:junit-jupiter'
+
+    // wiremock 테스트 의존성 추가
+    testImplementation "org.wiremock:wiremock:3.5.2"
 
     // Scheduler 테스트 를 위한 의존성 추가
     testImplementation 'org.awaitility:awaitility:4.2.2'
