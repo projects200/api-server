@@ -61,6 +61,17 @@ public class PolicyServiceImpl implements PolicyService {
     }
 
     @Override
+    public boolean isPolicyEnabled(PolicyKey key) {
+        Map<PolicyKey, Policy> policies = policyProvider.getAllPoliciesAsMap();
+        if (policies.containsKey(key)) {
+            return Boolean.parseBoolean(policies.get(key).getPolicyValue());
+        } else {
+            log.error("존재하지 않는 정책 키에 대한 요청입니다. Key: {}", key);
+            throw new CustomException(ErrorCode.POLICY_NOT_FOUND, "요청한 정책 키(" + key + ")가 존재하지 않습니다.");
+        }
+    }
+
+    @Override
     public Policy getPolicy(PolicyKey key) {
         Map<PolicyKey, Policy> policies = policyProvider.getAllPoliciesAsMap();
         if (policies.containsKey(key)) {

@@ -1,6 +1,9 @@
 package com.project200.undabang.test;
 
 import com.project200.undabang.common.web.response.CommonResponse;
+import com.project200.undabang.notification.fcm.service.NotificationBatchService;
+import com.project200.undabang.notification.fcm.service.NotificationService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -11,8 +14,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@RequiredArgsConstructor
 @RestController
 public class TestController {
+
+    private final NotificationBatchService notificationBatchService;
+    private final NotificationService notificationService;
 
     @PostMapping(value = "/test1", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public CommonResponse<String> handleFormSubmit2(@ModelAttribute TestDto1 testDto1) {
@@ -40,5 +47,10 @@ public class TestController {
         headers.forEach((key, value) -> headersMap.put(key, value.getFirst()));
 
         return ResponseEntity.ok(headersMap);
+    }
+
+    @PostMapping("/sendFcm")
+    public void sendFcm() {
+        notificationBatchService.sendInactivityNotifications();
     }
 }

@@ -29,6 +29,14 @@ public interface PolicyService {
     String getPolicyValueAsString(PolicyKey key);
 
     /**
+     * 캐시된 Map에서 특정 정책이 활성화되어 있는지 여부를 확인하는 메소드입니다.
+     *
+     * @param key 정책 키(policy_key)
+     * @return 정책이 활성화되어 있으면 true, 비활성화되어 있으면 false
+     */
+    boolean isPolicyEnabled(PolicyKey key);
+
+    /**
      * 캐시된 Map에서 특정 정책을 조회하는 메소드입니다.
      *
      * @param key 정책 키(policy_key)

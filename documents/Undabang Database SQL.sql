@@ -611,10 +611,10 @@ CREATE TABLE IF NOT EXISTS fcm_tokens
     member_id              CHAR(36)     NOT NULL COMMENT 'UUID_SELF',
     fcm_token_value        VARCHAR(255) NOT NULL COMMENT 'FCM 토큰 값, unique',
     fcm_token_user_agent   VARCHAR(255) NULL COMMENT '디바이스 정보 (User Agent)',
-    fcm_token_is_active BOOLEAN NOT NULL DEFAULT TRUE COMMENT '토큰 활성화 여부',
+    fcm_token_is_active  BOOLEAN  NOT NULL DEFAULT TRUE COMMENT '토큰 활성화 여부',
     fcm_token_activated_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '마지막 활성 일시',
+    fcm_token_expired_at DATETIME NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL 30 DAY) COMMENT '토큰 만료 일시 (활성화된 경우 현재 시점으로부터 30일 후)',
     fcm_token_created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
-    fcm_token_deleted_at   DATETIME     NULL COMMENT '삭제일시',
 
     UNIQUE KEY uk_fcm_token_value (fcm_token_value),
     CONSTRAINT fk_fcm_tokens_to_members FOREIGN KEY (member_id) REFERENCES members (member_id)

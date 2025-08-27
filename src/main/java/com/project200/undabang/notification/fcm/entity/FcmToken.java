@@ -1,4 +1,4 @@
-package com.project200.undabang.push_message.entity;
+package com.project200.undabang.notification.fcm.entity;
 
 import com.project200.undabang.member.entity.Member;
 import jakarta.persistence.*;
@@ -58,36 +58,28 @@ public class FcmToken {
 
     @Builder.Default
     @NotNull
+    @Comment("토큰 만료 일시 (활성화된 경우 현재 시점으로부터 30일 후)")
+    @Column(name = "fcm_token_expired_at", nullable = false)
+    private LocalDateTime fcmTokenExpiredAt = LocalDateTime.now().plusDays(30);
+
+    @Builder.Default
+    @NotNull
     @Comment("생성일시")
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "fcm_token_created_at", nullable = false)
     private LocalDateTime fcmTokenCreatedAt = LocalDateTime.now();
 
-    @Comment("삭제일시")
-    @Column(name = "fcm_token_deleted_at")
-    private LocalDateTime fcmTokenDeletedAt;
-
     public void activate() {
         this.fcmTokenIsActive = true;
         this.fcmTokenActivatedAt = LocalDateTime.now();
+        this.fcmTokenExpiredAt = LocalDateTime.now().plusDays(30);
     }
 
     public void deactivate() {
-        this.fcmTokenIsActive = false;
-        this.fcmTokenActivatedAt = LocalDateTime.now();
-    }
-
-    public void delete() {
-        this.fcmTokenDeletedAt = LocalDateTime.now();
         this.fcmTokenIsActive = false;
     }
 
     public boolean isActive() {
         return this.fcmTokenIsActive;
     }
-
-    public boolean isDeleted() {
-        return this.fcmTokenDeletedAt != null;
-    }
-
 }

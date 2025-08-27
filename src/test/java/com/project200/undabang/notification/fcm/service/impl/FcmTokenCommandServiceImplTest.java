@@ -1,8 +1,8 @@
-package com.project200.undabang.push_message.service.impl;
+package com.project200.undabang.notification.fcm.service.impl;
 
 import com.project200.undabang.member.entity.Member;
-import com.project200.undabang.push_message.entity.FcmToken;
-import com.project200.undabang.push_message.repository.FcmTokenRepository;
+import com.project200.undabang.notification.fcm.entity.FcmToken;
+import com.project200.undabang.notification.fcm.repository.FcmTokenRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -13,10 +13,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("FcmTokenCommandServiceImpl 테스트")
@@ -47,7 +51,7 @@ class FcmTokenCommandServiceImplTest {
 
             // then
             ArgumentCaptor<FcmToken> fcmTokenCaptor = ArgumentCaptor.forClass(FcmToken.class);
-            BDDMockito.then(fcmTokenRepository).should().save(fcmTokenCaptor.capture());
+            then(fcmTokenRepository).should().save(fcmTokenCaptor.capture());
 
             FcmToken savedToken = fcmTokenCaptor.getValue();
             assertThat(savedToken.getMember()).as("Member 정보가 정확히 저장되어야 합니다.").isEqualTo(member);
@@ -74,8 +78,8 @@ class FcmTokenCommandServiceImplTest {
             fcmTokenCommandService.saveFcmToken(member, fcmTokenValue, userAgent);
 
             // then
-            BDDMockito.then(fcmTokenRepository).should(BDDMockito.never()).save(BDDMockito.any(FcmToken.class));
-            BDDMockito.then(existingToken).should().activate(); // activate 메소드 호출 검증
+            then(fcmTokenRepository).should(BDDMockito.never()).save(BDDMockito.any(FcmToken.class));
+            then(existingToken).should().activate(); // activate 메소드 호출 검증
             assertThat(existingToken.getFcmTokenIsActive()).as("기존 토큰이 활성화 상태로 변경되어야 합니다.").isTrue();
         }
     }
@@ -100,7 +104,7 @@ class FcmTokenCommandServiceImplTest {
             fcmTokenCommandService.deactivateFcmToken(member, fcmTokenValue);
 
             // then
-            BDDMockito.then(existingToken).should().deactivate(); // deactivate 메소드 호출 검증
+            then(existingToken).should().deactivate(); // deactivate 메소드 호출 검증
             assertThat(existingToken.getFcmTokenIsActive()).as("토큰이 비활성화 상태여야 합니다.").isFalse();
         }
 
@@ -115,10 +119,54 @@ class FcmTokenCommandServiceImplTest {
             fcmTokenCommandService.deactivateFcmToken(member, fcmTokenValue);
 
             // then
-            BDDMockito.then(fcmTokenRepository).should(BDDMockito.never()).save(BDDMockito.any(FcmToken.class));
+            then(fcmTokenRepository).should(BDDMockito.never()).save(BDDMockito.any(FcmToken.class));
             // 아무런 추가적인 상호작용이 없었는지 확인
-            BDDMockito.then(fcmTokenRepository).should().findByFcmTokenValueAndMember_MemberId(fcmTokenValue, testUserId);
-            BDDMockito.then(fcmTokenRepository).shouldHaveNoMoreInteractions();
+            then(fcmTokenRepository).should().findByFcmTokenValueAndMember_MemberId(fcmTokenValue, testUserId);
+            then(fcmTokenRepository).shouldHaveNoMoreInteractions();
+        }
+    }
+
+    @Nested
+    @DisplayName("무효한 FCM 토큰 삭제 기능 테스트")
+    class DeleteInvalidTokens {
+
+        @Test
+        @DisplayName("토큰 리스트를 받아 성공적으로 삭제 메소드를 호출한다")
+        void deleteInvalidTokens_Success() {
+            // given
+            List<String> tokensToDelete = List.of("token1", "token2", "token3");
+
+            // when
+            fcmTokenCommandService.deleteInvalidTokens(tokensToDelete);
+
+            // then
+            then(fcmTokenRepository).should(times(1)).deleteByFcmTokenValueIn(tokensToDelete);
+        }
+
+        @Test
+        @DisplayName("빈 리스트를 전달하면 삭제 메소드를 호출하지 않는다")
+        void deleteInvalidTokens_EmptyList_DoesNothing() {
+            // given
+            List<String> emptyList = Collections.emptyList();
+
+            // when
+            fcmTokenCommandService.deleteInvalidTokens(emptyList);
+
+            // then
+            then(fcmTokenRepository).should(BDDMockito.never()).deleteByFcmTokenValueIn(BDDMockito.anyList());
+        }
+
+        @Test
+        @DisplayName("null을 전달하면 삭제 메소드를 호출하지 않는다")
+        void deleteInvalidTokens_NullList_DoesNothing() {
+            // given
+            List<String> nullList = null;
+
+            // when
+            fcmTokenCommandService.deleteInvalidTokens(nullList);
+
+            // then
+            then(fcmTokenRepository).should(BDDMockito.never()).deleteByFcmTokenValueIn(BDDMockito.anyList());
         }
     }
 }

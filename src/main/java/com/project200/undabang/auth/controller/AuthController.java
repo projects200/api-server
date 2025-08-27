@@ -4,7 +4,7 @@ import com.project200.undabang.auth.service.AuthService;
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.common.web.response.SuccessDetails;
 import com.project200.undabang.member.entity.Member;
-import com.project200.undabang.push_message.service.FcmTokenCommandService;
+import com.project200.undabang.notification.fcm.service.FcmTokenCommandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
