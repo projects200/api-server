@@ -1,13 +1,3 @@
-CREATE TRIGGER before_insert_members
-    BEFORE INSERT
-    ON members
-    FOR EACH ROW
-BEGIN
-    IF NEW.member_id IS NULL OR NEW.member_id = '' THEN
-        SET NEW.member_id = UUID();
-END IF;
-END;
-
 INSERT INTO post_type (post_type_name, post_type_desc)
 VALUES ('오운완 게시판', '오늘의 운동한 모습이나 결과를 자랑하는 게시판입니다');
 
