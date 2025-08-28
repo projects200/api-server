@@ -1,6 +1,5 @@
 package com.project200.undabang.common.scheduler;
 
-import org.assertj.core.api.Assertions;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,7 +15,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(properties = "spring.batch.job.enabled=false")
 class DecreaseExerciseScoreBatchSchedulerTest {
@@ -33,31 +34,39 @@ class DecreaseExerciseScoreBatchSchedulerTest {
     private Job decreaseExerciseScoreJob;
 
     @Test
-    @DisplayName("스케줄러가 실행되면 JobLauncher 의 run 메소드를 올바른 파라미터와 함께 호출해야 함")
-    void runDecreaseExerciseScoreJob() throws Exception{
+    @DisplayName("스케줄러가 실행되면 올바른 Job과 오늘 날짜가 포함된 타임스탬프 형식의 JobParameter를 사용하여 JobLauncher를 호출해야 함")
+    void runDecreaseExerciseScoreJob() throws Exception {
         // given && when
         scheduler.runDecreaseExerciseScoreJob();
 
         // then
-
-        // Awaitility : 비동기 작업이 끝날 때 까지 기다려주는 역할 수행
-        // 현재는 5초간 기다리도록 설정
+        // 비동기(@Async) 작업이 완료될 때까지 최대 5초간 대기
         Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
-            // 특정 인자가 넘어가는지, 정확하게 넘어가는지 확인
-            // 객체의 상호작용을 확인할 수 있다.
+            // Job과 JobParameters 인자를 캡처하기 위한 ArgumentCaptor 생성
             ArgumentCaptor<Job> jobCaptor = ArgumentCaptor.forClass(Job.class);
             ArgumentCaptor<JobParameters> jobParametersCaptor = ArgumentCaptor.forClass(JobParameters.class);
 
-            // job launcher의 run 메소드 감시
+            // jobLauncher.run 메서드가 호출되었는지 검증하고, 인자를 캡처
             Mockito.verify(jobLauncher).run(jobCaptor.capture(), jobParametersCaptor.capture());
 
+            // 1. Job 검증: 올바른 Job Bean이 전달되었는지 확인
             Job capturedJob = jobCaptor.getValue();
-            Assertions.assertThat(capturedJob).isEqualTo(decreaseExerciseScoreJob);
+            assertThat(capturedJob).isEqualTo(decreaseExerciseScoreJob);
 
+            // 2. JobParameters 검증: [핵심 변경 사항]
             JobParameters capturedParams = jobParametersCaptor.getValue();
-            String expectedRunDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            String runDateString = capturedParams.getString("runDate");
 
-            Assertions.assertThat(capturedParams.getString("runDate")).isEqualTo(expectedRunDate);
+            // runDate 파라미터가 null이 아니고, 비어있지 않은지 먼저 확인
+            assertThat(runDateString).isNotNull().isNotEmpty();
+
+            // 캡처된 타임스탬프 문자열을 LocalDateTime으로 파싱
+            LocalDateTime capturedDateTime = LocalDateTime.parse(runDateString);
+            // 파싱된 객체에서 날짜 부분만 추출
+            LocalDate capturedDate = capturedDateTime.toLocalDate();
+
+            // 추출된 날짜가 오늘 날짜와 같은지 비교
+            assertThat(capturedDate).isEqualTo(LocalDate.now());
         });
     }
 }

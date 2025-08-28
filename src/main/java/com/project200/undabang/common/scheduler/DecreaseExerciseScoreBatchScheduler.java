@@ -11,7 +11,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 
@@ -40,8 +40,10 @@ public class DecreaseExerciseScoreBatchScheduler {
     public void runDecreaseExerciseScoreJob() throws Exception {
         log.info("운동 점수 감소 배치 Job Scheduler 진행");
 
+        String runDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"));
+
         JobParameters jobParameters = new JobParametersBuilder()
-                .addString("runDate", LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                .addString("runDate", runDate)
                 .toJobParameters();
 
         jobLauncher.run(decreaseExerciseScoreJob, jobParameters);
