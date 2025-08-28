@@ -4,12 +4,19 @@ import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.notification.fcm.service.NotificationBatchService;
 import com.project200.undabang.notification.fcm.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.JobParametersBuilder;
+import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +27,10 @@ public class TestController {
 
     private final NotificationBatchService notificationBatchService;
     private final NotificationService notificationService;
+
+    private final JobLauncher jobLauncher;
+    @Qualifier("decreaseExerciseScoreJob")
+    private final Job decreaseExerciseScoreJob;
 
     @PostMapping(value = "/test1", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public CommonResponse<String> handleFormSubmit2(@ModelAttribute TestDto1 testDto1) {
@@ -52,5 +63,17 @@ public class TestController {
     @PostMapping("/sendFcm")
     public void sendFcm() {
         notificationBatchService.sendInactivityNotifications();
+    }
+
+    // 운동점수 감소 수동 실행 엔드 포인트
+    @PostMapping("/run-batch")
+    public void runBatch() throws Exception {
+        String runDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"));
+
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addString("runDate", runDate)
+                .toJobParameters();
+
+        jobLauncher.run(decreaseExerciseScoreJob, jobParameters);
     }
 }
