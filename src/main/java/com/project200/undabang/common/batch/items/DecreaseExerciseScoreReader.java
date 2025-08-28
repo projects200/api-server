@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 
 /**
@@ -35,9 +34,11 @@ public class DecreaseExerciseScoreReader extends JpaPagingItemReader<Member> {
 
         int THRESHOLD_DAYS = policyService.getPolicyValueAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS);
 
-        LocalDateTime referenceDate = LocalDate.parse(runDate, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                .atStartOfDay()
-                .minusDays(THRESHOLD_DAYS);
+        // 해당 부분은 혹시 모를 에러 상황을 위해 LocalDate 에서 LocalDateTime으로 변경됨
+        // 추후 이걸 변경하고 싶다면 Scheduler에서 Rundate 수정하고 이 부분을 수정해야 함
+        LocalDateTime parsedDateTime = LocalDateTime.parse(runDate);
+        LocalDate jobDate = parsedDateTime.toLocalDate();
+        LocalDateTime referenceDate = jobDate.atStartOfDay().minusDays(THRESHOLD_DAYS);
 
         this.querydslProvider = new DecreaseExerciseScoreQuerydslProvider(referenceDate);
 
