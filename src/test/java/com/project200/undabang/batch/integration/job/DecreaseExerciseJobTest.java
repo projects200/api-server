@@ -6,7 +6,6 @@ import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.service.PolicyService;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -25,6 +24,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -65,16 +65,9 @@ public class DecreaseExerciseJobTest {
         memberRepository.deleteAllInBatch();
     }
 
-    private JobParameters getJobParameters(LocalDate runDate) {
-        return new JobParametersBuilder()
-                .addString("runDate", runDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
-                .addLong("timestamp", System.currentTimeMillis())
-                .toJobParameters();
-    }
-
     @Test
     @DisplayName("운동점수감소 Job 성공한 경우 : 점수가 0보다 크면 1씩 감소, 0인 회원은 유지")
-    void decreaseExerciseJob_Success() throws Exception{
+    void decreaseExerciseJob_Success() throws Exception {
         // given
         int policyDueDate = 7;
         int policyDecreasePoint = 1;
@@ -82,109 +75,106 @@ public class DecreaseExerciseJobTest {
         given(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS)).willReturn(policyDecreasePoint);
         given(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS)).willReturn(policyDueDate);
 
-        // 점수 감소 대상이 아닌 유저
         Member activeMember = createMember("activeMember", (byte) 77);
         createExercise(activeMember, RUN_DATE.atStartOfDay().minusDays(policyDueDate-1));
 
-        // 점수 감소 대상인 유저
         Member inActiveMember = createMember("inActiveMember", (byte) 25);
         createExercise(inActiveMember, RUN_DATE.atStartOfDay().minusDays(policyDueDate+1));
 
-        // 점수 감소 대상이지만, 점수가 없는 유저
         Member zeroScoreMember = createMember("zeroScoreMember", (byte) 0);
         createExercise(zeroScoreMember, RUN_DATE.atStartOfDay().minusYears(1));
 
         // when
-        JobExecution jobExecution = jobLauncherTestUtils.launchJob(getJobParameters(RUN_DATE));
+        // [수정됨] 고유한 파라미터를 생성하는 메서드 호출
+        JobExecution jobExecution = jobLauncherTestUtils.launchJob(getUniqueJobParameters(RUN_DATE));
 
         // then
-        // job 실행결과 검증
-        Assertions.assertThat(jobExecution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
-        Assertions.assertThat(jobExecution.getExitStatus()).isEqualTo(ExitStatus.COMPLETED);
+        assertThat(jobExecution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        assertThat(jobExecution.getExitStatus()).isEqualTo(ExitStatus.COMPLETED);
 
-        // step 검증
         StepExecution stepExecution = jobExecution.getStepExecutions().iterator().next();
-        Assertions.assertThat(stepExecution.getReadCount()).isEqualTo(2); // 2명 읽는게 맞음 (zero, inactive)
-        Assertions.assertThat(stepExecution.getWriteCount()).isEqualTo(1); // 1명만 Processor에서 필터링 됨 (zeroScore filtering)
-        Assertions.assertThat(stepExecution.getFilterCount()).isEqualTo(1); // 1명만 디비에 업데이트 된 값이 저장되는게 맞음 (inactive -> db)
+        assertThat(stepExecution.getReadCount()).isEqualTo(2);
+        assertThat(stepExecution.getWriteCount()).isEqualTo(1);
+        assertThat(stepExecution.getFilterCount()).isEqualTo(1);
 
-        // 데이터베이스 상태 검증
         Member decreasedMember = memberRepository.findById(inActiveMember.getMemberId()).orElseThrow();
         Member exercisedMember = memberRepository.findById(activeMember.getMemberId()).orElseThrow();
         Member notActivedMember = memberRepository.findById(zeroScoreMember.getMemberId()).orElseThrow();
 
-        Assertions.assertThat(decreasedMember.getMemberScore()).isEqualTo((byte) (25 - policyDecreasePoint));
-        Assertions.assertThat(exercisedMember.getMemberScore()).isEqualTo(activeMember.getMemberScore());
-        Assertions.assertThat(notActivedMember.getMemberScore()).isEqualTo(zeroScoreMember.getMemberScore());
+        assertThat(decreasedMember.getMemberScore()).isEqualTo((byte) (25 - policyDecreasePoint));
+        assertThat(exercisedMember.getMemberScore()).isEqualTo(activeMember.getMemberScore());
+        assertThat(notActivedMember.getMemberScore()).isEqualTo(zeroScoreMember.getMemberScore());
     }
 
     @Test
     @DisplayName("Job 실행중 정책이 변경되어도 현재 Job 실행중 영향이 가면 안된다.")
-    void decreaseExerciseJob_initializedOnce_atTheStartOfStep() throws Exception{
+    void decreaseExerciseJob_initializedOnce_atTheStartOfStep() throws Exception {
         // given
         given(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS)).willReturn(1);
         given(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS)).willReturn(7);
 
-        // 조건에 부합하는 회원 (마지막 운동 8일 전)
         Member targetMember = createMember("targetMember", (byte) 77);
         createExercise(targetMember, RUN_DATE.atStartOfDay().minusDays(8));
 
-        // when (Job 전체를 실행한다)
-        jobLauncherTestUtils.launchJob(getJobParameters(RUN_DATE));
+        // when
+        // [수정됨] 고유한 파라미터를 생성하는 메서드 호출
+        jobLauncherTestUtils.launchJob(getUniqueJobParameters(RUN_DATE));
 
-        // Job이 끝난 후 정책이 변경되었다 가정함
-        // 그 중간에 정책이 바뀌어도 현재 작업에 영향을 주어선 안된다.
         given(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS)).willReturn(30);
         given(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS)).willReturn(3);
 
         // then
-        // 중간에 정책이 바뀌어도, 맨 처음 적용한 정책이 반영되어야 함
-        Assertions.assertThat(memberRepository.findById(targetMember.getMemberId()).get().getMemberScore()).isEqualTo((byte) 76);
+        assertThat(memberRepository.findById(targetMember.getMemberId()).get().getMemberScore()).isEqualTo((byte) 76);
 
-        // step이 동작하는 동안 Reader와 Process는 동작하지 않고, Step 시작시 초기화 된 값을 계속 사용해야 한다.
-        // StepScope빈 은 Step이 시작될 때, 단 한번만 인스턴스화 되므로 정확히 한번만 호출됨을 확인하면 외부 정책이 변경되어도 현재 Step의 동작은 영향을 받지 않는다는 사실이 보장됨
         verify(policyService, times(1)).getPolicyValueAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS);
         verify(policyService, times(1)).getPolicyValueAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS);
     }
 
     @Test
     @DisplayName("Job 실행중 정책이 변경되면, 현재 실행중인 Job이 아니라, 다음 Job에 새로운 정책이 적용되야 한다")
-    void decreaseExerciseJob_policyChanged_reflectNextJob() throws Exception{
+    void decreaseExerciseJob_policyChanged_reflectNextJob() throws Exception {
         // given
         given(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS)).willReturn(1);
         given(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS)).willReturn(7);
 
-        // 조건에 부합하는 회원 (마지막 운동 8일 전)
         Member firstMember = createMember("firstMember", (byte) 77);
         createExercise(firstMember, RUN_DATE.atStartOfDay().minusDays(8));
 
-        // 조건에 부합하지 않는 회원 (마지막 운동 6일 전)
         Member secondMember = createMember("secondMember", (byte) 45);
         createExercise(secondMember, RUN_DATE.atStartOfDay().minusDays(6));
 
         // when
-        // 첫번째 Job 실행
-        jobLauncherTestUtils.launchJob(getJobParameters(RUN_DATE));
+        // [수정됨] 첫번째 Job 실행 (고유 파라미터 사용)
+        jobLauncherTestUtils.launchJob(getUniqueJobParameters(RUN_DATE));
 
         // then
-        // firstMember만 감소되야 함
-        Assertions.assertThat(memberRepository.findById(firstMember.getMemberId()).get().getMemberScore()).isEqualTo((byte) 76);
-        Assertions.assertThat(memberRepository.findById(secondMember.getMemberId()).get().getMemberScore()).isEqualTo((byte) 45);
+        assertThat(memberRepository.findById(firstMember.getMemberId()).get().getMemberScore()).isEqualTo((byte) 76);
+        assertThat(memberRepository.findById(secondMember.getMemberId()).get().getMemberScore()).isEqualTo((byte) 45);
 
         // when
         // 정책 변경 이후 새로운 Job 실행
         given(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS)).willReturn(30);
         given(policyService.getPolicyValueAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS)).willReturn(3);
 
-        jobLauncherTestUtils.launchJob(getJobParameters(RUN_DATE));
+        jobLauncherTestUtils.launchJob(getUniqueJobParameters(RUN_DATE));
 
         //then
-        Assertions.assertThat(memberRepository.findById(firstMember.getMemberId()).get().getMemberScore()).isEqualTo((byte) 46);
-        Assertions.assertThat(memberRepository.findById(secondMember.getMemberId()).get().getMemberScore()).isEqualTo((byte) 15);
+        assertThat(memberRepository.findById(firstMember.getMemberId()).get().getMemberScore()).isEqualTo((byte) 46);
+        assertThat(memberRepository.findById(secondMember.getMemberId()).get().getMemberScore()).isEqualTo((byte) 15);
 
-        // 정책 테이블 호출이 두번 이루어 졌는지 확인
         verify(policyService, times(2)).getPolicyValueAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS);
         verify(policyService, times(2)).getPolicyValueAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS);
+    }
+
+    private JobParameters getUniqueJobParameters(LocalDate runDate) {
+        String uniqueRunDate = runDate.atStartOfDay()
+                // LocalTime.now() 대신 고정된 시간 + 나노초를 사용하여 테스트의 재현성을 높입니다.
+                .plusNanos(System.nanoTime())
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"));
+
+        return new JobParametersBuilder()
+                .addString("runDate", uniqueRunDate)
+                .toJobParameters();
     }
 
     private Member createMember(String nickname, Byte score){

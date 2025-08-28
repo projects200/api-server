@@ -26,10 +26,11 @@ class DecreaseExerciseScoreReaderTest {
     private EntityManagerFactory entityManagerFactory;
 
     @Test
-    @DisplayName("주입된 값들을 기반으로 QueryProvider가 올바른 referenceDate로 생성되는지 테스트")
-    void reader_initializes_queryProvider_correctly() throws Exception {
+    @DisplayName("타임스탬프 형식의 runDate를 기반으로 QueryProvider가 올바른 referenceDate로 생성되는지 테스트")
+    void reader_initializes_queryProvider_correctly() {
         // given
-        String runDate = "2023-10-15";
+        // 1. runDate를 실제 JobParameter와 같은 타임스탬프 형식으로 변경
+        String runDate = "2023-10-15T10:30:00.123";
         int chunkSize = 10;
         int thresholdDays = 7;
 
@@ -43,12 +44,14 @@ class DecreaseExerciseScoreReaderTest {
 
 
         // then
-        // private 필드인 queryProvider를 ReflectionTestUtils로 꺼내서 검증
         DecreaseExerciseScoreQuerydslProvider provider =
                 (DecreaseExerciseScoreQuerydslProvider) ReflectionTestUtils.getField(reader, "queryProvider");
 
-        // provider 내부의 referenceDate를 꺼내서 검증
-        LocalDateTime expectedReferenceDate = LocalDate.parse(runDate).atStartOfDay().minusDays(thresholdDays);
+        // 2. expectedReferenceDate 계산 로직을 실제 Reader의 로직과 동일하게 수정
+        //    LocalDateTime으로 파싱 -> LocalDate 추출 -> 날짜 계산
+        LocalDate jobDate = LocalDateTime.parse(runDate).toLocalDate();
+        LocalDateTime expectedReferenceDate = jobDate.atStartOfDay().minusDays(thresholdDays);
+
         LocalDateTime actualReferenceDate =
                 (LocalDateTime) ReflectionTestUtils.getField(provider, "referenceDate");
 
@@ -56,10 +59,11 @@ class DecreaseExerciseScoreReaderTest {
     }
 
     @Test
-    @DisplayName("엣지 케이스: threshold가 0일 때 referenceDate가 runDate와 동일하게 계산된다")
-    void reader_calculates_referenceDate_correctly_when_threshold_is_zero() throws Exception {
+    @DisplayName("엣지 케이스: threshold가 0일 때 referenceDate가 runDate의 날짜와 동일하게 계산된다")
+    void reader_calculates_referenceDate_correctly_when_threshold_is_zero() {
         // given
-        String runDate = "2023-10-15";
+        // 1. runDate를 실제 JobParameter와 같은 타임스탬프 형식으로 변경
+        String runDate = "2023-10-15T23:59:59.999";
         int chunkSize = 10;
         int thresholdDays = 0;
 
@@ -69,12 +73,18 @@ class DecreaseExerciseScoreReaderTest {
         DecreaseExerciseScoreReader reader = new DecreaseExerciseScoreReader(
                 policyService, entityManagerFactory, runDate, chunkSize
         );
+
         // then
         DecreaseExerciseScoreQuerydslProvider provider =
                 (DecreaseExerciseScoreQuerydslProvider) ReflectionTestUtils.getField(reader, "queryProvider");
+
+        // 2. expectedReferenceDate 계산 로직을 실제 Reader의 로직과 동일하게 수정
+        LocalDate jobDate = LocalDateTime.parse(runDate).toLocalDate();
+        LocalDateTime expectedReferenceDate = jobDate.atStartOfDay();
+
         LocalDateTime actualReferenceDate =
                 (LocalDateTime) ReflectionTestUtils.getField(provider, "referenceDate");
 
-        Assertions.assertThat(actualReferenceDate).isEqualTo(LocalDate.parse(runDate).atStartOfDay());
+        Assertions.assertThat(actualReferenceDate).isEqualTo(expectedReferenceDate);
     }
 }
