@@ -159,7 +159,7 @@ create table if not exists exercise_types
     exercise_name            varchar(50)                        not null,
     exercise_type_created_at datetime default CURRENT_TIMESTAMP not null,
     exercise_type_deleted_at datetime                           null,
-    exercise_type_original_image varchar(100) null
+    exercise_type_image_url varchar(255) null
 );
 
 create table if not exists member_report_subjects
@@ -173,13 +173,13 @@ create table if not exists members
 (
     member_id           char(36)                           not null
         primary key,
-    member_picture_id bigint null comment '프로필 사진 식별자',
+    member_picture_id bigint  null comment '프로필 사진 식별자',
     member_email        varchar(320)                       null,
     member_gender       char                               null comment 'M: 남 / F: 여 / U: 비공개',
     member_bday         date                               null,
     member_nickname     varchar(50)                        not null,
     member_desc         varchar(500)                       null,
-    member_score tinyint not null comment '0~100',
+    member_score      tinyint not null comment '0~100',
     member_warned_count tinyint  default 0                 not null comment '관리자 처리 신고 누적',
     member_created_at   datetime default CURRENT_TIMESTAMP not null,
     member_deleted_at   datetime                           null comment '탈퇴 시 삭제 일시 기록',
@@ -412,13 +412,13 @@ create table if not exists preferred_exercises
 (
     preferred_exercise_id          bigint auto_increment
         primary key,
-    exercise_id                    bigint                             not null,
-    member_id                      char(36)                           not null,
-    preferred_exercise_created_at  datetime default CURRENT_TIMESTAMP not null,
-    preferred_exercise_updated_at datetime         default CURRENT_TIMESTAMP null,
-    preferred_exercise_deleted_at  datetime                           null,
-    preferred_exercise_skill_level varchar(30)                        null,
-    preferred_exercise_date       tinyint unsigned default 0                 not null comment '0~127',
+    exercise_id                    bigint                                     not null,
+    member_id                      char(36)                                   not null,
+    preferred_exercise_created_at  datetime         default CURRENT_TIMESTAMP not null,
+    preferred_exercise_updated_at  datetime         default CURRENT_TIMESTAMP null,
+    preferred_exercise_deleted_at  datetime                                   null,
+    preferred_exercise_skill_level varchar(30)                                null,
+    preferred_exercise_date        tinyint unsigned default 0                 not null comment '0~127',
     constraint FK_pe_member
         foreign key (member_id) references members (member_id),
     constraint FK_pe_type
