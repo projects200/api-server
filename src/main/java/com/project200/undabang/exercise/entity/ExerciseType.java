@@ -36,7 +36,7 @@ public class ExerciseType {
 
     @Size(max = 100)
     @NotNull
-    @Column(name = "exercise_type_original_image", length = 100)
-    private String exerciseTypeOriginalImage;
+    @Column(name = "exercise_type_original_image", length = 255)
+    private String exerciseTypeOriginalImageUrl;
 
 }

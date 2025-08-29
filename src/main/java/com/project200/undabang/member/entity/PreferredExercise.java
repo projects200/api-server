@@ -46,7 +46,8 @@ public class PreferredExercise {
 
     @NotNull
     @Column(name = "preferred_exercise_date", nullable = false, columnDefinition = "TINYINT UNSIGNED DEFAULT 0")
-    private Byte preferredExerciseDate;
+    @Builder.Default
+    private Byte preferredExerciseDate = (byte) 0;
 
     @Column(name = "preferred_exercise_deleted_at")
     private LocalDateTime preferredExerciseDeletedAt;
