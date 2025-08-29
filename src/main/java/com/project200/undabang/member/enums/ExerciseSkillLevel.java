@@ -4,10 +4,12 @@ import lombok.Getter;
 
 @Getter
 public enum ExerciseSkillLevel {
-    BEGINNER("초보자"),
-    NOVICE("입문자"),
-    INTERMEDIATE("숙련자"),
-    EXPERT("전문가");
+    BEGINNER("입문"),
+    ROOKIE("초급"),
+    INTERMEDIATE("중급"),
+    ADVANCED("고급"),
+    SKILLED("숙련자"),
+    PRO("선출");
 
     private final String description;
 
