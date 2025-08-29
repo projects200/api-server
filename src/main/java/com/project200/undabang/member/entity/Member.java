@@ -4,10 +4,7 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.dto.command.SignUpMemberCommand;
 import com.project200.undabang.member.enums.MemberGender;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -78,6 +75,12 @@ public class Member {
     @Comment("탈퇴 시 삭제 일시 기록")
     @Column(name = "member_deleted_at")
     private LocalDateTime memberDeletedAt;
+
+    // 프로필 사진 식별자 필드 추가
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_picture_id")
+    private MemberPicture memberPicture;
+
 
     /**
      * 회원의 점수를 증가시킵니다. 점수는 정책에 정의된 최소/최대 값을 벗어나지 않습니다.
