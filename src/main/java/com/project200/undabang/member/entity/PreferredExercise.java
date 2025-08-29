@@ -39,6 +39,16 @@ public class PreferredExercise {
     @Builder.Default
     private LocalDateTime preferredExerciseCreatedAt = LocalDateTime.now();
 
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Column(name = "preferred_exercise_updated_at")
+    @Builder.Default
+    private LocalDateTime preferredExerciseUpdatedAt = LocalDateTime.now();
+
+    @NotNull
+    @Column(name = "preferred_exercise_date", nullable = false, columnDefinition = "TINYINT UNSIGNED DEFAULT 0")
+    @Builder.Default
+    private Byte preferredExerciseDate = (byte) 0;
+
     @Column(name = "preferred_exercise_deleted_at")
     private LocalDateTime preferredExerciseDeletedAt;
 
