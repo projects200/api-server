@@ -95,6 +95,7 @@ public class PictureService {
 
         try {
             //deletePicturesFromS3(pictureList);
+
             // S3 에서 삭제할 사진 객체는 /trash 폴더로 이동 (/trash/uploads...)
             moveImagesToTrashFolder(pictureList, processedObjectKeyList);
             // DB에 저장된 데이터 논리적 삭제
@@ -151,18 +152,6 @@ public class PictureService {
     }
 
     /**
-     * 주어진 Picture 리스트를 기반으로 S3에서 이미지를 삭제합니다.
-     * 삭제 과정에서 예외가 발생할 경우, 전체 삭제 작업을 다시 시도합니다.
-     */
-//    private void deletePicturesFromS3(List<Picture> pictureList) {
-//        for (Picture picture : pictureList) {
-//            String objectKey = s3Service.extractObjectKeyFromUrl(picture.getPictureUrl());
-//            s3Service.deleteImage(objectKey);
-//        }
-//    }
-
-
-    /**
      * 주어진 Picture 리스트를 기반으로 S3에서 업로드된 이미지를 롤백(삭제)하는 메서드입니다.
      * 각 이미지의 URL에서 S3 객체 키를 추출한 후, 이를 이용하여 S3에서 이미지를 삭제합니다.
      * 삭제 도중 예외가 발생한 경우에도 작업이 중단되지 않고, 로그에 에러 메시지를 기록합니다.
@@ -183,11 +172,23 @@ public class PictureService {
     }
 
     /**
-     * S3에서 삭제된 이미지들에 대한 롤백(복원)을 처리하는 메서드입니다.
-     * 주어진 Picture 리스트의 각 이미지 URL에서 S3 객체 키를 추출하고,
-     * 해당 객체를 S3에서 삭제 후 엔티티를 soft delete 처리합니다.
-     * 롤백 처리 중 에러가 발생하면 로그에 에러 메시지를 기록합니다.
+     * S3 파일 업로드 실패 시 호출되는 메서드입니다.
+     * 업로드된 S3 객체를 롤백 처리하고, 사용자 정의 예외를 발생시킵니다.
      */
+    private void handleUploadFailure(List<Picture> pictureList, String logMessage) {
+        log.error(logMessage);
+        rollBackS3Upload(pictureList);
+        throw new CustomException(ErrorCode.PICTURE_UPLOAD_FAILED);
+    }
+
+//    private void deletePicturesFromS3(List<Picture> pictureList) {
+//        for (Picture picture : pictureList) {
+//            String objectKey = s3Service.extractObjectKeyFromUrl(picture.getPictureUrl());
+//            s3Service.deleteImage(objectKey);
+//        }
+//    }
+
+
 //    private void rollBackS3Delete(List<Picture> pictureList) {
 //        if (pictureList == null || pictureList.isEmpty()) {
 //            return;
@@ -205,14 +206,4 @@ public class PictureService {
 //            }
 //        }
 //    }
-
-    /**
-     * S3 파일 업로드 실패 시 호출되는 메서드입니다.
-     * 업로드된 S3 객체를 롤백 처리하고, 사용자 정의 예외를 발생시킵니다.
-     */
-    private void handleUploadFailure(List<Picture> pictureList, String logMessage) {
-        log.error(logMessage);
-        rollBackS3Upload(pictureList);
-        throw new CustomException(ErrorCode.PICTURE_UPLOAD_FAILED);
-    }
 }
