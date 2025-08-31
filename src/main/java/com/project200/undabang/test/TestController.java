@@ -1,5 +1,6 @@
 package com.project200.undabang.test;
 
+import com.project200.undabang.common.validation.AllowedExtensions;
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.notification.fcm.service.NotificationBatchService;
 import com.project200.undabang.notification.fcm.service.NotificationService;
@@ -27,6 +28,7 @@ public class TestController {
 
     private final NotificationBatchService notificationBatchService;
     private final NotificationService notificationService;
+    private final TestService testService;
 
     private final JobLauncher jobLauncher;
     @Qualifier("decreaseExerciseScoreJob")
@@ -76,4 +78,31 @@ public class TestController {
 
         jobLauncher.run(decreaseExerciseScoreJob, jobParameters);
     }
+
+    /**
+     * 테스트용 사진 여러 개를 업로드합니다.
+     *
+     * @param files 업로드할 파일 리스트
+     * @return 생성된 Picture의 ID 목록 (List<Long>)
+     */
+    @PostMapping(path = "/api/v1/pictures", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<List<Long>> uploadPicturesForTest(@AllowedExtensions(extensions = {".jpg", ".jpeg", ".png"})
+                                                            @RequestPart("pictures") List<MultipartFile> files) {
+        List<Long> pictureIds = testService.uploadPictures(files);
+        return ResponseEntity.ok(pictureIds);
+    }
+
+    /**
+     * Picture ID 리스트를 받아 해당 사진들을 삭제 처리합니다.
+     *
+     * @param pictureIds 삭제할 Picture의 ID 목록
+     * @return 처리 결과 메시지
+     */
+    @DeleteMapping("/api/v1/pictures")
+    public ResponseEntity<CommonResponse<Void>> deletePicturesForTest(@RequestParam("pictureIds") List<Long> pictureIds) {
+        testService.deletePictures(pictureIds);
+        return ResponseEntity.ok(CommonResponse.success());
+    }
+
+
 }

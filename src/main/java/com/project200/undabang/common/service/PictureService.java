@@ -9,14 +9,12 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.exception.FileProcessingException;
 import com.project200.undabang.common.web.exception.S3UploadFailedException;
-import io.awspring.cloud.s3.S3Exception;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.core.exception.SdkException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -92,26 +90,53 @@ public class PictureService {
      */
     @Transactional
     public void deletePictureFromS3AndDB(@NotNull List<Picture> pictureList) {
-        try {
-            // 업로드 된 S3 이미지 삭제
-            deletePicturesFromS3(pictureList);
+        // 롤백을 위해 성공적으로 처리된 S3 객체 키를 기록하는 리스트
+        List<String> processedObjectKeyList = new ArrayList<>();
 
+        try {
+            //deletePicturesFromS3(pictureList);
+            // S3 에서 삭제할 사진 객체는 /trash 폴더로 이동 (/trash/uploads...)
+            moveImagesToTrashFolder(pictureList, processedObjectKeyList);
             // DB에 저장된 데이터 논리적 삭제
             softDeletePicturesInDB(pictureList);
-
-        } catch (S3Exception | SdkException e) {
-
-            // 클라이언트 레벨 에러 및 Sdk 에러 처리
-            log.error("S3 Exception: {}", e.getMessage());
-            rollBackS3Delete(pictureList);
-
         } catch (Exception e) {
 
-            log.error("이미지 삭제 처리중 에러 발생 {}", e.getMessage(), e);
+            log.error("이미지 삭제 처리중 에러 발생. S3 롤백을 시도합니다. {}", e.getMessage(), e);
+            rollBackS3MoveToTrash(processedObjectKeyList);
             throw new CustomException(ErrorCode.PICTURE_DELETE_FAILED);
 
         }
+    }
 
+    /**
+     * 주어진 Picture 리스트에서 각 Picture의 URL을 기반으로 S3 객체 키를 추출한 후,
+     * 해당 이미지를 S3의 "휴지통" 디렉터리로 이동시키고, 처리된 객체 키를 기록합니다.
+     */
+    public void moveImagesToTrashFolder(List<Picture> pictureList, List<String> processedObjectKeys) {
+        for (Picture picture : pictureList) {
+            String objectKey = s3Service.extractObjectKeyFromUrl(picture.getPictureUrl());
+            if (objectKey != null) {
+                s3Service.moveImageToTrash(objectKey);
+                processedObjectKeys.add(objectKey);
+            }
+        }
+    }
+
+    private void rollBackS3MoveToTrash(List<String> objectKeys) {
+        if (objectKeys == null || objectKeys.isEmpty()) {
+            return; // 롤백할 대상이 없으면 즉시 종료
+        }
+        log.info("S3 moveToTrash 롤백 시작. 대상 {}개", objectKeys.size());
+
+        for (String objectKey : objectKeys) {
+            try {
+                s3Service.restoreImageFromTrash(objectKey);
+            } catch (Exception e) {
+                // 중요: 롤백 중 발생하는 에러는 다른 파일의 롤백을 막으면 안 됩니다.
+                // 따라서 예외를 던지는 대신, 로그만 남기고 다음 파일의 롤백을 계속 시도합니다.
+                log.error("S3 롤백 중 객체 복원 실패. Key: {}. 원인: {}", objectKey, e.getMessage());
+            }
+        }
     }
 
     /**
@@ -129,12 +154,12 @@ public class PictureService {
      * 주어진 Picture 리스트를 기반으로 S3에서 이미지를 삭제합니다.
      * 삭제 과정에서 예외가 발생할 경우, 전체 삭제 작업을 다시 시도합니다.
      */
-    private void deletePicturesFromS3(List<Picture> pictureList) {
-        for (Picture picture : pictureList) {
-            String objectKey = s3Service.extractObjectKeyFromUrl(picture.getPictureUrl());
-            s3Service.deleteImage(objectKey);
-        }
-    }
+//    private void deletePicturesFromS3(List<Picture> pictureList) {
+//        for (Picture picture : pictureList) {
+//            String objectKey = s3Service.extractObjectKeyFromUrl(picture.getPictureUrl());
+//            s3Service.deleteImage(objectKey);
+//        }
+//    }
 
 
     /**
@@ -163,23 +188,23 @@ public class PictureService {
      * 해당 객체를 S3에서 삭제 후 엔티티를 soft delete 처리합니다.
      * 롤백 처리 중 에러가 발생하면 로그에 에러 메시지를 기록합니다.
      */
-    private void rollBackS3Delete(List<Picture> pictureList) {
-        if (pictureList == null || pictureList.isEmpty()) {
-            return;
-        }
-
-        for (Picture picture : pictureList) {
-            try {
-                String objectKey = s3Service.extractObjectKeyFromUrl(picture.getPictureUrl());
-                if (objectKey != null) {
-                    s3Service.deleteImage(objectKey);
-                    picture.softDelete();
-                }
-            } catch (Exception e) {
-                log.error("이미지 삭제 처리중 롤백 실패");
-            }
-        }
-    }
+//    private void rollBackS3Delete(List<Picture> pictureList) {
+//        if (pictureList == null || pictureList.isEmpty()) {
+//            return;
+//        }
+//
+//        for (Picture picture : pictureList) {
+//            try {
+//                String objectKey = s3Service.extractObjectKeyFromUrl(picture.getPictureUrl());
+//                if (objectKey != null) {
+//                    s3Service.deleteImage(objectKey);
+//                    picture.softDelete();
+//                }
+//            } catch (Exception e) {
+//                log.error("이미지 삭제 처리중 롤백 실패");
+//            }
+//        }
+//    }
 
     /**
      * S3 파일 업로드 실패 시 호출되는 메서드입니다.
