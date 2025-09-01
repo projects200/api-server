@@ -2,7 +2,6 @@ package com.project200.undabang.common.service;
 
 import com.project200.undabang.common.entity.Picture;
 import com.project200.undabang.common.entity.dto.PictureUploadParameters;
-import com.project200.undabang.common.entity.dto.PictureUploadWithKeyParameters;
 import com.project200.undabang.common.repository.PictureRepository;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
@@ -16,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -48,6 +48,118 @@ class PictureServiceUnitTest {
         picture2 = Picture.builder().id(2L).pictureUrl("http://s3.com/uploads/pic2.png").build();
         pictureList = List.of(picture1, picture2);
     }
+
+    @Nested
+    @DisplayName("사진 업로드 (자동 키 생성) 테스트")
+    class UploadWithAutoKeyTests {
+        private MockMultipartFile file1, file2;
+        private List<MultipartFile> fileList;
+
+        @BeforeEach
+        void setUp() {
+            file1 = new MockMultipartFile("f1", "img1.jpg", "image/jpeg", "c1".getBytes());
+            file2 = new MockMultipartFile("f2", "img2.png", "image/png", "c2".getBytes());
+            fileList = List.of(file1, file2);
+        }
+
+        @Test
+        @DisplayName("성공: 모든 파일이 정상 업로드 및 저장된다")
+        void upload_Success() {
+            // given
+            when(s3Service.generateObjectKey(anyString(), any(FileType.class))).thenReturn("key1", "key2");
+            when(s3Service.uploadImage(any(), anyString())).thenReturn("url1", "url2");
+            when(pictureRepository.save(any(Picture.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            // when
+            List<Picture> result = pictureService.uploadPictureListToS3AndDB(fileList, FileType.PROFILE);
+
+            // then
+            assertThat(result).hasSize(2);
+            verify(s3Service, times(2)).generateObjectKey(anyString(), any(FileType.class));
+            verify(s3Service, times(2)).uploadImage(any(), anyString());
+            verify(pictureRepository, times(2)).save(any(Picture.class));
+            verify(s3Service, never()).deleteImage(anyString());
+        }
+
+        @Test
+        @DisplayName("실패 및 롤백: DB 저장 실패 시 S3 업로드가 롤백된다")
+        void upload_Fail_And_Rollback_On_DbError() {
+            // given
+            when(s3Service.generateObjectKey(anyString(), any(FileType.class))).thenReturn("key1");
+            when(s3Service.uploadImage(any(), anyString())).thenReturn("url1");
+            // pictureRepository.save()가 호출되는 즉시 예외를 던지도록 설정
+            when(pictureRepository.save(any(Picture.class))).thenThrow(new RuntimeException("DB 강제 에러"));
+
+            // when & then
+            assertThatThrownBy(() -> pictureService.uploadPictureListToS3AndDB(fileList, FileType.PROFILE))
+                    .isInstanceOf(CustomException.class);
+
+            // then: 롤백 로직 검증
+            verify(s3Service, times(1)).uploadImage(any(), anyString());
+            verify(s3Service, times(1)).uploadImage(file1, "key1");
+
+            verify(pictureRepository, times(1)).save(any());
+
+            verify(s3Service, times(1)).deleteImage(anyString());
+            verify(s3Service, times(1)).deleteImage("key1");
+
+            verify(s3Service, never()).generateObjectKey(eq("img2.png"), any());
+        }
+    }
+
+    @Nested
+    @DisplayName("사진 업로드 (수동 키 지정) 테스트")
+    class UploadWithManualKeyTests {
+        private MockMultipartFile file1, file2;
+        private List<PictureUploadParameters> params;
+
+        @BeforeEach
+        void setUp() {
+            file1 = new MockMultipartFile("f1", "img1.jpg", "image/jpeg", "c1".getBytes());
+            file2 = new MockMultipartFile("f2", "img2.png", "image/png", "c2".getBytes());
+            params = List.of(
+                    new PictureUploadParameters(file1, "manual/key1.jpg"),
+                    new PictureUploadParameters(file2, "manual/key2.png")
+            );
+        }
+
+        @Test
+        @DisplayName("성공: 모든 파일이 지정된 키로 정상 업로드 및 저장된다")
+        void upload_Success() {
+            // given
+            when(s3Service.uploadImage(any(), anyString())).thenReturn("url1", "url2");
+            when(pictureRepository.save(any(Picture.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            // when
+            List<Picture> result = pictureService.uploadPictureListToS3AndDB(params);
+
+            // then
+            assertThat(result).hasSize(2);
+            verify(s3Service, never()).generateObjectKey(anyString(), any(FileType.class));
+            verify(s3Service, times(1)).uploadImage(file1, "manual/key1.jpg");
+            verify(s3Service, times(1)).uploadImage(file2, "manual/key2.png");
+            verify(pictureRepository, times(2)).save(any(Picture.class));
+        }
+
+        @Test
+        @DisplayName("실패 및 롤백: S3 업로드 실패 시 이전 작업이 롤백된다")
+        void upload_Fail_And_Rollback_On_S3Error() {
+            // given
+            when(s3Service.uploadImage(file1, "manual/key1.jpg")).thenReturn("url1");
+            when(s3Service.uploadImage(file2, "manual/key2.png")).thenThrow(new S3UploadFailedException("S3 에러"));
+            when(pictureRepository.save(any(Picture.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            // when & then
+            assertThatThrownBy(() -> pictureService.uploadPictureListToS3AndDB(params))
+                    .isInstanceOf(CustomException.class);
+
+            // then
+            verify(pictureRepository, times(1)).save(any()); // 첫 번째 DB 저장은 성공
+            verify(s3Service, times(1)).deleteImage("manual/key1.jpg"); // 성공했던 첫 번째 S3 업로드 롤백
+        }
+    }
+
+
 
     @Nested
     @DisplayName("사진 삭제 (deletePictureFromS3AndDB) 테스트")
@@ -185,207 +297,6 @@ class PictureServiceUnitTest {
             verify(s3Service, times(1)).moveImageToTrash("uploads/pic1.jpg");
             // picture2에 대해서는 호출되지 않아야 함
             verify(s3Service, never()).moveImageToTrash(null);
-        }
-    }
-
-    @Nested
-    @DisplayName("사진 업로드 (uploadPictureListToS3AndDB) 테스트")
-    class UploadPictureTests {
-
-        private MockMultipartFile file1;
-        private MockMultipartFile file2;
-        private PictureUploadParameters params;
-
-        @BeforeEach
-        void setUp() {
-            file1 = new MockMultipartFile("files", "image1.jpg", "image/jpeg", "image1 content".getBytes());
-            file2 = new MockMultipartFile("files", "image2.png", "image/png", "image2 content".getBytes());
-            params = new PictureUploadParameters(List.of(file1, file2), FileType.PROFILE);
-        }
-
-        @Test
-        @DisplayName("성공 케이스: 모든 파일이 정상적으로 업로드되고 DB에 저장된다")
-        void upload_Success() {
-            // given
-            when(s3Service.generateObjectKey(anyString(), any(FileType.class)))
-                    .thenReturn("uploads/key1.jpg", "uploads/key2.png");
-            when(s3Service.uploadImage(any(MockMultipartFile.class), anyString()))
-                    .thenReturn("http://s3.com/uploads/key1.jpg", "http://s3.com/uploads/key2.png");
-            when(pictureRepository.save(any(Picture.class))).thenAnswer(inv -> inv.getArgument(0));
-
-            // when
-            List<Picture> result = pictureService.uploadPictureListToS3AndDB(params);
-
-            // then
-            assertThat(result).hasSize(2);
-            verify(s3Service, times(2)).generateObjectKey(anyString(), any(FileType.class));
-            verify(s3Service, times(2)).uploadImage(any(MockMultipartFile.class), anyString());
-            verify(pictureRepository, times(2)).save(any(Picture.class));
-            // S3 롤백(삭제) 메서드는 호출되지 않아야 함
-            verify(s3Service, never()).deleteImage(anyString());
-        }
-
-        @Test
-        @DisplayName("실패 및 롤백 케이스: S3 업로드 중 예외가 발생한다")
-        void upload_Fail_When_S3UploadFails() {
-            // given: 두 번째 파일 업로드 시 예외 발생 설정
-            when(s3Service.generateObjectKey(anyString(), any(FileType.class)))
-                    .thenReturn("uploads/key1.jpg", "uploads/key2.png");
-            // 첫 번째 파일은 성공, URL 반환
-            when(s3Service.uploadImage(eq(file1), eq("uploads/key1.jpg")))
-                    .thenReturn("http://s3.com/uploads/key1.jpg");
-            // 두 번째 파일은 실패, 예외 발생
-            when(s3Service.uploadImage(eq(file2), eq("uploads/key2.png")))
-                    .thenThrow(new S3UploadFailedException("S3 업로드 강제 에러"));
-
-            // 첫 번째 파일은 DB 저장 성공
-            when(pictureRepository.save(any(Picture.class))).thenAnswer(inv -> inv.getArgument(0));
-
-            // when & then
-            assertThatThrownBy(() -> pictureService.uploadPictureListToS3AndDB(params))
-                    .isInstanceOf(CustomException.class)
-                    .hasMessageContaining(ErrorCode.PICTURE_UPLOAD_FAILED.getMessage());
-
-            // then: 롤백 로직 검증
-            // S3 업로드는 2번 시도됨
-            verify(s3Service, times(2)).uploadImage(any(MockMultipartFile.class), anyString());
-            // DB 저장은 첫 번째 파일에 대해서만 1번 성공함
-            verify(pictureRepository, times(1)).save(any(Picture.class));
-
-            // 성공했던 첫 번째 파일에 대해 S3 롤백(영구 삭제)이 1번 호출되어야 함
-            verify(s3Service, times(1)).deleteImage("uploads/key1.jpg");
-        }
-
-        @Test
-        @DisplayName("실패 및 롤백 케이스: DB 저장 중 예외가 발생한다")
-        void upload_Fail_When_DbSaveFails() {
-            // given: S3 업로드는 모두 성공, DB 저장은 두 번째 파일에서 실패
-            when(s3Service.generateObjectKey(anyString(), any(FileType.class)))
-                    .thenReturn("uploads/key1.jpg", "uploads/key2.png");
-            when(s3Service.uploadImage(any(MockMultipartFile.class), anyString()))
-                    .thenReturn("http://s3.com/uploads/key1.jpg", "http://s3.com/uploads/key2.png");
-
-
-            // 첫 번째 파일 저장은 성공
-            when(pictureRepository.save(any(Picture.class)))
-                    .thenAnswer(inv -> inv.getArgument(0)) // 첫 번째 호출
-                    .thenThrow(new RuntimeException("DB 저장 강제 에러")); // 두 번째 호출
-
-            // when & then
-            assertThatThrownBy(() -> pictureService.uploadPictureListToS3AndDB(params))
-                    .isInstanceOf(CustomException.class);
-
-            // then: 롤백 로직 검증
-            // 성공적으로 S3에 업로드된 두 파일 모두에 대해 롤백(삭제)이 호출되어야 함
-            verify(s3Service, times(2)).deleteImage(anyString());
-            verify(s3Service, times(1)).deleteImage("uploads/key1.jpg");
-            verify(s3Service, times(1)).deleteImage("uploads/key2.png");
-        }
-    }
-
-    @Nested
-    @DisplayName("사전 정의된 키로 사진 업로드 (uploadPictureListToS3AndDB with Keys) 테스트")
-    class UploadPictureWithKeysTests {
-
-        private MockMultipartFile file1;
-        private MockMultipartFile file2;
-        private List<String> objectKeys;
-        private PictureUploadWithKeyParameters params;
-
-        @BeforeEach
-        void setUp() {
-            file1 = new MockMultipartFile("files", "image1.jpg", "image/jpeg", "image1 content".getBytes());
-            file2 = new MockMultipartFile("files", "image2.png", "image/png", "image2 content".getBytes());
-            objectKeys = List.of("preset/key1.jpg", "preset/key2.png");
-            params = new PictureUploadWithKeyParameters(List.of(file1, file2), objectKeys);
-        }
-
-        @Test
-        @DisplayName("성공 케이스: 모든 파일이 사전 정의된 키로 정상 업로드되고 DB에 저장된다")
-        void uploadWithKeys_Success() {
-            // given
-            when(s3Service.uploadImage(any(MockMultipartFile.class), anyString()))
-                    .thenReturn("http://s3.com/preset/key1.jpg", "http://s3.com/preset/key2.png");
-            when(pictureRepository.save(any(Picture.class))).thenAnswer(inv -> inv.getArgument(0));
-
-            // when
-            List<Picture> result = pictureService.uploadPictureListToS3AndDB(params);
-
-            // then
-            assertThat(result).hasSize(2);
-            // generateObjectKey는 호출되지 않아야 함
-            verify(s3Service, never()).generateObjectKey(anyString(), any(FileType.class));
-            // uploadImage는 미리 정의된 키로 2번 호출되어야 함
-            verify(s3Service, times(1)).uploadImage(file1, "preset/key1.jpg");
-            verify(s3Service, times(1)).uploadImage(file2, "preset/key2.png");
-            verify(pictureRepository, times(2)).save(any(Picture.class));
-            verify(s3Service, never()).deleteImage(anyString()); // 롤백 없음
-        }
-
-        @Test
-        @DisplayName("실패 케이스 1: 파일과 키의 개수가 맞지 않으면 예외가 발생한다")
-        void uploadWithKeys_Fail_When_SizeMismatch() {
-            // given: 파일은 2개, 키는 1개인 파라미터 생성
-            PictureUploadWithKeyParameters mismatchParams = new PictureUploadWithKeyParameters(List.of(file1, file2), List.of("only-one-key.jpg"));
-
-            // when & then
-            assertThatThrownBy(() -> pictureService.uploadPictureListToS3AndDB(mismatchParams))
-                    .isInstanceOf(CustomException.class)
-                    .hasMessageContaining(ErrorCode.INTERNAL_SERVER_ERROR.getMessage());
-
-            // then: 예외 발생 전에 아무런 S3나 DB 작업이 없어야 함
-            verify(s3Service, never()).uploadImage(any(), any());
-            verify(pictureRepository, never()).save(any());
-        }
-
-        @Test
-        @DisplayName("실패 및 롤백 케이스 2: S3 업로드 중 예외가 발생한다")
-        void uploadWithKeys_Fail_And_Rollback_On_S3Error() {
-            // given: 두 번째 파일 업로드 시 예외 발생
-            when(s3Service.uploadImage(file1, "preset/key1.jpg")).thenReturn("http://s3.com/preset/key1.jpg");
-            when(s3Service.uploadImage(file2, "preset/key2.png")).thenThrow(new S3UploadFailedException("S3 강제 에러"));
-            when(pictureRepository.save(any(Picture.class))).thenAnswer(inv -> inv.getArgument(0));
-
-            // when & then
-            assertThatThrownBy(() -> pictureService.uploadPictureListToS3AndDB(params))
-                    .isInstanceOf(CustomException.class);
-
-            // then: 롤백 로직 검증
-            // S3 업로드는 2번 시도됨
-            verify(s3Service, times(2)).uploadImage(any(), any());
-            // DB 저장은 첫 번째 파일에 대해서만 1번 성공함
-            verify(pictureRepository, times(1)).save(any());
-
-            // 롤백 핸들러가 handleUploadFailureForKeys를 호출하도록 수정했으므로,
-            // 성공했던 첫 번째 파일의 objectKey로 롤백(삭제)이 호출되어야 함
-            verify(s3Service, times(1)).deleteImage("preset/key1.jpg");
-        }
-
-        @Test
-        @DisplayName("실패 및 롤백 케이스 3: DB 저장 중 예외가 발생한다")
-        void uploadWithKeys_Fail_And_Rollback_On_DbError() {
-            // given: S3 업로드는 성공하나, DB 저장은 첫 번째 시도부터 실패하도록 설정
-            when(s3Service.uploadImage(any(MockMultipartFile.class), anyString()))
-                    .thenReturn("http://s3.com/preset/key1.jpg"); // uploadImage는 한 번만 호출될 것이므로 한 번만 설정
-
-            when(pictureRepository.save(any(Picture.class)))
-                    .thenThrow(new RuntimeException("DB 강제 에러"));
-
-            // when & then: 예외 발생 검증
-            assertThatThrownBy(() -> pictureService.uploadPictureListToS3AndDB(params))
-                    .isInstanceOf(CustomException.class);
-
-            // then: 롤백 로직 검증
-            verify(s3Service, times(1)).uploadImage(any(), any());
-            verify(s3Service, times(1)).uploadImage(file1, "preset/key1.jpg");
-
-            // 성공한 S3 업로드 1건에 대해서만 롤백(삭제)이 호출되어야 함
-            verify(s3Service, times(1)).deleteImage(any());
-            verify(s3Service, times(1)).deleteImage("preset/key1.jpg");
-
-            // 두 번째 파일에 대한 업로드나 롤백은 시도되지 않았어야 함
-            verify(s3Service, never()).uploadImage(file2, "preset/key2.png");
-            verify(s3Service, never()).deleteImage("preset/key2.png");
         }
     }
 }

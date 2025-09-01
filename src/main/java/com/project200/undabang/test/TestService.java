@@ -1,7 +1,6 @@
 package com.project200.undabang.test;
 
 import com.project200.undabang.common.entity.Picture;
-import com.project200.undabang.common.entity.dto.PictureUploadParameters;
 import com.project200.undabang.common.repository.PictureRepository;
 import com.project200.undabang.common.service.FileType;
 import com.project200.undabang.common.service.PictureService;
@@ -29,9 +28,7 @@ public class TestService {
     public List<Long> uploadPictures(List<MultipartFile> files) {
         // PictureUploadParameters는 PictureService가 필요로 하는 DTO입니다.
         // 프로젝트에 맞게 정의하여 사용해야 합니다.
-        PictureUploadParameters params = new PictureUploadParameters(files, FileType.PROFILE); // FileType.POST는 예시
-
-        List<Picture> uploadedPictures = pictureService.uploadPictureListToS3AndDB(params);
+        List<Picture> uploadedPictures = pictureService.uploadPictureListToS3AndDB(files, FileType.PROFILE);
 
         return uploadedPictures.stream()
                 .map(Picture::getId)
