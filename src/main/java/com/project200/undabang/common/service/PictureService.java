@@ -37,21 +37,23 @@ public class PictureService {
     @Transactional
     public List<Picture> uploadPictureListToS3AndDB(PictureUploadParameters parameters) {
         List<Picture> pictureList = new ArrayList<>();
+        List<String> objectKeyList = new ArrayList<>();
 
         try {
             for (MultipartFile file : parameters.getPictureList()) {
                 String objectKey = s3Service.generateObjectKey(file.getOriginalFilename(), parameters.getFileType());
                 String imageUrl = s3Service.uploadImage(file, objectKey);
+                objectKeyList.add(objectKey);
 
                 Picture picture = Picture.of(file, imageUrl);
                 pictureList.add(pictureRepository.save(picture));
             }
         } catch (FileProcessingException | S3UploadFailedException e) {
 
-            handleUploadFailure(pictureList, "S3에 이미지 파일 업로드시 에러 발생");
+            handleUploadFailure(objectKeyList, "S3에 이미지 파일 업로드시 에러 발생");
         } catch (Exception e) {
 
-            handleUploadFailure(pictureList, "DB에 이미지 파일 저장시 에러 발생");
+            handleUploadFailure(objectKeyList, "DB에 이미지 파일 저장시 에러 발생");
         }
 
         return pictureList;
@@ -65,6 +67,7 @@ public class PictureService {
     @Transactional
     public List<Picture> uploadPictureListToS3AndDB(PictureUploadWithKeyParameters parameters) {
         List<Picture> pictureList = new ArrayList<>();
+        List<String> uploadedObjectKeyList = new ArrayList<>();
 
         List<MultipartFile> files = parameters.getMultipartFile();
         List<String> objectKeys = parameters.getObjectKey();
@@ -78,16 +81,19 @@ public class PictureService {
             for (int i = 0; i < files.size(); i++) {
                 MultipartFile file = files.get(i);
                 String objectKey = objectKeys.get(i);
+
                 String imageUrl = s3Service.uploadImage(file, objectKey);
+                uploadedObjectKeyList.add(objectKey);
+
                 Picture picture = Picture.of(file, imageUrl);
                 pictureList.add(pictureRepository.save(picture));
             }
         } catch (FileProcessingException | S3UploadFailedException e) {
 
-            handleUploadFailure(pictureList, "S3에 이미지 파일 업로드시 에러 발생");
+            handleUploadFailure(uploadedObjectKeyList, "S3에 이미지 파일 업로드시 에러 발생");
         } catch (Exception e) {
 
-            handleUploadFailure(pictureList, "DB에 이미지 파일 저장시 에러 발생");
+            handleUploadFailure(uploadedObjectKeyList, "DB에 이미지 파일 저장시 에러 발생");
         }
         return pictureList;
     }
@@ -164,14 +170,13 @@ public class PictureService {
      * 각 이미지의 URL에서 S3 객체 키를 추출한 후, 이를 이용하여 S3에서 이미지를 삭제합니다.
      * 삭제 도중 예외가 발생한 경우에도 작업이 중단되지 않고, 로그에 에러 메시지를 기록합니다.
      */
-    private void rollBackS3Upload(List<Picture> pictureList) {
-        if (pictureList == null || pictureList.isEmpty()) {
+    private void rollBackS3Upload(List<String> uploadedObjectKeyList) {
+        if (uploadedObjectKeyList == null || uploadedObjectKeyList.isEmpty()) {
             return;
         }
 
-        for (Picture picture : pictureList) {
+        for (String objectKey : uploadedObjectKeyList) {
             try {
-                String objectKey = s3Service.extractObjectKeyFromUrl(picture.getPictureUrl());
                 s3Service.deleteImage(objectKey);
             } catch (S3UploadFailedException e) {
                 log.error("S3 롤백중 사진 삭제 실패", e.getMessage());
@@ -183,9 +188,9 @@ public class PictureService {
      * S3 파일 업로드 실패 시 호출되는 메서드입니다.
      * 업로드된 S3 객체를 롤백 처리하고, 사용자 정의 예외를 발생시킵니다.
      */
-    private void handleUploadFailure(List<Picture> pictureList, String logMessage) {
+    private void handleUploadFailure(List<String> uploadedObjectKeyList, String logMessage) {
         log.error(logMessage);
-        rollBackS3Upload(pictureList);
+        rollBackS3Upload(uploadedObjectKeyList);
         throw new CustomException(ErrorCode.PICTURE_UPLOAD_FAILED);
     }
 
