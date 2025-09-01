@@ -63,12 +63,12 @@ public class PictureService {
      * 업로드 또는 저장 과정에서 예외가 발생하면 모든 작업을 롤백합니다.
      */
     @Transactional
-    public List<Picture> uploadPictureListToS3AndDB(@NotNull List<PictureUploadParameters> parameters) {
+    public List<Picture> uploadPictureListToS3AndDB(@NotNull List<PictureUploadParameters> parameterList) {
         List<Picture> pictureList = new ArrayList<>();
         List<String> uploadedObjectKeyList = new ArrayList<>();
 
         try {
-            for (PictureUploadParameters parameter : parameters) {
+            for (PictureUploadParameters parameter : parameterList) {
                 MultipartFile file = parameter.getMultipartFile();
                 String objectKey = parameter.getObjectKey();
 
