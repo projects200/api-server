@@ -2,8 +2,7 @@ package com.project200.undabang.common.service;
 
 import com.project200.undabang.common.entity.Picture;
 import com.project200.undabang.common.entity.dto.PictureUploadParameters;
-import com.project200.undabang.common.entity.dto.PictureUploadWithKeysParameters;
-import com.project200.undabang.common.entity.dto.PictureWithKeyRecord;
+import com.project200.undabang.common.entity.dto.PictureUploadWithKeyParameters;
 import com.project200.undabang.common.repository.PictureRepository;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
@@ -59,23 +58,33 @@ public class PictureService {
     }
 
     /**
-     * 주어진 PictureWithKeyRecord 리스트를 기반으로 이미지를 S3에 업로드하고, 업로드된 이미지 URL을 사용하여 Picture 엔티티를 생성한 뒤 데이터베이스에 저장합니다.
-     * 업로드 또는 데이터베이스 저장 중 오류 발생 시 롤백 처리를 수행합니다.
+     * 주어진 PictureUploadWithKeysParameters 객체를 사용하여 이미지 파일 리스트를 S3에 업로드하고,
+     * 업로드된 이미지 URL을 기반으로 Picture 엔티티를 생성하여 데이터베이스에 저장합니다.
+     * 업로드 또는 저장 중 오류가 발생할 경우, 처리된 작업을 롤백합니다.
      */
     @Transactional
-    public List<Picture> uploadPictureListToS3AndDB(PictureUploadWithKeysParameters parameters) {
+    public List<Picture> uploadPictureListToS3AndDB(PictureUploadWithKeyParameters parameters) {
         List<Picture> pictureList = new ArrayList<>();
 
+        List<MultipartFile> files = parameters.getMultipartFile();
+        List<String> objectKeys = parameters.getObjectKey();
+
+        if (files.size() != objectKeys.size()) {
+            log.error("업로드할 파일과 객체 키의 갯수가 일치하지 않습니다.");
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+
         try {
-            for (PictureWithKeyRecord record : parameters.pictureWithKeyRecordList()) {
-                String imageUrl = s3Service.uploadImage(record.multipartFile(), record.objectKey());
-                Picture picture = Picture.of(record.multipartFile(), imageUrl);
+            for (int i = 0; i < files.size(); i++) {
+                MultipartFile file = files.get(i);
+                String objectKey = objectKeys.get(i);
+                String imageUrl = s3Service.uploadImage(file, objectKey);
+                Picture picture = Picture.of(file, imageUrl);
                 pictureList.add(pictureRepository.save(picture));
             }
         } catch (FileProcessingException | S3UploadFailedException e) {
 
             handleUploadFailure(pictureList, "S3에 이미지 파일 업로드시 에러 발생");
-
         } catch (Exception e) {
 
             handleUploadFailure(pictureList, "DB에 이미지 파일 저장시 에러 발생");
@@ -105,7 +114,6 @@ public class PictureService {
             log.error("이미지 삭제 처리중 에러 발생. S3 롤백을 시도합니다. {}", e.getMessage(), e);
             rollBackS3MoveToTrash(processedObjectKeyList);
             throw new CustomException(ErrorCode.PICTURE_DELETE_FAILED);
-
         }
     }
 
