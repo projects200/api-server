@@ -188,8 +188,7 @@ create table if not exists members
     constraint member_nickname
         unique (member_nickname),
     constraint check_member_gender
-        check (member_gender in ('M', 'F', 'U')),
-    constraint FK_member_pictures_TO_members_1 FOREIGN KEY (member_picture_id) REFERENCES member_pictures (picture_id)
+        check (member_gender in ('M', 'F', 'U'))
 );
 
 create table if not exists chatrooms
@@ -306,6 +305,12 @@ create table if not exists member_pictures
     constraint FK_mp_pictures
         foreign key (picture_id) references pictures (picture_id)
 );
+
+ALTER TABLE members
+    -- 외래 키(Foreign Key) 제약조건 추가
+    ADD CONSTRAINT FK_member_pictures_TO_members_1
+        FOREIGN KEY (member_picture_id)
+            REFERENCES member_pictures (picture_id);
 
 create table if not exists policies
 (
