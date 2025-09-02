@@ -1,6 +1,7 @@
 package com.project200.undabang.member.controller;
 
 import com.project200.undabang.common.web.response.CommonResponse;
+import com.project200.undabang.member.dto.response.MemberProfileResponse;
 import com.project200.undabang.member.dto.response.MemberScoreResponseDto;
 import com.project200.undabang.member.service.MemberQueryService;
 import lombok.RequiredArgsConstructor;
@@ -21,5 +22,10 @@ public class MemberRestController {
     @GetMapping("/v1/members/score")
     public ResponseEntity<CommonResponse<MemberScoreResponseDto>> getMemberScore() {
         return ResponseEntity.ok(CommonResponse.success(memberQueryService.getMemberScore()));
+    }
+
+    @GetMapping("/v1/profile")
+    public MemberProfileResponse getProfile() {
+        return memberQueryService.getMemberProfile();
     }
 }
