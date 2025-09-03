@@ -1,12 +1,17 @@
 package com.project200.undabang.member.controller;
 
+import com.project200.undabang.common.entity.Picture;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
+import com.project200.undabang.exercise.entity.ExerciseType;
 import com.project200.undabang.member.dto.response.MemberProfileResponse;
 import com.project200.undabang.member.dto.response.MemberScoreResponseDto;
-import com.project200.undabang.member.dto.response.PreferredExercisesOfMemberResponse;
+import com.project200.undabang.member.entity.Member;
+import com.project200.undabang.member.entity.MemberPicture;
+import com.project200.undabang.member.entity.PreferredExercise;
+import com.project200.undabang.member.enums.ExerciseSkillLevel;
 import com.project200.undabang.member.enums.MemberGender;
 import com.project200.undabang.member.service.MemberQueryService;
 import org.assertj.core.api.Assertions;
@@ -18,8 +23,10 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -38,29 +45,69 @@ class MemberRestControllerTest extends AbstractRestDocSupport {
     @MockitoBean
     private MemberQueryService memberQueryService;
 
-
     private MemberProfileResponse getMemberProfileResponse() {
-        MemberProfileResponse response = new MemberProfileResponse();
-        response.setProfileThumbnailUrl("https://example.com/thumbnail.jpg");
-        response.setProfileImageUrl("https://example.com/profile.jpg");
-        response.setNickname("운동매니아");
-        response.setGender(MemberGender.UNKNOWN);
-        response.setBirthDate("1995-05-10");
-        response.setBio("안녕하세요! 운동을 사랑하는 개발자입니다.");
-        response.setYearlyExerciseDays(150);
-        response.setExerciseCountInLast30Days(20);
-        response.setExerciseScore(85);
+        Member member = Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberEmail("test@gmail.com")
+                .memberNickname("테스트유저")
+                .memberGender(MemberGender.UNKNOWN)
+                .memberBday(LocalDate.of(1990, 1, 1))
+                .memberScore((byte) 50)
+                .memberDesc("테스트 자기소개입니다.")
+                .build();
 
-        PreferredExercisesOfMemberResponse exercise1 = new PreferredExercisesOfMemberResponse();
-        exercise1.setName("헬스");
-        exercise1.setSkillLevel("중급");
+        Picture picture = Picture.builder()
+                .id(1L)
+                .pictureName("profile_image.jpg")
+                .pictureExtension(".jpg")
+                .pictureSize(1024)
+                .pictureUrl("http://example.com/profile_image.jpg")
+                .build();
 
-        PreferredExercisesOfMemberResponse exercise2 = new PreferredExercisesOfMemberResponse();
-        exercise2.setName("조깅");
-        exercise2.setSkillLevel("상급");
+        MemberPicture memberPicture = MemberPicture.builder()
+                .id(1L)
+                .memberPicturesUrl("http://example.com/profile_thumbnail.jpg")
+                .picture(picture)
+                .member(member)
+                .memberPicturesName("profile_thumbnail.jpg")
+                .memberPicturesUrl("http://example.com/profile_thumbnail.jpg")
+                .build();
 
-        response.setPreferredExercises(List.of(exercise1, exercise2));
-        return response;
+        member.updateProfilePicture(memberPicture);
+
+        ExerciseType exerciseType1 = ExerciseType.builder()
+                .id(1L)
+                .exerciseName("헬스")
+                .exerciseTypeImageUrl("http://example.com/exercise/weight_training.jpg")
+                .build();
+
+        ExerciseType exerciseType2 = ExerciseType.builder()
+                .id(2L)
+                .exerciseName("러닝")
+                .exerciseTypeImageUrl("http://example.com/exercise/weight_training.jpg")
+                .build();
+
+        PreferredExercise preferredExercise1 = PreferredExercise.builder()
+                .id(1L)
+                .exercise(exerciseType1)
+                .member(member)
+                .preferredExerciseSkillLevel(ExerciseSkillLevel.INTERMEDIATE)
+                .build();
+
+        PreferredExercise preferredExercise2 = PreferredExercise.builder()
+                .id(2L)
+                .exercise(exerciseType2)
+                .member(member)
+                .preferredExerciseSkillLevel(ExerciseSkillLevel.PRO)
+                .build();
+
+        preferredExercise1.setDaysOfWeek(new boolean[]{true, true, true, true, true, true, true});
+
+        List<PreferredExercise> preferredExercises = List.of(preferredExercise1, preferredExercise2);
+
+        ReflectionTestUtils.setField(member, "preferredExercises", preferredExercises);
+
+        return MemberProfileResponse.of(member, 365, 20);
     }
 
     @Nested

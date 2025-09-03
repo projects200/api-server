@@ -319,9 +319,11 @@ class MemberRepositoryTest {
                 softly.assertThat(foundMember.getMemberId()).as("조회된 회원의 ID가 일치해야 합니다.").isEqualTo(member.getMemberId());
                 softly.assertThat(foundMember.getMemberNickname()).as("조회된 회원의 닉네임이 일치해야 합니다.").isEqualTo("testuser");
                 softly.assertThat(foundMember.getMemberPicture()).as("회원의 사진 정보가 로드되어야 합니다.").isNotNull();
-                softly.assertThat(foundMember.getMemberPicture().getId()).as("회원 사진 ID가 일치해야 합니다.").isEqualTo(memberPicture.getId());
+                softly.assertThat(foundMember.getMemberPicture().getMemberPicturesUrl()).as("회원 사진 썸네일 Url이 일치해야 합니다.").isEqualTo(memberPicture.getMemberPicturesUrl());
+                softly.assertThat(foundMember.getMemberPicture().getPicture().getPictureUrl()).as("회원 사진 원본 URL이 일치해야 합니다.").isEqualTo(memberPicture.getPicture().getPictureUrl());
                 softly.assertThat(foundMember.getPreferredExercises()).as("선호 운동 정보가 로드되어야 합니다.").isNotEmpty();
-                softly.assertThat(foundMember.getPreferredExercises().iterator().next().getId()).as("선호 운동 ID가 일치해야 합니다.").isEqualTo(preferredExercise.getId());
+                softly.assertThat(foundMember.getPreferredExercises().getFirst().getId()).as("선호 운동 ID가 일치해야 합니다.").isEqualTo(preferredExercise.getId());
+                softly.assertThat(foundMember.getPreferredExercises().getFirst().getExercise().getExerciseName()).as("선호 운동 이름이 일치해야 합니다.").isEqualTo("헬스");
             });
         }
 
@@ -332,7 +334,7 @@ class MemberRepositoryTest {
             UUID nonExistentMemberId = UUID.randomUUID();
 
             // when
-            Optional<Member> foundMemberOptional = memberRepository.findMemberProfileByMemberId(nonExistentMemberId);
+            Optional<Member> foundMemberOptional = memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(nonExistentMemberId);
 
             // then
             assertThat(foundMemberOptional).as("존재하지 않는 회원이므로 빈 Optional을 반환해야 합니다.").isEmpty();
@@ -347,7 +349,7 @@ class MemberRepositoryTest {
             em.clear();
 
             // when
-            Optional<Member> foundMemberOptional = memberRepository.findMemberProfileByMemberId(deletedMember.getMemberId());
+            Optional<Member> foundMemberOptional = memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(deletedMember.getMemberId());
 
             // then
             assertThat(foundMemberOptional).as("삭제된 회원이므로 빈 Optional을 반환해야 합니다.").isEmpty();

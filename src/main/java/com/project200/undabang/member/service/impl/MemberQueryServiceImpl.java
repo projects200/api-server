@@ -60,6 +60,9 @@ public class MemberQueryServiceImpl implements MemberQueryService {
 
     @Override
     public MemberProfileResponse getMemberProfile() {
-        return null;
+        Member member = memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(UserContextHolder.getUserId())
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        return MemberProfileResponse.of(member, 0, 0);
     }
 }

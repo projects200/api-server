@@ -15,9 +15,9 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.LinkedHashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -84,7 +84,7 @@ public class Member {
     private MemberPicture memberPicture;
 
     @OneToMany(mappedBy = "member")
-    private Set<PreferredExercise> preferredExercises = new LinkedHashSet<>();
+    private List<PreferredExercise> preferredExercises = new ArrayList<>();
 
     /**
      * 회원의 점수를 증가시킵니다. 점수는 정책에 정의된 최소/최대 값을 벗어나지 않습니다.
