@@ -1,6 +1,7 @@
 package com.project200.undabang.member.repository;
 
 import com.project200.undabang.member.entity.Member;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -16,5 +17,6 @@ public interface MemberRepository extends JpaRepository<Member, UUID>, MemberRep
 
     Optional<Member> findByMemberIdAndMemberDeletedAtNull(UUID memberId);
 
-
+    @EntityGraph(attributePaths = {"memberPicture", "preferredExercises"})
+    Optional<Member> findMemberProfileByMemberIdAndMemberDeletedAtNull(UUID memberId);
 }

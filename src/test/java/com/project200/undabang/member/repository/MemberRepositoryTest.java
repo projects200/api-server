@@ -1,12 +1,17 @@
 package com.project200.undabang.member.repository;
 
+import com.project200.undabang.common.entity.Picture;
 import com.project200.undabang.configuration.TestQuerydslConfig;
+import com.project200.undabang.exercise.entity.ExerciseType;
 import com.project200.undabang.member.dto.command.SignUpMemberCommand;
 import com.project200.undabang.member.entity.Member;
+import com.project200.undabang.member.entity.MemberPicture;
+import com.project200.undabang.member.entity.PreferredExercise;
 import com.project200.undabang.member.enums.MemberGender;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -19,6 +24,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -227,5 +233,124 @@ class MemberRepositoryTest {
                 .rootCause()
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("X는 유효하지 않은 성별 값입니다.");
+    }
+
+    private Member createAndSaveMember(String nickname, String email, boolean isDeleted) {
+        Member member = Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberEmail(email)
+                .memberNickname(nickname)
+                .memberGender(MemberGender.MALE)
+                .memberBday(LocalDate.of(1995, 5, 10))
+                .memberScore((byte) 50)
+                .memberDeletedAt(isDeleted ? LocalDateTime.now() : null)
+                .build();
+        em.persist(member);
+        return member;
+    }
+
+    // ============== 테스트 헬퍼 메소드 ==============
+
+    private Picture createAndSavePicture(Member member) {
+        Picture picture = Picture.builder()
+                .pictureName(member.getMemberNickname() + "_profile.jpg")
+                .pictureExtension(".jpg")
+                .pictureSize(1024)
+                .pictureUrl("http://example.com/pictures/" + member.getMemberId())
+                .build();
+        em.persist(picture);
+        return picture;
+    }
+
+    private MemberPicture createAndSaveMemberPicture(Member member) {
+        Picture picture = createAndSavePicture(member);
+        MemberPicture memberPicture = MemberPicture.builder()
+                .id(picture.getId())
+                .picture(picture)
+                .member(member)
+                .build();
+        em.persist(memberPicture);
+        return memberPicture;
+    }
+
+    private ExerciseType createAndSavePreferredExercise() {
+        ExerciseType exerciseType = ExerciseType.builder()
+                .exerciseName("헬스")
+                .exerciseTypeImageUrl("http://example.com/exercise/weight_training.jpg")
+                .build();
+        em.persist(exerciseType);
+        return exerciseType;
+    }
+
+    private PreferredExercise createAndSavePreferredExercise(Member member) {
+        ExerciseType exerciseType = createAndSavePreferredExercise();
+        PreferredExercise preferredExercise = PreferredExercise.builder()
+                .member(member)
+                .exercise(exerciseType)
+                .build();
+        em.persist(preferredExercise);
+        return preferredExercise;
+    }
+
+    @Nested
+    @DisplayName("findMemberProfileByMemberIdAndMemberDeletedAtNull 메소드는")
+    class FindMemberProfileByMemberIdAndMemberDeletedAtNull {
+        @Test
+        @DisplayName("정상적인 회원 ID로 조회 시, 삭제되지 않은 회원의 프로필 정보를 반환한다")
+//        @Transactional
+        void findMemberProfileByMemberIdAndMemberDeletedAtNull_success() {
+            // given
+            Member member = createAndSaveMember("testuser", "test@example.com", false);
+            MemberPicture memberPicture = createAndSaveMemberPicture(member);
+            PreferredExercise preferredExercise = createAndSavePreferredExercise(member);
+            member.updateProfilePicture(memberPicture);
+
+            em.flush();
+            em.clear();
+
+            // when
+            Optional<Member> foundMemberOptional = memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(member.getMemberId());
+
+            // then
+            assertThat(foundMemberOptional).as("회원 프로필 조회가 성공해야 합니다.").isPresent();
+            Member foundMember = foundMemberOptional.get();
+
+            assertSoftly(softly -> {
+                softly.assertThat(foundMember.getMemberId()).as("조회된 회원의 ID가 일치해야 합니다.").isEqualTo(member.getMemberId());
+                softly.assertThat(foundMember.getMemberNickname()).as("조회된 회원의 닉네임이 일치해야 합니다.").isEqualTo("testuser");
+                softly.assertThat(foundMember.getMemberPicture()).as("회원의 사진 정보가 로드되어야 합니다.").isNotNull();
+                softly.assertThat(foundMember.getMemberPicture().getId()).as("회원 사진 ID가 일치해야 합니다.").isEqualTo(memberPicture.getId());
+                softly.assertThat(foundMember.getPreferredExercises()).as("선호 운동 정보가 로드되어야 합니다.").isNotEmpty();
+                softly.assertThat(foundMember.getPreferredExercises().iterator().next().getId()).as("선호 운동 ID가 일치해야 합니다.").isEqualTo(preferredExercise.getId());
+            });
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 회원 ID로 조회 시, 빈 Optional을 반환한다")
+        void findMemberProfileByMemberIdAndMemberDeletedAtNull_not_exists() {
+            // given
+            UUID nonExistentMemberId = UUID.randomUUID();
+
+            // when
+            Optional<Member> foundMemberOptional = memberRepository.findMemberProfileByMemberId(nonExistentMemberId);
+
+            // then
+            assertThat(foundMemberOptional).as("존재하지 않는 회원이므로 빈 Optional을 반환해야 합니다.").isEmpty();
+        }
+
+        @Test
+        @DisplayName("삭제된 회원 ID로 조회 시, 빈 Optional을 반환한다")
+        void findMemberProfileByMemberIdAndMemberDeletedAtNull_deleted_member() {
+            // given
+            Member deletedMember = createAndSaveMember("deletedUser", "deleted@example.com", true);
+            em.flush();
+            em.clear();
+
+            // when
+            Optional<Member> foundMemberOptional = memberRepository.findMemberProfileByMemberId(deletedMember.getMemberId());
+
+            // then
+            assertThat(foundMemberOptional).as("삭제된 회원이므로 빈 Optional을 반환해야 합니다.").isEmpty();
+        }
     }
 }

@@ -65,7 +65,7 @@ class MemberRestControllerTest extends AbstractRestDocSupport {
 
     @Nested
     @DisplayName("getMemberScore 메소드는")
-    class GetMemberScore메소드는 {
+    class GetMemberScore {
         @Test
         @DisplayName("회원 운동점수 조회를 성공한다")
         void getMemberScore_success() throws Exception {
@@ -139,7 +139,7 @@ class MemberRestControllerTest extends AbstractRestDocSupport {
 
     @Nested
     @DisplayName("getProfile 메소드는")
-    class GetProfile메소드는 {
+    class GetProfile {
         @Test
         @DisplayName("회원 프로필 조회를 성공한다")
         void getProfile_success() throws Exception {
