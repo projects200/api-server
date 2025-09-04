@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -36,22 +35,40 @@ public class MemberPictureQueryServiceImpl implements MemberPictureQueryService 
     public GetProfilePictureResponse getProfilePictures() {
         Member member = getMember(UserContextHolder.getUserId());
 
-        // 대표사진 검색 후 없으면 null 반환
-        ProfileImageRecord representativeProfileImageRecord = Optional.ofNullable(member.getMemberPicture())
-                .map(MemberPicture::getPicture)
-                .map(ProfileImageRecord::from)
-                .orElse(null);
-
-
+        // 회원의 회원사진(프로필사진) 목록 조회
         List<MemberPicture> profileImageList = memberPictureRepository.findByMemberAndPicture_PictureDeletedAtNull(member);
 
-        // 프로필 사진 리스트에 추가
+        // 회원의 프로필 사진 DTO 목록 생성
         List<ProfileImageRecord> profileImageRecordList = profileImageList.stream()
-                .map(MemberPicture::getPicture)
-                .map(ProfileImageRecord::from)
+                .map(memberPicture -> ProfileImageRecord.from(memberPicture.getPicture()))
                 .toList();
 
+        // 회원사진 목록 기반으로 대표사진 조회
+        ProfileImageRecord representativeProfileImageRecord = getRepresentativeProfileImage(member.getMemberPicture(), profileImageRecordList);
+
         return GetProfilePictureResponse.from(representativeProfileImageRecord, profileImageRecordList);
+    }
+
+    /**
+     * 전체 프로필 DTO 목록과 대표 MemberPicture 엔티티를 받아, 목록에서 일치하는 대표 프로필 DTO를 찾아 반환합니다.
+     */
+    private ProfileImageRecord getRepresentativeProfileImage(MemberPicture representativeMemberPicture, List<ProfileImageRecord> profileImageRecordList) {
+        // 대표사진이 없는경우 null 반환
+        if (representativeMemberPicture == null) {
+            return null;
+        }
+
+        long representativePictureId = representativeMemberPicture.getPicture().getId();
+
+        // 대표사진 반환
+        for (ProfileImageRecord record : profileImageRecordList) {
+            if (record.profileImageId() == representativePictureId) {
+                return record;
+            }
+        }
+
+        // 목록을 전부 순회했지만, 일치하는 DTO 가 없는경우 null 반환
+        return null;
     }
 
     /**
