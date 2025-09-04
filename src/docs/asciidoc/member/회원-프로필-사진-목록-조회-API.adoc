@@ -25,6 +25,6 @@ operation::get-profile-pictures/get-profile-pictures_-success[snippets="request-
 
 |===
 |상태 코드|설명
-|200|요청이 성공적으로 처리되었습니다. 회원의 프로필 정보를 반환합니다.
+|200|요청이 성공적으로 처리되었습니다. 회원의 프로필 사진 및 대표사진을 반환합니다.
 |404|존재하지 않는 회원입니다.
 |===
