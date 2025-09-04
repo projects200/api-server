@@ -37,7 +37,7 @@ class MemberPictureQueryControllerTest extends AbstractRestDocSupport {
 
     @Nested
     @DisplayName("GET /api/v1/profile-pictures API는")
-    class Describe_getProfilePictures {
+    class GetProfilePictures {
         @Test
         @DisplayName("회원의 프로필 사진 목록을 성공적으로 조회한다")
         void getProfilePictures_Success() throws Exception {

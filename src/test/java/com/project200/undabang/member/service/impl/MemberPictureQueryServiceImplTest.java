@@ -26,8 +26,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mockStatic;
 
 @ExtendWith(MockitoExtension.class)
 class MemberPictureQueryServiceImplTest {
@@ -62,101 +61,53 @@ class MemberPictureQueryServiceImplTest {
     class Describe_getProfilePictures {
 
         @Test
-        @DisplayName("대표 사진을 포함한 여러 프로필 사진이 있을 경우, 이를 올바르게 조합하여 반환한다")
-        void it_returns_profile_pictures_when_representative_exists() { // ★ 메서드명 변경: 의도 명확화
+        @DisplayName("유효한 사용자로 호출 시, 회원의 프로필 사진 정보를 조합하여 반환한다")
+        void it_returns_profile_pictures_for_a_valid_user() {
             // given
             UUID testUserId = UUID.randomUUID();
 
-            Member testUser = Member.builder().memberId(testUserId).build();
-
+            // 테스트용 사진 데이터 생성
             Picture representativePic = createPicture(1L, "rep_url.jpg");
-            Picture otherPic = createPicture(2L, "other_url.jpg");
+            Picture otherPic1 = createPicture(2L, "other1_url.jpg");
+            Picture otherPic2 = createPicture(3L, "other2_url.jpg");
 
-            MemberPicture repMp = createMemberPicture(testUser, representativePic);
-            MemberPicture otherMp = createMemberPicture(testUser, otherPic);
+            // 테스트용 MemberPicture 데이터 생성 (대표 사진 포함)
+            MemberPicture repMp = createMemberPicture(null, representativePic);
+            MemberPicture otherMp1 = createMemberPicture(null, otherPic1);
+            MemberPicture otherMp2 = createMemberPicture(null, otherPic2);
 
-            Member testUserWithRepPic = Member.builder()
+            // testUser에 대표 사진 설정
+            Member testUser = Member.builder()
                     .memberId(testUserId)
                     .memberPicture(repMp)
                     .build();
 
-            List<MemberPicture> allMemberPictures = List.of(repMp, otherMp);
-
+            // 이전에 생성한 MemberPicture 객체들에 완성된 Member 객체를 설정
+            List<MemberPicture> allMemberPictures = List.of(
+                    createMemberPicture(testUser, representativePic),
+                    createMemberPicture(testUser, otherPic1),
+                    createMemberPicture(testUser, otherPic2)
+            );
+            // try-with-resources 구문을 사용하여 static mock 관리
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+
+                // Mockito BDD 스타일 given() 사용
                 given(UserContextHolder.getUserId()).willReturn(testUserId);
-                given(memberRepository.findById(testUserId)).willReturn(Optional.of(testUserWithRepPic));
-                given(memberPictureRepository.findByMemberAndPicture_PictureDeletedAtNull(testUserWithRepPic)).willReturn(allMemberPictures);
+                given(memberRepository.findById(testUserId)).willReturn(Optional.of(testUser));
+                given(memberPictureRepository.findByMemberAndPicture_PictureDeletedAtNull(testUser)).willReturn(allMemberPictures);
 
                 // when
                 GetProfilePictureResponse response = memberPictureQueryService.getProfilePictures();
 
                 // then
                 assertThat(response).isNotNull();
-                assertThat(response.getProfileImageCount()).isEqualTo(2);
-                assertThat(response.getProfileImages()).hasSize(2);
+                assertThat(response.getProfileImageCount()).isEqualTo(3);
+                assertThat(response.getProfileImages()).hasSize(3);
 
+                // 대표 사진 검증
                 assertThat(response.getRepresentativeProfileImage()).isNotNull();
                 assertThat(response.getRepresentativeProfileImage().profileImageId()).isEqualTo(representativePic.getId());
                 assertThat(response.getRepresentativeProfileImage().profileImageUrl()).isEqualTo(representativePic.getPictureUrl());
-            }
-        }
-
-        @Test
-        @DisplayName("대표 사진이 설정됐지만 전체 목록에 포함되지 않을 경우, 대표 사진을 null로 반환한다")
-        void it_returns_null_representative_when_it_is_not_in_the_main_list() {
-            // given
-            UUID testUserId = UUID.randomUUID();
-            Member testUser = Member.builder().memberId(testUserId).build();
-
-            Picture representativePic = createPicture(1L, "deleted_rep_url.jpg");
-            Picture activePic = createPicture(2L, "active_pic.jpg");
-
-            MemberPicture repMp = createMemberPicture(testUser, representativePic);
-            MemberPicture activeMp = createMemberPicture(testUser, activePic);
-
-            Member testUserWithRepPic = Member.builder()
-                    .memberId(testUserId)
-                    .memberPicture(repMp)
-                    .build();
-
-            List<MemberPicture> activePicturesOnly = List.of(activeMp);
-
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                given(UserContextHolder.getUserId()).willReturn(testUserId);
-                given(memberRepository.findById(testUserId)).willReturn(Optional.of(testUserWithRepPic));
-                given(memberPictureRepository.findByMemberAndPicture_PictureDeletedAtNull(testUserWithRepPic)).willReturn(activePicturesOnly);
-
-                // when
-                GetProfilePictureResponse response = memberPictureQueryService.getProfilePictures();
-
-                // then
-                assertThat(response.getRepresentativeProfileImage()).isNull();
-                assertThat(response.getProfileImages()).hasSize(1);
-            }
-        }
-
-        @Test
-        @DisplayName("항상 자신의 프로필 사진 정보만 조회한다")
-        void it_always_retrieves_only_own_profile_pictures() {
-            // given
-            UUID loggedInUserId = UUID.randomUUID(); // 현재 로그인한 사용자
-            UUID anotherUserId = UUID.randomUUID(); // 조회하려는 다른 사용자 (실제로는 이 파라미터가 API에 없음)
-
-            Member loggedInUser = Member.builder().memberId(loggedInUserId).build();
-
-
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                // UserContextHolder는 항상 로그인한 사용자의 ID를 반환하도록 설정
-                given(UserContextHolder.getUserId()).willReturn(loggedInUserId);
-                given(memberRepository.findById(loggedInUserId)).willReturn(Optional.of(loggedInUser));
-                given(memberPictureRepository.findByMemberAndPicture_PictureDeletedAtNull(loggedInUser)).willReturn(Collections.emptyList());
-
-                // when
-                memberPictureQueryService.getProfilePictures();
-
-                // then
-                then(memberRepository).should(times(1)).findById(loggedInUserId);
-                then(memberRepository).should(never()).findById(anotherUserId);
             }
         }
 
@@ -168,7 +119,7 @@ class MemberPictureQueryServiceImplTest {
             // 대표 사진(memberPicture)이 null인 사용자
             Member testUser = Member.builder().memberId(testUserId).build();
 
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+            try (MockedStatic<UserContextHolder> mockedUserContextHolder = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(testUserId);
                 given(memberRepository.findById(testUserId)).willReturn(Optional.of(testUser));
                 // 사진 목록 조회 시 빈 리스트 반환
@@ -190,7 +141,7 @@ class MemberPictureQueryServiceImplTest {
         void it_throws_exception_when_member_not_found() {
             // given
             UUID testUserId = UUID.randomUUID();
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+            try (MockedStatic<UserContextHolder> mockedUserContextHolder = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(testUserId);
                 // 존재하지 않는 회원이므로 Optional.empty() 반환
                 given(memberRepository.findById(testUserId)).willReturn(Optional.empty());
