@@ -15,10 +15,12 @@
 - <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
 
 === 코드 샘플
-operation::member-rest-controller-test/get-member-score_success[snippets="curl-request,http-request,http-response"]
+
+operation::get-member-score/get-member-score_success[snippets="curl-request,http-request,http-response"]
 
 === 매개 변수
-operation::member-rest-controller-test/get-member-score_success[snippets="request-headers,response-fields"]
+
+operation::get-member-score/get-member-score_success[snippets="request-headers,response-fields"]
 
 ==== 응답 상태 코드
 |===

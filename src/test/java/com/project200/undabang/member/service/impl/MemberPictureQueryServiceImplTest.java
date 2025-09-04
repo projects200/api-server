@@ -152,5 +152,44 @@ class MemberPictureQueryServiceImplTest {
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
             }
         }
+
+        @Test
+        @DisplayName("대표 사진이 설정됐지만 전체 목록에 포함되지 않을 경우, 대표 사진을 null로 반환한다")
+        void it_returns_null_representative_when_it_is_not_in_the_main_list() {
+            // given: 이 테스트는 `getRepresentativeProfileImage`의 마지막 'return null' 분기를 검증합니다.
+            UUID testUserId = UUID.randomUUID();
+            Member testUser = Member.builder().memberId(testUserId).build();
+
+            // 대표 사진으로 설정될 사진 (e.g. 삭제됨)
+            Picture representativePic = createPicture(1L, "deleted_rep_url.jpg");
+            // 현재 활성화된 사진
+            Picture activePic = createPicture(2L, "active_pic.jpg");
+
+            MemberPicture repMp = createMemberPicture(testUser, representativePic);
+            MemberPicture activeMp = createMemberPicture(testUser, activePic);
+
+            // Member에는 대표 사진이 설정되어 있음
+            Member testUserWithRepPic = Member.builder()
+                    .memberId(testUserId)
+                    .memberPicture(repMp)
+                    .build();
+
+            // 하지만 Repository는 활성화된 사진 목록만 반환 (대표 사진은 필터링됨)
+            List<MemberPicture> activePicturesOnly = List.of(activeMp);
+
+            try (MockedStatic<UserContextHolder> mockedUserContextHolder = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(testUserId);
+                given(memberRepository.findById(testUserId)).willReturn(Optional.of(testUserWithRepPic));
+                given(memberPictureRepository.findByMemberAndPicture_PictureDeletedAtNull(testUserWithRepPic)).willReturn(activePicturesOnly);
+
+                // when
+                GetProfilePictureResponse response = memberPictureQueryService.getProfilePictures();
+
+                // then
+                // 헬퍼 메서드의 for-loop가 끝까지 돌고 일치하는 것을 찾지 못해 null을 반환해야 합니다.
+                assertThat(response.getRepresentativeProfileImage()).isNull();
+                assertThat(response.getProfileImages()).hasSize(1);
+            }
+        }
     }
 }
