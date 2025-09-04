@@ -3,6 +3,7 @@ package com.project200.undabang.member.service.impl;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
+import com.project200.undabang.member.dto.response.MemberProfileResponse;
 import com.project200.undabang.member.dto.response.MemberRegistrationStatusResponseDto;
 import com.project200.undabang.member.dto.response.MemberScoreResponseDto;
 import com.project200.undabang.member.entity.Member;
@@ -55,5 +56,13 @@ public class MemberQueryServiceImpl implements MemberQueryService {
     private Member findMemberById(){
         return memberRepository.findByMemberIdAndMemberDeletedAtNull(UserContextHolder.getUserId())
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+    }
+
+    @Override
+    public MemberProfileResponse getMemberProfile() {
+        Member member = memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(UserContextHolder.getUserId())
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        return MemberProfileResponse.of(member, 0, 0);
     }
 }
