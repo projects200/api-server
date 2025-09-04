@@ -244,5 +244,86 @@ class S3ServiceTest {
                 .doesNotThrowAnyException();
     }
 
+    @Test
+    @DisplayName("moveImageToTrash: 이미지를 휴지통으로 이동(소프트 삭제) 테스트")
+    void moveImageToTrash_shouldCopyObjectToTrashAndDeleteOriginal() {
+        // Given: 테스트용 파일 업로드
+        UUID testUserId = UUID.randomUUID();
+        String originalFilename = "file-to-move-to-trash.txt";
+        byte[] content = "This file will be soft-deleted.".getBytes();
+        MockMultipartFile multipartFile = new MockMultipartFile("file", originalFilename, "text/plain", content);
+        String objectKey;
+
+        try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+            given(UserContextHolder.getUserId()).willReturn(testUserId);
+            objectKey = s3Service.generateObjectKey(originalFilename, FileType.EXERCISE);
+            String trashObjectKey = s3Service.getTrashKeyFromOriginal(objectKey);
+
+            // 1. 원본 위치에 파일을 먼저 업로드
+            s3Service.uploadImage(multipartFile, objectKey);
+
+            // 2. 업로드가 잘 되었는지 확인 (원본 파일 존재, 휴지통 파일 미존재)
+            assertThat(s3Service.isFileExists(objectKey)).isTrue();
+            assertThat(s3Service.isFileExists(trashObjectKey)).isFalse();
+
+            // When: 휴지통으로 이동 메서드 호출
+            s3Service.moveImageToTrash(objectKey);
+
+            // Then: 결과 검증
+            // 1. 원본 파일은 삭제되었는지 확인
+            assertThat(s3Service.isFileExists(objectKey)).isFalse();
+
+            // 2. 휴지통 위치에 파일이 생성되었는지 확인
+            assertThat(s3Service.isFileExists(trashObjectKey)).isTrue();
+
+            // 3. 휴지통에 생성된 파일의 내용이 원본과 동일한지 검증
+            ResponseBytes<GetObjectResponse> objectBytes = s3Client.getObjectAsBytes(
+                    GetObjectRequest.builder().bucket(BUCKET_NAME).key(trashObjectKey).build()
+            );
+            assertThat(objectBytes.asByteArray()).isEqualTo(content);
+        }
+    }
+
+    @Test
+    @DisplayName("restoreImageFromTrash: 휴지통의 이미지를 원래 위치로 복원 테스트")
+    void restoreImageFromTrash_shouldCopyObjectFromTrashAndDeleteTrashCopy() {
+        // Given: 휴지통에 파일이 있는 상황을 시뮬레이션
+        UUID testUserId = UUID.randomUUID();
+        String originalFilename = "file-to-restore.log";
+        byte[] content = "This file will be restored from trash.".getBytes();
+        MockMultipartFile multipartFile = new MockMultipartFile("file", originalFilename, "text/plain", content);
+        String objectKey;
+
+        try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+            given(UserContextHolder.getUserId()).willReturn(testUserId);
+            objectKey = s3Service.generateObjectKey(originalFilename, FileType.EXERCISE);
+            String trashObjectKey = s3Service.getTrashKeyFromOriginal(objectKey);
+
+            // 1. 파일을 업로드한 후 바로 휴지통으로 이동시켜 '휴지통에 파일이 있는 상태'를 만듦
+            s3Service.uploadImage(multipartFile, objectKey);
+            s3Service.moveImageToTrash(objectKey);
+
+            // 2. 휴지통 이동이 잘 되었는지 사전 확인 (원본 파일 미존재, 휴지통 파일 존재)
+            assertThat(s3Service.isFileExists(objectKey)).isFalse();
+            assertThat(s3Service.isFileExists(trashObjectKey)).isTrue();
+
+            // When: 휴지통에서 복원 메서드 호출
+            s3Service.restoreImageFromTrash(objectKey);
+
+            // Then: 결과 검증
+            // 1. 원본 위치에 파일이 다시 복원되었는지 확인
+            assertThat(s3Service.isFileExists(objectKey)).isTrue();
+
+            // 2. 휴지통 위치의 파일은 삭제되었는지 확인
+            assertThat(s3Service.isFileExists(trashObjectKey)).isFalse();
+
+            // 3. 복원된 파일의 내용이 원본과 동일한지 검증
+            ResponseBytes<GetObjectResponse> objectBytes = s3Client.getObjectAsBytes(
+                    GetObjectRequest.builder().bucket(BUCKET_NAME).key(objectKey).build()
+            );
+            assertThat(objectBytes.asByteArray()).isEqualTo(content);
+        }
+    }
+
 
 }

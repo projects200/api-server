@@ -50,7 +50,11 @@ public enum ErrorCode {
     CUSTOM_TIMER_NOT_FOUND(404, "CUSTOM_TIMER_NOT_FOUND", "존재하지 않는 타이머 입니다."),
     CUSTOM_TIMER_STEP_MIN_COUNT_VIOLATION(409, "CUSTOM_TIMER_MIN_COUNT_VIOLATION", "최소 1개 이상의 커스텀 타이머 스텝을 보유해야 합니다."),
     CUSTOM_TIMER_STEP_MAX_COUNT_VIOLATION(409, "CUSTOM_TIMER_STEP_MAX_COUNT_VIOLATION", "최대 커스텀 타이머 스텝 개수(50개)를 초과했습니다."),
-    CUSTOM_TIMER_STEP_ORDER_INVALID(409, "CUSTOM_TIMER_STEP_ORDER_INVALID", "스텝 순서가 잘못되었습니다.");
+    CUSTOM_TIMER_STEP_ORDER_INVALID(409, "CUSTOM_TIMER_STEP_ORDER_INVALID", "스텝 순서가 잘못되었습니다."),
+
+    // 사진 관련 에러
+    PICTURE_UPLOAD_FAILED(500, "PICTURE_UPLOAD_FAILED", "이미지 업로드에 실패했습니다."),
+    PICTURE_DELETE_FAILED(500, "PICTURE_DELETE_FAILED", "이미지 삭제에 실패했습니다.");
 
     private final HttpStatusCode status;
     private final String code;
