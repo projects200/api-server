@@ -20,6 +20,6 @@ public class MemberPictureQueryController {
     @GetMapping("/v1/profile-pictures")
     public ResponseEntity<CommonResponse<GetProfilePictureResponse>> getProfilePictures() {
 
-        return ResponseEntity.ok(CommonResponse.success(memberPictureQueryService.getProfilePicture()));
+        return ResponseEntity.ok(CommonResponse.success(memberPictureQueryService.getProfilePictures()));
     }
 }

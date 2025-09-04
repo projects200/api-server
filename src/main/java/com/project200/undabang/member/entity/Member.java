@@ -77,7 +77,7 @@ public class Member {
     private LocalDateTime memberDeletedAt;
 
     // 프로필 사진 식별자 필드 추가
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_picture_id")
     private MemberPicture memberPicture;
 
