@@ -15,6 +15,8 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -81,6 +83,8 @@ public class Member {
     @JoinColumn(name = "member_picture_id")
     private MemberPicture memberPicture;
 
+    @OneToMany(mappedBy = "member")
+    private List<PreferredExercise> preferredExercises = new ArrayList<>();
 
     /**
      * 회원의 점수를 증가시킵니다. 점수는 정책에 정의된 최소/최대 값을 벗어나지 않습니다.
@@ -149,5 +153,10 @@ public class Member {
         if(this.memberScore > 0){
             this.memberScore = (byte) Math.max(0, this.memberScore - decreaseScore);
         }
+    }
+
+    // 대표 사진 변경
+    public void updateProfilePicture(MemberPicture memberPicture) {
+        this.memberPicture = memberPicture;
     }
 }

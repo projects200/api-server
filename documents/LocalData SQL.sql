@@ -25,50 +25,50 @@ VALUES
     ('550e8400-e29b-41d4-a716-446655440001', '2023-06-11 10:00:00', '2023-06-11 11:30:00', '힐링 명상 요가', '명상과 스트레칭 위주 요가', '요가', '요가스튜디오 서울');
 
 -- 사진 데이터 생성 (운동별로 다양한 개수, 일부는 사진 없음)
-INSERT INTO pictures (picture_name, picture_extension, picture_size, picture_url)
+INSERT INTO pictures (picture_id, picture_name, picture_extension, picture_size, picture_url)
 VALUES
     -- 첫 번째 회원의 첫 번째 운동 (ID: 1) - 5장
-    ('weight_training_1', 'jpg', 1200000, 'https://storage.undabang.com/exercises/weight_back_1.jpg'),
-    ('weight_training_2', 'jpg', 980000, 'https://storage.undabang.com/exercises/weight_back_2.jpg'),
-    ('weight_training_3', 'jpg', 1050000, 'https://storage.undabang.com/exercises/weight_back_3.jpg'),
-    ('weight_training_4', 'jpg', 1120000, 'https://storage.undabang.com/exercises/weight_back_4.jpg'),
-    ('weight_training_5', 'jpg', 990000, 'https://storage.undabang.com/exercises/weight_back_5.jpg'),
+    (1, 'weight_training_1', 'jpg', 1200000, 'https://storage.undabang.com/exercises/weight_back_1.jpg'),
+    (2, 'weight_training_2', 'jpg', 980000, 'https://storage.undabang.com/exercises/weight_back_2.jpg'),
+    (3, 'weight_training_3', 'jpg', 1050000, 'https://storage.undabang.com/exercises/weight_back_3.jpg'),
+    (4, 'weight_training_4', 'jpg', 1120000, 'https://storage.undabang.com/exercises/weight_back_4.jpg'),
+    (5, 'weight_training_5', 'jpg', 990000, 'https://storage.undabang.com/exercises/weight_back_5.jpg'),
 
     -- 첫 번째 회원의 두 번째 운동 (ID: 2) - 0장 (사진 없음)
 
     -- 첫 번째 회원의 세 번째 운동 (ID: 3) - 3장
-    ('leg_day_1', 'jpg', 780000, 'https://storage.undabang.com/exercises/leg_workout_1.jpg'),
-    ('leg_day_2', 'jpg', 800000, 'https://storage.undabang.com/exercises/leg_workout_2.jpg'),
-    ('leg_day_3', 'jpg', 910000, 'https://storage.undabang.com/exercises/leg_workout_3.jpg'),
+    (6, 'leg_day_1', 'jpg', 780000, 'https://storage.undabang.com/exercises/leg_workout_1.jpg'),
+    (7, 'leg_day_2', 'jpg', 800000, 'https://storage.undabang.com/exercises/leg_workout_2.jpg'),
+    (8, 'leg_day_3', 'jpg', 910000, 'https://storage.undabang.com/exercises/leg_workout_3.jpg'),
 
     -- 첫 번째 회원의 네 번째 운동 (ID: 4) - 0장 (사진 없음)
 
     -- 첫 번째 회원의 다섯 번째 운동 (ID: 5) - 2장
-    ('chest_workout_1', 'jpg', 1020000, 'https://storage.undabang.com/exercises/chest_workout_1.jpg'),
-    ('chest_workout_2', 'jpg', 880000, 'https://storage.undabang.com/exercises/chest_workout_2.jpg'),
+    (9, 'chest_workout_1', 'jpg', 1020000, 'https://storage.undabang.com/exercises/chest_workout_1.jpg'),
+    (10, 'chest_workout_2', 'jpg', 880000, 'https://storage.undabang.com/exercises/chest_workout_2.jpg'),
 
     -- 아침 유산소 운동에 대한 사진 1장만 추가
-    ('morning_cardio', 'jpg', 820000, 'https://storage.undabang.com/exercises/morning_cardio.jpg'),
+    (11, 'morning_cardio', 'jpg', 820000, 'https://storage.undabang.com/exercises/morning_cardio.jpg'),
 
     -- 두 번째 회원의 첫 번째 운동 (ID: 6) - 4장
-    ('yoga_morning_1', 'jpg', 720000, 'https://storage.undabang.com/exercises/yoga_morning_1.jpg'),
-    ('yoga_morning_2', 'jpg', 680000, 'https://storage.undabang.com/exercises/yoga_morning_2.jpg'),
-    ('yoga_morning_3', 'jpg', 750000, 'https://storage.undabang.com/exercises/yoga_morning_3.jpg'),
-    ('yoga_morning_4', 'jpg', 690000, 'https://storage.undabang.com/exercises/yoga_morning_4.jpg'),
+    (12, 'yoga_morning_1', 'jpg', 720000, 'https://storage.undabang.com/exercises/yoga_morning_1.jpg'),
+    (13, 'yoga_morning_2', 'jpg', 680000, 'https://storage.undabang.com/exercises/yoga_morning_2.jpg'),
+    (14, 'yoga_morning_3', 'jpg', 750000, 'https://storage.undabang.com/exercises/yoga_morning_3.jpg'),
+    (15, 'yoga_morning_4', 'jpg', 690000, 'https://storage.undabang.com/exercises/yoga_morning_4.jpg'),
 
     -- 두 번째 회원의 두 번째 운동 (ID: 7) - 2장
-    ('pilates_1', 'jpg', 690000, 'https://storage.undabang.com/exercises/pilates_1.jpg'),
-    ('pilates_2', 'jpg', 710000, 'https://storage.undabang.com/exercises/pilates_2.jpg'),
+    (16, 'pilates_1', 'jpg', 690000, 'https://storage.undabang.com/exercises/pilates_1.jpg'),
+    (17, 'pilates_2', 'jpg', 710000, 'https://storage.undabang.com/exercises/pilates_2.jpg'),
 
     -- 두 번째 회원의 세 번째 운동 (ID: 8) - 0장 (사진 없음)
 
     -- 두 번째 회원의 네 번째 운동 (ID: 9) - 1장
-    ('outdoor_yoga_1', 'jpg', 940000, 'https://storage.undabang.com/exercises/outdoor_yoga_1.jpg'),
+    (18, 'outdoor_yoga_1', 'jpg', 940000, 'https://storage.undabang.com/exercises/outdoor_yoga_1.jpg'),
 
     -- 두 번째 회원의 다섯 번째 운동 (ID: 10) - 3장
-    ('meditation_yoga_1', 'jpg', 650000, 'https://storage.undabang.com/exercises/meditation_yoga_1.jpg'),
-    ('meditation_yoga_2', 'jpg', 700000, 'https://storage.undabang.com/exercises/meditation_yoga_2.jpg'),
-    ('meditation_yoga_3', 'jpg', 680000, 'https://storage.undabang.com/exercises/meditation_yoga_3.jpg');
+    (19, 'meditation_yoga_1', 'jpg', 650000, 'https://storage.undabang.com/exercises/meditation_yoga_1.jpg'),
+    (20, 'meditation_yoga_2', 'jpg', 700000, 'https://storage.undabang.com/exercises/meditation_yoga_2.jpg'),
+    (21, 'meditation_yoga_3', 'jpg', 680000, 'https://storage.undabang.com/exercises/meditation_yoga_3.jpg');
 
 -- 운동과 사진 연결 (exercise_pictures 테이블)
 -- 사진 ID가 1부터 순차적으로 증가한다고 가정
@@ -95,3 +95,33 @@ VALUES
     -- 두 번째 회원의 다섯 번째 운동 (ID: 10) - 3장
     (18, 10), (19, 10), (20, 10),
     (21, 11);
+
+-- 첫 번째 회원의 프로필 사진 등록(프로필 사진은 id 100부터) 1
+INSERT INTO pictures (picture_id, picture_name, picture_extension, picture_size, picture_url)
+VALUES (100, 'profile_1', 'jpg', 1200000, 'https://storage.undabang.com/profiles/profile_1.jpg');
+
+-- 프로필 사진과 회원 연결 (member_pictures 테이블) 1
+INSERT INTO member_pictures (picture_id, member_id)
+VALUES (100, '550e8400-e29b-41d4-a716-446655440000');
+-- 첫 번째 회원
+
+-- 첫 번째 회원의 대표 이미지 사진 지정 1
+UPDATE members
+SET member_picture_id = 100
+WHERE member_id = '550e8400-e29b-41d4-a716-446655440000';
+
+-- 첫 번째 회원의 프로필 사진 등록(프로필 사진은 id 100부터) 2
+INSERT INTO pictures (picture_id, picture_name, picture_extension, picture_size, picture_url)
+VALUES (101, 'profile_2', 'jpg', 1150000, 'https://storage.undabang.com/profiles/profile_2.jpg');
+
+-- 프로필 사진과 회원 연결 (member_pictures 테이블) 2
+INSERT INTO member_pictures (picture_id, member_id)
+VALUES (101, '550e8400-e29b-41d4-a716-446655440000');
+-- 첫 번째 회원
+
+-- 첫 번째 회원의 대표 이미지 사진 지정 2
+UPDATE members
+SET member_picture_id = 101
+WHERE member_id = '550e8400-e29b-41d4-a716-446655440000';
+
+-- 선호 운동 등록
