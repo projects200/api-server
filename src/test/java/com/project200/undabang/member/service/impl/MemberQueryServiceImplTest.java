@@ -41,8 +41,7 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
-class
-MemberQueryServiceImplTest {
+class MemberQueryServiceImplTest {
 
     @InjectMocks
     private MemberQueryServiceImpl memberQueryService;
