@@ -30,7 +30,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
         LocalDate now = LocalDate.now();
 
         LocalDateTime exerciseStartDate = now.minusDays(daysAgo).atStartOfDay(); // N일전 00:00:00 부터 체크
-        LocalDateTime endOfToday = now.plusDays(1).atStartOfDay(); // 오늘 23:59:59 까지 체크
+        LocalDateTime endOfToday = now.plusDays(1).atStartOfDay(); // 내일 00:00:00 미만까지 체크(오늘 전체 포함)
 
         return queryFactory.select(exercise.count())
                 .from(exercise)
@@ -53,7 +53,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
         LocalDate now = LocalDate.now();
 
         LocalDateTime firstDateOfYear = now.withDayOfYear(1).atStartOfDay(); // 올해 1월 1일 00:00:00 부터 체크
-        LocalDateTime endOfToday = now.plusDays(1).atStartOfDay(); // 오늘 23:59:59 까지 체크
+        LocalDateTime endOfToday = now.plusDays(1).atStartOfDay(); // 내일 00:00:00 미만까지 체크(오늘 전체 포함)
 
         return queryFactory.select(exercise.exerciseStartedAt.dayOfYear().countDistinct())
                 .from(exercise)
