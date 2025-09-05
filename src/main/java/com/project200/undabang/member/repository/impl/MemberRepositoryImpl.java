@@ -27,15 +27,17 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
     public Long countMemberExerciseInLastDays(UUID memberId, int daysAgo) {
         QExercise exercise = QExercise.exercise;
 
-        LocalDateTime exerciseStartDate = LocalDateTime.now().minusDays(daysAgo);
-        LocalDateTime exerciseEndDate = LocalDate.now().plusDays(1).atStartOfDay();
+        LocalDate now = LocalDate.now();
+
+        LocalDateTime exerciseStartDate = now.minusDays(daysAgo).atStartOfDay(); // N일전 00:00:00 부터 체크
+        LocalDateTime endOfToday = now.plusDays(1).atStartOfDay(); // 오늘 23:59:59 까지 체크
 
         return queryFactory.select(exercise.count())
                 .from(exercise)
                 .where(
                         exercise.member.memberId.eq(memberId), // 특정 회원 조회
                         exercise.exerciseStartedAt.goe(exerciseStartDate), // 파라미터로 받은 기간 이후 수행한 운동
-                        exercise.exerciseStartedAt.lt(exerciseEndDate), // 오늘을 포함한 날짜까지 검색
+                        exercise.exerciseStartedAt.lt(endOfToday), // 오늘을 포함한 날짜까지 검색
                         exercise.exerciseDeletedAt.isNull() // 삭제하지 않은 운동만 검색
                 )
                 .fetchOne();
@@ -48,15 +50,17 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
     public Long countMemberExerciseInThisYear(UUID memberId) {
         QExercise exercise = QExercise.exercise;
 
-        LocalDateTime firstDateOfYear = LocalDate.now().withDayOfYear(1).atStartOfDay();
-        LocalDateTime untilToday = LocalDate.now().plusDays(1).atStartOfDay();
+        LocalDate now = LocalDate.now();
+
+        LocalDateTime firstDateOfYear = now.withDayOfYear(1).atStartOfDay(); // 올해 1월 1일 00:00:00 부터 체크
+        LocalDateTime endOfToday = now.plusDays(1).atStartOfDay(); // 오늘 23:59:59 까지 체크
 
         return queryFactory.select(exercise.exerciseStartedAt.dayOfYear().countDistinct())
                 .from(exercise)
                 .where(
                         exercise.member.memberId.eq(memberId), // 특정 회원 조회
                         exercise.exerciseStartedAt.goe(firstDateOfYear), // 올해 1월 1일부터 카운트
-                        exercise.exerciseStartedAt.lt(untilToday), // 오늘까지만 검색
+                        exercise.exerciseStartedAt.lt(endOfToday), // 오늘까지만 검색
                         exercise.exerciseDeletedAt.isNull() // 삭제하지 않은 운동만 검색
                 )
                 .fetchOne();
