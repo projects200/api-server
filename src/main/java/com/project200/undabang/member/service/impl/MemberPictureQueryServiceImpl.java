@@ -62,7 +62,7 @@ public class MemberPictureQueryServiceImpl implements MemberPictureQueryService 
 
         // 대표사진 반환
         for (ProfileImageRecord record : profileImageRecordList) {
-            if (record.profileImageId() == representativePictureId) {
+            if (Long.valueOf(record.profileImageId()).equals(representativePictureId)) {
                 return record;
             }
         }
