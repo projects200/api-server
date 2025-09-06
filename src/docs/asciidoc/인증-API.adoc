@@ -25,3 +25,5 @@ include::auth/회원-등록-상태-조회-API.adoc[]
 include::auth/로그인-API.adoc[]
 
 include::auth/로그아웃-API.adoc[]
+
+include::auth/닉네임-중복-검사-API.adoc[]
