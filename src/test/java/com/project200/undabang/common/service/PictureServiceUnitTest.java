@@ -160,7 +160,6 @@ class PictureServiceUnitTest {
     }
 
 
-
     @Nested
     @DisplayName("사진 삭제 (deletePictureFromS3AndDB) 테스트")
     class DeletePictureTests {
