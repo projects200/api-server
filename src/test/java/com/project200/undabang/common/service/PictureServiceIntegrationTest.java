@@ -33,6 +33,7 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -149,6 +150,39 @@ public class PictureServiceIntegrationTest {
 
             String url1 = savedPictures.stream().filter(p -> p.getPictureName().equals("manual1.txt")).findFirst().get().getPictureUrl();
             assertThat(url1).endsWith("manual/uploads/file1.txt");
+        }
+
+        @Test
+        @DisplayName("성공[단일 파일]: 단일 파일이 S3에 업로드되고 DB에 정상적으로 저장된다")
+        void upload_SingleFile_Success_Integration() {
+            // given
+            MockMultipartFile singleFile = new MockMultipartFile("picture", "single-upload.png", "image/png", "test-content".getBytes());
+
+            try (MockedStatic<UserContextHolder> mockedUser = mockStatic(UserContextHolder.class)) {
+                when(UserContextHolder.getUserId()).thenReturn(UUID.randomUUID());
+
+                // when
+                Picture result = pictureService.uploadPictureToS3AndDB(singleFile, FileType.PROFILE);
+
+                // then
+                // 1. 반환된 객체 검증
+                assertThat(result).isNotNull();
+                assertThat(result.getId()).isNotNull();
+
+                // DB에 저장된 '원본 파일 이름'이 올바른지 확인
+                assertThat(result.getPictureName()).isEqualTo("single-upload.png");
+                // S3에 저장된 URL은 null이 아니며, .png로 끝나는지만 확인
+                assertThat(result.getPictureUrl()).isNotNull().endsWith(".png");
+
+                // 2. DB 상태 직접 검증 (더 확실한 검증)
+                Optional<Picture> savedPictureOpt = pictureRepository.findById(result.getId());
+                assertThat(savedPictureOpt).isPresent();
+                assertThat(savedPictureOpt.get().getPictureName()).isEqualTo("single-upload.png");
+
+                // 3. S3 상태 직접 검증
+                String objectKey = s3Service.extractObjectKeyFromUrl(result.getPictureUrl());
+                assertThat(s3Service.isFileExists(objectKey)).isTrue();
+            }
         }
     }
 
