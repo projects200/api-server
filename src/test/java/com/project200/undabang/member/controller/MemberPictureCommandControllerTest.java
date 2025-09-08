@@ -53,7 +53,7 @@ class MemberPictureCommandControllerTest extends AbstractRestDocSupport {
             );
 
             CreateProfilePictureResponse responseDto = new CreateProfilePictureResponse(
-                    1L, null, "https://s3.com/images/my-profile.jpg"
+                    1L, "https://s3.com/images/my-thumbnail.jpg", "https://s3.com/images/my-profile.jpg"
             );
 
             BDDMockito.given(memberPictureCommandService.createProfilePicture(BDDMockito.any(MockMultipartFile.class)))
@@ -71,11 +71,11 @@ class MemberPictureCommandControllerTest extends AbstractRestDocSupport {
                             requestHeaders(RestDocsUtils.HEADER_ACCESS_TOKEN),
                             requestParts(
                                     partWithName("profilePicture").attributes(getTypeFormat("FILE"))
-                                            .description("업로드할 프로필 사진 파일입니다. 파일 크기는 10MB 이하여야 하며, 확장자는 .jpg, .jpeg, .png만 허용됩니다.")
+                                            .description("업로드할 프로필 사진 파일입니다. 파일 크기는 10MB 이하여야 하며, 확장자는 .jpg, .jpeg, .png 만 허용됩니다.")
                             ),
                             responseFields(RestDocsUtils.commonResponseFields(
-                                    fieldWithPath("data.pictureId").type(JsonFieldType.NUMBER).description("생성된 사진의 고유 ID입니다."),
-                                    fieldWithPath("data.profileThumbnailUrl").type(JsonFieldType.STRING).optional().description("생성된 프로필 썸네일 이미지의 URL입니다. (현재는 null)"),
+                                    fieldWithPath("data.pictureId").type(JsonFieldType.NUMBER).description("생성된 사진의 식별자 입니다."),
+                                    fieldWithPath("data.profileThumbnailUrl").type(JsonFieldType.STRING).optional().description("생성된 프로필 썸네일 이미지의 URL입니다."),
                                     fieldWithPath("data.profileImageUrl").type(JsonFieldType.STRING).description("생성된 프로필 원본 이미지의 URL입니다.")
                             ))
                     ))
