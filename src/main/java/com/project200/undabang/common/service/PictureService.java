@@ -188,8 +188,9 @@ public class PictureService {
     }
 
     /**
-     * S3에 저장된 객체를 "휴지통"에서 원래 위치로 복원하여 이전 상태로 롤백합니다.
-     * 롤백 중에 일부 객체에서 에러가 발생하더라도 다른 객체의 롤백 작업은 계속 시도합니다.
+     * S3의 휴지통으로 이동된 객체를 원래 상태로 롤백하는 메서드입니다.
+     * 주어진 객체 키 리스트를 기반으로 각각의 객체를 복원 시도합니다.
+     * 롤백 시도 중 예외가 발생해도 다른 객체의 롤백 작업은 중단되지 않습니다.
      */
     private void rollBackS3MoveToTrash(List<String> objectKeys) {
         if (objectKeys == null || objectKeys.isEmpty()) {

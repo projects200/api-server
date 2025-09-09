@@ -17,9 +17,10 @@ public class CreateProfilePictureResponse {
     private String profileImageUrl;
 
     public static CreateProfilePictureResponse from(Picture picture, MemberPicture memberPicture) {
+        // todo 추후 섬네일 개발시 null 자리에 생성된 memberPicture.getMemberPicturesUrl()을 추가해야 함
         return CreateProfilePictureResponse.builder()
                 .pictureId(picture.getId())
-                .profileThumbnailUrl(memberPicture.getMemberPicturesUrl())
+                .profileThumbnailUrl(null)
                 .profileImageUrl(picture.getPictureUrl())
                 .build();
     }
