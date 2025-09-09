@@ -5,6 +5,7 @@ import com.project200.undabang.common.entity.Picture;
 import com.project200.undabang.common.entity.dto.PictureUploadParameters;
 import com.project200.undabang.common.repository.PictureRepository;
 import com.project200.undabang.common.web.exception.CustomException;
+import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.exception.S3UploadFailedException;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -184,6 +185,49 @@ public class PictureServiceIntegrationTest {
                 assertThat(s3Service.isFileExists(objectKey)).isTrue();
             }
         }
+
+
+        @Test
+        @DisplayName("성공[단일 수동 키]: 수동 objectKey로 S3에 업로드되고 DB에 저장된다")
+        void upload_SingleFile_WithManualKey_Success_Integration() {
+            MockMultipartFile singleFile = new MockMultipartFile("f", "int-manual.txt", "text/plain", "hello".getBytes());
+            String manualKey = "manual/integration/int-manual.txt";
+
+            try (MockedStatic<UserContextHolder> mockedUser = mockStatic(UserContextHolder.class)) {
+                mockedUser.when(UserContextHolder::getUserId).thenReturn(UUID.randomUUID());
+
+                Picture result = pictureService.uploadPictureToS3AndDB(singleFile, manualKey);
+
+                assertThat(result).isNotNull();
+                assertThat(result.getId()).isNotNull();
+                assertThat(result.getPictureName()).isEqualTo("int-manual.txt");
+                assertThat(result.getPictureUrl()).isNotNull().endsWith(manualKey);
+
+                Optional<Picture> saved = pictureRepository.findById(result.getId());
+                assertThat(saved).isPresent();
+                String objectKey = s3Service.extractObjectKeyFromUrl(result.getPictureUrl());
+                assertThat(s3Service.isFileExists(objectKey)).isTrue();
+            }
+        }
+
+        @Test
+        @DisplayName("실패: 빈 파일을 업로드하면 CustomException(PICTURE_IS_EMPTY)을 던진다")
+        void upload_SingleFile_WithManualKey_Fail_WhenFileIsEmpty_Integration() {
+            MockMultipartFile emptyFile = new MockMultipartFile("f", "empty.txt", "text/plain", new byte[0]);
+
+            try (MockedStatic<UserContextHolder> mockedUser = mockStatic(UserContextHolder.class)) {
+                mockedUser.when(UserContextHolder::getUserId).thenReturn(UUID.randomUUID());
+
+                assertThatThrownBy(() -> pictureService.uploadPictureToS3AndDB(emptyFile, "manual/empty.txt"))
+                        .isInstanceOf(CustomException.class)
+                        .extracting("errorCode")
+                        .isEqualTo(ErrorCode.PICTURE_IS_EMPTY);
+
+                // DB에 저장된 항목이 없어야 함
+                assertThat(pictureRepository.findAll()).isEmpty();
+            }
+        }
+
     }
 
     @Nested

@@ -58,6 +58,36 @@ public class PictureService {
         return pictureList.get(0);
     }
 
+    /**
+     * 단일 MultipartFile을 S3에 업로드하고, 업로드된 파일 정보를 기반으로 Picture 엔티티를 생성하여
+     * 데이터베이스에 저장합니다. 내부적으로 리스트 처리 메소드를 재사용하며, 업로드 후 생성된 Picture 객체를 반환합니다.
+     *
+     * @param multipartFile 업로드할 파일. null이거나 비어있으면 CustomException이 발생합니다.
+     * @param objectKey     업로드할 파일의 S3 객체 키. null일 수 없습니다.
+     * @return S3에 업로드되고 데이터베이스에 저장된 Picture 엔티티
+     * @throws CustomException 파일이 비어있거나 업로드에 실패한 경우 발생
+     */
+    @Transactional
+    public Picture uploadPictureToS3AndDB(@NotNull MultipartFile multipartFile, @NotNull String objectKey) {
+        // 파일이 비어있는지 우선 확인
+        if (multipartFile.isEmpty()) {
+            throw new CustomException(ErrorCode.PICTURE_IS_EMPTY);
+        }
+
+        // 기존의 리스트 처리 메소드에 단일 파일을 리스트로 감싸서 전달
+        PictureUploadParameters parameter = new PictureUploadParameters(multipartFile, objectKey);
+        List<Picture> pictureList = this.uploadPictureListToS3AndDB(List.of(parameter));
+
+        // 결과 리스트가 비어있으면 오류가 발생한것으로 간주
+        if (pictureList.isEmpty()) {
+            log.error("파일 업로드 후 Picture 객체를 생성하지 못했습니다. ObjectKey: {}", objectKey);
+            throw new CustomException(ErrorCode.PICTURE_UPLOAD_FAILED);
+        }
+
+        // 생성된 첫번째 Picture 객체 반환
+        return pictureList.get(0);
+    }
+
 
     /**
      * 주어진 MultipartFile 리스트를 S3에 업로드하고, 업로드된 파일 정보를 기반으로 Picture 엔티티를 생성하여
@@ -157,6 +187,10 @@ public class PictureService {
         }
     }
 
+    /**
+     * S3에 저장된 객체를 "휴지통"에서 원래 위치로 복원하여 이전 상태로 롤백합니다.
+     * 롤백 중에 일부 객체에서 에러가 발생하더라도 다른 객체의 롤백 작업은 계속 시도합니다.
+     */
     private void rollBackS3MoveToTrash(List<String> objectKeys) {
         if (objectKeys == null || objectKeys.isEmpty()) {
             return; // 롤백할 대상이 없으면 즉시 종료

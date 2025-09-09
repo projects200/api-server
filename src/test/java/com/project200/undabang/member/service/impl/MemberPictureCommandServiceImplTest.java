@@ -132,7 +132,8 @@ class MemberPictureCommandServiceImplTest {
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
 
                 // 실패했으므로 PictureService나 MemberPictureRepository는 호출되지 않아야 함
-                BDDMockito.then(pictureService).should(BDDMockito.never()).uploadPictureToS3AndDB(any(), any());
+                BDDMockito.then(pictureService).should(BDDMockito.never()).uploadPictureToS3AndDB(any(MultipartFile.class), any(FileType.class));
+                BDDMockito.then(pictureService).should(BDDMockito.never()).uploadPictureToS3AndDB(any(MultipartFile.class), any(String.class));
                 BDDMockito.then(memberPictureRepository).should(BDDMockito.never()).save(any());
             }
         }
