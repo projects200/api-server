@@ -77,14 +77,14 @@ class MemberCommandControllerTest extends AbstractRestDocSupport {
                     .andDo(document.document(
                             requestHeaders(HEADER_ACCESS_TOKEN), // REST Docs 문서화
                             requestFields(
-                                    fieldWithPath("nickname").description("변경할 닉네임 (한글, 영문, 숫자 1~30자)"),
-                                    fieldWithPath("gender").description("변경할 성별 (MALE, FEMALE, UNKNOWN)"),
-                                    fieldWithPath("bio").description("변경할 자기소개 (최대 500자)").optional()
+                                    fieldWithPath("nickname").description("변경할 닉네임 입니다. 한글, 영문, 숫자를 포함한 공백없는 30자가 필요합니다."),
+                                    fieldWithPath("gender").description("변경할 성별 입니다. (MALE, FEMALE, UNKNOWN) 중에서 입력하셔야 합니다."),
+                                    fieldWithPath("bio").description("변경할 자기소개 입니다. 문자열로 최대 500자 까지 입력하셔야 합니다.").optional()
                             ),
                             responseFields(commonResponseFields(
-                                    fieldWithPath("data.nickname").description("수정된 닉네임"),
-                                    fieldWithPath("data.gender").description("수정된 성별"),
-                                    fieldWithPath("data.bio").description("수정된 자기소개")
+                                    fieldWithPath("data.nickname").description("수정된 닉네임을 보여줍니다. 한글, 영문, 숫자를 포함한 30자리 문자열입니다."),
+                                    fieldWithPath("data.gender").description("수정된 성별 정보를 보여줍니다. 상태로는 MALE, FEMALE, UNKNOWN이 존재합니다."),
+                                    fieldWithPath("data.bio").description("수정된 자기소개 정보를 보여줍니다. 최대 500글자까지 저장할 수 있습니다.")
                             ))
                     ));
 

@@ -109,6 +109,7 @@ include::overview/공통-개발-참고-사항.adoc[]
 
 - 내 프로필 조회 API #GET# `/api/v1/profile`
 
+- 내 프로필 수정 API #PUT# `/api/v1/profile`
 
 === xref:운동-API.html[운동 API]
 
