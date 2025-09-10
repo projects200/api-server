@@ -159,4 +159,11 @@ public class Member {
     public void updateProfilePicture(MemberPicture memberPicture) {
         this.memberPicture = memberPicture;
     }
+
+    // 변경감지를 이용한 회원 정보 변경 (회원 닉네임, 회원 성별, 회원 소개글)
+    public void updateMemberInfo(String nickname, MemberGender gender, String bio) {
+        this.memberNickname = nickname;
+        this.memberGender = gender;
+        this.memberDesc = bio;
+    }
 }
