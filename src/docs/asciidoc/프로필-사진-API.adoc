@@ -1,4 +1,4 @@
-= 회원 API
+= 프로필 사진 API
 :doctype: book
 :source-highlighter: highlightjs
 :toc: left
@@ -16,8 +16,9 @@
 
 [[공통-개발-참고-사항]]
 == 공통 개발 참고 사항
+
 include::overview/공통-개발-참고-사항.adoc[]
 
-include::member/회원-점수-조회-API.adoc[]
+include::profile-picture/프로필-사진-조회-API.adoc[]
 
-include::member/내-프로필-조회-API.adoc[]
+include::profile-picture/프로필-사진-생성-API.adoc[]

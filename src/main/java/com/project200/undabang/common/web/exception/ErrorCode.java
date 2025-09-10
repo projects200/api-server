@@ -54,7 +54,8 @@ public enum ErrorCode {
 
     // 사진 관련 에러
     PICTURE_UPLOAD_FAILED(500, "PICTURE_UPLOAD_FAILED", "이미지 업로드에 실패했습니다."),
-    PICTURE_DELETE_FAILED(500, "PICTURE_DELETE_FAILED", "이미지 삭제에 실패했습니다.");
+    PICTURE_DELETE_FAILED(500, "PICTURE_DELETE_FAILED", "이미지 삭제에 실패했습니다."),
+    PICTURE_IS_EMPTY(400, "PICTURE_IS_EMPTY", "요청받은 이미지가 비어있습니다.");
 
     private final HttpStatusCode status;
     private final String code;

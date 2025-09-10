@@ -29,6 +29,67 @@ public class PictureService {
     private final PictureRepository pictureRepository;
 
     /**
+     * 단일 MultipartFile을 S3에 업로드하고, 업로드된 파일 정보를 기반으로 Picture 엔티티를 생성하여
+     * 데이터베이스에 저장합니다. 이 메소드는 내부적으로 리스트 처리 메소드를 호출하여 재사용합니다.
+     *
+     * @param multipartFile 업로드할 단일 파일
+     * @param fileType      파일의 용도를 나타내는 Enum (예: PROFILE, POST)
+     * @return 데이터베이스에 저장된 Picture 엔티티
+     * @throws CustomException 파일이 비어있거나 업로드에 실패한 경우 발생
+     */
+    @Transactional
+    public Picture uploadPictureToS3AndDB(@NotNull MultipartFile multipartFile, @NotNull FileType fileType) {
+        // 파일이 비어있는지 먼저 확인
+        if (multipartFile.isEmpty()) {
+            throw new CustomException(ErrorCode.PICTURE_IS_EMPTY);
+        }
+
+        // 기존의 리스트 처리 메소드에 단일 파일을 리스트로 감싸서 전달
+        List<Picture> pictureList = this.uploadPictureListToS3AndDB(List.of(multipartFile), fileType);
+
+        // 결과 리스트가 비어있는 경우, 업로드 과정에서 알 수 없는 오류가 발생한 것으로 간주
+        if (pictureList.isEmpty()) {
+            // uploadPictureListToS3AndDB 내부에서 예외를 던지지 않고 비어있는 리스트를 반환하는 엣지 케이스 방어
+            log.error("파일 업로드 후 Picture 객체를 생성하지 못했습니다. FileName: {}", multipartFile.getOriginalFilename());
+            throw new CustomException(ErrorCode.PICTURE_UPLOAD_FAILED);
+        }
+
+        // 성공적으로 생성된 첫 번째(그리고 유일한) Picture 객체를 반환
+        return pictureList.get(0);
+    }
+
+    /**
+     * 단일 MultipartFile을 S3에 업로드하고, 업로드된 파일 정보를 기반으로 Picture 엔티티를 생성하여
+     * 데이터베이스에 저장합니다. 내부적으로 리스트 처리 메소드를 재사용하며, 업로드 후 생성된 Picture 객체를 반환합니다.
+     *
+     * @param multipartFile 업로드할 파일. null이거나 비어있으면 CustomException이 발생합니다.
+     * @param objectKey     업로드할 파일의 S3 객체 키. null일 수 없습니다.
+     * @return S3에 업로드되고 데이터베이스에 저장된 Picture 엔티티
+     * @throws CustomException 파일이 비어있거나 업로드에 실패한 경우 발생
+     */
+    @Transactional
+    public Picture uploadPictureToS3AndDB(@NotNull MultipartFile multipartFile, @NotNull String objectKey) {
+        // 파일이 비어있는지 우선 확인
+        if (multipartFile.isEmpty()) {
+            throw new CustomException(ErrorCode.PICTURE_IS_EMPTY);
+        }
+
+        // 기존의 리스트 처리 메소드에 단일 파일을 리스트로 감싸서 전달
+        PictureUploadParameters parameter = new PictureUploadParameters(multipartFile, objectKey);
+        List<Picture> pictureList = this.uploadPictureListToS3AndDB(List.of(parameter));
+
+        // 결과 리스트가 비어있으면 오류가 발생한것으로 간주
+        if (pictureList.isEmpty()) {
+            log.error("파일 업로드 후 Picture 객체를 생성하지 못했습니다. ObjectKey: {}", objectKey);
+            throw new CustomException(ErrorCode.PICTURE_UPLOAD_FAILED);
+        }
+
+        // 생성된 첫번째 Picture 객체 반환
+        return pictureList.get(0);
+    }
+
+
+    /**
      * 주어진 MultipartFile 리스트를 S3에 업로드하고, 업로드된 파일 정보를 기반으로 Picture 엔티티를 생성하여
      * 데이터베이스에 저장합니다. S3 업로드 또는 데이터베이스 저장 중 오류가 발생하면 모든 작업을 롤백합니다.
      */
@@ -126,6 +187,11 @@ public class PictureService {
         }
     }
 
+    /**
+     * S3의 휴지통으로 이동된 객체를 원래 상태로 롤백하는 메서드입니다.
+     * 주어진 객체 키 리스트를 기반으로 각각의 객체를 복원 시도합니다.
+     * 롤백 시도 중 예외가 발생해도 다른 객체의 롤백 작업은 중단되지 않습니다.
+     */
     private void rollBackS3MoveToTrash(List<String> objectKeys) {
         if (objectKeys == null || objectKeys.isEmpty()) {
             return; // 롤백할 대상이 없으면 즉시 종료

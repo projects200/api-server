@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -159,6 +160,71 @@ class PictureServiceUnitTest {
         }
     }
 
+    // java
+    @Nested
+    @DisplayName("단일 사진 업로드 (수동 키 오버로드) 테스트")
+    class UploadSingleWithManualKeyTests {
+
+        @Test
+        @DisplayName("성공: 단일 파일(수동 키)이 정상적으로 업로드 및 저장된다")
+        void upload_SingleFile_WithManualKey_Success() {
+            MockMultipartFile singleFile = createFile("manual-single.png", "image/png", "content".getBytes());
+            String manualKey = "manual/uploads/manual-single.png";
+            Picture expected = createPicture(10L, "manual-single.png", "http://s3.com/" + manualKey);
+
+            when(s3Service.uploadImage(eq(singleFile), eq(manualKey))).thenReturn(expected.getPictureUrl());
+            when(pictureRepository.save(any(Picture.class))).thenReturn(expected);
+
+            Picture result = pictureService.uploadPictureToS3AndDB(singleFile, manualKey);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getId()).isEqualTo(expected.getId());
+            assertThat(result.getPictureName()).isEqualTo(expected.getPictureName());
+
+            verify(s3Service, times(1)).uploadImage(eq(singleFile), eq(manualKey));
+            verify(pictureRepository, times(1)).save(any(Picture.class));
+        }
+
+        @Test
+        @DisplayName("실패: 업로드할 파일이 비어있으면 CustomException(PICTURE_IS_EMPTY)을 던진다")
+        void upload_SingleFile_WithManualKey_Fail_WhenFileIsEmpty() {
+            MockMultipartFile emptyFile = createFile("empty.png", "image/png", new byte[0]);
+
+            assertThatThrownBy(() -> pictureService.uploadPictureToS3AndDB(emptyFile, "manual/empty.png"))
+                    .isInstanceOf(CustomException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.PICTURE_IS_EMPTY);
+
+            verify(s3Service, never()).uploadImage(any(), anyString());
+            verify(pictureRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("실패[엣지케이스]: 내부 로직에서 빈 리스트를 반환하면 CustomException(PICTURE_UPLOAD_FAILED)을 던진다")
+        void upload_SingleFile_WithManualKey_Fail_WhenInternalMethodReturnsEmptyList() {
+            MockMultipartFile singleFile = createFile("ignored.png", "image/png", "x".getBytes());
+            PictureService spied = spy(new PictureService(s3Service, pictureRepository));
+            // 내부 리스트 처리 메서드가 빈 리스트를 반환하도록 설정
+            doReturn(Collections.emptyList()).when(spied).uploadPictureListToS3AndDB(anyList());
+
+            assertThatThrownBy(() -> spied.uploadPictureToS3AndDB(singleFile, "manual/ignored.png"))
+                    .isInstanceOf(CustomException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.PICTURE_UPLOAD_FAILED);
+        }
+
+        private MockMultipartFile createFile(String filename, String contentType, byte[] content) {
+            return new MockMultipartFile("f", filename, contentType, content);
+        }
+
+        private Picture createPicture(Long id, String name, String url) {
+            return Picture.builder()
+                    .id(id)
+                    .pictureName(name)
+                    .pictureUrl(url)
+                    .build();
+        }
+    }
 
     @Nested
     @DisplayName("사진 삭제 (deletePictureFromS3AndDB) 테스트")
@@ -296,6 +362,75 @@ class PictureServiceUnitTest {
             verify(s3Service, times(1)).moveImageToTrash("uploads/pic1.jpg");
             // picture2에 대해서는 호출되지 않아야 함
             verify(s3Service, never()).moveImageToTrash(null);
+        }
+    }
+
+    @Nested
+    @DisplayName("단일 사진 업로드 (uploadPictureToS3AndDB) 테스트")
+    class UploadSinglePictureTests {
+
+        private MockMultipartFile singleFile;
+        private Picture expectedPicture;
+
+        @BeforeEach
+        void setUp() {
+            singleFile = new MockMultipartFile("profile", "my-profile.jpg", "image/jpeg", "image_content".getBytes());
+            expectedPicture = Picture.builder().id(1L).pictureName("my-profile.jpg").pictureUrl("http://s3.com/key/my-profile.jpg").build();
+        }
+
+        @Test
+        @DisplayName("성공: 단일 파일이 정상적으로 업로드 및 저장된다")
+        void upload_SingleFile_Success() {
+            // given
+            // uploadPictureToS3AndDB가 내부적으로 호출하는 uploadPictureListToS3AndDB의 의존성을 Mocking
+            when(s3Service.generateObjectKey(anyString(), any(FileType.class))).thenReturn("some-key");
+            when(s3Service.uploadImage(any(MultipartFile.class), anyString())).thenReturn("some-url");
+            when(pictureRepository.save(any(Picture.class))).thenReturn(expectedPicture);
+
+            // when
+            Picture result = pictureService.uploadPictureToS3AndDB(singleFile, FileType.PROFILE);
+
+            // then
+            assertThat(result).isNotNull();
+            assertThat(result.getId()).isEqualTo(expectedPicture.getId());
+            assertThat(result.getPictureName()).isEqualTo(expectedPicture.getPictureName());
+
+            // 내부적으로 list 처리 메소드를 호출했는지, 그리고 그 의존성들이 1번씩만 호출되었는지 검증
+            verify(s3Service, times(1)).uploadImage(eq(singleFile), anyString());
+            verify(pictureRepository, times(1)).save(any(Picture.class));
+        }
+
+        @Test
+        @DisplayName("실패: 업로드할 파일이 비어있으면 CustomException(PICTURE_IS_EMPTY)을 던진다")
+        void upload_SingleFile_Fail_WhenFileIsEmpty() {
+            // given
+            MockMultipartFile emptyFile = new MockMultipartFile("profile", "empty.jpg", "image/jpeg", new byte[0]);
+
+            // when & then
+            assertThatThrownBy(() -> pictureService.uploadPictureToS3AndDB(emptyFile, FileType.PROFILE))
+                    .isInstanceOf(CustomException.class)
+                    .extracting("errorCode") // CustomException의 errorCode 필드 검증
+                    .isEqualTo(ErrorCode.PICTURE_IS_EMPTY);
+
+            // 실패했으므로 S3나 DB와 상호작용이 전혀 없었는지 확인
+            verify(s3Service, never()).uploadImage(any(), anyString());
+            verify(pictureRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("실패[엣지케이스]: 내부 로직에서 빈 리스트를 반환하면 CustomException(PICTURE_UPLOAD_FAILED)을 던진다")
+        void upload_SingleFile_Fail_WhenInternalMethodReturnsEmptyList() {
+            // given
+            // 이 테스트는 uploadPictureToS3AndDB 자체의 방어로직을 테스트하기 위함
+            // Spy를 사용하여 실제 객체의 일부 메소드만 Mocking
+            PictureService spiedPictureService = spy(new PictureService(s3Service, pictureRepository));
+            doReturn(Collections.emptyList()).when(spiedPictureService).uploadPictureListToS3AndDB(anyList(), any(FileType.class));
+
+            // when & then
+            assertThatThrownBy(() -> spiedPictureService.uploadPictureToS3AndDB(singleFile, FileType.PROFILE))
+                    .isInstanceOf(CustomException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.PICTURE_UPLOAD_FAILED);
         }
     }
 }
