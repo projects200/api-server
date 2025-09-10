@@ -53,7 +53,7 @@ class MemberPictureCommandControllerTest extends AbstractRestDocSupport {
             );
 
             CreateProfilePictureResponse responseDto = new CreateProfilePictureResponse(
-                    1L, "https://s3.com/images/my-thumbnail.jpg", "https://s3.com/images/my-profile.jpg"
+                    1L, "https://s3.com/images/my-profile.jpg"
             );
 
             BDDMockito.given(memberPictureCommandService.createProfilePicture(BDDMockito.any(MockMultipartFile.class)))

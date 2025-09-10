@@ -53,7 +53,7 @@ public class MemberPictureCommandServiceImpl implements MemberPictureCommandServ
         // 대표 프로필 사진 변경
         member.updateProfilePicture(savedMemberPicture);
 
-        return CreateProfilePictureResponse.from(savedPicture, savedMemberPicture);
+        return CreateProfilePictureResponse.from(savedPicture);
     }
 
     /**

@@ -96,7 +96,6 @@ class MemberPictureCommandServiceImplTest {
                     softly.assertThat(result).as("응답 객체는 null이 아니어야 함").isNotNull();
                     softly.assertThat(result.getPictureId()).as("올바른 Picture ID가 반환되어야 함").isEqualTo(savedPicture.getId());
                     softly.assertThat(result.getProfileImageUrl()).as("올바른 원본 이미지 URL이 반환되어야 함").isEqualTo(savedPicture.getPictureUrl());
-                    softly.assertThat(result.getProfileThumbnailUrl()).as("썸네일 URL은 현재 null이어야 함").isNull();
                 });
 
                 // Member 엔티티의 상태가 올바르게 변경되었는지 검증
