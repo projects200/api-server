@@ -26,6 +26,8 @@ public class MemberQueryServiceImpl implements MemberQueryService {
 
     private final PolicyService policyService;
 
+    private static final int RECENT_EXERCISE_PERIOD_DAYS = 30; // 최근 운동기간
+
     @Override
     public MemberRegistrationStatusResponseDto getRegistrationStatus() {
         UUID userId = UserContextHolder.getUserId();
@@ -63,6 +65,10 @@ public class MemberQueryServiceImpl implements MemberQueryService {
         Member member = memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(UserContextHolder.getUserId())
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-        return MemberProfileResponse.of(member, 0, 0);
+        int yearlyExerciseCounts = memberRepository.countMemberExerciseInThisYear(member.getMemberId()).intValue();
+
+        int exerciseCountInLastDays = memberRepository.countMemberExerciseInLastDays(member.getMemberId(), RECENT_EXERCISE_PERIOD_DAYS).intValue();
+
+        return MemberProfileResponse.of(member, yearlyExerciseCounts, exerciseCountInLastDays);
     }
 }
