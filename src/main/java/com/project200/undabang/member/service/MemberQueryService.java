@@ -1,5 +1,6 @@
 package com.project200.undabang.member.service;
 
+import com.project200.undabang.member.dto.response.CheckNicknameDuplicateResponse;
 import com.project200.undabang.member.dto.response.MemberProfileResponse;
 import com.project200.undabang.member.dto.response.MemberRegistrationStatusResponseDto;
 import com.project200.undabang.member.dto.response.MemberScoreResponseDto;
@@ -14,4 +15,6 @@ public interface MemberQueryService {
      * @return 회원 프로필 정보를 담고 있는 MemberProfileResponse 객체
      */
     MemberProfileResponse getMemberProfile();
+
+    CheckNicknameDuplicateResponse checkDuplicateNickname(String nickname);
 }

@@ -5,6 +5,7 @@ import com.project200.undabang.common.entity.Picture;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.exercise.entity.ExerciseType;
+import com.project200.undabang.member.dto.response.CheckNicknameDuplicateResponse;
 import com.project200.undabang.member.dto.response.MemberProfileResponse;
 import com.project200.undabang.member.dto.response.MemberRegistrationStatusResponseDto;
 import com.project200.undabang.member.dto.response.MemberScoreResponseDto;
@@ -323,6 +324,92 @@ class MemberQueryServiceImplTest {
                         .isInstanceOf(CustomException.class)
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
             }
+        }
+
+        @Test
+        @DisplayName("운동 기록 횟수가 정확히 포함된 프로필 정보를 반환한다")
+        void getMemberProfile_withExerciseCounts_Success() {
+            // given: 테스트에 필요한 mock 데이터 설정
+            UUID testUserId = UUID.randomUUID();
+            Member mockMember = createMember();
+            // Mocking할 때 일관성을 유지하기 위해 Member의 ID를 testUserId로 설정합니다.
+            ReflectionTestUtils.setField(mockMember, "memberId", testUserId);
+
+            // Repository 메서드들이 반환할 값들을 미리 정의합니다.
+            long expectedYearlyCount = 15L;
+            long expectedMonthlyCount = 5L;
+
+            try (MockedStatic<UserContextHolder> ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
+                // 1. UserContextHolder가 testUserId를 반환하도록 설정
+                BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
+
+                // 2. 기본 프로필 조회 시 mockMember를 반환하도록 설정
+                BDDMockito.given(memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(testUserId))
+                        .willReturn(Optional.of(mockMember));
+
+                // 3. 올해 운동 일수 조회 시 expectedYearlyCount를 반환하도록 설정
+                BDDMockito.given(memberRepository.countMemberExerciseInThisYear(testUserId))
+                        .willReturn(expectedYearlyCount);
+
+                // 4. 최근 30일 운동 횟수 조회 시 expectedMonthlyCount를 반환하도록 설정
+                BDDMockito.given(memberRepository.countMemberExerciseInLastDays(testUserId, 30))
+                        .willReturn(expectedMonthlyCount);
+
+                // when: 실제 서비스 메서드 호출
+                MemberProfileResponse response = memberQueryService.getMemberProfile();
+
+                // then: 반환된 DTO의 값이 우리가 Mocking한 값과 일치하는지 검증
+                assertSoftly(softly -> {
+                    softly.assertThat(response).isNotNull();
+                    softly.assertThat(response.getNickname()).isEqualTo("테스트유저"); // 기본 정보 확인
+                    softly.assertThat(response.getExerciseScore()).isEqualTo(50); // 기본 정보 확인
+
+                    // 핵심 검증: 운동 기록 횟수가 정확히 매핑되었는지 확인
+                    softly.assertThat(response.getYearlyExerciseDays()).isEqualTo((int) expectedYearlyCount);
+                    softly.assertThat(response.getExerciseCountInLast30Days()).isEqualTo((int) expectedMonthlyCount);
+                });
+
+                // then: Repository의 메서드들이 정확히 1번씩 호출되었는지 검증 (Verify)
+                then(memberRepository).should(times(1)).findMemberProfileByMemberIdAndMemberDeletedAtNull(testUserId);
+                then(memberRepository).should(times(1)).countMemberExerciseInThisYear(testUserId);
+                then(memberRepository).should(times(1)).countMemberExerciseInLastDays(testUserId, 30);
+            }
+        }
+    }
+
+
+    @Nested
+    @DisplayName("닉네임 중복 검사")
+    class CheckDuplicateNickname {
+
+        @Test
+        @DisplayName("이미 존재하는 닉네임일 경우 available false를 반환한다")
+        void checkDuplicateNickname_ExistingNickname_ReturnsFalse() {
+            // given
+            String existingNickname = "이미존재하는닉네임";
+            given(memberRepository.existsByMemberNickname(existingNickname)).willReturn(true);
+
+            // when
+            CheckNicknameDuplicateResponse response = memberQueryService.checkDuplicateNickname(existingNickname);
+
+            // then
+            assertThat(response.isAvailable()).isFalse();
+            then(memberRepository).should().existsByMemberNickname(existingNickname);
+        }
+
+        @Test
+        @DisplayName("사용 가능한 닉네임일 경우 available true를 반환한다")
+        void checkDuplicateNickname_AvailableNickname_ReturnsTrue() {
+            // given
+            String availableNickname = "새로운닉네임";
+            given(memberRepository.existsByMemberNickname(availableNickname)).willReturn(false);
+
+            // when
+            CheckNicknameDuplicateResponse response = memberQueryService.checkDuplicateNickname(availableNickname);
+
+            // then
+            assertThat(response.isAvailable()).isTrue();
+            then(memberRepository).should().existsByMemberNickname(availableNickname);
         }
     }
 }

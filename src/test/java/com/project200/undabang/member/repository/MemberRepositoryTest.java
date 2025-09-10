@@ -2,6 +2,7 @@ package com.project200.undabang.member.repository;
 
 import com.project200.undabang.common.entity.Picture;
 import com.project200.undabang.configuration.TestQuerydslConfig;
+import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.exercise.entity.ExerciseType;
 import com.project200.undabang.member.dto.command.SignUpMemberCommand;
 import com.project200.undabang.member.entity.Member;
@@ -353,6 +354,175 @@ class MemberRepositoryTest {
 
             // then
             assertThat(foundMemberOptional).as("삭제된 회원이므로 빈 Optional을 반환해야 합니다.").isEmpty();
+        }
+    }
+
+    // ============== 테스트 헬퍼 메소드 추가 ==============
+    // Exercise 엔티티를 생성하고 저장하는 헬퍼 메소드
+    private Exercise createAndSaveExercise(Member member, LocalDateTime startedAt, boolean isDeleted) {
+        Exercise exercise = Exercise.builder()
+                .member(member)
+                .exerciseTitle("테스트 운동 - " + startedAt.toString())
+                .exerciseStartedAt(startedAt)
+                .exerciseEndedAt(startedAt.plusHours(1))
+                .exerciseDeletedAt(isDeleted ? LocalDateTime.now() : null)
+                .build();
+        em.persist(exercise);
+        return exercise;
+    }
+
+    @Nested
+    @DisplayName("countMemberExerciseInLastDays 메소드는")
+    class CountMemberExerciseInLastDaysTest {
+
+        @Test
+        @DisplayName("지정된 기간 내에 존재하는 운동 기록의 개수를 정확히 반환한다")
+        void should_returnCorrectCount_when_exercisesExistWithinRange() {
+            // given: 테스트를 위한 회원과 최근 7일 내 3개의 운동 기록 생성
+            Member member = createAndSaveMember("user1", "user1@email.com", false);
+            createAndSaveExercise(member, LocalDateTime.now().minusDays(1), false); // 1일 전
+            createAndSaveExercise(member, LocalDateTime.now().minusDays(3), false); // 3일 전
+            createAndSaveExercise(member, LocalDateTime.now().minusDays(6), false); // 6일 전
+            // 범위 밖의 데이터
+            createAndSaveExercise(member, LocalDateTime.now().minusDays(8), false); // 8일 전
+
+            em.flush();
+            em.clear();
+
+            // when: 최근 7일간의 운동 기록 개수를 조회
+            Long exerciseCount = memberRepository.countMemberExerciseInLastDays(member.getMemberId(), 7);
+
+            // then: 3개가 조회되어야 한다
+            assertThat(exerciseCount).isEqualTo(3L);
+        }
+
+        @Test
+        @DisplayName("삭제된 운동 기록은 개수에서 제외한다")
+        void should_excludeDeletedExercises_fromCount() {
+            // given: 테스트를 위한 회원과 삭제된 기록을 포함한 운동 기록 생성
+            Member member = createAndSaveMember("user2", "user2@email.com", false);
+            createAndSaveExercise(member, LocalDateTime.now().minusDays(1), false); // 정상
+            createAndSaveExercise(member, LocalDateTime.now().minusDays(2), true);  // 삭제됨
+            createAndSaveExercise(member, LocalDateTime.now().minusDays(3), false); // 정상
+
+            em.flush();
+            em.clear();
+
+            // when: 최근 7일간의 운동 기록 개수를 조회
+            Long exerciseCount = memberRepository.countMemberExerciseInLastDays(member.getMemberId(), 7);
+
+            // then: 삭제된 기록을 제외한 2개가 조회되어야 한다
+            assertThat(exerciseCount).isEqualTo(2L);
+        }
+
+        @Test
+        @DisplayName("다른 회원의 운동 기록은 개수에 포함하지 않는다")
+        void should_notCountExercises_ofOtherMembers() {
+            // given: 테스트 대상 회원과 다른 회원, 그리고 각자의 운동 기록 생성
+            Member targetMember = createAndSaveMember("targetUser", "target@email.com", false);
+            Member anotherMember = createAndSaveMember("anotherUser", "another@email.com", false);
+
+            createAndSaveExercise(anotherMember, LocalDateTime.now().minusDays(1), false);
+            createAndSaveExercise(targetMember, LocalDateTime.now().minusDays(2), false);
+            createAndSaveExercise(targetMember, LocalDateTime.now().minusDays(3), false);
+
+            em.flush();
+            em.clear();
+
+            // when: targetMember의 최근 7일간 운동 기록 개수를 조회
+            Long exerciseCount = memberRepository.countMemberExerciseInLastDays(targetMember.getMemberId(), 7);
+
+            // then: targetMember의 기록인 2개만 조회되어야 한다
+            assertThat(exerciseCount).isEqualTo(2L);
+        }
+
+        @Test
+        @DisplayName("지정된 기간 내에 운동 기록이 없으면 0을 반환한다")
+        void should_returnZero_when_noExercisesExistWithinRange() {
+            // given: 테스트를 위한 회원과 범위 밖의 운동 기록만 생성
+            Member member = createAndSaveMember("user4", "user4@email.com", false);
+            createAndSaveExercise(member, LocalDateTime.now().minusDays(10), false);
+            createAndSaveExercise(member, LocalDateTime.now().minusDays(15), false);
+
+            em.flush();
+            em.clear();
+
+            // when: 최근 7일간의 운동 기록 개수를 조회
+            Long exerciseCount = memberRepository.countMemberExerciseInLastDays(member.getMemberId(), 7);
+
+            // then: 0이 반환되어야 한다
+            assertThat(exerciseCount).isEqualTo(0L);
+        }
+    }
+
+    @Nested
+    @DisplayName("countMemberExerciseInThisYear 메소드는")
+    class CountMemberExerciseInThisYearTest {
+
+        @Test
+        @DisplayName("올해에 운동한 고유한 날짜의 수를 정확히 반환한다")
+        void should_returnDistinctDayCount_forCurrentYear() {
+            // given: 테스트를 위한 회원과 3일에 걸친 4개의 운동 기록 생성
+            Member member = createAndSaveMember("user5", "user5@email.com", false);
+            LocalDateTime now = LocalDateTime.now();
+            // 오늘 2번
+            createAndSaveExercise(member, now, false);
+            createAndSaveExercise(member, now.minusHours(2), false);
+            // 5일 전 1번
+            createAndSaveExercise(member, now.minusDays(5), false);
+            // 10일 전 1번
+            createAndSaveExercise(member, now.minusDays(10), false);
+            // 작년 데이터 (포함되면 안됨)
+            createAndSaveExercise(member, now.minusYears(1), false);
+
+            em.flush();
+            em.clear();
+
+            // when: 올해 운동한 일수를 조회
+            Long exerciseDays = memberRepository.countMemberExerciseInThisYear(member.getMemberId());
+
+            // then: 오늘, 5일 전, 10일 전. 총 3일이 조회되어야 한다
+            assertThat(exerciseDays).isEqualTo(3L);
+        }
+
+        @Test
+        @DisplayName("삭제된 운동 기록이 있는 날은, 다른 기록이 없다면 일수에서 제외한다")
+        void should_excludeDay_ifAllExercisesOnThatDayAreDeleted() {
+            // given
+            Member member = createAndSaveMember("user6", "user6@email.com", false);
+            LocalDateTime now = LocalDateTime.now();
+            // 오늘 1번 (정상)
+            createAndSaveExercise(member, now, false);
+            // 어제 2번 (모두 삭제)
+            createAndSaveExercise(member, now.minusDays(1), true);
+            createAndSaveExercise(member, now.minusDays(1).minusHours(1), true);
+
+            em.flush();
+            em.clear();
+
+            // when: 올해 운동한 일수를 조회
+            Long exerciseDays = memberRepository.countMemberExerciseInThisYear(member.getMemberId());
+
+            // then: 어제는 모두 삭제되었으므로, 오늘 하루만 카운트되어 1일이 조회되어야 한다
+            assertThat(exerciseDays).isEqualTo(1L);
+        }
+
+        @Test
+        @DisplayName("올해에 운동 기록이 없으면 0을 반환한다")
+        void should_returnZero_when_noExercisesInCurrentYear() {
+            // given: 테스트를 위한 회원과 작년 데이터만 생성
+            Member member = createAndSaveMember("user7", "user7@email.com", false);
+            createAndSaveExercise(member, LocalDateTime.now().minusYears(1), false);
+            createAndSaveExercise(member, LocalDateTime.now().minusYears(2), false);
+
+            em.flush();
+            em.clear();
+
+            // when: 올해 운동한 일수를 조회
+            Long exerciseDays = memberRepository.countMemberExerciseInThisYear(member.getMemberId());
+
+            // then: 0이 반환되어야 한다
+            assertThat(exerciseDays).isEqualTo(0L);
         }
     }
 }
