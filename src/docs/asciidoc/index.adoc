@@ -101,6 +101,8 @@ include::overview/공통-개발-참고-사항.adoc[]
 
 - 로그아웃 API #POST# `/api/v1/logout`
 
+- 닉네임 중복검사 API #GET# `/open/v1/nicknames/check?nickname={nickname}`
+
 === xref:회원-API.html[회원 API]
 
 - 회원 운동 점수 조회 API #GET# `/api/v1/members/score`
