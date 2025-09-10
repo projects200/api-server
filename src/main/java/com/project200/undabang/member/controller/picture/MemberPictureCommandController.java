@@ -1,4 +1,4 @@
-package com.project200.undabang.member.controller;
+package com.project200.undabang.member.controller.picture;
 
 import com.project200.undabang.common.validation.AllowedExtensions;
 import com.project200.undabang.common.web.response.CommonResponse;

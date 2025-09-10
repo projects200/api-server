@@ -1,11 +1,11 @@
-package com.project200.undabang.member.controller;
+package com.project200.undabang.member.controller.auth;
 
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.member.dto.request.SignUpRequestDto;
 import com.project200.undabang.member.dto.response.MemberRegistrationStatusResponseDto;
 import com.project200.undabang.member.dto.response.SignUpResponseDto;
-import com.project200.undabang.member.service.MemberQueryService;
 import com.project200.undabang.member.service.MemberCommandService;
+import com.project200.undabang.member.service.MemberQueryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

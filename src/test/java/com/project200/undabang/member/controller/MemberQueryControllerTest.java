@@ -39,9 +39,9 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.response
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(MemberRestController.class)
+@WebMvcTest(MemberQueryController.class)
 @DisplayName("MemberRestController 테스트")
-class MemberRestControllerTest extends AbstractRestDocSupport {
+class MemberQueryControllerTest extends AbstractRestDocSupport {
     @MockitoBean
     private MemberQueryService memberQueryService;
 
