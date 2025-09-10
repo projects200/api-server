@@ -160,7 +160,14 @@ public class Member {
         this.memberPicture = memberPicture;
     }
 
-    // 변경감지를 이용한 회원 정보 변경 (회원 닉네임, 회원 성별, 회원 소개글)
+    /**
+     * 회원의 정보를 업데이트합니다.
+     * 제공된 닉네임, 성별, 자기소개를 기반으로 회원 정보를 수정합니다.
+     *
+     * @param nickname 새로운 닉네임
+     * @param gender   새로운 성별 정보
+     * @param bio      새로운 자기소개 내용
+     */
     public void updateMemberInfo(String nickname, MemberGender gender, String bio) {
         this.memberNickname = nickname;
         this.memberGender = gender;

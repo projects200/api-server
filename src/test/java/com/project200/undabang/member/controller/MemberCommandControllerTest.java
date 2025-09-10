@@ -45,26 +45,23 @@ class MemberCommandControllerTest extends AbstractRestDocSupport {
         @DisplayName("정상적으로 회원 프로필을 수정한다")
         void updateMemberProfile_Success() throws Exception {
             // given
-            // 1. 요청 DTO 생성
             UpdateMemberProfileRequest request = new UpdateMemberProfileRequest(
                     NEW_NICKNAME, MemberGender.FEMALE, "새로운 자기소개"
             );
 
-            // 2. 서비스가 반환할 예상 응답 DTO 생성
             UpdateMemberProfileResponse expectedResponse = UpdateMemberProfileResponse.builder()
                     .nickname(NEW_NICKNAME)
                     .gender(MemberGender.FEMALE.toString())
                     .bio("새로운 자기소개")
                     .build();
 
-            // 3. 서비스 메소드 Mocking: 어떤 요청이든 받으면 위에서 정의한 응답을 반환하도록 설정
             given(memberCommandService.updateMemberProfile(any(UpdateMemberProfileRequest.class)))
                     .willReturn(expectedResponse);
 
             // when & then
-            mockMvc.perform(put("/api/v1/profile") // PUT 요청
+            mockMvc.perform(put("/api/v1/profile")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .headers(getCommonApiHeaders(TEST_UUID)) // AbstractRestDocSupport의 헬퍼 메소드 사용 가정
+                            .headers(getCommonApiHeaders(TEST_UUID))
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpectAll(
                             status().isOk(), // 성공 시 200 OK
@@ -75,7 +72,7 @@ class MemberCommandControllerTest extends AbstractRestDocSupport {
                             jsonPath("$.data.bio").value("새로운 자기소개")
                     )
                     .andDo(document.document(
-                            requestHeaders(HEADER_ACCESS_TOKEN), // REST Docs 문서화
+                            requestHeaders(HEADER_ACCESS_TOKEN),
                             requestFields(
                                     fieldWithPath("nickname").description("변경할 닉네임 입니다. 한글, 영문, 숫자를 포함한 공백없는 30자가 필요합니다."),
                                     fieldWithPath("gender").description("변경할 성별 입니다. (MALE, FEMALE, UNKNOWN) 중에서 입력하셔야 합니다."),
@@ -88,7 +85,6 @@ class MemberCommandControllerTest extends AbstractRestDocSupport {
                             ))
                     ));
 
-            // 서비스 메소드가 정확히 1번 호출되었는지 검증
             then(memberCommandService).should().updateMemberProfile(any(UpdateMemberProfileRequest.class));
         }
 
@@ -105,7 +101,6 @@ class MemberCommandControllerTest extends AbstractRestDocSupport {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
 
-            // 유효성 검증에서 실패했으므로, 서비스는 호출되지 않아야 함
             then(memberCommandService).shouldHaveNoInteractions();
         }
 
@@ -115,7 +110,6 @@ class MemberCommandControllerTest extends AbstractRestDocSupport {
             // given
             UpdateMemberProfileRequest request = new UpdateMemberProfileRequest(NEW_NICKNAME, MemberGender.FEMALE, "자기소개");
 
-            // 서비스 계층에서 MEMBER_NOT_FOUND 예외가 발생하도록 설정
             given(memberCommandService.updateMemberProfile(any(UpdateMemberProfileRequest.class)))
                     .willThrow(new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
@@ -128,7 +122,6 @@ class MemberCommandControllerTest extends AbstractRestDocSupport {
                     .andExpect(jsonPath("$.succeed").value(false))
                     .andExpect(jsonPath("$.code").value(ErrorCode.MEMBER_NOT_FOUND.getCode()));
 
-            // 예외는 발생했지만, 서비스 메소드 자체는 호출되었음을 검증
             then(memberCommandService).should().updateMemberProfile(any(UpdateMemberProfileRequest.class));
         }
     }

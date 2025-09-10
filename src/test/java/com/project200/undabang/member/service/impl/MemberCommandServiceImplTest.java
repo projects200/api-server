@@ -65,8 +65,8 @@ class MemberCommandServiceImplTest {
     private Member createDefaultMember() {
         return Member.builder()
                 .memberId(TEST_UUID)
-                .memberEmail(TEST_EMAIL) // 제공해주신 이메일 상수 추가
-                .memberNickname(TEST_NICKNAME) // 제공해주신 닉네임 상수로 변경
+                .memberEmail(TEST_EMAIL)
+                .memberNickname(TEST_NICKNAME)
                 .memberGender(MemberGender.MALE)
                 .memberDesc("기존 자기소개")
                 .build();
@@ -328,7 +328,6 @@ class MemberCommandServiceImplTest {
                 ignored.when(UserContextHolder::getUserId).thenReturn(TEST_UUID);
 
                 Member member = createDefaultMember();
-                // 요청 DTO의 닉네임을 기존 닉네임 상수(TEST_NICKNAME)로 설정
                 UpdateMemberProfileRequest request = new UpdateMemberProfileRequest(TEST_NICKNAME, MemberGender.FEMALE, "자기소개만 변경");
 
                 given(memberRepository.findById(TEST_UUID)).willReturn(Optional.of(member));
