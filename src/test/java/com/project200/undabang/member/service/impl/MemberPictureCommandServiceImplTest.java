@@ -195,7 +195,7 @@ class MemberPictureCommandServiceImplTest {
 
     private MemberPicture createTestMemberPicture(Member member, Picture picture) {
         return MemberPicture.builder()
-                .id(picture.getId()) // 편의상 pictureId와 동일하게 설정
+                .id(picture.getId())
                 .member(member)
                 .picture(picture)
                 .build();
