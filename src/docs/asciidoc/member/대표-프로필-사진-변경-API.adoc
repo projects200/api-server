@@ -1,0 +1,33 @@
+== 대표 프로필 사진 변경 API
+
+=== 설명
+
+- #PUT# `/api/v1/profile-pictures/{pictureId}/represent`
+- 회원이 설정한 대표사진을 변경하는 API 입니다.
+
+=== 개발 이력
+
+- Sprint 11 (2025-09-11): 기능 개발이 완료되었습니다.
+
+=== 개발 참고 사항
+
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+
+operation::update-representative-profile-image/update-representative-profile-image_-success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+
+operation::update-representative-profile-image/update-representative-profile-image_-success[snippets="request-headers,path-parameters,response-fields"]
+
+==== 응답 상태 코드
+
+|===
+|상태 코드|설명
+|200|리소스가 성공적으로 업데이트 되었습니다.
+|401|인증되지 않은 요청입니다. Access Token이 없거나 유효하지 않습니다.
+|403|접근 권한이 없습니다.
+|404|존재하지 않는 사진입니다.
+|===
+
