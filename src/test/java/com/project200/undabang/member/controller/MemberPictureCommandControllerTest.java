@@ -6,6 +6,7 @@ import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
 import com.project200.undabang.configuration.RestDocsUtils;
 import com.project200.undabang.member.dto.response.CreateProfilePictureResponse;
+import com.project200.undabang.member.dto.response.UpdateProfilePictureResponse;
 import com.project200.undabang.member.service.MemberPictureCommandService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,10 +25,10 @@ import static com.project200.undabang.configuration.DocumentFormatGenerator.getT
 import static com.project200.undabang.configuration.HeadersGenerator.getCommonApiHeaders;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.put;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
-import static org.springframework.restdocs.request.RequestDocumentation.partWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.requestParts;
+import static org.springframework.restdocs.request.RequestDocumentation.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -152,6 +153,92 @@ class MemberPictureCommandControllerTest extends AbstractRestDocSupport {
                     .andExpect(jsonPath("$.message").value(ErrorCode.MEMBER_NOT_FOUND.getMessage()));
 
             BDDMockito.then(memberPictureCommandService).should(BDDMockito.times(1)).createProfilePicture(BDDMockito.any(MockMultipartFile.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("대표 프로필 사진 변경")
+    class updateRepresentativeProfileImage {
+
+        @Test
+        @DisplayName("성공: 유효한 사진 ID로 요청 시 200 OK와 응답 데이터를 반환한다")
+        void updateRepresentativeProfileImage_Success() throws Exception {
+            // given
+            UUID testMemberId = UUID.randomUUID();
+            Long pictureId = 1L;
+
+            UpdateProfilePictureResponse responseDto = new UpdateProfilePictureResponse(pictureId);
+
+            BDDMockito.given(memberPictureCommandService.updateRepresentativeProfileImage(pictureId))
+                    .willReturn(responseDto);
+
+            // when
+            String response = mockMvc.perform(put("/api/v1/profile-pictures/{pictureId}/represent", pictureId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(testMemberId)))
+                    .andExpectAll(status().isOk())
+                    .andDo(document.document(
+                            requestHeaders(RestDocsUtils.HEADER_ACCESS_TOKEN),
+                            pathParameters(
+                                    parameterWithName("pictureId").attributes(getTypeFormat("NUMBER")).description("대표 사진으로 지정할 사진의 식별자를 나타냅니다.")
+                            ),
+                            responseFields(RestDocsUtils.commonResponseFields(
+                                    fieldWithPath("data.profileImageId").type(JsonFieldType.NUMBER).description("새롭게 대표로 지정된 프로필 사진의 식별자를 나타냅니다.")
+                            ))
+                    ))
+                    .andReturn().getResponse().getContentAsString();
+
+            // then
+            assertThat(response).isEqualTo(objectMapper.writeValueAsString(CommonResponse.update(responseDto)));
+            BDDMockito.then(memberPictureCommandService).should().updateRepresentativeProfileImage(pictureId);
+            BDDMockito.then(memberPictureCommandService).shouldHaveNoMoreInteractions();
+        }
+
+        @Test
+        @DisplayName("실패: 사진이 존재하지 않을 때 서비스에서 예외 발생 시 404 Not Found를 반환한다")
+        void updateRepresentativeProfileImage_Fail_PictureNotFound() throws Exception {
+            // given
+            UUID testMemberId = UUID.randomUUID();
+            Long pictureId = 999L; // 존재하지 않는 사진 ID
+
+            BDDMockito.given(memberPictureCommandService.updateRepresentativeProfileImage(pictureId))
+                    .willThrow(new CustomException(ErrorCode.PICTURE_NOT_FOUND));
+
+            // when & then
+            mockMvc.perform(put("/api/v1/profile-pictures/{pictureId}/represent", pictureId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(testMemberId)))
+                    .andExpectAll(status().isNotFound())
+                    .andExpect(jsonPath("$.succeed").value(false))
+                    .andExpect(jsonPath("$.code").value(ErrorCode.PICTURE_NOT_FOUND.getCode()))
+                    .andExpect(jsonPath("$.message").value(ErrorCode.PICTURE_NOT_FOUND.getMessage()));
+
+            BDDMockito.then(memberPictureCommandService).should().updateRepresentativeProfileImage(pictureId);
+        }
+
+        @Test
+        @DisplayName("실패: 사진이 사용자의 소유가 아닐 때 서비스에서 예외 발생 시 403 Forbidden을 반환한다")
+        void updateRepresentativeProfileImage_Fail_AuthorizationDenied() throws Exception {
+            // given
+            UUID testMemberId = UUID.randomUUID();
+            Long pictureId = 2L; // 다른 사람의 사진 ID
+
+            BDDMockito.given(memberPictureCommandService.updateRepresentativeProfileImage(pictureId))
+                    .willThrow(new CustomException(ErrorCode.AUTHORIZATION_DENIED));
+
+            // when & then
+            mockMvc.perform(put("/api/v1/profile-pictures/{pictureId}/represent", pictureId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(testMemberId)))
+                    .andExpectAll(status().isForbidden())
+                    .andExpect(jsonPath("$.succeed").value(false))
+                    .andExpect(jsonPath("$.code").value(ErrorCode.AUTHORIZATION_DENIED.getCode()))
+                    .andExpect(jsonPath("$.message").value(ErrorCode.AUTHORIZATION_DENIED.getMessage()));
+
+            BDDMockito.then(memberPictureCommandService).should().updateRepresentativeProfileImage(pictureId);
         }
     }
 }

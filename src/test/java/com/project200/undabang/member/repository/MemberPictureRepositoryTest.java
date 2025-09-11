@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Import;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,7 +23,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
 @Import(TestQuerydslConfig.class)
 class MemberPictureRepositoryTest {
-
 
     @Autowired
     private EntityManager em;
@@ -133,6 +133,66 @@ class MemberPictureRepositoryTest {
 
             // then
             assertThat(foundPictures).isNotNull().isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull 메소드는")
+    class Describe_findByMemberAndPicture_Id_AndPicture_PictureDeletedAtNull {
+
+        @Test
+        @DisplayName("유효한 회원과 사진ID로 조회 시 해당 MemberPicture 객체를 Optional에 담아 반환한다")
+        void it_returns_optional_of_member_picture_for_valid_input() {
+            // given
+            Member member = createAndSaveMember("testMember");
+            MemberPicture expectedMemberPicture = createAndSaveMemberPicture(member);
+            Long pictureId = expectedMemberPicture.getPicture().getId();
+
+            flushAndClear();
+
+            // when
+            Optional<MemberPicture> foundOpt = memberPictureRepository.findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(member, pictureId);
+
+            // then
+            assertThat(foundOpt).isPresent();
+            assertThat(foundOpt.get().getId()).isEqualTo(expectedMemberPicture.getId());
+        }
+
+        @Test
+        @DisplayName("사진이 다른 회원의 소유일 경우 빈 Optional을 반환한다 (인가 실패 케이스)")
+        void it_returns_empty_optional_when_picture_owned_by_another_member() {
+            // given
+            Member requestingMember = createAndSaveMember("requestingMember");
+            Member ownerMember = createAndSaveMember("ownerMember");
+            MemberPicture ownedMemberPicture = createAndSaveMemberPicture(ownerMember);
+            Long pictureIdOwnedByOther = ownedMemberPicture.getPicture().getId();
+
+            flushAndClear();
+
+            // when
+            Optional<MemberPicture> result = memberPictureRepository.findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(requestingMember, pictureIdOwnedByOther);
+
+            // then
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("사진이 soft-delete된 경우 빈 Optional을 반환한다")
+        void it_returns_empty_optional_when_picture_is_soft_deleted() {
+            // given
+            Member member = createAndSaveMember("testMember");
+            MemberPicture memberPicture = createAndSaveMemberPicture(member);
+            Picture picture = memberPicture.getPicture();
+            picture.softDelete(); // Picture를 soft-delete
+            em.persist(picture);
+
+            flushAndClear();
+
+            // when
+            Optional<MemberPicture> result = memberPictureRepository.findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(member, picture.getId());
+
+            // then
+            assertThat(result).isEmpty();
         }
     }
 }

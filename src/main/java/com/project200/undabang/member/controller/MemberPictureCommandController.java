@@ -41,9 +41,16 @@ public class MemberPictureCommandController {
         return ResponseEntity.ok(CommonResponse.delete(null));
     }
 
+    /**
+     * 특정 프로필 사진을 대표 이미지로 업데이트합니다.
+     *
+     * @param pictureId 대표 이미지로 설정할 프로필 사진의 고유 ID
+     * @return 업데이트된 대표 프로필 사진 정보를 포함하는 ResponseEntity 객체를 반환합니다.
+     * 반환 데이터는 CommonResponse<UpdateProfilePictureResponse> 형태입니다.
+     */
     @PutMapping("/v1/profile-pictures/{pictureId}/represent")
-    public ResponseEntity<CommonResponse<UpdateProfilePictureResponse>> updateRepresentativePicture(@PathVariable Long pictureId) {
+    public ResponseEntity<CommonResponse<UpdateProfilePictureResponse>> updateRepresentativeProfileImage(@PathVariable Long pictureId) {
 
-        return ResponseEntity.ok(CommonResponse.update(new UpdateProfilePictureResponse(1L)));
+        return ResponseEntity.ok(CommonResponse.update(memberPictureCommandService.updateRepresentativeProfileImage(pictureId)));
     }
 }
