@@ -35,9 +35,17 @@ public class MemberPictureCommandController {
         return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(memberPictureCommandService.createProfilePicture(profilePicture)));
     }
 
+    /**
+     * 사용자의 프로필 사진을 삭제합니다.
+     *
+     * @param pictureId 삭제할 프로필 사진의 고유 ID
+     * @return 삭제 결과를 포함하는 ResponseEntity 객체를 반환합니다.
+     * 반환 데이터는 CommonResponse<Void> 형태입니다.
+     */
     @DeleteMapping("/v1/profile-pictures/{pictureId}")
     public ResponseEntity<CommonResponse<Void>> deleteProfilePicture(@PathVariable Long pictureId) {
 
+        memberPictureCommandService.deleteProfilePicture(pictureId);
         return ResponseEntity.ok(CommonResponse.delete(null));
     }
 

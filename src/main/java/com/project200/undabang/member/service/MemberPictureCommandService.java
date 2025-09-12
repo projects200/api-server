@@ -6,6 +6,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface MemberPictureCommandService {
     CreateProfilePictureResponse createProfilePicture(MultipartFile profilePicture);
-
     UpdateProfilePictureResponse updateRepresentativeProfileImage(Long pictureId);
+
+    void deleteProfilePicture(Long pictureId);
 }

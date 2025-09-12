@@ -296,5 +296,28 @@ public class PictureServiceIntegrationTest {
             assertThat(s3Service.isFileExists("trash/uploads/rollback1.jpg")).isFalse();
             assertThat(s3Service.isFileExists("uploads/fail-on-this.png")).isTrue();
         }
+
+        @Test
+        @DisplayName("성공[단일 삭제]: 단일 Picture 객체 삭제 시 S3 파일이 휴지통으로 이동하고 DB가 soft-delete 된다")
+        void delete_SinglePicture_Success_Integration() {
+            // given
+            // 1. DB에 Picture 엔티티 저장
+            Picture pic = pictureRepository.save(Picture.builder().pictureUrl("http://s3.com/uploads/single-delete.gif").build());
+            // 2. LocalStack S3에 실제 파일 업로드
+            s3Service.uploadImage(new MockMultipartFile("f", "single.gif", "image/gif", "c".getBytes()), "uploads/single-delete.gif");
+
+            // when
+            pictureService.deletePictureFromS3AndDB(pic);
+
+            // then
+            // 1. DB 검증: deleted_at 컬럼 확인
+            entityManager.clear(); // 영속성 컨텍스트를 비워 DB에서 직접 다시 조회하도록 강제
+            Picture deletedPic = pictureRepository.findById(pic.getId()).get();
+            assertThat(deletedPic.getPictureDeletedAt()).isNotNull();
+
+            // 2. S3 검증: 원본 파일 삭제 및 휴지통으로 이동 확인
+            assertThat(s3Service.isFileExists("uploads/single-delete.gif")).isFalse();
+            assertThat(s3Service.isFileExists("trash/uploads/single-delete.gif")).isTrue();
+        }
     }
 }

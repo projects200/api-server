@@ -151,6 +151,18 @@ public class PictureService {
     }
 
     /**
+     * 단일 Picture 엔티티를 기반으로 S3에서 이미지를 삭제하고,
+     * 데이터베이스에서 해당 데이터를 논리적으로 삭제(soft delete)합니다.
+     * 내부적으로 리스트 처리 메소드를 재사용합니다.
+     *
+     * @param picture 삭제할 Picture 엔티티
+     */
+    @Transactional
+    public void deletePictureFromS3AndDB(@NotNull Picture picture) {
+        this.deletePictureFromS3AndDB(List.of(picture));
+    }
+
+    /**
      * 주어진 Picture 리스트를 기반으로 S3에서 이미지를 삭제하고,
      * 데이터베이스에 해당 데이터를 논리적으로 삭제(soft delete)합니다.
      * 예외 상황 발생 시 S3 삭제나 DB 처리의 롤백을 수행합니다.

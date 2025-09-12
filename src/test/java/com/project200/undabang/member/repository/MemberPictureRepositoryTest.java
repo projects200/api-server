@@ -14,6 +14,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,47 +30,6 @@ class MemberPictureRepositoryTest {
 
     @Autowired
     private MemberPictureRepository memberPictureRepository;
-
-    private Member createAndSaveMember(String nickname) {
-        Member member = Member.builder()
-                .memberId(UUID.randomUUID())
-                .memberEmail(nickname + "@email.com")
-                .memberNickname(nickname)
-                .memberGender(MemberGender.UNKNOWN) // Enum이 있다면 실제 값으로
-                .memberBday(LocalDate.of(2000, 1, 1))
-                .build();
-        em.persist(member);
-        return member;
-    }
-
-    private Picture createAndSavePicture(String pictureName) {
-        Picture picture = Picture.builder()
-                .pictureName(pictureName)
-                .pictureUrl("/test/" + pictureName)
-                .pictureExtension(".jpg")
-                .pictureSize(1024)
-                .build();
-        em.persist(picture);
-        return picture;
-    }
-
-    private MemberPicture createAndSaveMemberPicture(Member member) {
-        // Picture를 먼저 생성하고 저장
-        Picture picture = createAndSavePicture(UUID.randomUUID().toString());
-
-        // MemberPicture 생성 및 저장
-        MemberPicture memberPicture = MemberPicture.builder()
-                .member(member)
-                .picture(picture)
-                .build();
-        em.persist(memberPicture);
-        return memberPicture;
-    }
-
-    private void flushAndClear() {
-        em.flush();
-        em.clear();
-    }
 
     @Nested
     @DisplayName("findByMemberAndPicture_PictureDeletedAtNull 메소드는")
@@ -193,6 +153,147 @@ class MemberPictureRepositoryTest {
 
             // then
             assertThat(result).isEmpty();
+        }
+    }
+
+    private Member createAndSaveMember(String nickname) {
+        Member member = Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberEmail(nickname + "@email.com")
+                .memberNickname(nickname)
+                .memberGender(MemberGender.UNKNOWN)
+                .memberBday(LocalDate.of(2000, 1, 1))
+                .build();
+        em.persist(member);
+        return member;
+    }
+
+    private Picture createAndSavePicture(String pictureName, LocalDateTime createdAt) {
+        Picture picture = Picture.builder()
+                .pictureName(pictureName)
+                .pictureUrl("/test/" + pictureName)
+                .pictureExtension(".jpg")
+                .pictureSize(1024)
+                .pictureCreatedAt(createdAt) // 생성 시간 제어를 위해 파라미터 추가
+                .build();
+        em.persist(picture);
+        return picture;
+    }
+
+    private MemberPicture createAndSaveMemberPicture(Member member) {
+        return createAndSaveMemberPicture(member, LocalDateTime.now());
+    }
+
+    private MemberPicture createAndSaveMemberPicture(Member member, LocalDateTime pictureCreatedAt) {
+        Picture picture = createAndSavePicture(UUID.randomUUID().toString(), pictureCreatedAt);
+        MemberPicture memberPicture = MemberPicture.builder()
+                .member(member)
+                .picture(picture)
+                .build();
+        em.persist(memberPicture);
+        return memberPicture;
+    }
+
+    private void flushAndClear() {
+        em.flush();
+        em.clear();
+    }
+
+    @Nested
+    @DisplayName("findFirstByMemberAndMemberPicturesDeletedAtNullAndPicture_PictureDeletedAtNullOrderByPicture_PictureCreatedAtDesc 메소드는")
+    class Describe_findFirstByMember {
+
+        @Test
+        @DisplayName("삭제되지 않은 사진들 중 가장 최근에 생성된 사진 하나를 Optional에 담아 반환한다")
+        void it_returns_the_most_recently_created_picture() throws InterruptedException {
+            // given
+            Member member = createAndSaveMember("testMember");
+
+            // 생성 시간 순서를 보장하기 위해 시간 간격을 둠
+            createAndSaveMemberPicture(member, LocalDateTime.now().minusDays(2)); // 가장 오래된 사진
+            MemberPicture middlePicture = createAndSaveMemberPicture(member, LocalDateTime.now().minusDays(1)); // 중간
+            MemberPicture latestPicture = createAndSaveMemberPicture(member, LocalDateTime.now()); // 가장 최신
+
+            flushAndClear();
+
+            // when
+            Optional<MemberPicture> foundOpt = memberPictureRepository.findFirstByMemberAndMemberPicturesDeletedAtNullAndPicture_PictureDeletedAtNullOrderByPicture_PictureCreatedAtDesc(member);
+
+            // then
+            assertThat(foundOpt).isPresent();
+            assertThat(foundOpt.get().getId()).isEqualTo(latestPicture.getId());
+            assertThat(foundOpt.get().getPicture().getId()).isEqualTo(latestPicture.getPicture().getId());
+        }
+
+        @Test
+        @DisplayName("가장 최신 사진의 Picture가 soft-delete된 경우, 그 다음으로 최신인 사진을 반환한다")
+        void it_returns_the_next_latest_picture_if_the_latest_one_is_deleted() {
+            // given
+            Member member = createAndSaveMember("testMember");
+
+            createAndSaveMemberPicture(member, LocalDateTime.now().minusDays(2));
+            MemberPicture expectedPicture = createAndSaveMemberPicture(member, LocalDateTime.now().minusDays(1)); // 차순위 최신
+            MemberPicture latestButDeleted = createAndSaveMemberPicture(member, LocalDateTime.now()); // 가장 최신이지만 삭제될 사진
+
+            // 가장 최신 Picture를 soft-delete
+            latestButDeleted.getPicture().softDelete();
+            em.persist(latestButDeleted.getPicture());
+
+            flushAndClear();
+
+            // when
+            Optional<MemberPicture> foundOpt = memberPictureRepository.findFirstByMemberAndMemberPicturesDeletedAtNullAndPicture_PictureDeletedAtNullOrderByPicture_PictureCreatedAtDesc(member);
+
+            // then
+            assertThat(foundOpt).isPresent();
+            assertThat(foundOpt.get().getId()).isEqualTo(expectedPicture.getId());
+        }
+
+        @Test
+        @DisplayName("가장 최신 사진의 MemberPicture가 soft-delete된 경우, 그 다음으로 최신인 사진을 반환한다")
+        void it_returns_the_next_latest_picture_if_the_latest_member_picture_is_deleted() {
+            // given
+            Member member = createAndSaveMember("testMember");
+
+            createAndSaveMemberPicture(member, LocalDateTime.now().minusDays(2));
+            MemberPicture expectedPicture = createAndSaveMemberPicture(member, LocalDateTime.now().minusDays(1));
+            MemberPicture latestButDeleted = createAndSaveMemberPicture(member, LocalDateTime.now());
+
+            // 가장 최신 MemberPicture를 soft-delete
+            latestButDeleted.deleteMemberPicture();
+            em.persist(latestButDeleted);
+
+            flushAndClear();
+
+            // when
+            Optional<MemberPicture> foundOpt = memberPictureRepository.findFirstByMemberAndMemberPicturesDeletedAtNullAndPicture_PictureDeletedAtNullOrderByPicture_PictureCreatedAtDesc(member);
+
+            // then
+            assertThat(foundOpt).isPresent();
+            assertThat(foundOpt.get().getId()).isEqualTo(expectedPicture.getId());
+        }
+
+        @Test
+        @DisplayName("삭제되지 않은 사진이 하나도 없는 경우 빈 Optional을 반환한다")
+        void it_returns_empty_optional_when_no_active_pictures_exist() {
+            // given
+            Member member = createAndSaveMember("testMember");
+            MemberPicture mp1 = createAndSaveMemberPicture(member);
+            MemberPicture mp2 = createAndSaveMemberPicture(member);
+
+            // 모든 사진을 삭제 처리
+            mp1.getPicture().softDelete();
+            em.persist(mp1.getPicture());
+            mp2.deleteMemberPicture();
+            em.persist(mp2);
+
+            flushAndClear();
+
+            // when
+            Optional<MemberPicture> foundOpt = memberPictureRepository.findFirstByMemberAndMemberPicturesDeletedAtNullAndPicture_PictureDeletedAtNullOrderByPicture_PictureCreatedAtDesc(member);
+
+            // then
+            assertThat(foundOpt).isEmpty();
         }
     }
 }

@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @Slf4j
@@ -81,6 +82,39 @@ public class MemberPictureCommandServiceImpl implements MemberPictureCommandServ
         member.updateProfilePicture(memberPicture);
 
         return UpdateProfilePictureResponse.from(member);
+    }
+
+    /**
+     * 주어진 사진 ID에 해당하는 프로필 사진을 삭제합니다.
+     * 사진이 존재하지 않거나 사용 권한이 없는 경우 예외가 발생합니다.
+     * 기존 대표 프로필 사진을 삭제한 경우, 삭제 후 가장 최신 사진으로 대표 프로필 사진을 갱신하거나 null로 업데이트합니다.
+     *
+     * @param pictureId 삭제할 프로필 사진의 ID
+     * @throws CustomException 사진이 존재하지 않거나 사용 권한이 없는 경우 발생
+     */
+    @Override
+    public void deleteProfilePicture(Long pictureId) {
+        Member member = getMember(UserContextHolder.getUserId());
+
+        Picture picture = pictureRepository.findById(pictureId).orElseThrow(() -> new CustomException(ErrorCode.PICTURE_NOT_FOUND));
+
+        MemberPicture memberPicture = memberPictureRepository.findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(member, pictureId)
+                .orElseThrow(() -> new CustomException(ErrorCode.AUTHORIZATION_DENIED));
+
+        // 썸네일 사진, 프로필 사진 논리적 삭제 및 S3에 저장된 프로필 사진 삭제
+        memberPicture.deleteMemberPicture();
+        pictureService.deletePictureFromS3AndDB(picture);
+
+        // 만약 회원의 fk 를 지우는 경우, 가장 최근에 생성된 사진 데이터를 넣어주고 그렇지 않으면 null 을 넣어줘야 함
+        if (Objects.equals(member.getMemberPicture(), memberPicture)) {
+            memberPictureRepository.findFirstByMemberAndMemberPicturesDeletedAtNullAndPicture_PictureDeletedAtNullOrderByPicture_PictureCreatedAtDesc(member)
+                    .ifPresentOrElse(
+                            member::updateProfilePicture,
+                            () -> member.updateProfilePicture(null)
+                    );
+        }
+
+        // todo 썸네일 생성 이후 삭제를 진행해야 함 S3에 업로드 및 삭제 과정에 대한 고려 후 개발 진행
     }
 
     /**

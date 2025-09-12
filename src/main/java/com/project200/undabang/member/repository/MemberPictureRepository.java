@@ -14,4 +14,6 @@ public interface MemberPictureRepository extends JpaRepository<MemberPicture, Lo
     List<MemberPicture> findByMemberAndPicture_PictureDeletedAtNull(Member member);
 
     Optional<MemberPicture> findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(Member member, Long id);
+
+    Optional<MemberPicture> findFirstByMemberAndMemberPicturesDeletedAtNullAndPicture_PictureDeletedAtNullOrderByPicture_PictureCreatedAtDesc(Member member);
 }
