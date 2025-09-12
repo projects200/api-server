@@ -102,11 +102,11 @@ public class MemberPictureCommandServiceImpl implements MemberPictureCommandServ
                 .orElseThrow(() -> new CustomException(ErrorCode.AUTHORIZATION_DENIED));
 
         // 썸네일 사진, 프로필 사진 논리적 삭제 및 S3에 저장된 프로필 사진 삭제
-        memberPicture.deleteMemberPicture();
         pictureService.deletePictureFromS3AndDB(picture);
+        memberPicture.deleteMemberPicture();
 
         // 만약 회원의 fk 를 지우는 경우, 가장 최근에 생성된 사진 데이터를 넣어주고 그렇지 않으면 null 을 넣어줘야 함
-        if (Objects.equals(member.getMemberPicture(), memberPicture)) {
+        if (member.getMemberPicture() != null && Objects.equals(member.getMemberPicture().getId(), memberPicture.getId())) {
             memberPictureRepository.findFirstByMemberAndMemberPicturesDeletedAtNullAndPicture_PictureDeletedAtNullOrderByPicture_PictureCreatedAtDesc(member)
                     .ifPresentOrElse(
                             member::updateProfilePicture,
