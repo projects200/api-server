@@ -3,15 +3,13 @@ package com.project200.undabang.member.controller.picture;
 import com.project200.undabang.common.validation.AllowedExtensions;
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.member.dto.response.CreateProfilePictureResponse;
+import com.project200.undabang.member.dto.response.UpdateProfilePictureResponse;
 import com.project200.undabang.member.service.MemberPictureCommandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
@@ -35,5 +33,17 @@ public class MemberPictureCommandController {
             @RequestPart("profilePicture") MultipartFile profilePicture) {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(memberPictureCommandService.createProfilePicture(profilePicture)));
+    }
+
+    @DeleteMapping("/v1/profile-pictures/{pictureId}")
+    public ResponseEntity<CommonResponse<Void>> deleteProfilePicture(@PathVariable Long pictureId) {
+
+        return ResponseEntity.ok(CommonResponse.delete(null));
+    }
+
+    @PutMapping("/v1/profile-pictures/{pictureId}/represent")
+    public ResponseEntity<CommonResponse<UpdateProfilePictureResponse>> updateRepresentativePicture(@PathVariable Long pictureId) {
+
+        return ResponseEntity.ok(CommonResponse.update(new UpdateProfilePictureResponse(1L)));
     }
 }
