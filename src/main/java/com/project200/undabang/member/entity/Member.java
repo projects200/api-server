@@ -159,4 +159,18 @@ public class Member {
     public void updateProfilePicture(MemberPicture memberPicture) {
         this.memberPicture = memberPicture;
     }
+
+    /**
+     * 회원의 정보를 업데이트합니다.
+     * 제공된 닉네임, 성별, 자기소개를 기반으로 회원 정보를 수정합니다.
+     *
+     * @param nickname 새로운 닉네임
+     * @param gender   새로운 성별 정보
+     * @param bio      새로운 자기소개 내용
+     */
+    public void updateMemberInfo(String nickname, MemberGender gender, String bio) {
+        this.memberNickname = nickname;
+        this.memberGender = gender;
+        this.memberDesc = bio;
+    }
 }

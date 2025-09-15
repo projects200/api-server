@@ -5,6 +5,7 @@ import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
 import com.project200.undabang.configuration.RestDocsUtils;
+import com.project200.undabang.member.controller.picture.MemberPictureCommandController;
 import com.project200.undabang.member.dto.response.CreateProfilePictureResponse;
 import com.project200.undabang.member.dto.response.UpdateProfilePictureResponse;
 import com.project200.undabang.member.service.MemberPictureCommandService;
