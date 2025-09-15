@@ -21,3 +21,5 @@ include::overview/공통-개발-참고-사항.adoc[]
 include::member/회원-점수-조회-API.adoc[]
 
 include::member/내-프로필-조회-API.adoc[]
+
+include::member/내-프로필-수정-API.adoc[]
