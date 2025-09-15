@@ -2,11 +2,13 @@ package com.project200.undabang.member.service.impl;
 
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.entity.Picture;
+import com.project200.undabang.common.repository.PictureRepository;
 import com.project200.undabang.common.service.FileType;
 import com.project200.undabang.common.service.PictureService;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.dto.response.CreateProfilePictureResponse;
+import com.project200.undabang.member.dto.response.UpdateProfilePictureResponse;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.MemberPicture;
 import com.project200.undabang.member.repository.MemberPictureRepository;
@@ -30,6 +32,7 @@ public class MemberPictureCommandServiceImpl implements MemberPictureCommandServ
     private final MemberRepository memberRepository;
     private final MemberPictureRepository memberPictureRepository;
     private final PictureService pictureService;
+    private final PictureRepository pictureRepository;
 
     /**
      * 사용자가 업로드한 프로필 사진을 S3에 저장하고, 이를 데이터베이스에 기록한 뒤
@@ -54,6 +57,30 @@ public class MemberPictureCommandServiceImpl implements MemberPictureCommandServ
         member.updateProfilePicture(savedMemberPicture);
 
         return CreateProfilePictureResponse.from(savedPicture);
+    }
+
+    /**
+     * 사용자의 대표 프로필 사진을 업데이트합니다.
+     * 주어진 사진 ID에 해당하는 사진이 존재하고, 사용자의 사진인 경우 사용자의 대표 프로필 사진을 변경합니다.
+     *
+     * @param pictureId 업데이트할 프로필 사진의 ID
+     * @return 변경된 대표 프로필 사진 정보를 담고 있는 UpdateProfilePictureResponse 객체
+     * @throws CustomException 사진이 존재하지 않거나 사용 권한이 없는 경우 발생
+     */
+    @Override
+    public UpdateProfilePictureResponse updateRepresentativeProfileImage(Long pictureId) {
+        Member member = getMember(UserContextHolder.getUserId());
+
+        if (!pictureRepository.existsByIdAndPictureDeletedAtNull(pictureId)) {
+            throw new CustomException(ErrorCode.PICTURE_NOT_FOUND);
+        }
+
+        MemberPicture memberPicture = memberPictureRepository.findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(member, pictureId)
+                .orElseThrow(() -> new CustomException(ErrorCode.AUTHORIZATION_DENIED));
+
+        member.updateProfilePicture(memberPicture);
+
+        return UpdateProfilePictureResponse.from(member);
     }
 
     /**

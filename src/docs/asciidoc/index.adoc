@@ -111,6 +111,9 @@ include::overview/공통-개발-참고-사항.adoc[]
 
 - 내 프로필 수정 API #PUT# `/api/v1/profile`
 
+- 대표 프로필 사진 변경 API #PUT# `/api/v1/profile-pictures/{pictureId}/represent`
+
+
 === xref:운동-API.html[운동 API]
 
 - 운동 기록 생성 API #POST# `/api/v1/exercises`

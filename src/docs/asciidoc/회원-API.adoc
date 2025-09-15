@@ -23,3 +23,5 @@ include::member/회원-점수-조회-API.adoc[]
 include::member/내-프로필-조회-API.adoc[]
 
 include::member/내-프로필-수정-API.adoc[]
+
+include::member/대표-프로필-사진-변경-API.adoc[]

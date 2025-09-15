@@ -2,11 +2,13 @@ package com.project200.undabang.member.service.impl;
 
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.entity.Picture;
+import com.project200.undabang.common.repository.PictureRepository;
 import com.project200.undabang.common.service.FileType;
 import com.project200.undabang.common.service.PictureService;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.dto.response.CreateProfilePictureResponse;
+import com.project200.undabang.member.dto.response.UpdateProfilePictureResponse;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.MemberPicture;
 import com.project200.undabang.member.repository.MemberPictureRepository;
@@ -46,18 +48,8 @@ class MemberPictureCommandServiceImplTest {
     @Mock
     private PictureService pictureService;
 
-    private Member createTestMember(UUID memberId) {
-        return Member.builder().memberId(memberId).build();
-    }
-
-    private MultipartFile createTestMultipartFile() {
-        return new MockMultipartFile(
-                "profilePicture",
-                "profile.jpg",
-                MediaType.IMAGE_JPEG_VALUE,
-                "test-image-content".getBytes()
-        );
-    }
+    @Mock
+    private PictureRepository pictureRepository;
 
     @Nested
     @DisplayName("프로필 사진 생성 성공 케이스")
@@ -192,4 +184,137 @@ class MemberPictureCommandServiceImplTest {
             }
         }
     }
+
+    private Member createTestMember(UUID memberId) {
+        return Member.builder().memberId(memberId).build();
+    }
+
+    private Picture createTestPicture(Long pictureId) {
+        return Picture.builder().id(pictureId).build();
+    }
+
+    private MemberPicture createTestMemberPicture(Member member, Picture picture) {
+        return MemberPicture.builder()
+                .id(picture.getId())
+                .member(member)
+                .picture(picture)
+                .build();
+    }
+
+    private MultipartFile createTestMultipartFile() {
+        return new MockMultipartFile(
+                "profilePicture",
+                "profile.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "test-image-content".getBytes()
+        );
+    }
+
+    @Nested
+    @DisplayName("대표 프로필 사진 변경 테스트")
+    class UpdateRepresentativeProfileImageTests {
+
+        @Test
+        @DisplayName("성공: 모든 조건이 유효할 때 대표 프로필 사진이 성공적으로 변경된다")
+        void updateRepresentativeProfileImage_Success() {
+            // given
+            UUID testUserId = UUID.randomUUID();
+            Long pictureId = 100L;
+            Member testMember = createTestMember(testUserId);
+            Picture testPicture = createTestPicture(pictureId);
+            MemberPicture testMemberPicture = createTestMemberPicture(testMember, testPicture);
+
+            try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
+                // Mocking static method and repository calls
+                BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
+                BDDMockito.given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
+                BDDMockito.given(pictureRepository.existsByIdAndPictureDeletedAtNull(pictureId)).willReturn(true);
+                BDDMockito.given(memberPictureRepository.findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(testMember, pictureId))
+                        .willReturn(Optional.of(testMemberPicture));
+
+                // when
+                UpdateProfilePictureResponse result = memberPictureCommandService.updateRepresentativeProfileImage(pictureId);
+
+                // then
+                assertThat(result).isNotNull();
+                assertThat(result.getProfileImageId()).isEqualTo(testMemberPicture.getId());
+
+                // Member 객체의 상태가 올바르게 변경되었는지 검증
+                assertThat(testMember.getMemberPicture()).isEqualTo(testMemberPicture);
+
+                // Mock 객체 상호작용 검증
+                BDDMockito.then(memberRepository).should().findById(testUserId);
+                BDDMockito.then(pictureRepository).should().existsByIdAndPictureDeletedAtNull(pictureId);
+                BDDMockito.then(memberPictureRepository).should().findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(testMember, pictureId);
+            }
+        }
+
+        @Test
+        @DisplayName("실패: 회원을 찾을 수 없을 때 CustomException(MEMBER_NOT_FOUND)을 던진다")
+        void updateRepresentativeProfileImage_Fails_WhenMemberNotFound() {
+            // given
+            UUID testUserId = UUID.randomUUID();
+            Long pictureId = 100L;
+
+            try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
+                BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
+                BDDMockito.given(memberRepository.findById(testUserId)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> memberPictureCommandService.updateRepresentativeProfileImage(pictureId))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
+
+                // 이후 로직이 호출되지 않았는지 검증
+                BDDMockito.then(pictureRepository).should(BDDMockito.never()).existsByIdAndPictureDeletedAtNull(any());
+                BDDMockito.then(memberPictureRepository).should(BDDMockito.never()).findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(any(), any());
+            }
+        }
+
+        @Test
+        @DisplayName("실패: 사진이 존재하지 않거나 삭제되었을 때 CustomException(PICTURE_NOT_FOUND)을 던진다")
+        void updateRepresentativeProfileImage_Fails_WhenPictureNotFound() {
+            // given
+            UUID testUserId = UUID.randomUUID();
+            Long pictureId = 100L;
+            Member testMember = createTestMember(testUserId);
+
+            try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
+                BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
+                BDDMockito.given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
+                BDDMockito.given(pictureRepository.existsByIdAndPictureDeletedAtNull(pictureId)).willReturn(false);
+
+                // when & then
+                assertThatThrownBy(() -> memberPictureCommandService.updateRepresentativeProfileImage(pictureId))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PICTURE_NOT_FOUND);
+
+                BDDMockito.then(memberPictureRepository).should(BDDMockito.never()).findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(any(), any());
+            }
+        }
+
+        @Test
+        @DisplayName("실패: 사진이 현재 사용자의 소유가 아닐 때 CustomException(AUTHORIZATION_DENIED)을 던진다")
+        void updateRepresentativeProfileImage_Fails_WhenPictureNotOwnedByUser() {
+            // given
+            UUID testUserId = UUID.randomUUID();
+            Long pictureId = 100L;
+            Member testMember = createTestMember(testUserId);
+
+            try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
+                BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
+                BDDMockito.given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
+                BDDMockito.given(pictureRepository.existsByIdAndPictureDeletedAtNull(pictureId)).willReturn(true);
+                // 사용자의 사진이 아니므로 empty Optional 반환
+                BDDMockito.given(memberPictureRepository.findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(testMember, pictureId))
+                        .willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> memberPictureCommandService.updateRepresentativeProfileImage(pictureId))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.AUTHORIZATION_DENIED);
+            }
+        }
+    }
+
 }
