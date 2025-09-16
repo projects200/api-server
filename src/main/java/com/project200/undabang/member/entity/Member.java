@@ -4,10 +4,7 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.dto.command.SignUpMemberCommand;
 import com.project200.undabang.member.enums.MemberGender;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -18,6 +15,8 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -78,6 +77,14 @@ public class Member {
     @Comment("탈퇴 시 삭제 일시 기록")
     @Column(name = "member_deleted_at")
     private LocalDateTime memberDeletedAt;
+
+    // 프로필 사진 식별자 필드 추가
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_picture_id")
+    private MemberPicture memberPicture;
+
+    @OneToMany(mappedBy = "member")
+    private List<PreferredExercise> preferredExercises = new ArrayList<>();
 
     /**
      * 회원의 점수를 증가시킵니다. 점수는 정책에 정의된 최소/최대 값을 벗어나지 않습니다.
@@ -146,5 +153,24 @@ public class Member {
         if(this.memberScore > 0){
             this.memberScore = (byte) Math.max(0, this.memberScore - decreaseScore);
         }
+    }
+
+    // 대표 사진 변경
+    public void updateProfilePicture(MemberPicture memberPicture) {
+        this.memberPicture = memberPicture;
+    }
+
+    /**
+     * 회원의 정보를 업데이트합니다.
+     * 제공된 닉네임, 성별, 자기소개를 기반으로 회원 정보를 수정합니다.
+     *
+     * @param nickname 새로운 닉네임
+     * @param gender   새로운 성별 정보
+     * @param bio      새로운 자기소개 내용
+     */
+    public void updateMemberInfo(String nickname, MemberGender gender, String bio) {
+        this.memberNickname = nickname;
+        this.memberGender = gender;
+        this.memberDesc = bio;
     }
 }

@@ -159,7 +159,7 @@ create table if not exists exercise_types
     exercise_name            varchar(50)                        not null,
     exercise_type_created_at datetime default CURRENT_TIMESTAMP not null,
     exercise_type_deleted_at datetime                           null,
-    exercise_type_original_image varchar(100) null
+    exercise_type_image_url varchar(255) null
 );
 
 create table if not exists member_report_subjects
@@ -173,13 +173,13 @@ create table if not exists members
 (
     member_id           char(36)                           not null
         primary key,
-    member_picture_id bigint null comment '프로필 사진 식별자',
+    member_picture_id bigint  null comment '프로필 사진 식별자',
     member_email        varchar(320)                       null,
     member_gender       char                               null comment 'M: 남 / F: 여 / U: 비공개',
     member_bday         date                               null,
     member_nickname     varchar(50)                        not null,
     member_desc         varchar(500)                       null,
-    member_score tinyint not null comment '0~100',
+    member_score      tinyint not null comment '0~100',
     member_warned_count tinyint  default 0                 not null comment '관리자 처리 신고 누적',
     member_created_at   datetime default CURRENT_TIMESTAMP not null,
     member_deleted_at   datetime                           null comment '탈퇴 시 삭제 일시 기록',
@@ -188,8 +188,7 @@ create table if not exists members
     constraint member_nickname
         unique (member_nickname),
     constraint check_member_gender
-        check (member_gender in ('M', 'F', 'U')),
-    constraint FK_member_pictures_TO_members_1 FOREIGN KEY (member_picture_id) REFERENCES member_pictures (picture_id)
+        check (member_gender in ('M', 'F', 'U'))
 );
 
 create table if not exists chatrooms
@@ -307,6 +306,12 @@ create table if not exists member_pictures
         foreign key (picture_id) references pictures (picture_id)
 );
 
+ALTER TABLE members
+    -- 외래 키(Foreign Key) 제약조건 추가
+    ADD CONSTRAINT FK_member_pictures_TO_members_1
+        FOREIGN KEY (member_picture_id)
+            REFERENCES member_pictures (picture_id);
+
 create table if not exists policies
 (
     policy_id          int          not null auto_increment primary key,
@@ -412,13 +417,13 @@ create table if not exists preferred_exercises
 (
     preferred_exercise_id          bigint auto_increment
         primary key,
-    exercise_id                    bigint                             not null,
-    member_id                      char(36)                           not null,
-    preferred_exercise_created_at  datetime default CURRENT_TIMESTAMP not null,
-    preferred_exercise_updated_at datetime         default CURRENT_TIMESTAMP null,
-    preferred_exercise_deleted_at  datetime                           null,
-    preferred_exercise_skill_level varchar(30)                        null,
-    preferred_exercise_date       tinyint unsigned default 0                 not null comment '0~127',
+    exercise_id                    bigint                                     not null,
+    member_id                      char(36)                                   not null,
+    preferred_exercise_created_at  datetime         default CURRENT_TIMESTAMP not null,
+    preferred_exercise_updated_at  datetime         default CURRENT_TIMESTAMP null,
+    preferred_exercise_deleted_at  datetime                                   null,
+    preferred_exercise_skill_level varchar(30)                                null,
+    preferred_exercise_date        tinyint unsigned default 0                 not null comment '0~127',
     constraint FK_pe_member
         foreign key (member_id) references members (member_id),
     constraint FK_pe_type
@@ -521,14 +526,13 @@ CREATE TABLE IF NOT EXISTS fcm_tokens
 (
     fcm_token_id           BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'AUTO_INCREMENT',
     member_id              CHAR(36)     NOT NULL COMMENT 'UUID_SELF',
-    fcm_token_value        VARCHAR(255) NOT NULL COMMENT 'FCM 토큰 값, unique',
+    fcm_token_value VARCHAR(255) NOT NULL COMMENT 'FCM 토큰 값',
     fcm_token_user_agent   VARCHAR(255) NULL COMMENT '디바이스 정보 (User Agent)',
     fcm_token_is_active  BOOLEAN  NOT NULL DEFAULT TRUE COMMENT '토큰 활성화 여부',
     fcm_token_activated_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '마지막 활성 일시',
     fcm_token_expired_at DATETIME NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL 30 DAY) COMMENT '토큰 만료 일시 (활성화된 경우 현재 시점으로부터 30일 후)',
     fcm_token_created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
 
-    UNIQUE KEY uk_fcm_token_value (fcm_token_value),
     CONSTRAINT fk_fcm_tokens_to_members FOREIGN KEY (member_id) REFERENCES members (member_id)
 );
 

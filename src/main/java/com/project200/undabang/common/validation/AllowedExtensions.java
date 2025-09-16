@@ -6,7 +6,10 @@ import jakarta.validation.Payload;
 import java.lang.annotation.*;
 
 @Documented
-@Constraint(validatedBy = AllowedExtensionsValidator.class)
+@Constraint(validatedBy = {
+        AllowedExtensionsValidator.class,
+        AllowedSingleMultipartFileExtensionsValidator.class
+})
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AllowedExtensions {

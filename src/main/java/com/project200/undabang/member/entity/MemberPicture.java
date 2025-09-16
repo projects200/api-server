@@ -51,4 +51,22 @@ public class MemberPicture {
     @Column(name = "member_pictures_deleted_at")
     private LocalDateTime memberPicturesDeletedAt;
 
+    /**
+     * 주어진 Member와 Picture 객체를 기반으로 MemberPicture 객체를 생성합니다.
+     */
+    public static MemberPicture from(Member member, Picture picture) {
+        return MemberPicture.builder()
+                .member(member)
+                .picture(picture)
+                .memberPicturesCreatedAt(LocalDateTime.now())
+                .build();
+    }
+
+    /**
+     * 회원 사진이 삭제된 시간(memberPicturesDeletedAt)을 현재 시간으로 설정합니다.
+     * 이를 통해 회원 사진이 삭제되었음을 나타냅니다.
+     */
+    public void deleteMemberPicture() {
+        this.memberPicturesDeletedAt = LocalDateTime.now();
+    }
 }

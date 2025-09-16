@@ -15,9 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @Entity
-@Table(name = "fcm_tokens", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_fcm_token_value", columnNames = {"fcm_token_value"})
-})
+@Table(name = "fcm_tokens")
 public class FcmToken {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

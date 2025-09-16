@@ -12,6 +12,7 @@ import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
@@ -33,6 +34,8 @@ public class S3Service {
 
     @Value("${app.s3.bucket-name}") // 프로퍼티에서 값 주입
     private String bucketName;
+
+    private static final String TRASH_PREFIX = "trash/";
 
     /**
     * 사용자 ID와 파일 이름을 기반으로 S3 객체 키를 생성합니다.
@@ -167,6 +170,89 @@ public class S3Service {
         } catch (Exception ex) {
             handleGenericException(objectKey, ex);
         }
+    }
+
+    /**
+     * 주어진 S3 객체를 휴지통 경로로 이동합니다.
+     * 원본 객체를 휴지통 경로로 복사한 후, 원본 객체를 삭제합니다.
+     *
+     * @param objectKey 이동하려는 S3 객체의 고유 키. null이거나 비어있는 값은 허용되지 않습니다.
+     * @throws S3UploadFailedException S3 객체 복사 또는 삭제 작업 중 실패가 발생한 경우 예외를 던집니다.
+     */
+    public void moveImageToTrash(String objectKey) throws S3UploadFailedException {
+        if (objectKey == null || objectKey.isBlank()) {
+            log.warn("moveToTrash: objectKey가 null이거나 비어있습니다.");
+            return;
+        }
+
+        // DB에는 데이터가 있는데 S3에 객체가 없을경우 체크
+        if (!isFileExists(objectKey)) {
+            log.warn("휴지통으로 이동할 원본 S3 객체가 존재하지 않습니다. Key: {}", objectKey);
+            return;
+        }
+
+        String trashObjectKey = getTrashKeyFromOriginal(objectKey);
+
+        try {
+            copyObject(objectKey, trashObjectKey);
+            deleteImage(objectKey);
+            log.info("S3 객체를 휴지통으로 이동했습니다: 원본 '{}' -> 휴지통 '{}'", objectKey, trashObjectKey);
+        } catch (S3UploadFailedException e) {
+            log.error("S3 객체를 휴지통으로 이동하는 중 오류 발생. 원본 Key: {}", objectKey, e);
+            throw e;
+        }
+    }
+
+    /**
+     * 휴지통에 있는 이미지를 원래 위치로 복원합니다.
+     */
+    public void restoreImageFromTrash(String originalObjectKey) throws S3UploadFailedException {
+        if (originalObjectKey == null || originalObjectKey.isBlank()) {
+            log.warn("restoreFromTrash: originalObjectKey가 null이거나 비어있습니다.");
+            return;
+        }
+        String trashObjectKey = getTrashKeyFromOriginal(originalObjectKey);
+
+        try {
+            if (!isFileExists(trashObjectKey)) {
+                log.warn("휴지통에 복원할 파일이 없습니다: {}", trashObjectKey);
+                return;
+            }
+            copyObject(trashObjectKey, originalObjectKey);
+            deleteImage(trashObjectKey);
+            log.info("S3 객체를 휴지통에서 복원했습니다: 휴지통 '{}' -> 원본 '{}'", trashObjectKey, originalObjectKey);
+        } catch (S3UploadFailedException e) {
+            log.error("S3 객체를 휴지통에서 복원하는 중 오류 발생. 원본 Key: {}", originalObjectKey, e);
+            throw e;
+        }
+    }
+
+    /**
+     * 주어진 소스 객체 키를 대상 객체 키로 복사합니다. 복사는 동일한 S3 버킷 내에서 수행됩니다.
+     */
+    private void copyObject(String sourceKey, String destinationKey) throws S3UploadFailedException {
+        try {
+            CopyObjectRequest copyReq = CopyObjectRequest.builder()
+                    .sourceBucket(bucketName)
+                    .sourceKey(sourceKey)
+                    .destinationBucket(bucketName)
+                    .destinationKey(destinationKey)
+                    .build();
+            s3Client.copyObject(copyReq);
+        } catch (S3Exception ex) {
+            handleS3Exception(sourceKey, ex);
+        } catch (SdkException ex) {
+            handleSdkException(sourceKey, ex);
+        } catch (Exception ex) {
+            handleGenericException(sourceKey, ex);
+        }
+    }
+
+    /**
+     * 원본 키로부터 휴지통 키를 생성합니다.
+     */
+    public String getTrashKeyFromOriginal(String originalKey) {
+        return TRASH_PREFIX + originalKey;
     }
 
     // 업로드할 파일이 비어있는지 확인하는 메서드

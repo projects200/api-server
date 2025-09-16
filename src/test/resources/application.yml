@@ -21,6 +21,7 @@ spring:
         format_sql: true
         use_sql_comments: true
         dialect: org.hibernate.dialect.H2Dialect
+        hbm2ddl.halt_on_error: true   # DDL 에러 시 경고가 아니라 예외 발생
 
   h2:
     console:

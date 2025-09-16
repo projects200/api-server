@@ -34,9 +34,9 @@ public class ExerciseType {
     @Column(name = "exercise_type_deleted_at")
     private LocalDateTime exerciseTypeDeletedAt;
 
-    @Size(max = 10)
+    @Size(max = 255)
     @NotNull
-    @Column(name = "exercise_type_emoji", nullable = false, length = 10)
-    private String exerciseTypeEmoji;
+    @Column(name = "exercise_type_image_url", length = 255)
+    private String exerciseTypeImageUrl;
 
 }

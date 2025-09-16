@@ -101,9 +101,18 @@ include::overview/공통-개발-참고-사항.adoc[]
 
 - 로그아웃 API #POST# `/api/v1/logout`
 
+- 닉네임 중복검사 API #GET# `/open/v1/nicknames/check?nickname={nickname}`
+
 === xref:회원-API.html[회원 API]
 
 - 회원 운동 점수 조회 API #GET# `/api/v1/members/score`
+
+- 내 프로필 조회 API #GET# `/api/v1/profile`
+
+- 내 프로필 수정 API #PUT# `/api/v1/profile`
+
+- 대표 프로필 사진 변경 API #PUT# `/api/v1/profile-pictures/{pictureId}/represent`
+
 
 === xref:운동-API.html[운동 API]
 
@@ -160,3 +169,11 @@ include::overview/공통-개발-참고-사항.adoc[]
 - 커스텀 타이머 수정 API #PUT# `/api/v1/custom-timers/{customTimerId}`
 
 - 커스텀 타이머 이름 수정 API #PATCH# `/api/v1/custom-timers/{customTimerId}`
+
+=== xref:프로필-사진-API.html[프로필 사진 API]
+
+- 프로필 사진 조회 API #GET# `/api/v1/profile-pictures`
+
+- 프로필 사진 생성 API #POST# `/api/v1/profile-pictures`
+
+- 프로필 사진 삭제 API #DELETE# `/api/v1/profile-pictures/{profileId}`

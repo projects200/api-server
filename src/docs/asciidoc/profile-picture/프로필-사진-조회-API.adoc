@@ -1,0 +1,30 @@
+== 프로필 사진 조회 API
+
+=== 설명
+
+- #GET# `/api/v1/profile-pictures`
+- 마이페이지에서 내 프로필 사진들을 조회하는 API 입니다.
+
+=== 개발 이력
+
+- Sprint 11 (2025-09-04): 개발을 완료하였습니다.
+
+=== 개발 참고 사항
+
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+
+operation::get-profile-pictures/get-profile-pictures_-success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+
+operation::get-profile-pictures/get-profile-pictures_-success[snippets="request-headers,response-fields"]
+
+==== 응답 상태 코드
+
+|===
+|상태 코드|설명
+|200|요청이 성공적으로 처리되었습니다. 회원의 프로필 사진 및 대표사진을 반환합니다.
+|404|존재하지 않는 회원입니다.
+|===
