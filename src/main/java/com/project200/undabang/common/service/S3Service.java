@@ -173,11 +173,21 @@ public class S3Service {
     }
 
     /**
-     * 주어진 S3 객체를 "휴지통" 디렉터리로 이동시키는 메서드입니다.
+     * 주어진 S3 객체를 휴지통 경로로 이동합니다.
+     * 원본 객체를 휴지통 경로로 복사한 후, 원본 객체를 삭제합니다.
+     *
+     * @param objectKey 이동하려는 S3 객체의 고유 키. null이거나 비어있는 값은 허용되지 않습니다.
+     * @throws S3UploadFailedException S3 객체 복사 또는 삭제 작업 중 실패가 발생한 경우 예외를 던집니다.
      */
     public void moveImageToTrash(String objectKey) throws S3UploadFailedException {
         if (objectKey == null || objectKey.isBlank()) {
             log.warn("moveToTrash: objectKey가 null이거나 비어있습니다.");
+            return;
+        }
+
+        // DB에는 데이터가 있는데 S3에 객체가 없을경우 체크
+        if (!isFileExists(objectKey)) {
+            log.warn("휴지통으로 이동할 원본 S3 객체가 존재하지 않습니다. Key: {}", objectKey);
             return;
         }
 

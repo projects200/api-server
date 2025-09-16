@@ -11,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -431,6 +432,60 @@ class PictureServiceUnitTest {
                     .isInstanceOf(CustomException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.PICTURE_UPLOAD_FAILED);
+        }
+
+        @Test
+        @DisplayName("성공[단일 삭제]: 단일 Picture 객체 삭제 시 내부 리스트 처리 메서드를 정상적으로 호출한다")
+        void delete_SinglePicture_Success() {
+            // given
+            // PictureService의 실제 객체를 Spy하여 실제 메서드 호출을 추적
+            PictureService spiedPictureService = spy(new PictureService(s3Service, pictureRepository));
+
+            // 내부적으로 호출될 List<Picture> 버전의 메서드가 아무것도 하지 않도록 설정
+            // 이렇게 함으로써 우리는 단일 버전 메서드가 List 버전을 '호출했는지' 여부만 검증할 수 있음
+            doNothing().when(spiedPictureService).deletePictureFromS3AndDB(anyList());
+
+            // when
+            spiedPictureService.deletePictureFromS3AndDB(picture1);
+
+            // then
+            // deletePictureFromS3AndDB(List<Picture>) 메서드가 정확히 한 번 호출되었는지,
+            // 그리고 그 인자가 List.of(picture1)과 같은지 검증
+            ArgumentCaptor<List<Picture>> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
+            verify(spiedPictureService, times(1)).deletePictureFromS3AndDB(listArgumentCaptor.capture());
+
+            List<Picture> capturedList = listArgumentCaptor.getValue();
+            assertThat(capturedList).hasSize(1);
+            assertThat(capturedList.get(0)).isEqualTo(picture1);
+        }
+
+        // --- ✨ 추가된 테스트 코드 2: 롤백 실패 시 동작 검증 ---
+        @Test
+        @DisplayName("롤백 중 S3 복원 실패 시, 에러를 로깅하고 계속 진행한다")
+        void delete_Rollback_Continues_On_S3RestoreFailure() {
+            // given: S3 이동은 성공, DB 저장은 실패, S3 롤백(복원) 중에도 실패
+            when(s3Service.extractObjectKeyFromUrl(anyString()))
+                    .thenAnswer(inv -> {
+                        String url = inv.getArgument(0).toString();
+                        int idx = url.indexOf("uploads/");
+                        return idx >= 0 ? url.substring(idx) : url;
+                    });
+            doNothing().when(s3Service).moveImageToTrash(anyString());
+            when(pictureRepository.save(any(Picture.class))).thenThrow(new RuntimeException("DB 강제 에러"));
+
+            // 롤백 시, 첫 번째 파일 복원에서 예외를 던지도록 설정
+            doThrow(new S3UploadFailedException("S3 복원 강제 에러")).when(s3Service).restoreImageFromTrash("uploads/pic1.jpg");
+            // 두 번째 파일 복원은 성공
+            doNothing().when(s3Service).restoreImageFromTrash("uploads/pic2.png");
+
+            // when & then: 최종적으로는 CustomException이 발생해야 함
+            assertThatThrownBy(() -> pictureService.deletePictureFromS3AndDB(pictureList))
+                    .isInstanceOf(CustomException.class);
+
+            // then: 롤백 로직 검증
+            // 두 파일 모두에 대해 restoreImageFromTrash가 호출되었는지 확인 (첫 번째는 실패, 두 번째는 성공)
+            verify(s3Service, times(1)).restoreImageFromTrash("uploads/pic1.jpg");
+            verify(s3Service, times(1)).restoreImageFromTrash("uploads/pic2.png");
         }
     }
 }

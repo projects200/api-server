@@ -61,4 +61,12 @@ public class MemberPicture {
                 .memberPicturesCreatedAt(LocalDateTime.now())
                 .build();
     }
+
+    /**
+     * 회원 사진이 삭제된 시간(memberPicturesDeletedAt)을 현재 시간으로 설정합니다.
+     * 이를 통해 회원 사진이 삭제되었음을 나타냅니다.
+     */
+    public void deleteMemberPicture() {
+        this.memberPicturesDeletedAt = LocalDateTime.now();
+    }
 }

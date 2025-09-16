@@ -22,3 +22,5 @@ include::overview/공통-개발-참고-사항.adoc[]
 include::profile-picture/프로필-사진-조회-API.adoc[]
 
 include::profile-picture/프로필-사진-생성-API.adoc[]
+
+include::profile-picture/프로필-사진-삭제-API.adoc[]

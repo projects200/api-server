@@ -25,7 +25,10 @@ import java.util.UUID;
 import static com.project200.undabang.configuration.DocumentFormatGenerator.getTypeFormat;
 import static com.project200.undabang.configuration.HeadersGenerator.getCommonApiHeaders;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.put;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
@@ -58,7 +61,7 @@ class MemberPictureCommandControllerTest extends AbstractRestDocSupport {
                     1L, "https://s3.com/images/my-profile.jpg"
             );
 
-            BDDMockito.given(memberPictureCommandService.createProfilePicture(BDDMockito.any(MockMultipartFile.class)))
+            BDDMockito.given(memberPictureCommandService.createProfilePicture(any(MockMultipartFile.class)))
                     .willReturn(responseDto);
 
             // when
@@ -85,7 +88,7 @@ class MemberPictureCommandControllerTest extends AbstractRestDocSupport {
 
             // then
             assertThat(response).isEqualTo(objectMapper.writeValueAsString(CommonResponse.create(responseDto)));
-            BDDMockito.then(memberPictureCommandService).should(BDDMockito.times(1)).createProfilePicture(BDDMockito.any(MockMultipartFile.class));
+            BDDMockito.then(memberPictureCommandService).should(times(1)).createProfilePicture(any(MockMultipartFile.class));
             BDDMockito.then(memberPictureCommandService).shouldHaveNoMoreInteractions();
         }
 
@@ -107,7 +110,7 @@ class MemberPictureCommandControllerTest extends AbstractRestDocSupport {
                     .andExpect(jsonPath("$.succeed").value(false))
                     .andExpect(jsonPath("$.message").value("요청 파라미터 유효성 검증에 실패했습니다."));
 
-            BDDMockito.then(memberPictureCommandService).should(BDDMockito.never()).createProfilePicture(BDDMockito.any(MockMultipartFile.class));
+            BDDMockito.then(memberPictureCommandService).should(BDDMockito.never()).createProfilePicture(any(MockMultipartFile.class));
         }
 
         @Test
@@ -128,7 +131,7 @@ class MemberPictureCommandControllerTest extends AbstractRestDocSupport {
                     .andExpect(jsonPath("$.succeed").value(false))
                     .andExpect(jsonPath("$.message").value("Required part 'profilePicture' is not present."));
 
-            BDDMockito.then(memberPictureCommandService).should(BDDMockito.never()).createProfilePicture(BDDMockito.any(MockMultipartFile.class));
+            BDDMockito.then(memberPictureCommandService).should(BDDMockito.never()).createProfilePicture(any(MockMultipartFile.class));
         }
 
         @Test
@@ -138,7 +141,7 @@ class MemberPictureCommandControllerTest extends AbstractRestDocSupport {
             UUID testMemberId = UUID.randomUUID();
             MockMultipartFile profilePictureFile = new MockMultipartFile("profilePicture", "my-profile.jpg", MediaType.IMAGE_JPEG_VALUE, "dummy-image-content".getBytes());
 
-            BDDMockito.given(memberPictureCommandService.createProfilePicture(BDDMockito.any(MockMultipartFile.class)))
+            BDDMockito.given(memberPictureCommandService.createProfilePicture(any(MockMultipartFile.class)))
                     .willThrow(new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
             // when & then
@@ -153,7 +156,7 @@ class MemberPictureCommandControllerTest extends AbstractRestDocSupport {
                     .andExpect(jsonPath("$.code").value(ErrorCode.MEMBER_NOT_FOUND.getCode()))
                     .andExpect(jsonPath("$.message").value(ErrorCode.MEMBER_NOT_FOUND.getMessage()));
 
-            BDDMockito.then(memberPictureCommandService).should(BDDMockito.times(1)).createProfilePicture(BDDMockito.any(MockMultipartFile.class));
+            BDDMockito.then(memberPictureCommandService).should(times(1)).createProfilePicture(any(MockMultipartFile.class));
         }
     }
 
@@ -240,6 +243,123 @@ class MemberPictureCommandControllerTest extends AbstractRestDocSupport {
                     .andExpect(jsonPath("$.message").value(ErrorCode.AUTHORIZATION_DENIED.getMessage()));
 
             BDDMockito.then(memberPictureCommandService).should().updateRepresentativeProfileImage(pictureId);
+        }
+    }
+
+    @Nested
+    @DisplayName("프로필 사진 삭제")
+    class DeleteProfilePicture {
+
+        @Test
+        @DisplayName("성공: 유효한 사진 ID로 요청 시 200 OK와 성공 응답을 반환한다")
+        void deleteProfilePicture_Success() throws Exception {
+            // given
+            UUID testMemberId = UUID.randomUUID();
+            Long pictureId = 1L;
+
+            // deleteProfilePicture는 void를 반환하므로, doNothing()으로 설정
+            BDDMockito.doNothing().when(memberPictureCommandService).deleteProfilePicture(pictureId);
+
+            // when
+            String response = mockMvc.perform(delete("/api/v1/profile-pictures/{pictureId}", pictureId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(testMemberId)))
+                    .andExpectAll(status().isOk())
+                    .andDo(document.document(
+                            requestHeaders(RestDocsUtils.HEADER_ACCESS_TOKEN),
+                            pathParameters(
+                                    parameterWithName("pictureId").attributes(getTypeFormat("NUMBER")).description("삭제할 프로필 사진의 식별자입니다.")
+                            ),
+                            responseFields(RestDocsUtils.commonResponseFields(
+                                    fieldWithPath("data").type(JsonFieldType.NULL).description("삭제 성공 시 데이터는 null 을 반환합니다")
+                            ))
+                    ))
+                    .andReturn().getResponse().getContentAsString();
+
+            // then
+            assertThat(response).isEqualTo(objectMapper.writeValueAsString(CommonResponse.delete(null)));
+            BDDMockito.then(memberPictureCommandService).should(times(1)).deleteProfilePicture(pictureId);
+            BDDMockito.then(memberPictureCommandService).shouldHaveNoMoreInteractions();
+        }
+
+        @Test
+        @DisplayName("실패: 사진이 존재하지 않을 때 서비스에서 예외 발생 시 404 Not Found를 반환한다")
+        void deleteProfilePicture_Fail_PictureNotFound() throws Exception {
+            // given
+            UUID testMemberId = UUID.randomUUID();
+            Long nonExistentPictureId = 999L;
+
+            // 서비스 레이어에서 PICTURE_NOT_FOUND 예외를 던지도록 Mocking
+            BDDMockito.willThrow(new CustomException(ErrorCode.PICTURE_NOT_FOUND))
+                    .given(memberPictureCommandService).deleteProfilePicture(nonExistentPictureId);
+
+            // when & then
+            mockMvc.perform(delete("/api/v1/profile-pictures/{pictureId}", nonExistentPictureId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(testMemberId)))
+                    .andExpectAll(status().isNotFound())
+                    .andExpect(jsonPath("$.succeed").value(false))
+                    .andExpect(jsonPath("$.code").value(ErrorCode.PICTURE_NOT_FOUND.getCode()))
+                    .andExpect(jsonPath("$.message").value(ErrorCode.PICTURE_NOT_FOUND.getMessage()));
+
+            BDDMockito.then(memberPictureCommandService).should(times(1)).deleteProfilePicture(nonExistentPictureId);
+        }
+
+        @Test
+        @DisplayName("실패: 사진이 사용자의 소유가 아닐 때 서비스에서 예외 발생 시 403 Forbidden을 반환한다")
+        void deleteProfilePicture_Fail_AuthorizationDenied() throws Exception {
+            // given
+            UUID testMemberId = UUID.randomUUID();
+            Long othersPictureId = 2L;
+
+            // 서비스 레이어에서 AUTHORIZATION_DENIED 예외를 던지도록 Mocking
+            BDDMockito.willThrow(new CustomException(ErrorCode.AUTHORIZATION_DENIED))
+                    .given(memberPictureCommandService).deleteProfilePicture(othersPictureId);
+
+            // when & then
+            mockMvc.perform(delete("/api/v1/profile-pictures/{pictureId}", othersPictureId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(testMemberId)))
+                    .andExpectAll(status().isForbidden())
+                    .andExpect(jsonPath("$.succeed").value(false))
+                    .andExpect(jsonPath("$.code").value(ErrorCode.AUTHORIZATION_DENIED.getCode()))
+                    .andExpect(jsonPath("$.message").value(ErrorCode.AUTHORIZATION_DENIED.getMessage()));
+
+            BDDMockito.then(memberPictureCommandService).should(times(1)).deleteProfilePicture(othersPictureId);
+        }
+
+        @Test
+        @DisplayName("실패: 사진 업로드 중 서버 내부 오류 발생 시 500 Internal Server Error를 반환한다")
+        void createProfilePicture_Fail_InternalServerError() throws Exception {
+            // given
+            UUID testMemberId = UUID.randomUUID();
+            MockMultipartFile profilePictureFile = new MockMultipartFile(
+                    "profilePicture",
+                    "my-profile.jpg",
+                    MediaType.IMAGE_JPEG_VALUE,
+                    "dummy-image-content".getBytes()
+            );
+
+            // 서비스 레이어에서 PICTURE_UPLOAD_FAILED 예외를 던지도록 Mocking
+            BDDMockito.given(memberPictureCommandService.createProfilePicture(any(MockMultipartFile.class)))
+                    .willThrow(new CustomException(ErrorCode.PICTURE_UPLOAD_FAILED));
+
+            // when & then
+            mockMvc.perform(MockMvcRequestBuilders
+                            .multipart("/api/v1/profile-pictures")
+                            .file(profilePictureFile)
+                            .contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(testMemberId)))
+                    .andExpectAll(status().isInternalServerError()) // 500 상태 코드 검증
+                    .andExpect(jsonPath("$.succeed").value(false))
+                    .andExpect(jsonPath("$.code").value(ErrorCode.PICTURE_UPLOAD_FAILED.getCode()))
+                    .andExpect(jsonPath("$.message").value(ErrorCode.PICTURE_UPLOAD_FAILED.getMessage()));
+
+            BDDMockito.then(memberPictureCommandService).should(times(1)).createProfilePicture(any(MockMultipartFile.class));
         }
     }
 }
