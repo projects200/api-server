@@ -18,7 +18,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -97,9 +96,9 @@ class MemberPictureCommandServiceImplTest {
                 assertThat(testMember.getMemberPicture()).as("Member 객체의 프로필 사진이 업데이트되어야 함").isEqualTo(savedMemberPicture);
 
                 // Mock 객체들의 상호작용 검증
-                then(memberRepository).should(BDDMockito.times(1)).findById(testUserId);
-                then(pictureService).should(BDDMockito.times(1)).uploadPictureToS3AndDB(mockFile, FileType.PROFILE);
-                then(memberPictureRepository).should(BDDMockito.times(1)).save(any(MemberPicture.class));
+                then(memberRepository).should(times(1)).findById(testUserId);
+                then(pictureService).should(times(1)).uploadPictureToS3AndDB(mockFile, FileType.PROFILE);
+                then(memberPictureRepository).should(times(1)).save(any(MemberPicture.class));
             }
         }
     }
@@ -126,9 +125,9 @@ class MemberPictureCommandServiceImplTest {
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
 
                 // 실패했으므로 PictureService나 MemberPictureRepository는 호출되지 않아야 함
-                then(pictureService).should(BDDMockito.never()).uploadPictureToS3AndDB(any(MultipartFile.class), any(FileType.class));
-                then(pictureService).should(BDDMockito.never()).uploadPictureToS3AndDB(any(MultipartFile.class), any(String.class));
-                then(memberPictureRepository).should(BDDMockito.never()).save(any());
+                then(pictureService).should(never()).uploadPictureToS3AndDB(any(MultipartFile.class), any(FileType.class));
+                then(pictureService).should(never()).uploadPictureToS3AndDB(any(MultipartFile.class), any(String.class));
+                then(memberPictureRepository).should(never()).save(any());
             }
         }
 
@@ -154,7 +153,7 @@ class MemberPictureCommandServiceImplTest {
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PICTURE_UPLOAD_FAILED);
 
                 // 실패했으므로 MemberPictureRepository는 호출되지 않아야 함
-                then(memberPictureRepository).should(BDDMockito.never()).save(any());
+                then(memberPictureRepository).should(never()).save(any());
             }
         }
 
@@ -182,8 +181,8 @@ class MemberPictureCommandServiceImplTest {
                         .hasMessage("Database save error");
 
                 // 상위 로직들이 정상적으로 1번씩 호출되었는지 검증
-                then(memberRepository).should(BDDMockito.times(1)).findById(testUserId);
-                then(pictureService).should(BDDMockito.times(1)).uploadPictureToS3AndDB(mockFile, FileType.PROFILE);
+                then(memberRepository).should(times(1)).findById(testUserId);
+                then(pictureService).should(times(1)).uploadPictureToS3AndDB(mockFile, FileType.PROFILE);
             }
         }
     }
@@ -269,8 +268,8 @@ class MemberPictureCommandServiceImplTest {
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
 
                 // 이후 로직이 호출되지 않았는지 검증
-                then(pictureRepository).should(BDDMockito.never()).existsByIdAndPictureDeletedAtNull(any());
-                then(memberPictureRepository).should(BDDMockito.never()).findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(any(), any());
+                then(pictureRepository).should(never()).existsByIdAndPictureDeletedAtNull(any());
+                then(memberPictureRepository).should(never()).findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(any(), any());
             }
         }
 
@@ -292,7 +291,7 @@ class MemberPictureCommandServiceImplTest {
                         .isInstanceOf(CustomException.class)
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PICTURE_NOT_FOUND);
 
-                then(memberPictureRepository).should(BDDMockito.never()).findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(any(), any());
+                then(memberPictureRepository).should(never()).findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(any(), any());
             }
         }
 
