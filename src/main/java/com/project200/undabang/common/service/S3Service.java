@@ -18,6 +18,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -87,6 +88,22 @@ public class S3Service {
         log.warn("객체 키를 추출할 수 없습니다: {}", url);
         // 추출 실패시 원래 url 반환
         return url;
+    }
+
+    /**
+     * 이미지를 S3에 업로드하는 메서드.
+     *
+     * @param inputStream   업로드할 이미지의 입력 스트림
+     * @param contentLength 업로드할 이미지의 크기 (바이트 단위)
+     * @param contentType   업로드할 이미지의 MIME 타입
+     * @param objectKey     S3에 저장될 오브젝트 키
+     * @return 업로드된 오브젝트의 URL 혹은 성공 여부를 나타내는 문자열 (null일 수 있음)
+     */
+    public String uploadImage(InputStream inputStream, long contentLength, String contentType, String objectKey) {
+        PutObjectRequest request = createPutObjectRequest(contentType, objectKey);
+
+        // 예외 발생 시 null 반환 또는 예외를 그대로 던짐 (기존 로직 유지)
+        return uploadToS3(request, inputStream, contentLength, objectKey);
     }
 
     /**
@@ -271,6 +288,45 @@ public class S3Service {
                 .contentType(multipartFile.getContentType()) // Content-Type 설정
                 .metadata(metadata) // 사용자 정의 메타데이터 설정
                 .build();
+    }
+
+    /**
+     * 제공된 콘텐츠 유형과 객체 키를 사용하여 S3에 객체를 업로드하기 위한 PutObjectRequest를 생성합니다.
+     *
+     * @param contentType 업로드할 객체의 콘텐츠 유형
+     * @param objectKey   업로드할 객체의 키
+     * @return S3에 객체 업로드 요청을 나타내는 PutObjectRequest 객체
+     */
+    private PutObjectRequest createPutObjectRequest(String contentType, String objectKey) {
+        return PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(objectKey)
+                .contentType(contentType)
+                .build();
+    }
+
+    /**
+     * 주어진 객체를 S3 버킷에 업로드합니다.
+     *
+     * @param putObjectRequest S3 업로드 요청 설정을 포함하는 객체
+     * @param inputStream      업로드할 파일의 InputStream
+     * @param contentLength    업로드할 파일의 크기(바이트 단위)
+     * @param objectKey        S3 객체의 키(파일 경로에 해당)
+     * @return 업로드된 S3 객체의 공개 URL 문자열
+     */
+    private String uploadToS3(PutObjectRequest putObjectRequest, InputStream inputStream, long contentLength, String objectKey) {
+        try {
+            s3Client.putObject(putObjectRequest,
+                    RequestBody.fromInputStream(inputStream, contentLength));
+            return getPublicUrl(objectKey);
+        } catch (S3Exception ex) {
+            handleS3Exception(objectKey, ex);
+        } catch (SdkException ex) {
+            handleSdkException(objectKey, ex);
+        } catch (Exception ex) {
+            handleGenericException(objectKey, ex);
+        }
+        return null; // 이 줄은 도달하지 않음
     }
 
     // S3에 파일을 업로드하는 메서드

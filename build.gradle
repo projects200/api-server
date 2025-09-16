@@ -61,6 +61,9 @@ dependencies {
     // Slack API Client 의존성 추가
     implementation 'com.slack.api:slack-api-client:1.45.3'
 
+    // thumbnailator 의존성 추가
+    implementation 'net.coobird:thumbnailator:0.4.20'
+
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     developmentOnly 'org.springframework.boot:spring-boot-docker-compose'

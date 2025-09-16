@@ -49,3 +49,8 @@ slack:
   webhook:
     url:  ""
     enabled:  false
+
+thumbnail:
+  profile:
+    width: 130
+    height: 130
