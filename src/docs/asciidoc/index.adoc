@@ -109,6 +109,8 @@ include::overview/공통-개발-참고-사항.adoc[]
 
 - 내 프로필 조회 API #GET# `/api/v1/profile`
 
+- 내 프로필 수정 API #PUT# `/api/v1/profile`
+
 - 대표 프로필 사진 변경 API #PUT# `/api/v1/profile-pictures/{pictureId}/represent`
 
 

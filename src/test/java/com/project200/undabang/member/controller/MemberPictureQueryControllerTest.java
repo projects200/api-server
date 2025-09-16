@@ -3,6 +3,7 @@ package com.project200.undabang.member.controller;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
+import com.project200.undabang.member.controller.picture.MemberPictureQueryController;
 import com.project200.undabang.member.dto.record.ProfileImageRecord;
 import com.project200.undabang.member.dto.response.GetProfilePictureResponse;
 import com.project200.undabang.member.service.MemberPictureQueryService;

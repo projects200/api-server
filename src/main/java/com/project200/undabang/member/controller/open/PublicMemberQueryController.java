@@ -1,4 +1,4 @@
-package com.project200.undabang.member.controller;
+package com.project200.undabang.member.controller.open;
 
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.member.dto.response.CheckNicknameDuplicateResponse;

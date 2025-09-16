@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
-public class MemberRestController {
+public class MemberQueryController {
     private final MemberQueryService memberQueryService;
 
     @GetMapping("/v1/members/score")
