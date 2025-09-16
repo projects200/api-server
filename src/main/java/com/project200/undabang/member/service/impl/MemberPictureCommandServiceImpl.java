@@ -105,7 +105,7 @@ public class MemberPictureCommandServiceImpl implements MemberPictureCommandServ
         pictureService.deletePictureFromS3AndDB(picture);
         memberPicture.deleteMemberPicture();
 
-        // 만약 회원의 fk 를 지우는 경우, 가장 최근에 생성된 사진 데이터를 넣어주고 그렇지 않으면 null 을 넣어줘야 함
+        // 회원 테이블의 대표사진을 제거합니다. 그 후, 가장 최근에 생성된 사진 데이터를 넣어주고 그렇지 않으면 null 을 넣어줘야 합니다.
         if (member.getMemberPicture() != null && Objects.equals(member.getMemberPicture().getId(), memberPicture.getId())) {
             memberPictureRepository.findFirstByMemberAndMemberPicturesDeletedAtNullAndPicture_PictureDeletedAtNullOrderByPicture_PictureCreatedAtDesc(member)
                     .ifPresentOrElse(
