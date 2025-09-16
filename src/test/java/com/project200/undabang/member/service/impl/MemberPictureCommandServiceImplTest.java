@@ -32,7 +32,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.*;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class MemberPictureCommandServiceImplTest {
@@ -72,14 +74,14 @@ class MemberPictureCommandServiceImplTest {
 
             MemberPicture savedMemberPicture = MemberPicture.from(testMember, savedPicture);
 
-            try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
+            try (var ignored = mockStatic(UserContextHolder.class)) {
                 // Mocking static method
-                BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
+                given(UserContextHolder.getUserId()).willReturn(testUserId);
 
                 // Mocking repository and service calls
-                BDDMockito.given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
-                BDDMockito.given(pictureService.uploadPictureToS3AndDB(mockFile, FileType.PROFILE)).willReturn(savedPicture);
-                BDDMockito.given(memberPictureRepository.save(any(MemberPicture.class))).willReturn(savedMemberPicture);
+                given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
+                given(pictureService.uploadPictureToS3AndDB(mockFile, FileType.PROFILE)).willReturn(savedPicture);
+                given(memberPictureRepository.save(any(MemberPicture.class))).willReturn(savedMemberPicture);
 
                 // when
                 CreateProfilePictureResponse result = memberPictureCommandService.createProfilePicture(mockFile);
@@ -95,9 +97,9 @@ class MemberPictureCommandServiceImplTest {
                 assertThat(testMember.getMemberPicture()).as("Member 객체의 프로필 사진이 업데이트되어야 함").isEqualTo(savedMemberPicture);
 
                 // Mock 객체들의 상호작용 검증
-                BDDMockito.then(memberRepository).should(BDDMockito.times(1)).findById(testUserId);
-                BDDMockito.then(pictureService).should(BDDMockito.times(1)).uploadPictureToS3AndDB(mockFile, FileType.PROFILE);
-                BDDMockito.then(memberPictureRepository).should(BDDMockito.times(1)).save(any(MemberPicture.class));
+                then(memberRepository).should(BDDMockito.times(1)).findById(testUserId);
+                then(pictureService).should(BDDMockito.times(1)).uploadPictureToS3AndDB(mockFile, FileType.PROFILE);
+                then(memberPictureRepository).should(BDDMockito.times(1)).save(any(MemberPicture.class));
             }
         }
     }
@@ -113,9 +115,9 @@ class MemberPictureCommandServiceImplTest {
             UUID testUserId = UUID.randomUUID();
             MultipartFile mockFile = createTestMultipartFile();
 
-            try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
-                BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
-                BDDMockito.given(memberRepository.findById(testUserId)).willReturn(Optional.empty());
+            try (var ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(testUserId);
+                given(memberRepository.findById(testUserId)).willReturn(Optional.empty());
 
                 // when & then
                 assertThatThrownBy(() -> memberPictureCommandService.createProfilePicture(mockFile))
@@ -124,9 +126,9 @@ class MemberPictureCommandServiceImplTest {
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
 
                 // 실패했으므로 PictureService나 MemberPictureRepository는 호출되지 않아야 함
-                BDDMockito.then(pictureService).should(BDDMockito.never()).uploadPictureToS3AndDB(any(MultipartFile.class), any(FileType.class));
-                BDDMockito.then(pictureService).should(BDDMockito.never()).uploadPictureToS3AndDB(any(MultipartFile.class), any(String.class));
-                BDDMockito.then(memberPictureRepository).should(BDDMockito.never()).save(any());
+                then(pictureService).should(BDDMockito.never()).uploadPictureToS3AndDB(any(MultipartFile.class), any(FileType.class));
+                then(pictureService).should(BDDMockito.never()).uploadPictureToS3AndDB(any(MultipartFile.class), any(String.class));
+                then(memberPictureRepository).should(BDDMockito.never()).save(any());
             }
         }
 
@@ -138,11 +140,11 @@ class MemberPictureCommandServiceImplTest {
             Member testMember = createTestMember(testUserId);
             MultipartFile mockFile = createTestMultipartFile();
 
-            try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
-                BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
-                BDDMockito.given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
+            try (var ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(testUserId);
+                given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
                 // PictureService에서 예외 발생 시나리오 Mocking
-                BDDMockito.given(pictureService.uploadPictureToS3AndDB(mockFile, FileType.PROFILE))
+                given(pictureService.uploadPictureToS3AndDB(mockFile, FileType.PROFILE))
                         .willThrow(new CustomException(ErrorCode.PICTURE_UPLOAD_FAILED));
 
                 // when & then
@@ -152,7 +154,7 @@ class MemberPictureCommandServiceImplTest {
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PICTURE_UPLOAD_FAILED);
 
                 // 실패했으므로 MemberPictureRepository는 호출되지 않아야 함
-                BDDMockito.then(memberPictureRepository).should(BDDMockito.never()).save(any());
+                then(memberPictureRepository).should(BDDMockito.never()).save(any());
             }
         }
 
@@ -165,12 +167,12 @@ class MemberPictureCommandServiceImplTest {
             MultipartFile mockFile = createTestMultipartFile();
             Picture savedPicture = Picture.builder().id(1L).build();
 
-            try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
-                BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
-                BDDMockito.given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
-                BDDMockito.given(pictureService.uploadPictureToS3AndDB(mockFile, FileType.PROFILE)).willReturn(savedPicture);
+            try (var ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(testUserId);
+                given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
+                given(pictureService.uploadPictureToS3AndDB(mockFile, FileType.PROFILE)).willReturn(savedPicture);
                 // MemberPictureRepository 저장 시 예외 발생 시나리오 Mocking
-                BDDMockito.given(memberPictureRepository.save(any(MemberPicture.class)))
+                given(memberPictureRepository.save(any(MemberPicture.class)))
                         .willThrow(new RuntimeException("Database save error"));
 
                 // when & then
@@ -180,8 +182,8 @@ class MemberPictureCommandServiceImplTest {
                         .hasMessage("Database save error");
 
                 // 상위 로직들이 정상적으로 1번씩 호출되었는지 검증
-                BDDMockito.then(memberRepository).should(BDDMockito.times(1)).findById(testUserId);
-                BDDMockito.then(pictureService).should(BDDMockito.times(1)).uploadPictureToS3AndDB(mockFile, FileType.PROFILE);
+                then(memberRepository).should(BDDMockito.times(1)).findById(testUserId);
+                then(pictureService).should(BDDMockito.times(1)).uploadPictureToS3AndDB(mockFile, FileType.PROFILE);
             }
         }
     }
@@ -225,12 +227,12 @@ class MemberPictureCommandServiceImplTest {
             Picture testPicture = createTestPicture(pictureId);
             MemberPicture testMemberPicture = createTestMemberPicture(testMember, testPicture);
 
-            try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
+            try (var ignored = mockStatic(UserContextHolder.class)) {
                 // Mocking static method and repository calls
-                BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
-                BDDMockito.given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
-                BDDMockito.given(pictureRepository.existsByIdAndPictureDeletedAtNull(pictureId)).willReturn(true);
-                BDDMockito.given(memberPictureRepository.findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(testMember, pictureId))
+                given(UserContextHolder.getUserId()).willReturn(testUserId);
+                given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
+                given(pictureRepository.existsByIdAndPictureDeletedAtNull(pictureId)).willReturn(true);
+                given(memberPictureRepository.findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(testMember, pictureId))
                         .willReturn(Optional.of(testMemberPicture));
 
                 // when
@@ -244,9 +246,9 @@ class MemberPictureCommandServiceImplTest {
                 assertThat(testMember.getMemberPicture()).isEqualTo(testMemberPicture);
 
                 // Mock 객체 상호작용 검증
-                BDDMockito.then(memberRepository).should().findById(testUserId);
-                BDDMockito.then(pictureRepository).should().existsByIdAndPictureDeletedAtNull(pictureId);
-                BDDMockito.then(memberPictureRepository).should().findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(testMember, pictureId);
+                then(memberRepository).should().findById(testUserId);
+                then(pictureRepository).should().existsByIdAndPictureDeletedAtNull(pictureId);
+                then(memberPictureRepository).should().findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(testMember, pictureId);
             }
         }
 
@@ -257,9 +259,9 @@ class MemberPictureCommandServiceImplTest {
             UUID testUserId = UUID.randomUUID();
             Long pictureId = 100L;
 
-            try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
-                BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
-                BDDMockito.given(memberRepository.findById(testUserId)).willReturn(Optional.empty());
+            try (var ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(testUserId);
+                given(memberRepository.findById(testUserId)).willReturn(Optional.empty());
 
                 // when & then
                 assertThatThrownBy(() -> memberPictureCommandService.updateRepresentativeProfileImage(pictureId))
@@ -267,8 +269,8 @@ class MemberPictureCommandServiceImplTest {
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
 
                 // 이후 로직이 호출되지 않았는지 검증
-                BDDMockito.then(pictureRepository).should(BDDMockito.never()).existsByIdAndPictureDeletedAtNull(any());
-                BDDMockito.then(memberPictureRepository).should(BDDMockito.never()).findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(any(), any());
+                then(pictureRepository).should(BDDMockito.never()).existsByIdAndPictureDeletedAtNull(any());
+                then(memberPictureRepository).should(BDDMockito.never()).findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(any(), any());
             }
         }
 
@@ -280,17 +282,17 @@ class MemberPictureCommandServiceImplTest {
             Long pictureId = 100L;
             Member testMember = createTestMember(testUserId);
 
-            try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
-                BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
-                BDDMockito.given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
-                BDDMockito.given(pictureRepository.existsByIdAndPictureDeletedAtNull(pictureId)).willReturn(false);
+            try (var ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(testUserId);
+                given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
+                given(pictureRepository.existsByIdAndPictureDeletedAtNull(pictureId)).willReturn(false);
 
                 // when & then
                 assertThatThrownBy(() -> memberPictureCommandService.updateRepresentativeProfileImage(pictureId))
                         .isInstanceOf(CustomException.class)
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PICTURE_NOT_FOUND);
 
-                BDDMockito.then(memberPictureRepository).should(BDDMockito.never()).findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(any(), any());
+                then(memberPictureRepository).should(BDDMockito.never()).findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(any(), any());
             }
         }
 
@@ -302,12 +304,12 @@ class MemberPictureCommandServiceImplTest {
             Long pictureId = 100L;
             Member testMember = createTestMember(testUserId);
 
-            try (var ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
-                BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
-                BDDMockito.given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
-                BDDMockito.given(pictureRepository.existsByIdAndPictureDeletedAtNull(pictureId)).willReturn(true);
+            try (var ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(testUserId);
+                given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
+                given(pictureRepository.existsByIdAndPictureDeletedAtNull(pictureId)).willReturn(true);
                 // 사용자의 사진이 아니므로 empty Optional 반환
-                BDDMockito.given(memberPictureRepository.findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(testMember, pictureId))
+                given(memberPictureRepository.findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(testMember, pictureId))
                         .willReturn(Optional.empty());
 
                 // when & then
@@ -332,9 +334,9 @@ class MemberPictureCommandServiceImplTest {
 
             Member testMember = createTestMember(testUserId);
             Picture pictureToDelete = createTestPicture(pictureToDeleteId);
-            MemberPicture memberPictureToDelete = createTestMemberPicture(testMember, pictureToDelete);
+            // memberPictureToDelete 객체를 spy로 생성하여 deleteMemberPicture 메서드 호출을 추적
+            MemberPicture memberPictureToDelete = spy(createTestMemberPicture(testMember, pictureToDelete));
 
-            // 현재 대표 사진은 다른 사진으로 설정
             Picture representativePicture = createTestPicture(representativePictureId);
             MemberPicture representativeMemberPicture = createTestMemberPicture(testMember, representativePicture);
             testMember.updateProfilePicture(representativeMemberPicture);
@@ -344,18 +346,17 @@ class MemberPictureCommandServiceImplTest {
                 given(UserContextHolder.getUserId()).willReturn(testUserId);
                 given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
                 given(pictureRepository.findById(pictureToDeleteId)).willReturn(Optional.of(pictureToDelete));
-                given(memberPictureRepository.findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(testMember, pictureToDeleteId))
+                given(memberPictureRepository.findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(testMember, pictureToDelete.getId()))
                         .willReturn(Optional.of(memberPictureToDelete));
-
-                // pictureService의 삭제 메서드는 void이므로 doNothing() 처리
                 doNothing().when(pictureService).deletePictureFromS3AndDB(pictureToDelete);
 
                 // when
                 memberPictureCommandService.deleteProfilePicture(pictureToDeleteId);
 
                 // then
-                // 1. 서비스/레포지토리 호출 검증
+                // 1. 서비스/레포지토리/객체 메서드 호출 검증
                 then(pictureService).should(times(1)).deletePictureFromS3AndDB(pictureToDelete);
+                then(memberPictureToDelete).should(times(1)).deleteMemberPicture(); // spy 객체의 메서드 호출 검증
                 // 대표 사진이 아니므로, 새 대표 사진을 찾는 로직은 호출되지 않아야 함
                 then(memberPictureRepository).should(never()).findFirstByMemberAndMemberPicturesDeletedAtNullAndPicture_PictureDeletedAtNullOrderByPicture_PictureCreatedAtDesc(any(Member.class));
 
@@ -373,12 +374,10 @@ class MemberPictureCommandServiceImplTest {
 
             Member testMember = createTestMember(testUserId);
             Picture pictureToDelete = createTestPicture(pictureToDeleteId);
-            MemberPicture memberPictureToDelete = createTestMemberPicture(testMember, pictureToDelete);
+            MemberPicture memberPictureToDelete = spy(createTestMemberPicture(testMember, pictureToDelete));
 
-            // 삭제할 사진을 현재 대표 사진으로 설정
             testMember.updateProfilePicture(memberPictureToDelete);
 
-            // 새로 대표 사진이 될 후보 사진 설정
             Picture newRepresentativePicture = createTestPicture(200L);
             MemberPicture newRepresentativeMemberPicture = createTestMemberPicture(testMember, newRepresentativePicture);
 
@@ -387,13 +386,10 @@ class MemberPictureCommandServiceImplTest {
                 given(UserContextHolder.getUserId()).willReturn(testUserId);
                 given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
                 given(pictureRepository.findById(pictureToDeleteId)).willReturn(Optional.of(pictureToDelete));
-                given(memberPictureRepository.findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(testMember, pictureToDeleteId))
+                given(memberPictureRepository.findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(testMember, pictureToDelete.getId()))
                         .willReturn(Optional.of(memberPictureToDelete));
-
-                // 새 대표 사진을 찾는 쿼리가 newRepresentativeMemberPicture를 반환하도록 설정
                 given(memberPictureRepository.findFirstByMemberAndMemberPicturesDeletedAtNullAndPicture_PictureDeletedAtNullOrderByPicture_PictureCreatedAtDesc(testMember))
                         .willReturn(Optional.of(newRepresentativeMemberPicture));
-
                 doNothing().when(pictureService).deletePictureFromS3AndDB(pictureToDelete);
 
                 // when
@@ -401,9 +397,9 @@ class MemberPictureCommandServiceImplTest {
 
                 // then
                 then(pictureService).should(times(1)).deletePictureFromS3AndDB(pictureToDelete);
+                then(memberPictureToDelete).should(times(1)).deleteMemberPicture();
                 then(memberPictureRepository).should(times(1)).findFirstByMemberAndMemberPicturesDeletedAtNullAndPicture_PictureDeletedAtNullOrderByPicture_PictureCreatedAtDesc(testMember);
 
-                // Member의 대표 사진이 새로운 사진으로 교체되었는지 검증
                 assertThat(testMember.getMemberPicture()).isEqualTo(newRepresentativeMemberPicture);
             }
         }
@@ -417,7 +413,7 @@ class MemberPictureCommandServiceImplTest {
 
             Member testMember = createTestMember(testUserId);
             Picture pictureToDelete = createTestPicture(pictureToDeleteId);
-            MemberPicture memberPictureToDelete = createTestMemberPicture(testMember, pictureToDelete);
+            MemberPicture memberPictureToDelete = spy(createTestMemberPicture(testMember, pictureToDelete));
             testMember.updateProfilePicture(memberPictureToDelete);
 
             try (var ignored = mockStatic(UserContextHolder.class)) {
@@ -425,13 +421,10 @@ class MemberPictureCommandServiceImplTest {
                 given(UserContextHolder.getUserId()).willReturn(testUserId);
                 given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
                 given(pictureRepository.findById(pictureToDeleteId)).willReturn(Optional.of(pictureToDelete));
-                given(memberPictureRepository.findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(testMember, pictureToDeleteId))
+                given(memberPictureRepository.findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(testMember, pictureToDelete.getId()))
                         .willReturn(Optional.of(memberPictureToDelete));
-
-                // 새 대표 사진을 찾는 쿼리가 빈 Optional을 반환하도록 설정 (다른 사진 없음)
                 given(memberPictureRepository.findFirstByMemberAndMemberPicturesDeletedAtNullAndPicture_PictureDeletedAtNullOrderByPicture_PictureCreatedAtDesc(testMember))
                         .willReturn(Optional.empty());
-
                 doNothing().when(pictureService).deletePictureFromS3AndDB(pictureToDelete);
 
                 // when
@@ -439,9 +432,9 @@ class MemberPictureCommandServiceImplTest {
 
                 // then
                 then(pictureService).should(times(1)).deletePictureFromS3AndDB(pictureToDelete);
+                then(memberPictureToDelete).should(times(1)).deleteMemberPicture();
                 then(memberPictureRepository).should(times(1)).findFirstByMemberAndMemberPicturesDeletedAtNullAndPicture_PictureDeletedAtNullOrderByPicture_PictureCreatedAtDesc(testMember);
 
-                // Member의 대표 사진이 null로 설정되었는지 검증
                 assertThat(testMember.getMemberPicture()).isNull();
             }
         }
@@ -457,7 +450,6 @@ class MemberPictureCommandServiceImplTest {
             try (var ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(testUserId);
                 given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
-                // PictureRepository가 빈 Optional을 반환하도록 설정
                 given(pictureRepository.findById(pictureId)).willReturn(Optional.empty());
 
                 // when & then
@@ -484,8 +476,7 @@ class MemberPictureCommandServiceImplTest {
                 given(UserContextHolder.getUserId()).willReturn(testUserId);
                 given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
                 given(pictureRepository.findById(pictureId)).willReturn(Optional.of(testPicture));
-                // MemberPictureRepository가 빈 Optional을 반환하도록 설정 (권한 없음 케이스)
-                given(memberPictureRepository.findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(testMember, pictureId))
+                given(memberPictureRepository.findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(testMember, testPicture.getId()))
                         .willReturn(Optional.empty());
 
                 // when & then
@@ -497,4 +488,5 @@ class MemberPictureCommandServiceImplTest {
             }
         }
     }
+
 }
