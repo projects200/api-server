@@ -49,7 +49,7 @@ public class ExerciseLocationQueryServiceImpl implements ExerciseLocationQuerySe
         for (MemberProfileAndLocationRecord profileAndLocationRecord : memberProfileAndLocationList) {
             UUID memberId = profileAndLocationRecord.memberId();
             // memberId가 map 에 없으면 ArrayList를 생성하고, Map에 추가한다. 그 후, record를 Map에 추가함
-            groupedMemberLocationsMap.computeIfAbsent(memberId, ifAbsent -> new ArrayList<>()).add(profileAndLocationRecord);
+            groupedMemberLocationsMap.computeIfAbsent(memberId, key -> new ArrayList<>()).add(profileAndLocationRecord);
         }
 
         return groupedMemberLocationsMap;

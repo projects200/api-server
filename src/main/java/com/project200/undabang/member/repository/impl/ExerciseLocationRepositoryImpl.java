@@ -36,7 +36,7 @@ public class ExerciseLocationRepositoryImpl implements ExerciseLocationRepositor
                         member.memberNickname,
                         member.memberGender,
                         member.memberBday,
-                        picture.pictureUrl, // 썸네일 개발 후에는 memberPicture.url 써야함
+                        picture.pictureUrl, // Todo : 썸네일 개발 후에는 memberPicture.url 써야함
                         exerciseLocation.exerciseLocationName,
                         exerciseLocation.exerciseLocationPoint
                 ))
