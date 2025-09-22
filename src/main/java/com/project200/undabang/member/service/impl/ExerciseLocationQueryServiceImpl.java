@@ -33,7 +33,6 @@ public class ExerciseLocationQueryServiceImpl implements ExerciseLocationQuerySe
         Map<UUID, List<MemberProfileAndLocationRecord>> memberProfileAndLocationMap = groupMemberLocationRecordByUsingMap(memberProfileAndLocationList);
 
         return memberProfileAndLocationMap.values().stream()
-                .filter(list -> !list.isEmpty()) // 빈 리스트는 처리하지 않음
                 .map(GetMembersExerciseLocationsResponse::from)
                 .toList();
     }
