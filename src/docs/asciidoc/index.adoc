@@ -113,6 +113,8 @@ include::overview/공통-개발-참고-사항.adoc[]
 
 - 대표 프로필 사진 변경 API #PUT# `/api/v1/profile-pictures/{pictureId}/represent`
 
+- 다른 회원들의 운동 장소 목록 조회 API #GET# `/api/v1/members`
+
 
 === xref:운동-API.html[운동 API]
 

@@ -78,7 +78,6 @@ class ExerciseLocationQueryControllerTest extends AbstractRestDocSupport {
                     .andDo(document.document(
                             requestHeaders(HEADER_ACCESS_TOKEN),
                             responseFields(commonResponseFieldsForList(
-                                    fieldWithPath("data[]").type(ARRAY).description("회원 및 운동 위치 정보 리스트"),
                                     fieldWithPath("data[].memberId").type(STRING).description("다른 회원의 식별자(UUID)를 나타냅니다. "),
                                     fieldWithPath("data[].profileImageUrl").type(STRING).description("다른 회원의 썸네일 프로필 이미지 URL 정보입니다."),
                                     fieldWithPath("data[].nickname").type(STRING).description("다른 회원의 닉네임값을 나타냅니다."),
