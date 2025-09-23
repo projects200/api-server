@@ -3,6 +3,7 @@ package com.project200.undabang.member.controller;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
 import com.project200.undabang.member.controller.location.ExerciseLocationQueryController;
 import com.project200.undabang.member.dto.record.ExerciseLocationRecord;
+import com.project200.undabang.member.dto.response.GetExerciseLocationsResponse;
 import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
 import com.project200.undabang.member.enums.MemberGender;
 import com.project200.undabang.member.service.ExerciseLocationQueryService;
@@ -114,6 +115,87 @@ class ExerciseLocationQueryControllerTest extends AbstractRestDocSupport {
                     );
 
             BDDMockito.then(exerciseLocationQueryService).should(BDDMockito.times(1)).getMembersExerciseLocations();
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/v1/exercise-locations API는")
+    class GetExerciseLocations {
+
+        @Test
+        @DisplayName("현재 로그인한 사용자의 운동 장소 목록을 성공적으로 조회한다")
+        void getExerciseLocations_Success() throws Exception {
+            // given
+            UUID currentMemberId = UUID.randomUUID();
+            List<GetExerciseLocationsResponse> responseList = List.of(
+                    GetExerciseLocationsResponse.builder()
+                            .id(1L)
+                            .name("강남 스포애니")
+                            .address("서울 강남구 테헤란로 123")
+                            .latitude(37.5017)
+                            .longitude(127.0396)
+                            .build(),
+                    GetExerciseLocationsResponse.builder()
+                            .id(2L)
+                            .name("우리집 홈짐")
+                            .address("서울 서초구 반포대로 456")
+                            .latitude(37.4923)
+                            .longitude(127.0086)
+                            .build()
+            );
+
+            BDDMockito.given(exerciseLocationQueryService.getExerciseLocations()).willReturn(responseList);
+
+            // when & then
+            mockMvc.perform(get("/api/v1/exercise-locations")
+                            .headers(getCommonApiHeaders(currentMemberId)) // 인증 토큰 포함
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON))
+                    .andExpectAll(
+                            status().isOk(),
+                            jsonPath("$.succeed").value(true),
+                            jsonPath("$.code").value("SUCCESS"),
+                            jsonPath("$.data").isArray(),
+                            jsonPath("$.data[0].id").value(1L),
+                            jsonPath("$.data[0].name").value("강남 스포애니"),
+                            jsonPath("$.data[1].latitude").value(37.4923)
+                    )
+                    .andDo(document.document(
+                            requestHeaders(HEADER_ACCESS_TOKEN),
+                            responseFields(commonResponseFieldsForList(
+                                    fieldWithPath("data[].id").type(NUMBER).description("운동 장소의 고유 식별자 정보를 나타냅니다."),
+                                    fieldWithPath("data[].name").type(STRING).description("운동 장소의 이름(상호명) 입니다."),
+                                    fieldWithPath("data[].address").type(STRING).description("운동 장소의 도로명 주소(혹은 지번주소) 입니다."),
+                                    fieldWithPath("data[].latitude").type(NUMBER).description("운동 장소의 위도 정보 입니다."),
+                                    fieldWithPath("data[].longitude").type(NUMBER).description("운동 장소의 경도 정보 입니다.")
+                            ))
+                    ));
+
+            // 서비스 메서드가 1번 호출되었는지 검증
+            BDDMockito.then(exerciseLocationQueryService).should(BDDMockito.times(1)).getExerciseLocations();
+        }
+
+        @Test
+        @DisplayName("조회된 운동 장소가 없으면 빈 리스트를 반환한다")
+        void getExerciseLocations_Success_EmptyList() throws Exception {
+            // given
+            UUID currentMemberId = UUID.randomUUID();
+            BDDMockito.given(exerciseLocationQueryService.getExerciseLocations()).willReturn(Collections.emptyList());
+
+            // when & then
+            mockMvc.perform(get("/api/v1/exercise-locations")
+                            .headers(getCommonApiHeaders(currentMemberId))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON))
+                    .andExpectAll(
+                            status().isOk(),
+                            jsonPath("$.succeed").value(true),
+                            jsonPath("$.code").value("SUCCESS"),
+                            jsonPath("$.data").isArray(),
+                            jsonPath("$.data").isEmpty()
+                    );
+
+            BDDMockito.then(exerciseLocationQueryService).should(BDDMockito.times(1)).getExerciseLocations();
         }
     }
 }
