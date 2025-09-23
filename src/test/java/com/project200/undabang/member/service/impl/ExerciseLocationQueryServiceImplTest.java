@@ -50,7 +50,6 @@ class ExerciseLocationQueryServiceImplTest {
     @DisplayName("getMembersExerciseLocations 메소드는")
     class Describe_getMembersExerciseLocations {
 
-
         @Test
         @DisplayName("레포지토리에서 받은 데이터를 회원 ID별로 그룹화하여 반환한다")
         void it_groups_data_by_member_id_and_returns() {
