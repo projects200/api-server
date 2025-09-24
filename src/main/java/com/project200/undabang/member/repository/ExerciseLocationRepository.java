@@ -8,4 +8,8 @@ import java.util.List;
 
 public interface ExerciseLocationRepository extends JpaRepository<ExerciseLocation, Long>, ExerciseLocationRepositoryCustom {
     List<ExerciseLocation> findByMemberAndExerciseLocationDeletedAtNull(Member member);
+
+    boolean existsByExerciseLocationNameAndExerciseLocationDeletedAtNull(String exerciseLocationName);
+
+    long countByMemberAndExerciseLocationDeletedAtNull(Member member);
 }
