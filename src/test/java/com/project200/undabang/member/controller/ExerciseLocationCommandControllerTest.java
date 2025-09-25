@@ -234,6 +234,31 @@ class ExerciseLocationCommandControllerTest extends AbstractRestDocSupport {
 
             then(exerciseLocationCommandService).should().updateExerciseLocation(eq(locationId), any(UpdateExerciseLocationRequest.class));
         }
+
+        @Test
+        @DisplayName("수정하려는 이름이 이미 존재하면 409 Conflict를 반환한다")
+        void updateExerciseLocation_Conflict_WhenNameIsDuplicated() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long locationId = 1L;
+            UpdateExerciseLocationRequest request = new UpdateExerciseLocationRequest("이미 있는 헬스장");
+
+            given(exerciseLocationCommandService.updateExerciseLocation(eq(locationId), any(UpdateExerciseLocationRequest.class)))
+                    .willThrow(new CustomException(ErrorCode.EXERCISE_LOCATION_NAME_DUPLICATED));
+
+            // when & then
+            mockMvc.perform(patch("/api/v1/exercise-locations/{locationId}", locationId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpectAll(
+                            status().isConflict(),
+                            jsonPath("$.succeed").value(false),
+                            jsonPath("$.code").value(ErrorCode.EXERCISE_LOCATION_NAME_DUPLICATED.name())
+                    );
+
+            then(exerciseLocationCommandService).should().updateExerciseLocation(eq(locationId), any(UpdateExerciseLocationRequest.class));
+        }
     }
 
     @Nested
@@ -317,31 +342,6 @@ class ExerciseLocationCommandControllerTest extends AbstractRestDocSupport {
                     );
 
             then(exerciseLocationCommandService).should().deleteExerciseLocation(locationId);
-        }
-
-        @Test
-        @DisplayName("수정하려는 이름이 이미 존재하면 409 Conflict를 반환한다")
-        void updateExerciseLocation_Conflict_WhenNameIsDuplicated() throws Exception {
-            // given
-            UUID memberId = UUID.randomUUID();
-            Long locationId = 1L;
-            UpdateExerciseLocationRequest request = new UpdateExerciseLocationRequest("이미 있는 헬스장");
-
-            given(exerciseLocationCommandService.updateExerciseLocation(eq(locationId), any(UpdateExerciseLocationRequest.class)))
-                    .willThrow(new CustomException(ErrorCode.EXERCISE_LOCATION_NAME_DUPLICATED));
-
-            // when & then
-            mockMvc.perform(patch("/api/v1/exercise-locations/{locationId}", locationId)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .headers(getCommonApiHeaders(memberId))
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andExpectAll(
-                            status().isConflict(),
-                            jsonPath("$.succeed").value(false),
-                            jsonPath("$.code").value(ErrorCode.EXERCISE_LOCATION_NAME_DUPLICATED.name())
-                    );
-
-            then(exerciseLocationCommandService).should().updateExerciseLocation(eq(locationId), any(UpdateExerciseLocationRequest.class));
         }
     }
 }
