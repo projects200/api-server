@@ -45,6 +45,10 @@ public class ExerciseLocationCommandServiceImpl implements ExerciseLocationComma
         return CreateExerciseLocationResponse.from(savedExerciseLocation);
     }
 
+    /**
+     * 전달받은 운동 위치 ID와 회원 식별자를 이용하여 운동 위치 정보를 업데이트하는 메서드.
+     * 해당 회원이 소유한 운동 위치가 존재하지 않거나 삭제된 경우 예외를 발생시킵니다.
+     */
     @Transactional
     @Override
     public UpdateExerciseLocationResponse updateExerciseLocation(Long locationId, UpdateExerciseLocationRequest request) {

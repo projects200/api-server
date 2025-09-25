@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Import;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -333,6 +334,58 @@ class ExerciseLocationRepositoryImplTest {
 
             // then
             assertThat(result).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("findByMemberAndExerciseLocationIdAndExerciseLocationDeletedAtNull 메소드는")
+    class Describe_findByMemberAndExerciseLocationIdAndExerciseLocationDeletedAtNull {
+
+        @Test
+        @DisplayName("해당 회원의 삭제되지 않은 운동 장소를 ID로 조회하면 Optional에 담아 반환한다")
+        void it_returns_location_when_exists_and_not_deleted() {
+            // given
+            Member member = createAndSaveMember("user");
+            ExerciseLocation location = createAndSaveExerciseLocation(member, "헬스장", false);
+            flushAndClear();
+
+            // when
+            Optional<ExerciseLocation> result = exerciseLocationRepository.findByMemberAndExerciseLocationIdAndExerciseLocationDeletedAtNull(member, location.getExerciseLocationId());
+
+            // then
+            assertThat(result).isPresent();
+            assertThat(result.get().getExerciseLocationId()).isEqualTo(location.getExerciseLocationId());
+        }
+
+        @Test
+        @DisplayName("해당 회원의 운동 장소가 삭제된 경우 Optional.empty를 반환한다")
+        void it_returns_empty_when_location_is_deleted() {
+            // given
+            Member member = createAndSaveMember("user");
+            ExerciseLocation location = createAndSaveExerciseLocation(member, "헬스장", true);
+            flushAndClear();
+
+            // when
+            Optional<ExerciseLocation> result = exerciseLocationRepository.findByMemberAndExerciseLocationIdAndExerciseLocationDeletedAtNull(member, location.getExerciseLocationId());
+
+            // then
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("해당 회원이 가진 운동 장소가 아닌 경우 Optional.empty를 반환한다")
+        void it_returns_empty_when_location_does_not_belong_to_member() {
+            // given
+            Member member1 = createAndSaveMember("user1");
+            Member member2 = createAndSaveMember("user2");
+            ExerciseLocation location = createAndSaveExerciseLocation(member1, "헬스장", false);
+            flushAndClear();
+
+            // when
+            Optional<ExerciseLocation> result = exerciseLocationRepository.findByMemberAndExerciseLocationIdAndExerciseLocationDeletedAtNull(member2, location.getExerciseLocationId());
+
+            // then
+            assertThat(result).isEmpty();
         }
     }
 }

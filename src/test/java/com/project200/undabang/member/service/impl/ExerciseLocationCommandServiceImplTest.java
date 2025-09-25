@@ -4,7 +4,9 @@ import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.dto.request.CreateExerciseLocationRequest;
+import com.project200.undabang.member.dto.request.UpdateExerciseLocationRequest;
 import com.project200.undabang.member.dto.response.CreateExerciseLocationResponse;
+import com.project200.undabang.member.dto.response.UpdateExerciseLocationResponse;
 import com.project200.undabang.member.entity.ExerciseLocation;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.ExerciseLocationRepository;
@@ -172,6 +174,78 @@ class ExerciseLocationCommandServiceImplTest {
                     verify(exerciseLocationRepository, never()).save(any());
                 }
             }
+        }
+    }
+
+    @Nested
+    @DisplayName("updateExerciseLocation 메소드는")
+    class Describe_updateExerciseLocation {
+
+        @Test
+        @DisplayName("해당 회원의 삭제되지 않은 운동장소가 존재하면 이름을 수정하고 응답을 반환한다")
+        void it_updates_location_name_and_returns_response() {
+            // given
+            final UUID MEMBER_ID = UUID.randomUUID();
+            final Long LOCATION_ID = 1L;
+            final String OLD_NAME = "기존 헬스장";
+            final String NEW_NAME = "수정된 헬스장";
+            Member member = createMember(MEMBER_ID, "testUser");
+            ExerciseLocation location = ExerciseLocation.builder()
+                    .exerciseLocationId(LOCATION_ID)
+                    .member(member)
+                    .exerciseLocationName(OLD_NAME)
+                    .build();
+
+            try (MockedStatic<UserContextHolder> mockedUserContext = mockStatic(UserContextHolder.class)) {
+                mockedUserContext.when(UserContextHolder::getUserId).thenReturn(MEMBER_ID);
+                when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(member));
+                when(exerciseLocationRepository.findByMemberAndExerciseLocationIdAndExerciseLocationDeletedAtNull(member, LOCATION_ID))
+                        .thenReturn(Optional.of(location));
+
+                UpdateExerciseLocationRequest request = updateRequest(NEW_NAME);
+
+                // when
+                UpdateExerciseLocationResponse response = exerciseLocationCommandService.updateExerciseLocation(LOCATION_ID, request);
+
+                // then
+                assertThat(response).isNotNull();
+                assertThat(response.getId()).isEqualTo(LOCATION_ID);
+                assertThat(location.getExerciseLocationName()).isEqualTo(NEW_NAME);
+            }
+        }
+
+        @Test
+        @DisplayName("운동장소가 없거나 삭제된 경우 CustomException을 던진다")
+        void it_throws_exception_when_location_not_found() {
+            // given
+            final UUID MEMBER_ID = UUID.randomUUID();
+            final Long LOCATION_ID = 1L;
+            Member member = createMember(MEMBER_ID, "testUser");
+
+            try (MockedStatic<UserContextHolder> mockedUserContext = mockStatic(UserContextHolder.class)) {
+                mockedUserContext.when(UserContextHolder::getUserId).thenReturn(MEMBER_ID);
+                when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(member));
+                when(exerciseLocationRepository.findByMemberAndExerciseLocationIdAndExerciseLocationDeletedAtNull(member, LOCATION_ID))
+                        .thenReturn(Optional.empty());
+
+                UpdateExerciseLocationRequest request = updateRequest("새 이름");
+
+                // when & then
+                assertThatThrownBy(() -> exerciseLocationCommandService.updateExerciseLocation(LOCATION_ID, request))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.EXERCISE_LOCATION_NOT_FOUND);
+            }
+        }
+
+        private UpdateExerciseLocationRequest updateRequest(String newName) {
+            return new UpdateExerciseLocationRequest(newName);
+        }
+
+        private Member createMember(UUID memberId, String nickname) {
+            return Member.builder()
+                    .memberId(memberId)
+                    .memberNickname(nickname)
+                    .build();
         }
     }
 }
