@@ -72,27 +72,24 @@ class ExerciseLocationCommandServiceImplTest {
                 CreateExerciseLocationRequest request = createExerciseLocationRequest("새로운 헬스장", "서울시 강남구", 37.5, 127.0);
                 Member member = createMember(MEMBER_ID, "testUser");
 
-                // UserContextHolder.getUserId()는 static 메소드이므로, MockedStatic을 사용합니다.
                 try (MockedStatic<UserContextHolder> mockedUserContext = mockStatic(UserContextHolder.class)) {
-                    // Mock 설정
                     mockedUserContext.when(UserContextHolder::getUserId).thenReturn(MEMBER_ID);
                     when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(member));
-                    when(exerciseLocationRepository.existsByExerciseLocationNameAndExerciseLocationDeletedAtNull(request.getName())).thenReturn(false);
-                    when(policyService.getPolicyValueAsInt(any(PolicyKey.class))).thenReturn(10); // 최대 10개
-                    when(exerciseLocationRepository.countByMemberAndExerciseLocationDeletedAtNull(member)).thenReturn(5L); // 현재 5개
+                    // [수정 전] when(exerciseLocationRepository.existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(request.getName())).thenReturn(false);
+                    // [수정 후]
+                    when(exerciseLocationRepository.existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, request.getName())).thenReturn(false);
+                    when(policyService.getPolicyValueAsInt(any(PolicyKey.class))).thenReturn(10);
+                    when(exerciseLocationRepository.countByMemberAndExerciseLocationDeletedAtNull(member)).thenReturn(5L);
 
-                    // save 메소드가 호출되면 ID가 부여된 엔티티를 반환하도록 설정
                     when(exerciseLocationRepository.save(any(ExerciseLocation.class)))
                             .thenAnswer(invocation -> {
                                 ExerciseLocation locationToSave = invocation.getArgument(0);
-                                // 실제 DB처럼 ID를 설정해주는 것을 흉내 냅니다.
                                 return ExerciseLocation.builder()
                                         .exerciseLocationId(SAVED_LOCATION_ID)
                                         .member(locationToSave.getMember())
                                         .exerciseLocationName(locationToSave.getExerciseLocationName())
                                         .build();
                             });
-
 
                     // when
                     CreateExerciseLocationResponse response = exerciseLocationCommandService.createExerciseLocation(request);
@@ -101,7 +98,6 @@ class ExerciseLocationCommandServiceImplTest {
                     assertThat(response).isNotNull();
                     assertThat(response.getExerciseLocationId()).isEqualTo(SAVED_LOCATION_ID);
 
-                    // verify: save 메소드가 정확히 1번 호출되었는지 검증
                     verify(exerciseLocationRepository, times(1)).save(any(ExerciseLocation.class));
                 }
             }
@@ -122,15 +118,12 @@ class ExerciseLocationCommandServiceImplTest {
                 try (MockedStatic<UserContextHolder> mockedUserContext = mockStatic(UserContextHolder.class)) {
                     mockedUserContext.when(UserContextHolder::getUserId).thenReturn(MEMBER_ID);
                     when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(member));
-                    // 이름 중복 검사에서 true를 반환하도록 설정
-                    when(exerciseLocationRepository.existsByExerciseLocationNameAndExerciseLocationDeletedAtNull(request.getName())).thenReturn(true);
+                    when(exerciseLocationRepository.existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, request.getName())).thenReturn(true);
 
-                    // when & then
                     assertThatThrownBy(() -> exerciseLocationCommandService.createExerciseLocation(request))
                             .isInstanceOf(CustomException.class)
                             .hasFieldOrPropertyWithValue("errorCode", ErrorCode.EXERCISE_LOCATION_NAME_DUPLICATED);
 
-                    // verify: 예외가 발생했으므로, save 메소드는 절대 호출되면 안 됨
                     verify(exerciseLocationRepository, never()).save(any());
                 }
             }
@@ -147,19 +140,14 @@ class ExerciseLocationCommandServiceImplTest {
                 try (MockedStatic<UserContextHolder> mockedUserContext = mockStatic(UserContextHolder.class)) {
                     mockedUserContext.when(UserContextHolder::getUserId).thenReturn(MEMBER_ID);
                     when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(member));
-                    // 이름 중복은 통과
-                    when(exerciseLocationRepository.existsByExerciseLocationNameAndExerciseLocationDeletedAtNull(request.getName())).thenReturn(false);
-                    // 정책상 최대 개수는 10개
+                    when(exerciseLocationRepository.existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, request.getName())).thenReturn(false);
                     when(policyService.getPolicyValueAsInt(any(PolicyKey.class))).thenReturn(MAX_COUNT);
-                    // 현재 회원은 이미 10개를 가지고 있음
                     when(exerciseLocationRepository.countByMemberAndExerciseLocationDeletedAtNull(member)).thenReturn((long) MAX_COUNT);
 
-                    // when & then
                     assertThatThrownBy(() -> exerciseLocationCommandService.createExerciseLocation(request))
                             .isInstanceOf(CustomException.class)
                             .hasFieldOrPropertyWithValue("errorCode", ErrorCode.EXERCISE_LOCATION_MAX_COUNT_VIOLATION);
 
-                    // verify
                     verify(exerciseLocationRepository, never()).save(any());
                 }
             }
@@ -173,16 +161,13 @@ class ExerciseLocationCommandServiceImplTest {
 
                 try (MockedStatic<UserContextHolder> mockedUserContext = mockStatic(UserContextHolder.class)) {
                     mockedUserContext.when(UserContextHolder::getUserId).thenReturn(NON_EXISTENT_MEMBER_ID);
-                    // 회원을 찾지 못해 Optional.empty()를 반환하도록 설정
                     when(memberRepository.findById(NON_EXISTENT_MEMBER_ID)).thenReturn(Optional.empty());
 
-                    // when & then
                     assertThatThrownBy(() -> exerciseLocationCommandService.createExerciseLocation(request))
                             .isInstanceOf(CustomException.class)
                             .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
 
-                    // verify: 회원 조회 단계에서 실패했으므로 운동 위치 관련 repository는 호출되면 안 됨
-                    verify(exerciseLocationRepository, never()).existsByExerciseLocationNameAndExerciseLocationDeletedAtNull(anyString());
+                    verify(exerciseLocationRepository, never()).existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(any(Member.class), anyString());
                     verify(exerciseLocationRepository, never()).countByMemberAndExerciseLocationDeletedAtNull(any(Member.class));
                     verify(exerciseLocationRepository, never()).save(any());
                 }
