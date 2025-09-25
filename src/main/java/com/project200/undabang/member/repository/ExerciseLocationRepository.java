@@ -5,6 +5,7 @@ import com.project200.undabang.member.entity.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ExerciseLocationRepository extends JpaRepository<ExerciseLocation, Long>, ExerciseLocationRepositoryCustom {
     List<ExerciseLocation> findByMemberAndExerciseLocationDeletedAtNull(Member member);
@@ -12,4 +13,6 @@ public interface ExerciseLocationRepository extends JpaRepository<ExerciseLocati
     boolean existsByExerciseLocationNameAndExerciseLocationDeletedAtNull(String exerciseLocationName);
 
     long countByMemberAndExerciseLocationDeletedAtNull(Member member);
+
+    Optional<ExerciseLocation> findByMemberAndExerciseLocationIdAndExerciseLocationDeletedAtNull(Member member, Long exerciseLocationId);
 }

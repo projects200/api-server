@@ -4,7 +4,9 @@ import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.dto.request.CreateExerciseLocationRequest;
+import com.project200.undabang.member.dto.request.UpdateExerciseLocationRequest;
 import com.project200.undabang.member.dto.response.CreateExerciseLocationResponse;
+import com.project200.undabang.member.dto.response.UpdateExerciseLocationResponse;
 import com.project200.undabang.member.entity.ExerciseLocation;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.ExerciseLocationRepository;
@@ -41,6 +43,20 @@ public class ExerciseLocationCommandServiceImpl implements ExerciseLocationComma
         ExerciseLocation savedExerciseLocation = exerciseLocationRepository.save(exerciseLocation);
 
         return CreateExerciseLocationResponse.from(savedExerciseLocation);
+    }
+
+    @Transactional
+    @Override
+    public UpdateExerciseLocationResponse updateExerciseLocation(Long locationId, UpdateExerciseLocationRequest request) {
+        Member member = getMember(UserContextHolder.getUserId());
+
+        ExerciseLocation exerciseLocation = exerciseLocationRepository.findByMemberAndExerciseLocationIdAndExerciseLocationDeletedAtNull(member, locationId).orElseThrow(
+                () -> new CustomException(ErrorCode.EXERCISE_LOCATION_NOT_FOUND)
+        );
+
+        exerciseLocation.updateExerciseLocationName(request.getExerciseLocationName());
+
+        return UpdateExerciseLocationResponse.from(exerciseLocation);
     }
 
     /**

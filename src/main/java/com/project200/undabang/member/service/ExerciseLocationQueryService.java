@@ -7,6 +7,5 @@ import java.util.List;
 
 public interface ExerciseLocationQueryService {
     List<GetMembersExerciseLocationsResponse> getMembersExerciseLocations();
-
     List<GetExerciseLocationsResponse> getExerciseLocations();
 }

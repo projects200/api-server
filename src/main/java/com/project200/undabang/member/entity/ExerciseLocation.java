@@ -47,4 +47,9 @@ public class ExerciseLocation {
 
     @Comment("운동 장소 삭제 일시 기록")
     private LocalDateTime exerciseLocationDeletedAt;
+
+    public void updateExerciseLocationName(String exerciseLocationName) {
+        this.exerciseLocationName = exerciseLocationName;
+        this.exerciseLocationUpdatedAt = LocalDateTime.now();
+    }
 }

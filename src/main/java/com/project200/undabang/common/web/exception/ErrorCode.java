@@ -60,7 +60,8 @@ public enum ErrorCode {
 
     // 운동 주소 관련 에러
     EXERCISE_LOCATION_MAX_COUNT_VIOLATION(409, "EXERCISE_LOCATION_MAX_COUNT_VIOLATION", "최대 운동 장소 저장 갯수(10개)를 초과했습니다."),
-    EXERCISE_LOCATION_NAME_DUPLICATED(409, "EXERCISE_LOCATION_NAME_DUPLICATED", "이미 사용중인 운동 장소 명 입니다.");
+    EXERCISE_LOCATION_NAME_DUPLICATED(409, "EXERCISE_LOCATION_NAME_DUPLICATED", "이미 사용중인 운동 장소 명 입니다."),
+    EXERCISE_LOCATION_NOT_FOUND(404, "EXERCISE_LOCATION_NOT_FOUND", "존재하지 않는 운동장소 입니다");
 
     private final HttpStatusCode status;
     private final String code;
