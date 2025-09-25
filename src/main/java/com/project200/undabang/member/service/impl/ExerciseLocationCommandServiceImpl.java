@@ -49,7 +49,7 @@ public class ExerciseLocationCommandServiceImpl implements ExerciseLocationComma
      * 규칙을 위반할 경우 예외를 발생시킴.
      */
     private void validateForCreation(Member member, String exerciseLocationName) {
-        if (checkDuplicateExerciseLocationName(exerciseLocationName)) {
+        if (checkDuplicateExerciseLocationName(member, exerciseLocationName)) {
             throw new CustomException(ErrorCode.EXERCISE_LOCATION_NAME_DUPLICATED);
         }
 
@@ -68,10 +68,10 @@ public class ExerciseLocationCommandServiceImpl implements ExerciseLocationComma
 
     /**
      * 운동 위치 이름이 중복되는지 확인하는 메서드.
-     * 삭제되지 않은 운동 위치 중 동일한 이름이 존재하는지 여부를 검사함.
+     * 자신이 보유한 운동 위치 중 동일한 이름이 존재하는지 여부를 검사함.
      */
-    private boolean checkDuplicateExerciseLocationName(String locationName) {
-        return exerciseLocationRepository.existsByExerciseLocationNameAndExerciseLocationDeletedAtNull(locationName);
+    private boolean checkDuplicateExerciseLocationName(Member member, String locationName) {
+        return exerciseLocationRepository.existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, locationName);
     }
 
     /**

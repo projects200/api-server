@@ -151,7 +151,7 @@ class ExerciseLocationQueryServiceImplTest {
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
                 given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-                given(exerciseLocationRepository.findByMemberAndExerciseLocationDeletedAtNull(member)).willReturn(locations);
+                given(exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member)).willReturn(locations);
 
                 // when
                 List<GetExerciseLocationsResponse> results = exerciseLocationQueryService.getExerciseLocations();
@@ -167,7 +167,7 @@ class ExerciseLocationQueryServiceImplTest {
 
                 // Mock 상호작용 검증
                 verify(memberRepository, times(1)).findById(memberId);
-                verify(exerciseLocationRepository, times(1)).findByMemberAndExerciseLocationDeletedAtNull(member);
+                verify(exerciseLocationRepository, times(1)).findAllByMemberAndExerciseLocationDeletedAtNull(member);
             }
         }
 
@@ -178,7 +178,7 @@ class ExerciseLocationQueryServiceImplTest {
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
                 given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-                given(exerciseLocationRepository.findByMemberAndExerciseLocationDeletedAtNull(member)).willReturn(Collections.emptyList());
+                given(exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member)).willReturn(Collections.emptyList());
 
                 // when
                 List<GetExerciseLocationsResponse> results = exerciseLocationQueryService.getExerciseLocations();
@@ -202,7 +202,7 @@ class ExerciseLocationQueryServiceImplTest {
                         .hasMessageContaining(ErrorCode.MEMBER_NOT_FOUND.getMessage());
 
                 // exerciseLocationRepository는 호출되지 않아야 함
-                verify(exerciseLocationRepository, never()).findByMemberAndExerciseLocationDeletedAtNull(any());
+                verify(exerciseLocationRepository, never()).findAllByMemberAndExerciseLocationDeletedAtNull(any());
             }
         }
 
