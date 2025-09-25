@@ -185,3 +185,5 @@ include::overview/공통-개발-참고-사항.adoc[]
 - 운동 장소 목록 조회 API #GET# `/api/v1/exercise-locations`
 
 - 운동 장소 생성 API #POST# `/api/v1/exercise-locations`
+
+- 운동 장소 이름 수정 API #PATCH# `/api/v1/exercise-locations/{locationId}`
