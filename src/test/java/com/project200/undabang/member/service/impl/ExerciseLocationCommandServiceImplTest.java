@@ -190,17 +190,15 @@ class ExerciseLocationCommandServiceImplTest {
             final String OLD_NAME = "기존 헬스장";
             final String NEW_NAME = "수정된 헬스장";
             Member member = createMember(MEMBER_ID, "testUser");
-            ExerciseLocation location = ExerciseLocation.builder()
-                    .exerciseLocationId(LOCATION_ID)
-                    .member(member)
-                    .exerciseLocationName(OLD_NAME)
-                    .build();
+            ExerciseLocation location = createExerciseLocation(LOCATION_ID, member, OLD_NAME);
 
             try (MockedStatic<UserContextHolder> mockedUserContext = mockStatic(UserContextHolder.class)) {
                 mockedUserContext.when(UserContextHolder::getUserId).thenReturn(MEMBER_ID);
                 when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(member));
-                when(exerciseLocationRepository.findByMemberAndExerciseLocationIdAndExerciseLocationDeletedAtNull(member, LOCATION_ID))
+                when(exerciseLocationRepository.findByExerciseLocationIdAndExerciseLocationDeletedAtNull(LOCATION_ID))
                         .thenReturn(Optional.of(location));
+                when(exerciseLocationRepository.existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, NEW_NAME))
+                        .thenReturn(false);
 
                 UpdateExerciseLocationRequest request = updateRequest(NEW_NAME);
 
@@ -215,25 +213,111 @@ class ExerciseLocationCommandServiceImplTest {
         }
 
         @Test
-        @DisplayName("운동장소가 없거나 삭제된 경우 CustomException을 던진다")
-        void it_throws_exception_when_location_not_found() {
+        @DisplayName("이름이 변경되지 않았을 경우, 중복 검사를 수행하지 않고 성공적으로 응답한다")
+        void it_does_not_validate_duplicate_when_name_is_unchanged() {
             // given
             final UUID MEMBER_ID = UUID.randomUUID();
             final Long LOCATION_ID = 1L;
+            final String SAME_NAME = "기존 헬스장";
+            Member member = createMember(MEMBER_ID, "testUser");
+            ExerciseLocation location = createExerciseLocation(LOCATION_ID, member, SAME_NAME);
+
+            try (MockedStatic<UserContextHolder> mockedUserContext = mockStatic(UserContextHolder.class)) {
+                mockedUserContext.when(UserContextHolder::getUserId).thenReturn(MEMBER_ID);
+                when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(member));
+                when(exerciseLocationRepository.findByExerciseLocationIdAndExerciseLocationDeletedAtNull(LOCATION_ID))
+                        .thenReturn(Optional.of(location));
+
+                UpdateExerciseLocationRequest request = updateRequest(SAME_NAME);
+
+                // when
+                UpdateExerciseLocationResponse response = exerciseLocationCommandService.updateExerciseLocation(LOCATION_ID, request);
+
+                // then
+                assertThat(response).isNotNull();
+                assertThat(response.getId()).isEqualTo(LOCATION_ID);
+                assertThat(location.getExerciseLocationName()).isEqualTo(SAME_NAME);
+
+                // 이름이 동일하므로 중복 검사(DB 조회)가 호출되지 않았는지 확인
+                verify(exerciseLocationRepository, never()).existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(any(Member.class), anyString());
+            }
+        }
+
+
+        @Test
+        @DisplayName("운동장소가 없거나 삭제된 경우 CustomException(NOT_FOUND)을 던진다")
+        void it_throws_not_found_exception_when_location_is_not_found_or_deleted() {
+            // given
+            final UUID MEMBER_ID = UUID.randomUUID();
+            final Long NON_EXISTENT_LOCATION_ID = 999L;
             Member member = createMember(MEMBER_ID, "testUser");
 
             try (MockedStatic<UserContextHolder> mockedUserContext = mockStatic(UserContextHolder.class)) {
                 mockedUserContext.when(UserContextHolder::getUserId).thenReturn(MEMBER_ID);
                 when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(member));
-                when(exerciseLocationRepository.findByMemberAndExerciseLocationIdAndExerciseLocationDeletedAtNull(member, LOCATION_ID))
+                when(exerciseLocationRepository.findByExerciseLocationIdAndExerciseLocationDeletedAtNull(NON_EXISTENT_LOCATION_ID))
                         .thenReturn(Optional.empty());
+
+                UpdateExerciseLocationRequest request = updateRequest("새 이름");
+
+                // when & then
+                assertThatThrownBy(() -> exerciseLocationCommandService.updateExerciseLocation(NON_EXISTENT_LOCATION_ID, request))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.EXERCISE_LOCATION_NOT_FOUND);
+            }
+        }
+
+        @Test
+        @DisplayName("자신이 소유한 운동장소가 아니면 CustomException(AUTHORIZATION_DENIED)을 던진다")
+        void it_throws_authorization_denied_exception_when_not_owner() {
+            // given
+            final UUID MEMBER_ID = UUID.randomUUID();
+            final UUID OTHER_MEMBER_ID = UUID.randomUUID();
+            final Long LOCATION_ID = 1L;
+            Member member = createMember(MEMBER_ID, "testUser");
+            Member otherMember = createMember(OTHER_MEMBER_ID, "otherUser");
+            ExerciseLocation locationOfOtherMember = createExerciseLocation(LOCATION_ID, otherMember, "다른 사람의 헬스장");
+
+            try (MockedStatic<UserContextHolder> mockedUserContext = mockStatic(UserContextHolder.class)) {
+                mockedUserContext.when(UserContextHolder::getUserId).thenReturn(MEMBER_ID);
+                when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(member));
+                when(exerciseLocationRepository.findByExerciseLocationIdAndExerciseLocationDeletedAtNull(LOCATION_ID))
+                        .thenReturn(Optional.of(locationOfOtherMember));
 
                 UpdateExerciseLocationRequest request = updateRequest("새 이름");
 
                 // when & then
                 assertThatThrownBy(() -> exerciseLocationCommandService.updateExerciseLocation(LOCATION_ID, request))
                         .isInstanceOf(CustomException.class)
-                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.EXERCISE_LOCATION_NOT_FOUND);
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.AUTHORIZATION_DENIED);
+            }
+        }
+
+        @Test
+        @DisplayName("수정하려는 이름이 이미 존재하면 CustomException(NAME_DUPLICATED)을 던진다")
+        void it_throws_name_duplicated_exception_when_new_name_already_exists() {
+            // given
+            final UUID MEMBER_ID = UUID.randomUUID();
+            final Long LOCATION_ID = 1L;
+            final String OLD_NAME = "기존 헬스장";
+            final String DUPLICATE_NAME = "이미 있는 헬스장";
+            Member member = createMember(MEMBER_ID, "testUser");
+            ExerciseLocation location = createExerciseLocation(LOCATION_ID, member, OLD_NAME);
+
+            try (MockedStatic<UserContextHolder> mockedUserContext = mockStatic(UserContextHolder.class)) {
+                mockedUserContext.when(UserContextHolder::getUserId).thenReturn(MEMBER_ID);
+                when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(member));
+                when(exerciseLocationRepository.findByExerciseLocationIdAndExerciseLocationDeletedAtNull(LOCATION_ID))
+                        .thenReturn(Optional.of(location));
+                when(exerciseLocationRepository.existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, DUPLICATE_NAME))
+                        .thenReturn(true);
+
+                UpdateExerciseLocationRequest request = updateRequest(DUPLICATE_NAME);
+
+                // when & then
+                assertThatThrownBy(() -> exerciseLocationCommandService.updateExerciseLocation(LOCATION_ID, request))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.EXERCISE_LOCATION_NAME_DUPLICATED);
             }
         }
 
@@ -245,6 +329,14 @@ class ExerciseLocationCommandServiceImplTest {
             return Member.builder()
                     .memberId(memberId)
                     .memberNickname(nickname)
+                    .build();
+        }
+
+        private ExerciseLocation createExerciseLocation(Long locationId, Member member, String name) {
+            return ExerciseLocation.builder()
+                    .exerciseLocationId(locationId)
+                    .member(member)
+                    .exerciseLocationName(name)
                     .build();
         }
     }

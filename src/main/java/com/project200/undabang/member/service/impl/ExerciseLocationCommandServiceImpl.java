@@ -46,17 +46,16 @@ public class ExerciseLocationCommandServiceImpl implements ExerciseLocationComma
     }
 
     /**
-     * 전달받은 운동 위치 ID와 회원 식별자를 이용하여 운동 위치 정보를 업데이트하는 메서드.
-     * 해당 회원이 소유한 운동 위치가 존재하지 않거나 삭제된 경우 예외를 발생시킵니다.
+     * 주어진 운동 위치 ID에 해당하는 운동 장소 이름를 업데이트하고, 업데이트된 운동 위치 정보를 반환합니다.
      */
     @Transactional
     @Override
     public UpdateExerciseLocationResponse updateExerciseLocation(Long locationId, UpdateExerciseLocationRequest request) {
         Member member = getMember(UserContextHolder.getUserId());
 
-        ExerciseLocation exerciseLocation = exerciseLocationRepository.findByMemberAndExerciseLocationIdAndExerciseLocationDeletedAtNull(member, locationId).orElseThrow(
-                () -> new CustomException(ErrorCode.EXERCISE_LOCATION_NOT_FOUND)
-        );
+        ExerciseLocation exerciseLocation = getExerciseLocation(member, locationId);
+
+        validateForUpdate(member, exerciseLocation.getExerciseLocationName(), request.getExerciseLocationName());
 
         exerciseLocation.updateExerciseLocationName(request.getExerciseLocationName());
 
@@ -80,6 +79,23 @@ public class ExerciseLocationCommandServiceImpl implements ExerciseLocationComma
     }
 
     /**
+     * 운동 위치 업데이트 시 유효성을 검사하는 메서드.
+     * 주어진 이전 이름과 새로운 이름을 비교하여 변경 사항이 없을 경우 검증을 중지하며,
+     * 새로운 이름이 중복일 경우 예외를 발생시킵니다.
+     */
+    private void validateForUpdate(Member member, String prevName, String newName) {
+        // 지금 사용중인 이름일 경우 바로 반환해서 DB 조회 최소화
+        if (prevName.equals(newName)) {
+            return;
+        }
+
+        // 이미 사용중인 이름일 경우, 해당 사항을 에러로 알려줌
+        if (checkDuplicateExerciseLocationName(member, newName)) {
+            throw new CustomException(ErrorCode.EXERCISE_LOCATION_NAME_DUPLICATED);
+        }
+    }
+
+    /**
      * 특정 회원의 삭제되지 않은 운동 위치 개수를 반환하는 메서드.
      */
     private long countMemberExerciseLocation(Member member) {
@@ -92,6 +108,21 @@ public class ExerciseLocationCommandServiceImpl implements ExerciseLocationComma
      */
     private boolean checkDuplicateExerciseLocationName(Member member, String locationName) {
         return exerciseLocationRepository.existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, locationName);
+    }
+
+    /**
+     * 주어진 회원 정보와 운동 위치 ID를 기반으로 운동 위치를 조회합니다.
+     * 만약 운동 위치가 존재하지 않거나, 해당 회원의 소유가 아닐 경우 예외를 발생시킵니다.
+     */
+    private ExerciseLocation getExerciseLocation(Member member, Long locationId) {
+        ExerciseLocation exerciseLocation = exerciseLocationRepository.findByExerciseLocationIdAndExerciseLocationDeletedAtNull(locationId).orElseThrow(
+                () -> new CustomException(ErrorCode.EXERCISE_LOCATION_NOT_FOUND));
+
+        if (!exerciseLocation.getMember().equals(member)) {
+            throw new CustomException(ErrorCode.AUTHORIZATION_DENIED);
+        }
+
+        return exerciseLocation;
     }
 
     /**

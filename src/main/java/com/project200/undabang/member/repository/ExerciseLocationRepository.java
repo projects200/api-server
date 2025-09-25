@@ -9,9 +9,8 @@ import java.util.Optional;
 
 public interface ExerciseLocationRepository extends JpaRepository<ExerciseLocation, Long>, ExerciseLocationRepositoryCustom {
     List<ExerciseLocation> findAllByMemberAndExerciseLocationDeletedAtNull(Member member);
-
     boolean existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(Member member, String exerciseLocationName);
     long countByMemberAndExerciseLocationDeletedAtNull(Member member);
 
-    Optional<ExerciseLocation> findByMemberAndExerciseLocationIdAndExerciseLocationDeletedAtNull(Member member, Long exerciseLocationId);
+    Optional<ExerciseLocation> findByExerciseLocationIdAndExerciseLocationDeletedAtNull(Long exerciseLocationId);
 }

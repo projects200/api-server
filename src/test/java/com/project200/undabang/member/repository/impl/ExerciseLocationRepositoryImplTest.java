@@ -89,33 +89,6 @@ class ExerciseLocationRepositoryImplTest {
         }
     }
 
-    // Helper Methods
-    private Member createAndSaveMember(String nickname, boolean deleted) {
-        Member member = Member.builder()
-                .memberId(UUID.randomUUID())
-                .memberEmail(nickname + "@email.com")
-                .memberNickname(nickname)
-                .memberGender(MemberGender.UNKNOWN)
-                .memberBday(LocalDate.of(2000, 1, 1))
-                .memberDeletedAt(deleted ? LocalDateTime.now() : null)
-                .build();
-        em.persist(member);
-        return member;
-    }
-
-    private Member createAndSaveMember(String nickname) {
-        Member member = Member.builder()
-                .memberId(UUID.randomUUID())
-                .memberEmail(nickname + "@email.com")
-                .memberNickname(nickname)
-                .memberGender(MemberGender.UNKNOWN)
-                .memberBday(LocalDate.of(2000, 1, 1))
-                .memberDeletedAt(null) // 테스트에서는 기본적으로 활성 유저 사용
-                .build();
-        em.persist(member);
-        return member;
-    }
-
     @Nested
     @DisplayName("findByMemberAndExerciseLocationDeletedAtNull 메소드는")
     class Describe_findByMemberAndExerciseLocationDeletedAtNull {
@@ -249,42 +222,6 @@ class ExerciseLocationRepositoryImplTest {
         }
     }
 
-    private ExerciseLocation createAndSaveExerciseLocation(Member member, String name, boolean deleted) {
-        Point point = geometryFactory.createPoint(new Coordinate(127.0, 37.5));
-        point.setSRID(4326);
-
-        ExerciseLocation location = ExerciseLocation.builder()
-                .member(member)
-                .exerciseLocationName(name)
-                .exerciseLocationAddress("Some Address")
-                .exerciseLocationPoint(point)
-                .exerciseLocationDeletedAt(deleted ? LocalDateTime.now() : null)
-                .build();
-        em.persist(location);
-        return location;
-    }
-
-    private Picture createAndSavePicture(String url) {
-        Picture picture = Picture.builder()
-                .pictureUrl(url)
-                .build();
-        em.persist(picture);
-        return picture;
-    }
-
-    private void createAndSaveMemberPicture(Member member, Picture picture) {
-        MemberPicture memberPicture = MemberPicture.from(member, picture);
-        em.persist(memberPicture);
-
-        member.updateProfilePicture(memberPicture);
-        em.persist(member);
-    }
-
-    private void flushAndClear() {
-        em.flush();
-        em.clear();
-    }
-
     @Nested
     @DisplayName("existsByExerciseLocationNameAndExerciseLocationDeletedAtNull 메소드는")
     class Describe_existsByExerciseLocationNameAndExerciseLocationDeletedAtNull {
@@ -337,52 +274,112 @@ class ExerciseLocationRepositoryImplTest {
         }
     }
 
+    private Member createAndSaveMember(String nickname, boolean deleted) {
+        Member member = Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberEmail(nickname + "@email.com")
+                .memberNickname(nickname)
+                .memberGender(MemberGender.UNKNOWN)
+                .memberBday(LocalDate.of(2000, 1, 1))
+                .memberDeletedAt(deleted ? LocalDateTime.now() : null)
+                .build();
+        em.persist(member);
+        return member;
+    }
+
+    private Member createAndSaveMember(String nickname) {
+        Member member = Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberEmail(nickname + "@email.com")
+                .memberNickname(nickname)
+                .memberGender(MemberGender.UNKNOWN)
+                .memberBday(LocalDate.of(2000, 1, 1))
+                .memberDeletedAt(null) // 테스트에서는 기본적으로 활성 유저 사용
+                .build();
+        em.persist(member);
+        return member;
+    }
+
+    private ExerciseLocation createAndSaveExerciseLocation(Member member, String name, boolean deleted) {
+        Point point = geometryFactory.createPoint(new Coordinate(127.0, 37.5));
+        point.setSRID(4326);
+
+        ExerciseLocation location = ExerciseLocation.builder()
+                .member(member)
+                .exerciseLocationName(name)
+                .exerciseLocationAddress("Some Address")
+                .exerciseLocationPoint(point)
+                .exerciseLocationDeletedAt(deleted ? LocalDateTime.now() : null)
+                .build();
+        em.persist(location);
+        return location;
+    }
+
+    private Picture createAndSavePicture(String url) {
+        Picture picture = Picture.builder()
+                .pictureUrl(url)
+                .build();
+        em.persist(picture);
+        return picture;
+    }
+
+    private void createAndSaveMemberPicture(Member member, Picture picture) {
+        MemberPicture memberPicture = MemberPicture.from(member, picture);
+        em.persist(memberPicture);
+
+        member.updateProfilePicture(memberPicture);
+        em.persist(member);
+    }
+
+    private void flushAndClear() {
+        em.flush();
+        em.clear();
+    }
+
     @Nested
-    @DisplayName("findByMemberAndExerciseLocationIdAndExerciseLocationDeletedAtNull 메소드는")
-    class Describe_findByMemberAndExerciseLocationIdAndExerciseLocationDeletedAtNull {
+    @DisplayName("findByExerciseLocationIdAndExerciseLocationDeletedAtNull 메소드는")
+    class Describe_findByExerciseLocationIdAndExerciseLocationDeletedAtNull {
 
         @Test
-        @DisplayName("해당 회원의 삭제되지 않은 운동 장소를 ID로 조회하면 Optional에 담아 반환한다")
+        @DisplayName("삭제되지 않은 운동 장소를 ID로 조회하면 Optional에 담아 반환한다")
         void it_returns_location_when_exists_and_not_deleted() {
             // given
             Member member = createAndSaveMember("user");
-            ExerciseLocation location = createAndSaveExerciseLocation(member, "헬스장", false);
+            ExerciseLocation location = createAndSaveExerciseLocation(member, "활성 헬스장", false);
             flushAndClear();
 
             // when
-            Optional<ExerciseLocation> result = exerciseLocationRepository.findByMemberAndExerciseLocationIdAndExerciseLocationDeletedAtNull(member, location.getExerciseLocationId());
+            Optional<ExerciseLocation> result = exerciseLocationRepository.findByExerciseLocationIdAndExerciseLocationDeletedAtNull(location.getExerciseLocationId());
 
             // then
             assertThat(result).isPresent();
             assertThat(result.get().getExerciseLocationId()).isEqualTo(location.getExerciseLocationId());
+            assertThat(result.get().getExerciseLocationDeletedAt()).isNull();
         }
 
         @Test
-        @DisplayName("해당 회원의 운동 장소가 삭제된 경우 Optional.empty를 반환한다")
+        @DisplayName("ID에 해당하는 운동 장소가 삭제된 경우 Optional.empty를 반환한다")
         void it_returns_empty_when_location_is_deleted() {
             // given
             Member member = createAndSaveMember("user");
-            ExerciseLocation location = createAndSaveExerciseLocation(member, "헬스장", true);
+            ExerciseLocation location = createAndSaveExerciseLocation(member, "삭제된 헬스장", true);
             flushAndClear();
 
             // when
-            Optional<ExerciseLocation> result = exerciseLocationRepository.findByMemberAndExerciseLocationIdAndExerciseLocationDeletedAtNull(member, location.getExerciseLocationId());
+            Optional<ExerciseLocation> result = exerciseLocationRepository.findByExerciseLocationIdAndExerciseLocationDeletedAtNull(location.getExerciseLocationId());
 
             // then
             assertThat(result).isEmpty();
         }
 
         @Test
-        @DisplayName("해당 회원이 가진 운동 장소가 아닌 경우 Optional.empty를 반환한다")
-        void it_returns_empty_when_location_does_not_belong_to_member() {
+        @DisplayName("ID에 해당하는 운동 장소가 존재하지 않는 경우 Optional.empty를 반환한다")
+        void it_returns_empty_when_location_does_not_exist() {
             // given
-            Member member1 = createAndSaveMember("user1");
-            Member member2 = createAndSaveMember("user2");
-            ExerciseLocation location = createAndSaveExerciseLocation(member1, "헬스장", false);
-            flushAndClear();
+            Long nonExistentId = 999L;
 
             // when
-            Optional<ExerciseLocation> result = exerciseLocationRepository.findByMemberAndExerciseLocationIdAndExerciseLocationDeletedAtNull(member2, location.getExerciseLocationId());
+            Optional<ExerciseLocation> result = exerciseLocationRepository.findByExerciseLocationIdAndExerciseLocationDeletedAtNull(nonExistentId);
 
             // then
             assertThat(result).isEmpty();

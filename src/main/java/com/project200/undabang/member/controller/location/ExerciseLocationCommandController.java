@@ -26,7 +26,7 @@ public class ExerciseLocationCommandController {
 
     @PatchMapping("/v1/exercise-locations/{locationId}")
     public ResponseEntity<CommonResponse<UpdateExerciseLocationResponse>> updateExerciseLocation(@PathVariable Long locationId,
-                                                                                                 @RequestBody UpdateExerciseLocationRequest request) {
+                                                                                                 @Valid @RequestBody UpdateExerciseLocationRequest request) {
 
         return ResponseEntity.ok(CommonResponse.update(exerciseLocationCommandService.updateExerciseLocation(locationId, request)));
     }
