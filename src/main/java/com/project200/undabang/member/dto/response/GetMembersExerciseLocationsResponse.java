@@ -29,35 +29,4 @@ public class GetMembersExerciseLocationsResponse {
     private MemberGender gender;
     private LocalDate birthDate;
     private List<ExerciseLocationRecord> locations;
-
-    /**
-     * 주어진 MemberProfileAndLocationRecord 목록에서 정보를 추출하여
-     * GetMembersExerciseLocationsResponse 객체를 생성합니다.
-     *
-     * @param recordList MemberProfileAndLocationRecord 객체의 리스트
-     * @return GetMembersExerciseLocationsResponse 객체
-     */
-//    public static GetMembersExerciseLocationsResponse from(List<MemberProfileAndLocationRecord> recordList) {
-//        MemberProfileAndLocationRecord firstRecord = recordList.getFirst();
-//
-//        List<ExerciseLocationRecord> locationRecordList = recordList.stream()
-//                .map(dto -> {
-//                    Point point = dto.locationPoint();
-//                    return new ExerciseLocationRecord(
-//                            dto.exerciseLocationName(),
-//                            point.getY(), // 위도
-//                            point.getX() // 경도
-//                    );
-//                })
-//                .toList();
-//
-//        return GetMembersExerciseLocationsResponse.builder()
-//                .memberId(firstRecord.memberId())
-//                .profileImageUrl(firstRecord.profileThumbnailUrl())
-//                .nickname(firstRecord.nickname())
-//                .gender(firstRecord.gender())
-//                .birthDate(firstRecord.birthDate())
-//                .locations(locationRecordList)
-//                .build();
-//    }
 }
