@@ -2,23 +2,32 @@ package com.project200.undabang.member.repository.impl;
 
 import com.project200.undabang.common.entity.Picture;
 import com.project200.undabang.configuration.TestQuerydslConfig;
-import com.project200.undabang.member.dto.record.MemberProfileAndLocationRecord;
+import com.project200.undabang.member.dto.record.ExerciseLocationRecord;
+import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
 import com.project200.undabang.member.entity.ExerciseLocation;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.MemberPicture;
 import com.project200.undabang.member.enums.MemberGender;
 import com.project200.undabang.member.repository.ExerciseLocationRepository;
 import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.io.ParseException;
+import org.locationtech.jts.io.WKBReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -30,13 +39,47 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Import(TestQuerydslConfig.class)
 class ExerciseLocationRepositoryImplTest {
 
-    private final GeometryFactory geometryFactory = new GeometryFactory();
     @Autowired
     private EntityManager em;
+
     @Autowired
     private ExerciseLocationRepository exerciseLocationRepository;
 
-    // Helper Methods
+    private final GeometryFactory geometryFactory = new GeometryFactory();
+
+    @BeforeAll
+    static void setupH2Geometry(@Autowired DataSource dataSource) throws SQLException {
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement()) {
+            // H2에 ST_X, ST_Y 함수를 생성합니다.
+            // 중첩 클래스를 참조하기 위해 '$'를 사용합니다.
+            String className = "com.project200.undabang.member.repository.impl.ExerciseLocationRepositoryImplTest$H2SpatialFunctions";
+            stmt.execute(String.format("CREATE ALIAS IF NOT EXISTS ST_X FOR \"%s.getX\"", className));
+            stmt.execute(String.format("CREATE ALIAS IF NOT EXISTS ST_Y FOR \"%s.getY\"", className));
+        }
+    }
+
+    private Picture createAndSavePicture(String url) {
+        Picture picture = Picture.builder()
+                .pictureUrl(url)
+                .build();
+        em.persist(picture);
+        em.flush(); // Picture의 ID 생성을 위해 flush
+        return picture;
+    }
+
+    private void createAndSaveMemberPicture(Member member, Picture picture) {
+        MemberPicture memberPicture = MemberPicture.builder()
+                .member(member)
+                .picture(picture)
+                .memberPicturesUrl(picture.getPictureUrl())
+                .build();
+        em.persist(memberPicture);
+
+        member.updateProfilePicture(memberPicture);
+        em.persist(member);
+    }
+
     private Member createAndSaveMember(String nickname, boolean deleted) {
         Member member = Member.builder()
                 .memberId(UUID.randomUUID())
@@ -65,25 +108,42 @@ class ExerciseLocationRepositoryImplTest {
         return location;
     }
 
-    private Picture createAndSavePicture(String url) {
-        Picture picture = Picture.builder()
-                .pictureUrl(url)
-                .build();
-        em.persist(picture);
-        return picture;
-    }
+    // H2용 공간 함수
+    public static class H2SpatialFunctions {
 
-    private void createAndSaveMemberPicture(Member member, Picture picture) {
-        MemberPicture memberPicture = MemberPicture.from(member, picture);
-        em.persist(memberPicture);
+        private static final WKBReader wkbReader = new WKBReader();
 
-        member.updateProfilePicture(memberPicture);
-        em.persist(member);
-    }
+        public static double getX(byte[] wkb) {
+            if (wkb == null) {
+                return 0.0;
+            }
+            try {
+                Geometry geom = wkbReader.read(wkb);
+                if (geom instanceof Point) {
+                    return ((Point) geom).getX();
+                }
+            } catch (ParseException e) {
+                // 테스트 실패를 유도하거나 기본값을 반환
+                throw new RuntimeException("Failed to parse WKB for ST_X", e);
+            }
+            return 0.0;
+        }
 
-    private void flushAndClear() {
-        em.flush();
-        em.clear();
+        public static double getY(byte[] wkb) {
+            if (wkb == null) {
+                return 0.0;
+            }
+            try {
+                Geometry geom = wkbReader.read(wkb);
+                if (geom instanceof Point) {
+                    return ((Point) geom).getY();
+                }
+            } catch (ParseException e) {
+                // 테스트 실패를 유도하거나 기본값을 반환
+                throw new RuntimeException("Failed to parse WKB for ST_Y", e);
+            }
+            return 0.0;
+        }
     }
 
     @Nested
@@ -98,25 +158,31 @@ class ExerciseLocationRepositoryImplTest {
             Member deletedMember = createAndSaveMember("deletedUser", true);
 
             Picture picture = createAndSavePicture("http://example.com/profile.jpg");
-            createAndSaveMemberPicture(activeMember, picture); // 대표 사진 설정
+            createAndSaveMemberPicture(activeMember, picture);
 
             ExerciseLocation activeLocation = createAndSaveExerciseLocation(activeMember, "Active Gym", false);
-            createAndSaveExerciseLocation(activeMember, "Deleted Gym", true); // 활성 유저의 삭제된 장소
-            createAndSaveExerciseLocation(deletedMember, "Another Gym", false); // 삭제된 유저의 활성 장소
+            createAndSaveExerciseLocation(activeMember, "Deleted Gym", true);
+            createAndSaveExerciseLocation(deletedMember, "Another Gym", false);
 
             flushAndClear();
 
             // when
-            List<MemberProfileAndLocationRecord> results = exerciseLocationRepository.getMembersExerciseLocations();
+            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations();
 
             // then
             assertThat(results).hasSize(1);
 
-            MemberProfileAndLocationRecord result = results.get(0);
-            assertThat(result.memberId()).isEqualTo(activeMember.getMemberId());
-            assertThat(result.nickname()).isEqualTo(activeMember.getMemberNickname());
-            assertThat(result.profileThumbnailUrl()).isEqualTo(picture.getPictureUrl());
-            assertThat(result.exerciseLocationName()).isEqualTo(activeLocation.getExerciseLocationName());
+            GetMembersExerciseLocationsResponse result = results.get(0);
+            assertThat(result.getMemberId()).isEqualTo(activeMember.getMemberId());
+            assertThat(result.getNickname()).isEqualTo(activeMember.getMemberNickname());
+            assertThat(result.getProfileThumbnailUrl()).isEqualTo(activeMember.getMemberPicture().getMemberPicturesUrl());
+            assertThat(result.getProfileImageUrl()).isEqualTo(picture.getPictureUrl());
+            assertThat(result.getLocations()).hasSize(1);
+
+            ExerciseLocationRecord locationRecord = result.getLocations().get(0);
+            assertThat(locationRecord.exerciseLocationName()).isEqualTo(activeLocation.getExerciseLocationName());
+            assertThat(locationRecord.latitude()).isEqualTo(37.5);
+            assertThat(locationRecord.longitude()).isEqualTo(127.0);
         }
 
         @Test
@@ -124,15 +190,20 @@ class ExerciseLocationRepositoryImplTest {
         void it_returns_empty_list_when_no_active_locations_exist() {
             // given
             Member activeMember = createAndSaveMember("activeUser", false);
-            createAndSaveExerciseLocation(activeMember, "Deleted Gym", true); // 삭제된 장소만 존재
+            createAndSaveExerciseLocation(activeMember, "Deleted Gym", true);
 
             flushAndClear();
 
             // when
-            List<MemberProfileAndLocationRecord> results = exerciseLocationRepository.getMembersExerciseLocations();
+            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations();
 
             // then
             assertThat(results).isNotNull().isEmpty();
         }
+    }
+
+    private void flushAndClear() {
+        em.flush();
+        em.clear();
     }
 }

@@ -48,6 +48,7 @@ class ExerciseLocationQueryControllerTest extends AbstractRestDocSupport {
             List<GetMembersExerciseLocationsResponse> responseList = List.of(
                     GetMembersExerciseLocationsResponse.builder()
                             .memberId(memberId1)
+                            .profileThumbnailUrl("http://example.com/thumbnail1.jpg")
                             .profileImageUrl("http://example.com/profile1.jpg")
                             .nickname("운동맨")
                             .gender(MemberGender.MALE)
@@ -73,18 +74,21 @@ class ExerciseLocationQueryControllerTest extends AbstractRestDocSupport {
                             jsonPath("$.data").isArray(),
                             jsonPath("$.data[0].memberId").value(memberId1.toString()),
                             jsonPath("$.data[0].nickname").value("운동맨"),
+                            jsonPath("$.data[0].profileThumbnailUrl").value("http://example.com/thumbnail1.jpg"),
+                            jsonPath("$.data[0].profileImageUrl").value("http://example.com/profile1.jpg"),
                             jsonPath("$.data[0].locations[0].exerciseLocationName").value("헬스장 A")
                     )
                     .andDo(document.document(
                             requestHeaders(HEADER_ACCESS_TOKEN),
                             responseFields(commonResponseFieldsForList(
-                                    fieldWithPath("data[].memberId").type(STRING).description("다른 회원의 식별자(UUID)를 나타냅니다. "),
-                                    fieldWithPath("data[].profileImageUrl").type(STRING).description("다른 회원의 썸네일 프로필 이미지 URL 정보입니다."),
-                                    fieldWithPath("data[].nickname").type(STRING).description("다른 회원의 닉네임값을 나타냅니다."),
+                                    fieldWithPath("data[].memberId").type(STRING).description("다른 회원의 식별자(UUID)를 나타냅니다."),
+                                    fieldWithPath("data[].profileThumbnailUrl").type(STRING).description("다른 회원의 썸네일 이미지 URL 정보입니다."),
+                                    fieldWithPath("data[].profileImageUrl").type(STRING).description("다른 회원의 프로필 이미지 URL 정보입니다."),
+                                    fieldWithPath("data[].nickname").type(STRING).description("다른 회원의 닉네임을 나타냅니다."),
                                     fieldWithPath("data[].gender").type(STRING).description("다른 회원의 성별 (MALE, FEMALE, UNKNOWN) 정보를 나타냅니다."),
-                                    fieldWithPath("data[].birthDate").type(STRING).description("다른 회원의 생년월일 (YYYY-MM-DD) 정보를 나타냅니다."),
+                                    fieldWithPath("data[].birthDate").type(STRING).description("다른 회원의 생년월일 정보를 나타냅니다."),
                                     fieldWithPath("data[].locations[]").type(ARRAY).description("다른 회원이 저장한 운동 위치 목록 입니다."),
-                                    fieldWithPath("data[].locations[].exerciseLocationName").type(STRING).description("카카오맵 API 에서 반환하거나 본인이 저장한 운동 장소 이름 입니다."),
+                                    fieldWithPath("data[].locations[].exerciseLocationName").type(STRING).description("카카오맵 API 에서 반환한 상호명이나 본인이 저장한 운동 장소 이름 입니다."),
                                     fieldWithPath("data[].locations[].latitude").type(NUMBER).description("운동 장소의 위도 정보 입니다."),
                                     fieldWithPath("data[].locations[].longitude").type(NUMBER).description("운동 장소의 경도 정보 입니다.")
                             ))
