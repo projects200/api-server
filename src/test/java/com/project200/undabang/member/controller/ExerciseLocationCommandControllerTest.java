@@ -31,12 +31,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -229,6 +230,115 @@ class ExerciseLocationCommandControllerTest extends AbstractRestDocSupport {
                             status().isNotFound(),
                             jsonPath("$.succeed").value(false),
                             jsonPath("$.code").value(ErrorCode.EXERCISE_LOCATION_NOT_FOUND.name())
+                    );
+
+            then(exerciseLocationCommandService).should().updateExerciseLocation(eq(locationId), any(UpdateExerciseLocationRequest.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("운동 위치 삭제 API")
+    class DeleteExerciseLocation {
+
+        @Test
+        @DisplayName("운동 위치를 성공적으로 삭제한다")
+        void deleteExerciseLocation_Success() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long locationId = 1L;
+
+            doNothing().when(exerciseLocationCommandService).deleteExerciseLocation(locationId);
+
+            // when & then
+            mockMvc.perform(delete("/api/v1/exercise-locations/{locationId}", locationId)
+                            .headers(getCommonApiHeaders(memberId)))
+                    .andExpectAll(
+                            status().isOk(),
+                            jsonPath("$.succeed").value(true),
+                            jsonPath("$.code").value("DELETED"),
+                            jsonPath("$.message").value("리소스가 성공적으로 삭제되었습니다.")
+                    )
+                    .andDo(document.document(
+                            requestHeaders(
+                                    HEADER_ACCESS_TOKEN
+                            ),
+                            pathParameters(
+                                    parameterWithName("locationId").attributes(getTypeFormat(JsonFieldType.NUMBER))
+                                            .description("삭제할 운동 장소의 고유 식별자 입니다.")
+                            ),
+                            responseFields(commonResponseFields(
+                                    fieldWithPath("data").description("삭제 성공 시 null을 반환합니다.").type(JsonFieldType.NULL)
+                            ))
+                    ));
+
+            then(exerciseLocationCommandService).should().deleteExerciseLocation(locationId);
+            then(exerciseLocationCommandService).shouldHaveNoMoreInteractions();
+        }
+
+        @Test
+        @DisplayName("삭제할 운동 위치가 존재하지 않으면 404 Not Found를 반환한다")
+        void deleteExerciseLocation_NotFound() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long locationId = 999L;
+
+            doThrow(new CustomException(ErrorCode.EXERCISE_LOCATION_NOT_FOUND))
+                    .when(exerciseLocationCommandService).deleteExerciseLocation(locationId);
+
+            // when & then
+            mockMvc.perform(delete("/api/v1/exercise-locations/{locationId}", locationId)
+                            .headers(getCommonApiHeaders(memberId)))
+                    .andExpectAll(
+                            status().isNotFound(),
+                            jsonPath("$.succeed").value(false),
+                            jsonPath("$.code").value(ErrorCode.EXERCISE_LOCATION_NOT_FOUND.name())
+                    );
+
+            then(exerciseLocationCommandService).should().deleteExerciseLocation(locationId);
+        }
+
+        @Test
+        @DisplayName("다른 사람의 운동 위치를 삭제하려고 하면 403 Forbidden을 반환한다")
+        void deleteExerciseLocation_Forbidden() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long locationId = 2L; // 다른 사람의 운동 위치 ID
+
+            doThrow(new CustomException(ErrorCode.AUTHORIZATION_DENIED))
+                    .when(exerciseLocationCommandService).deleteExerciseLocation(locationId);
+
+            // when & then
+            mockMvc.perform(delete("/api/v1/exercise-locations/{locationId}", locationId)
+                            .headers(getCommonApiHeaders(memberId)))
+                    .andExpectAll(
+                            status().isForbidden(),
+                            jsonPath("$.succeed").value(false),
+                            jsonPath("$.code").value(ErrorCode.AUTHORIZATION_DENIED.name())
+                    );
+
+            then(exerciseLocationCommandService).should().deleteExerciseLocation(locationId);
+        }
+
+        @Test
+        @DisplayName("수정하려는 이름이 이미 존재하면 409 Conflict를 반환한다")
+        void updateExerciseLocation_Conflict_WhenNameIsDuplicated() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long locationId = 1L;
+            UpdateExerciseLocationRequest request = new UpdateExerciseLocationRequest("이미 있는 헬스장");
+
+            given(exerciseLocationCommandService.updateExerciseLocation(eq(locationId), any(UpdateExerciseLocationRequest.class)))
+                    .willThrow(new CustomException(ErrorCode.EXERCISE_LOCATION_NAME_DUPLICATED));
+
+            // when & then
+            mockMvc.perform(patch("/api/v1/exercise-locations/{locationId}", locationId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpectAll(
+                            status().isConflict(),
+                            jsonPath("$.succeed").value(false),
+                            jsonPath("$.code").value(ErrorCode.EXERCISE_LOCATION_NAME_DUPLICATED.name())
                     );
 
             then(exerciseLocationCommandService).should().updateExerciseLocation(eq(locationId), any(UpdateExerciseLocationRequest.class));

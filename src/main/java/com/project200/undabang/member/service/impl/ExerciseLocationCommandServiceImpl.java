@@ -63,6 +63,18 @@ public class ExerciseLocationCommandServiceImpl implements ExerciseLocationComma
     }
 
     /**
+     * 주어진 운동 위치 ID를 기반으로 운동 위치를 삭제 처리합니다.
+     */
+    @Transactional
+    @Override
+    public void deleteExerciseLocation(Long locationId) {
+        Member member = getMember(UserContextHolder.getUserId());
+        ExerciseLocation exerciseLocation = getExerciseLocation(member, locationId);
+
+        exerciseLocation.deleteExerciseLocation();
+    }
+
+    /**
      * 새로운 운동 위치 생성 시 유효성을 검증하는 메서드.
      * 운동 위치 이름의 중복 여부와 회원이 생성할 수 있는 운동 위치의 최대 개수를 검사하여
      * 규칙을 위반할 경우 예외를 발생시킴.

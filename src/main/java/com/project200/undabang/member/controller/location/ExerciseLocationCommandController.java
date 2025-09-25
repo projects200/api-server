@@ -30,4 +30,11 @@ public class ExerciseLocationCommandController {
 
         return ResponseEntity.ok(CommonResponse.update(exerciseLocationCommandService.updateExerciseLocation(locationId, request)));
     }
+
+    @DeleteMapping("/v1/exercise-locations/{locationId}")
+    public ResponseEntity<CommonResponse<Void>> deleteExerciseLocation(@PathVariable Long locationId) {
+
+        exerciseLocationCommandService.deleteExerciseLocation(locationId);
+        return ResponseEntity.ok(CommonResponse.delete(null));
+    }
 }
