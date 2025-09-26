@@ -3,7 +3,7 @@ package com.project200.undabang.member.service.impl;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
-import com.project200.undabang.member.dto.record.MemberProfileAndLocationRecord;
+import com.project200.undabang.member.dto.record.ExerciseLocationRecord;
 import com.project200.undabang.member.dto.response.GetExerciseLocationsResponse;
 import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
 import com.project200.undabang.member.entity.ExerciseLocation;
@@ -51,67 +51,40 @@ class ExerciseLocationQueryServiceImplTest {
     class Describe_getMembersExerciseLocations {
 
         @Test
-        @DisplayName("레포지토리에서 받은 데이터를 회원 ID별로 그룹화하여 반환한다")
-        void it_groups_data_by_member_id_and_returns() {
+        @DisplayName("레포지토리에서 받은 데이터를 그대로 반환한다")
+        void it_returns_data_from_repository() {
             // given
-            UUID memberId1 = UUID.randomUUID();
-            UUID memberId2 = UUID.randomUUID();
-            LocalDate birthDate1 = LocalDate.of(1990, 1, 1);
-            LocalDate birthDate2 = LocalDate.of(1995, 5, 5);
+            UUID memberId = UUID.randomUUID();
+            LocalDate birthDate = LocalDate.of(1990, 1, 1);
 
-            List<MemberProfileAndLocationRecord> mockRecords = List.of(
-                    new MemberProfileAndLocationRecord(memberId1, "user1", MemberGender.MALE, birthDate1, "url1", "Gym A", createPoint(127.0, 37.5)),
-                    new MemberProfileAndLocationRecord(memberId1, "user1", MemberGender.MALE, birthDate1, "url1", "Gym B", createPoint(127.1, 37.6)),
-                    new MemberProfileAndLocationRecord(memberId2, "user2", MemberGender.FEMALE, birthDate2, "url2", "Gym C", createPoint(127.2, 37.7))
+            List<ExerciseLocationRecord> locations = List.of(
+                    new ExerciseLocationRecord("헬스장A", 37.5, 127.0)
             );
 
-            given(exerciseLocationRepository.getMembersExerciseLocations()).willReturn(mockRecords);
+            GetMembersExerciseLocationsResponse response = GetMembersExerciseLocationsResponse.builder()
+                    .memberId(memberId)
+                    .profileThumbnailUrl("url1")
+                    .profileImageUrl("url1")
+                    .nickname("user1")
+                    .gender(MemberGender.MALE)
+                    .birthDate(birthDate)
+                    .locations(locations)
+                    .build();
+
+            List<GetMembersExerciseLocationsResponse> mockResponses = List.of(response);
+
+            given(exerciseLocationRepository.getMembersExerciseLocations()).willReturn(mockResponses);
 
             // when
             List<GetMembersExerciseLocationsResponse> results = exerciseLocationQueryService.getMembersExerciseLocations();
 
             // then
-            assertThat(results).hasSize(2);
-
-            // 첫 번째 회원(member1) 검증
-            GetMembersExerciseLocationsResponse response1 = results.stream()
-                    .filter(r -> r.getMemberId().equals(memberId1))
-                    .findFirst()
-                    .orElse(null);
-
-            assertThat(response1).isNotNull();
-            assertThat(response1.getNickname()).isEqualTo("user1");
-            assertThat(response1.getProfileImageUrl()).isEqualTo("url1");
-            assertThat(response1.getGender()).isEqualTo(MemberGender.MALE);
-            assertThat(response1.getBirthDate()).isEqualTo(birthDate1);
-            assertThat(response1.getLocations()).hasSize(2);
-            assertThat(response1.getLocations())
-                    .extracting("exerciseLocationName")
-                    .containsExactlyInAnyOrder("Gym A", "Gym B");
-            assertThat(response1.getLocations())
-                    .extracting("latitude")
-                    .containsExactlyInAnyOrder(37.5, 37.6);
-
-            // 두 번째 회원(member2) 검증
-            GetMembersExerciseLocationsResponse response2 = results.stream()
-                    .filter(r -> r.getMemberId().equals(memberId2))
-                    .findFirst()
-                    .orElse(null);
-
-            assertThat(response2).isNotNull();
-            assertThat(response2.getNickname()).isEqualTo("user2");
-            assertThat(response2.getProfileImageUrl()).isEqualTo("url2");
-            assertThat(response2.getGender()).isEqualTo(MemberGender.FEMALE);
-            assertThat(response2.getBirthDate()).isEqualTo(birthDate2);
-            assertThat(response2.getLocations()).hasSize(1);
-            assertThat(response2.getLocations().get(0).exerciseLocationName()).isEqualTo("Gym C");
-            assertThat(response2.getLocations().get(0).latitude()).isEqualTo(37.7);
-            assertThat(response2.getLocations().get(0).longitude()).isEqualTo(127.2);
+            assertThat(results).isEqualTo(mockResponses);
         }
 
         @Test
-        @DisplayName("활성 운동 장소가 없으면 빈 리스트를 반환한다")
-        void it_returns_empty_list_when_no_active_locations() {
+        @DisplayName("레포지토리에서 빈 리스트를 반환하면 빈 리스트를 반환한다")
+        void it_returns_empty_list_when_repository_returns_empty() {
             // given
             given(exerciseLocationRepository.getMembersExerciseLocations()).willReturn(List.of());
 
@@ -119,13 +92,8 @@ class ExerciseLocationQueryServiceImplTest {
             List<GetMembersExerciseLocationsResponse> results = exerciseLocationQueryService.getMembersExerciseLocations();
 
             // then
+            assertThat(results).isEmpty();
             assertThat(results).isNotNull().isEmpty();
-        }
-
-        private Point createPoint(double longitude, double latitude) {
-            Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude));
-            point.setSRID(4326);
-            return point;
         }
     }
 
