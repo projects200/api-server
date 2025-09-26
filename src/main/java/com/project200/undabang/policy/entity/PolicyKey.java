@@ -32,4 +32,7 @@ public enum PolicyKey {
     // 커스텀 타이머
     CUSTOM_TIMER_STEP_MAX_COUNT, // 커스텀 타이머 스텝 최대 보유 갯수
     CUSTOM_TIMER_STEP_MIN_COUNT, // 커스텀 타이머 스텝 최소 보유 갯수
+
+    // 운동 기록
+    EXERCISE_LOCATION_MAX_COUNT, // 운동 기록 최대 보유 갯수
 }

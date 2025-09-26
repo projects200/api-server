@@ -7,7 +7,7 @@ plugins {
 }
 
 group = 'com.project200'
-version = '0.3.6-SNAPSHOT'
+version = '0.4.5-SNAPSHOT'
 
 java {
     toolchain {
@@ -60,6 +60,10 @@ dependencies {
 
     // Slack API Client 의존성 추가
     implementation 'com.slack.api:slack-api-client:1.45.3'
+
+    // 공간 좌표 데이터 활용
+    implementation 'org.hibernate.orm:hibernate-spatial'
+    implementation 'org.locationtech.jts:jts-core:1.20.0'
 
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'

@@ -1,0 +1,40 @@
+package com.project200.undabang.member.controller.location;
+
+import com.project200.undabang.common.web.response.CommonResponse;
+import com.project200.undabang.member.dto.request.CreateExerciseLocationRequest;
+import com.project200.undabang.member.dto.request.UpdateExerciseLocationRequest;
+import com.project200.undabang.member.dto.response.CreateExerciseLocationResponse;
+import com.project200.undabang.member.dto.response.UpdateExerciseLocationResponse;
+import com.project200.undabang.member.service.ExerciseLocationCommandService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api")
+public class ExerciseLocationCommandController {
+    private final ExerciseLocationCommandService exerciseLocationCommandService;
+
+    @PostMapping("/v1/exercise-locations")
+    public ResponseEntity<CommonResponse<CreateExerciseLocationResponse>> createExerciseLocation(@Valid @RequestBody CreateExerciseLocationRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(exerciseLocationCommandService.createExerciseLocation(request)));
+    }
+
+    @PatchMapping("/v1/exercise-locations/{locationId}")
+    public ResponseEntity<CommonResponse<UpdateExerciseLocationResponse>> updateExerciseLocation(@PathVariable Long locationId,
+                                                                                                 @Valid @RequestBody UpdateExerciseLocationRequest request) {
+
+        return ResponseEntity.ok(CommonResponse.update(exerciseLocationCommandService.updateExerciseLocation(locationId, request)));
+    }
+
+    @DeleteMapping("/v1/exercise-locations/{locationId}")
+    public ResponseEntity<CommonResponse<Void>> deleteExerciseLocation(@PathVariable Long locationId) {
+
+        exerciseLocationCommandService.deleteExerciseLocation(locationId);
+        return ResponseEntity.ok(CommonResponse.delete(null));
+    }
+}

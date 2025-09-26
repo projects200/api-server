@@ -86,6 +86,9 @@ public class Member {
     @OneToMany(mappedBy = "member")
     private List<PreferredExercise> preferredExercises = new ArrayList<>();
 
+    @OneToMany(mappedBy = "member")
+    private List<ExerciseLocation> exerciseLocations = new ArrayList<>();
+
     /**
      * 회원의 점수를 증가시킵니다. 점수는 정책에 정의된 최소/최대 값을 벗어나지 않습니다.
      *
