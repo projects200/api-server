@@ -3,10 +3,7 @@ package com.project200.undabang.member.service.impl;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
-import com.project200.undabang.member.dto.response.CheckNicknameDuplicateResponse;
-import com.project200.undabang.member.dto.response.MemberProfileResponse;
-import com.project200.undabang.member.dto.response.MemberRegistrationStatusResponseDto;
-import com.project200.undabang.member.dto.response.MemberScoreResponseDto;
+import com.project200.undabang.member.dto.response.*;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.member.service.MemberQueryService;
@@ -28,6 +25,13 @@ public class MemberQueryServiceImpl implements MemberQueryService {
     private final PolicyService policyService;
 
     private static final int RECENT_EXERCISE_PERIOD_DAYS = 30; // 최근 운동기간
+
+    @Override
+    public GetOtherMemberProfileResponse getOtherMemberProfile(UUID memberId) {
+
+
+        return null;
+    }
 
     /**
      * 현재 사용자가 시스템에 등록되어 있는지의 여부를 확인합니다.

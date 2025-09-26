@@ -1,9 +1,8 @@
 package com.project200.undabang.member.service;
 
-import com.project200.undabang.member.dto.response.CheckNicknameDuplicateResponse;
-import com.project200.undabang.member.dto.response.MemberProfileResponse;
-import com.project200.undabang.member.dto.response.MemberRegistrationStatusResponseDto;
-import com.project200.undabang.member.dto.response.MemberScoreResponseDto;
+import com.project200.undabang.member.dto.response.*;
+
+import java.util.UUID;
 
 public interface MemberQueryService {
     MemberRegistrationStatusResponseDto getRegistrationStatus();
@@ -17,4 +16,6 @@ public interface MemberQueryService {
     MemberProfileResponse getMemberProfile();
 
     CheckNicknameDuplicateResponse checkDuplicateNickname(String nickname);
+
+    GetOtherMemberProfileResponse getOtherMemberProfile(UUID memberId);
 }
