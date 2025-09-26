@@ -13,6 +13,10 @@ drop table if exists policy_group_mappings;
 drop table if exists policy_groups;
 drop table if exists policies;
 
+DROP TABLE IF EXISTS matches;
+DROP TABLE IF EXISTS open_chatrooms;
+DROP TABLE IF EXISTS exercise_locations;
+
 DROP TABLE IF EXISTS fcm_tokens;
 DROP TABLE IF EXISTS scenario_message_mappings;
 DROP TABLE IF EXISTS notification_messages;
@@ -526,11 +530,11 @@ CREATE TABLE IF NOT EXISTS fcm_tokens
 (
     fcm_token_id           BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'AUTO_INCREMENT',
     member_id              CHAR(36)     NOT NULL COMMENT 'UUID_SELF',
-    fcm_token_value VARCHAR(255) NOT NULL COMMENT 'FCM 토큰 값',
+    fcm_token_value      VARCHAR(255) NOT NULL COMMENT 'FCM 토큰 값',
     fcm_token_user_agent   VARCHAR(255) NULL COMMENT '디바이스 정보 (User Agent)',
-    fcm_token_is_active  BOOLEAN  NOT NULL DEFAULT TRUE COMMENT '토큰 활성화 여부',
+    fcm_token_is_active  BOOLEAN      NOT NULL DEFAULT TRUE COMMENT '토큰 활성화 여부',
     fcm_token_activated_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '마지막 활성 일시',
-    fcm_token_expired_at DATETIME NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL 30 DAY) COMMENT '토큰 만료 일시 (활성화된 경우 현재 시점으로부터 30일 후)',
+    fcm_token_expired_at DATETIME     NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL 30 DAY) COMMENT '토큰 만료 일시 (활성화된 경우 현재 시점으로부터 30일 후)',
     fcm_token_created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
 
     CONSTRAINT fk_fcm_tokens_to_members FOREIGN KEY (member_id) REFERENCES members (member_id)
@@ -567,4 +571,49 @@ CREATE TABLE IF NOT EXISTS scenario_message_mappings
 
     CONSTRAINT fk_map_to_messages FOREIGN KEY (message_id) REFERENCES notification_messages (message_id),
     CONSTRAINT fk_map_to_scenarios FOREIGN KEY (scenario_id) REFERENCES notification_scenarios (scenario_id)
+);
+
+CREATE TABLE exercise_locations
+(
+    exercise_location_id         BIGINT          NOT NULL AUTO_INCREMENT,
+    member_id                    CHAR(36)        NOT NULL COMMENT 'UUID_SELF',
+    exercise_location_name       VARCHAR(100)    NOT NULL COMMENT '운동장소 상호명, 없으면 직접 입력',
+    exercise_location_address    VARCHAR(255)    NOT NULL COMMENT 'API 에서 반환하는 도로명주소',
+    exercise_location_point      POINT SRID 4326 NOT NULL COMMENT '단일 점 을 나타냄 (X,Y) 위도와 경도를 저장합니다',
+    exercise_location_created_at DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    exercise_location_updated_at DATETIME        NULL,
+    exercise_location_deleted_at DATETIME        NULL,
+    CONSTRAINT PK_EXERCISE_LOCATIONS PRIMARY KEY (exercise_location_id),
+    CONSTRAINT FK_members_TO_exercise_locations_1 FOREIGN KEY (member_id)
+        REFERENCES members (member_id),
+    SPATIAL INDEX idx_spatial_point (exercise_location_point) -- 공간 인덱스 추가
+);
+
+CREATE TABLE open_chatrooms
+(
+    open_chatroom_id         BIGINT       NOT NULL AUTO_INCREMENT,
+    member_id                CHAR(36)     NOT NULL COMMENT 'UUID_SELF',
+    open_chatroom_url        VARCHAR(255) NULL COMMENT '유효성 검증 필요',
+    open_chatroom_created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    open_chatroom_updated_at DATETIME     NULL,
+    open_chatroom_deleted_at DATETIME     NULL,
+    CONSTRAINT PK_OPEN_CHATROOMS PRIMARY KEY (open_chatroom_id),
+    CONSTRAINT FK_members_TO_open_chatrooms_1 FOREIGN KEY (member_id)
+        REFERENCES members (member_id)
+);
+
+CREATE TABLE matches
+(
+    match_id          BIGINT      NOT NULL AUTO_INCREMENT COMMENT 'AUTO_INCREMENT',
+    requester_id      CHAR(36)    NOT NULL COMMENT 'UUID_SELF',
+    receiver_id       CHAR(36)    NOT NULL COMMENT 'UUID_SELF',
+    match_status      VARCHAR(30) NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING, ACCEPTED, REJECTED, CANCELLED',
+    match_created_at  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    match_canceled_at DATETIME    NULL,
+    match_handled_at  DATETIME    NULL,
+    CONSTRAINT PK_MATCHES PRIMARY KEY (match_id),
+    CONSTRAINT FK_members_TO_matches_1 FOREIGN KEY (requester_id)
+        REFERENCES members (member_id),
+    CONSTRAINT FK_members_TO_matches_2 FOREIGN KEY (receiver_id)
+        REFERENCES members (member_id)
 );
