@@ -33,9 +33,10 @@ public class MemberQueryController {
         return memberQueryService.getMemberProfile();
     }
 
-    @GetMapping("/v1/members/{memberId}")
-    public ResponseEntity<CommonResponse<GetOtherMemberProfileResponse>> getOtherMemberProfile(@PathVariable UUID otherMemberId) {
 
-        return ResponseEntity.ok(CommonResponse.success(memberQueryService.getOtherMemberProfile(otherMemberId)));
+    @GetMapping("/v1/members/{memberId}/profile")
+    public ResponseEntity<CommonResponse<GetOtherMemberProfileResponse>> getOtherMemberProfile(@PathVariable UUID memberId) {
+
+        return ResponseEntity.ok(CommonResponse.success(memberQueryService.getOtherMemberProfile(memberId)));
     }
 }

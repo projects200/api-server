@@ -26,11 +26,24 @@ public class MemberQueryServiceImpl implements MemberQueryService {
 
     private static final int RECENT_EXERCISE_PERIOD_DAYS = 30; // 최근 운동기간
 
+    /**
+     * 주어진 멤버 ID를 기반으로 다른 사용자의 프로필 정보를 조회합니다.
+     * 삭제된 멤버는 조회 대상에서 제외되며, 해당 멤버 정보가 존재하지 않을 경우 예외가 발생합니다.
+     *
+     * @param memberId 조회하려는 대상 멤버의 UUID
+     * @return GetOtherMemberProfileResponse 객체로, 조회된 멤버의 프로필 정보를 포함합니다
+     */
     @Override
     public GetOtherMemberProfileResponse getOtherMemberProfile(UUID memberId) {
+        Member otherMember = memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(memberId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
+        // todo : 추후 차단 기능 개발 시, 다른 회원이 차단한 경우 검색 안되게 하는 기능 추가
 
-        return null;
+        int yearlyExerciseCounts = memberRepository.countMemberExerciseInThisYear(otherMember.getMemberId()).intValue();
+        int exerciseCountInLastDays = memberRepository.countMemberExerciseInLastDays(otherMember.getMemberId(), RECENT_EXERCISE_PERIOD_DAYS).intValue();
+
+        return GetOtherMemberProfileResponse.of(otherMember, yearlyExerciseCounts, exerciseCountInLastDays);
     }
 
     /**
