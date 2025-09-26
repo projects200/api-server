@@ -179,3 +179,7 @@ include::overview/공통-개발-참고-사항.adoc[]
 - 프로필 사진 생성 API #POST# `/api/v1/profile-pictures`
 
 - 프로필 사진 삭제 API #DELETE# `/api/v1/profile-pictures/{profileId}`
+
+=== xref:운동-장소-API.html[운동 장소 API]
+
+- 회원 운동 장소 목록 상세 조회 API #GET# `/api/v1/exercise-locations`

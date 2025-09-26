@@ -1,6 +1,7 @@
 package com.project200.undabang.member.controller.location;
 
 import com.project200.undabang.common.web.response.CommonResponse;
+import com.project200.undabang.member.dto.response.GetExerciseLocationsResponse;
 import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
 import com.project200.undabang.member.service.ExerciseLocationQueryService;
 import lombok.RequiredArgsConstructor;
@@ -21,5 +22,11 @@ public class ExerciseLocationQueryController {
     public ResponseEntity<CommonResponse<List<GetMembersExerciseLocationsResponse>>> getMembersExerciseLocations() {
 
         return ResponseEntity.ok(CommonResponse.success(exerciseLocationQueryService.getMembersExerciseLocations()));
+    }
+
+    @GetMapping("/v1/exercise-locations")
+    public ResponseEntity<CommonResponse<List<GetExerciseLocationsResponse>>> getExerciseLocations() {
+
+        return ResponseEntity.ok(CommonResponse.success(exerciseLocationQueryService.getExerciseLocations()));
     }
 }
