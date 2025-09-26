@@ -1,0 +1,35 @@
+== 다른 회원의 캘린더 조회 API
+
+=== 설명
+
+- #GET# `/api/v1/members/{memberId}/calendars?start={startDate}&end={endDate}`
+- 회원이 다른 회원의 캘린더를 조회하는 API 입니다.
+
+=== 개발 이력
+
+- Sprint 12 (2025-09-26): 기능 개발이 완료되었습니다.
+
+=== 개발 참고 사항
+
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+
+operation::get-other-member-calendars/get-other-member-calendars_success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+
+operation::get-other-member-calendars/get-other-member-calendars_success[snippets="request-headers,path-parameters,query-parameters,response-fields"]
+
+==== 응답 상태 코드
+
+|===
+|상태 코드|설명
+|200|요청이 성공적으로 처리되었습니다. +
+다른 회원의 캘린더 정보를 반환합니다.
+|400|유효하지 않은 입력 값입니다.
+|401|인증되지 않은 요청입니다. +
+Access Token이 없거나 유효하지 않습니다
+|404|존재하지 않는 회원 입니다.
+|===
+
