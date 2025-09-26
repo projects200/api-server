@@ -38,7 +38,7 @@ public class MemberQueryServiceImpl implements MemberQueryService {
         Member otherMember = memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(memberId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-        // todo : 추후 차단 기능 개발 시, 다른 회원이 차단한 경우 검색 안되게 하는 기능 추가
+        // TODO : 추후 차단 기능 개발 시, 다른 회원이 차단한 경우 검색 안되게 하는 기능 추가
 
         int yearlyExerciseCounts = memberRepository.countMemberExerciseInThisYear(otherMember.getMemberId()).intValue();
         int exerciseCountInLastDays = memberRepository.countMemberExerciseInLastDays(otherMember.getMemberId(), RECENT_EXERCISE_PERIOD_DAYS).intValue();
