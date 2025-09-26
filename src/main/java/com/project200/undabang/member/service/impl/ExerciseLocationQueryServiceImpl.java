@@ -48,7 +48,7 @@ public class ExerciseLocationQueryServiceImpl implements ExerciseLocationQuerySe
     public List<GetExerciseLocationsResponse> getExerciseLocations() {
         Member member = getMember(UserContextHolder.getUserId());
 
-        List<ExerciseLocation> exerciseLocationList = exerciseLocationRepository.findByMemberAndExerciseLocationDeletedAtNull(member);
+        List<ExerciseLocation> exerciseLocationList = exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member);
 
         return exerciseLocationList.stream()
                 .map(GetExerciseLocationsResponse::from)
