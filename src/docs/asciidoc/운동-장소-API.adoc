@@ -19,6 +19,6 @@
 
 include::overview/공통-개발-참고-사항.adoc[]
 
-include::exercise-location/운동-장소-목록-조회-API.adoc[]
+include::exercise-location/회원-운동-장소-목록-상세-조회-API.adoc[]
 
 include::exercise-location/운동-장소-생성-API.adoc[]
