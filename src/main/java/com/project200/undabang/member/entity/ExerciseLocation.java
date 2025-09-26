@@ -48,8 +48,19 @@ public class ExerciseLocation {
     @Comment("운동 장소 삭제 일시 기록")
     private LocalDateTime exerciseLocationDeletedAt;
 
+    /**
+     * 운동 장소의 이름을 업데이트하고 수정 일시를 갱신합니다.
+     */
     public void updateExerciseLocationName(String exerciseLocationName) {
         this.exerciseLocationName = exerciseLocationName;
         this.exerciseLocationUpdatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 운동 장소를 삭제된 것으로 표시하고, 삭제된 시간을 현재 시간으로 설정합니다.
+     * 해당 메서드는 실제 데이터 삭제가 아닌 논리적으로 삭제 상태를 나타내는 데 사용됩니다.
+     */
+    public void deleteExerciseLocation() {
+        this.exerciseLocationDeletedAt = LocalDateTime.now();
     }
 }

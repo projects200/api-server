@@ -8,4 +8,6 @@ import com.project200.undabang.member.dto.response.UpdateExerciseLocationRespons
 public interface ExerciseLocationCommandService {
     CreateExerciseLocationResponse createExerciseLocation(CreateExerciseLocationRequest request);
     UpdateExerciseLocationResponse updateExerciseLocation(Long locationId, UpdateExerciseLocationRequest request);
+
+    void deleteExerciseLocation(Long locationId);
 }
