@@ -31,6 +31,7 @@ import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,19 +58,6 @@ class ExerciseLocationRepositoryImplTest {
         }
     }
 
-    private Member createAndSaveMember(String nickname, boolean deleted) {
-        Member member = Member.builder()
-                .memberId(UUID.randomUUID())
-                .memberEmail(nickname + "@email.com")
-                .memberNickname(nickname)
-                .memberGender(MemberGender.UNKNOWN)
-                .memberBday(LocalDate.of(2000, 1, 1))
-                .memberDeletedAt(deleted ? LocalDateTime.now() : null)
-                .build();
-        em.persist(member);
-        return member;
-    }
-
     private Member createAndSaveMember(String nickname) {
         return createAndSaveMember(nickname, false);
     }
@@ -81,6 +69,54 @@ class ExerciseLocationRepositoryImplTest {
         em.persist(picture);
         em.flush();
         return picture;
+    }
+
+    private void createAndSaveMemberPicture(Member member, Picture picture) {
+        MemberPicture memberPicture = MemberPicture.builder()
+                .member(member)
+                .picture(picture)
+                .memberPicturesUrl(picture.getPictureUrl())
+                .build();
+        em.persist(memberPicture);
+
+        member.updateProfilePicture(memberPicture);
+        em.persist(member);
+    }
+
+    // H2용 공간 함수
+    public static class H2SpatialFunctions {
+
+        private static final WKBReader wkbReader = new WKBReader();
+
+        public static double getX(byte[] wkb) {
+            if (wkb == null) {
+                return 0.0;
+            }
+            try {
+                Geometry geom = wkbReader.read(wkb);
+                if (geom instanceof Point) {
+                    return ((Point) geom).getX();
+                }
+            } catch (ParseException e) {
+                throw new RuntimeException("Failed to parse WKB for ST_X", e);
+            }
+            return 0.0;
+        }
+
+        public static double getY(byte[] wkb) {
+            if (wkb == null) {
+                return 0.0;
+            }
+            try {
+                Geometry geom = wkbReader.read(wkb);
+                if (geom instanceof Point) {
+                    return ((Point) geom).getY();
+                }
+            } catch (ParseException e) {
+                throw new RuntimeException("Failed to parse WKB for ST_Y", e);
+            }
+            return 0.0;
+        }
     }
 
     @Nested
@@ -144,74 +180,6 @@ class ExerciseLocationRepositoryImplTest {
         }
     }
 
-    private void createAndSaveMemberPicture(Member member, Picture picture) {
-        MemberPicture memberPicture = MemberPicture.builder()
-                .member(member)
-                .picture(picture)
-                .memberPicturesUrl(picture.getPictureUrl())
-                .build();
-        em.persist(memberPicture);
-
-        member.updateProfilePicture(memberPicture);
-        em.persist(member);
-    }
-
-    private ExerciseLocation createAndSaveExerciseLocation(Member member, String name, boolean deleted) {
-        Point point = geometryFactory.createPoint(new Coordinate(127.0, 37.5));
-        point.setSRID(4326);
-
-        ExerciseLocation location = ExerciseLocation.builder()
-                .member(member)
-                .exerciseLocationName(name)
-                .exerciseLocationAddress("Some Address")
-                .exerciseLocationPoint(point)
-                .exerciseLocationDeletedAt(deleted ? LocalDateTime.now() : null)
-                .build();
-        em.persist(location);
-        return location;
-    }
-
-    private void flushAndClear() {
-        em.flush();
-        em.clear();
-    }
-
-    // H2용 공간 함수
-    public static class H2SpatialFunctions {
-
-        private static final WKBReader wkbReader = new WKBReader();
-
-        public static double getX(byte[] wkb) {
-            if (wkb == null) {
-                return 0.0;
-            }
-            try {
-                Geometry geom = wkbReader.read(wkb);
-                if (geom instanceof Point) {
-                    return ((Point) geom).getX();
-                }
-            } catch (ParseException e) {
-                throw new RuntimeException("Failed to parse WKB for ST_X", e);
-            }
-            return 0.0;
-        }
-
-        public static double getY(byte[] wkb) {
-            if (wkb == null) {
-                return 0.0;
-            }
-            try {
-                Geometry geom = wkbReader.read(wkb);
-                if (geom instanceof Point) {
-                    return ((Point) geom).getY();
-                }
-            } catch (ParseException e) {
-                throw new RuntimeException("Failed to parse WKB for ST_Y", e);
-            }
-            return 0.0;
-        }
-    }
-
     @Nested
     @DisplayName("getMembersExerciseLocations 메소드는")
     class Describe_getMembersExerciseLocations {
@@ -266,6 +234,23 @@ class ExerciseLocationRepositoryImplTest {
             // then
             assertThat(results).isNotNull().isEmpty();
         }
+    }
+
+    // =================================================================================================================
+    // Helper Methods
+    // =================================================================================================================
+
+    private Member createAndSaveMember(String nickname, boolean deleted) {
+        Member member = Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberEmail(nickname + "@email.com")
+                .memberNickname(nickname)
+                .memberGender(MemberGender.UNKNOWN)
+                .memberBday(LocalDate.of(2000, 1, 1))
+                .memberDeletedAt(deleted ? LocalDateTime.now() : null)
+                .build();
+        em.persist(member);
+        return member;
     }
 
     @Nested
@@ -333,8 +318,58 @@ class ExerciseLocationRepositoryImplTest {
     }
 
     @Nested
-    @DisplayName("existsByExerciseLocationNameAndExerciseLocationDeletedAtNull 메소드는")
-    class Describe_existsByExerciseLocationNameAndExerciseLocationDeletedAtNull {
+    @DisplayName("findByExerciseLocationIdAndExerciseLocationDeletedAtNull 메소드는")
+    class Describe_findByExerciseLocationIdAndExerciseLocationDeletedAtNull {
+
+        @Test
+        @DisplayName("삭제되지 않은 운동 장소를 ID로 조회하면 Optional에 담아 반환한다")
+        void it_returns_location_when_exists_and_not_deleted() {
+            // given
+            Member member = createAndSaveMember("user");
+            ExerciseLocation location = createAndSaveExerciseLocation(member, "활성 헬스장", false);
+            flushAndClear();
+
+            // when
+            Optional<ExerciseLocation> result = exerciseLocationRepository.findByExerciseLocationIdAndExerciseLocationDeletedAtNull(location.getExerciseLocationId());
+
+            // then
+            assertThat(result).isPresent();
+            assertThat(result.get().getExerciseLocationId()).isEqualTo(location.getExerciseLocationId());
+            assertThat(result.get().getExerciseLocationDeletedAt()).isNull();
+        }
+
+        @Test
+        @DisplayName("ID에 해당하는 운동 장소가 삭제된 경우 Optional.empty를 반환한다")
+        void it_returns_empty_when_location_is_deleted() {
+            // given
+            Member member = createAndSaveMember("user");
+            ExerciseLocation location = createAndSaveExerciseLocation(member, "삭제된 헬스장", true);
+            flushAndClear();
+
+            // when
+            Optional<ExerciseLocation> result = exerciseLocationRepository.findByExerciseLocationIdAndExerciseLocationDeletedAtNull(location.getExerciseLocationId());
+
+            // then
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("ID에 해당하는 운동 장소가 존재하지 않는 경우 Optional.empty를 반환한다")
+        void it_returns_empty_when_location_does_not_exist() {
+            // given
+            Long nonExistentId = 999L;
+
+            // when
+            Optional<ExerciseLocation> result = exerciseLocationRepository.findByExerciseLocationIdAndExerciseLocationDeletedAtNull(nonExistentId);
+
+            // then
+            assertThat(result).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull 메소드는")
+    class Describe_existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull {
 
         @Test
         @DisplayName("삭제되지 않은 운동 장소 중 동일한 이름이 존재하면 true를 반환한다")
@@ -382,5 +417,25 @@ class ExerciseLocationRepositoryImplTest {
             // then
             assertThat(result).isFalse();
         }
+    }
+
+    private ExerciseLocation createAndSaveExerciseLocation(Member member, String name, boolean deleted) {
+        Point point = geometryFactory.createPoint(new Coordinate(127.0, 37.5));
+        point.setSRID(4326);
+
+        ExerciseLocation location = ExerciseLocation.builder()
+                .member(member)
+                .exerciseLocationName(name)
+                .exerciseLocationAddress("Some Address")
+                .exerciseLocationPoint(point)
+                .exerciseLocationDeletedAt(deleted ? LocalDateTime.now() : null)
+                .build();
+        em.persist(location);
+        return location;
+    }
+
+    private void flushAndClear() {
+        em.flush();
+        em.clear();
     }
 }

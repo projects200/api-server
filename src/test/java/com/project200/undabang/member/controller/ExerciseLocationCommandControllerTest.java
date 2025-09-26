@@ -1,11 +1,15 @@
-package com.project200.undabang.member.controller.location;
+package com.project200.undabang.member.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
+import com.project200.undabang.configuration.RestDocsUtils;
+import com.project200.undabang.member.controller.location.ExerciseLocationCommandController;
 import com.project200.undabang.member.dto.request.CreateExerciseLocationRequest;
+import com.project200.undabang.member.dto.request.UpdateExerciseLocationRequest;
 import com.project200.undabang.member.dto.response.CreateExerciseLocationResponse;
+import com.project200.undabang.member.dto.response.UpdateExerciseLocationResponse;
 import com.project200.undabang.member.service.ExerciseLocationCommandService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -13,22 +17,29 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
 
+import static com.project200.undabang.configuration.DocumentFormatGenerator.getTypeFormat;
 import static com.project200.undabang.configuration.HeadersGenerator.getCommonApiHeaders;
 import static com.project200.undabang.configuration.RestDocsUtils.HEADER_ACCESS_TOKEN;
 import static com.project200.undabang.configuration.RestDocsUtils.commonResponseFields;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 
 @WebMvcTest(ExerciseLocationCommandController.class)
 class ExerciseLocationCommandControllerTest extends AbstractRestDocSupport {
@@ -145,6 +156,82 @@ class ExerciseLocationCommandControllerTest extends AbstractRestDocSupport {
 
             // 예외는 발생했지만, 서비스 메소드 자체는 호출되었음을 검증
             then(exerciseLocationCommandService).should().createExerciseLocation(any(CreateExerciseLocationRequest.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("운동 위치 수정 API")
+    class UpdateExerciseLocation {
+
+        @Test
+        @DisplayName("정상적으로 운동 위치 이름을 수정한다")
+        void updateExerciseLocation_Success() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long locationId = 1L;
+            String newName = "수정된 헬스장";
+            UpdateExerciseLocationRequest request = new UpdateExerciseLocationRequest(newName);
+            UpdateExerciseLocationResponse expectedResponse = new UpdateExerciseLocationResponse(locationId);
+
+            given(exerciseLocationCommandService.updateExerciseLocation(eq(locationId), any(UpdateExerciseLocationRequest.class)))
+                    .willReturn(expectedResponse);
+
+            // when & then
+            mockMvc.perform(patch("/api/v1/exercise-locations/{locationId}", locationId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpectAll(
+                            status().isOk(),
+                            jsonPath("$.succeed").value(true),
+                            jsonPath("$.code").value("UPDATED"),
+                            jsonPath("$.message").value("리소스가 성공적으로 수정되었습니다."),
+                            jsonPath("$.data.id").value(locationId)
+                    ).andDo(document.document(
+                            requestHeaders(
+                                    RestDocsUtils.HEADER_ACCESS_TOKEN
+                            ),
+                            pathParameters(
+                                    parameterWithName("locationId").attributes(getTypeFormat(JsonFieldType.NUMBER))
+                                            .description("수정할 운동 장소의 고유 식별자 정보를 나타냅니다.")
+                            ),
+                            requestFields(
+                                    fieldWithPath("exerciseLocationName").description("수정할 운동 장소의 상호명 혹은 본인이 설정한 이름 입니다.")
+                            ),
+                            responseFields(commonResponseFields(
+                                    fieldWithPath("data.id").description("수정된 운동 장소의 고유 식별자 입니다.")
+                            ))
+                    ));
+
+
+            then(exerciseLocationCommandService).should().updateExerciseLocation(eq(locationId), any(UpdateExerciseLocationRequest.class));
+            then(exerciseLocationCommandService).shouldHaveNoMoreInteractions();
+        }
+
+        @Test
+        @DisplayName("운동 위치가 존재하지 않으면 404 Not Found를 반환한다")
+        void updateExerciseLocation_NotFound() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long locationId = 999L;
+            UpdateExerciseLocationRequest request = new UpdateExerciseLocationRequest("없는 헬스장");
+
+            given(exerciseLocationCommandService.updateExerciseLocation(eq(locationId), any(UpdateExerciseLocationRequest.class)))
+                    .willThrow(new CustomException(ErrorCode.EXERCISE_LOCATION_NOT_FOUND));
+
+            // when & then
+            mockMvc.perform(patch("/api/v1/exercise-locations/{locationId}", locationId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpectAll(
+                            status().isNotFound(),
+                            jsonPath("$.succeed").value(false),
+                            jsonPath("$.code").value(ErrorCode.EXERCISE_LOCATION_NOT_FOUND.name())
+                    );
+
+            then(exerciseLocationCommandService).should().updateExerciseLocation(eq(locationId), any(UpdateExerciseLocationRequest.class));
         }
     }
 }
