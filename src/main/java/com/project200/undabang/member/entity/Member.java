@@ -4,6 +4,7 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.dto.command.SignUpMemberCommand;
 import com.project200.undabang.member.enums.MemberGender;
+import com.project200.undabang.openchat.entity.OpenChatRoom;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -88,6 +89,10 @@ public class Member {
 
     @OneToMany(mappedBy = "member")
     private List<ExerciseLocation> exerciseLocations = new ArrayList<>();
+
+    @OneToOne(mappedBy = "member", fetch = FetchType.LAZY)
+    private OpenChatRoom openChatRoom;
+
 
     /**
      * 회원의 점수를 증가시킵니다. 점수는 정책에 정의된 최소/최대 값을 벗어나지 않습니다.
