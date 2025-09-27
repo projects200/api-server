@@ -37,7 +37,7 @@ public class OpenChatRoomCommandServiceImpl implements OpenChatRoomCommandServic
     public CreateOpenChatRoomResponse createOpenChatRoom(CreateOpenChatRoomRequest request) {
         Member member = getMember(UserContextHolder.getUserId());
 
-        String openChatroomUrl = request.getOpenChatroomUrl();
+        String openChatroomUrl = normalizeUrl(request.getOpenChatroomUrl());
 
         // 이미 등록한 오픈카톡 ID가 있는지 우선 검사
         if (openChatRoomRepository.existsByMemberAndDeletedAtNull(member)) {
@@ -58,6 +58,16 @@ public class OpenChatRoomCommandServiceImpl implements OpenChatRoomCommandServic
         }
     }
 
+    /**
+     * 주어진 URL을 정규화합니다. URL이 "http://"로 시작하는 경우 "https://"로 변경합니다.
+     */
+    private String normalizeUrl(String url) {
+        if (url.startsWith("http://")) {
+            return url.replace("http://", "https://");
+        }
+
+        return url;
+    }
 
     /**
      * 지정된 회원 ID에 해당하는 회원 정보를 조회합니다.
