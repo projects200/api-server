@@ -1,4 +1,4 @@
-package com.project200.undabang.openchat.respository;
+package com.project200.undabang.openchat.repository;
 
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.openchat.entity.OpenChatRoom;

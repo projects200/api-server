@@ -8,7 +8,7 @@ import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.openchat.dto.request.CreateOpenChatRoomRequest;
 import com.project200.undabang.openchat.dto.response.CreateOpenChatRoomResponse;
 import com.project200.undabang.openchat.entity.OpenChatRoom;
-import com.project200.undabang.openchat.respository.OpenChatRoomRepository;
+import com.project200.undabang.openchat.repository.OpenChatRoomRepository;
 import com.project200.undabang.openchat.service.OpenChatRoomCommandService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -63,7 +63,8 @@ public class OpenChatRoomCommandServiceImpl implements OpenChatRoomCommandServic
      */
     private String normalizeUrl(String url) {
         if (url.startsWith("http://")) {
-            return url.replace("http://", "https://");
+            // 혹시 쿼리 파라미터로 redirect?=http:// 가 있을 수 있으므로 프로토콜 부분만 검사
+            return url.replaceFirst("http://", "https://");
         }
 
         return url;
