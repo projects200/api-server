@@ -12,6 +12,7 @@ import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Comment;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Where;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
@@ -90,8 +91,9 @@ public class Member {
     @OneToMany(mappedBy = "member")
     private List<ExerciseLocation> exerciseLocations = new ArrayList<>();
 
-    @OneToOne(mappedBy = "member", fetch = FetchType.LAZY)
-    private OpenChatRoom openChatRoom;
+    @OneToMany(mappedBy = "member", fetch = FetchType.LAZY)
+    @Where(clause = "open_chat_room_deleted_at IS NULL")
+    private List<OpenChatRoom> activeOpenChatRoomList;
 
 
     /**
