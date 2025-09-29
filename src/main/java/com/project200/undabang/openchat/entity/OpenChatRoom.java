@@ -56,6 +56,9 @@ public class OpenChatRoom {
         return OpenChatRoom.builder()
                 .member(member)
                 .url(openChatroomUrl)
+                .createdAt(LocalDateTime.now())
+                .memberIdUniqueKey(0L)
+                .urlUniqueKey(0L)
                 .build();
     }
 
