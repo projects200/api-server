@@ -92,7 +92,7 @@ public class Member {
     private List<ExerciseLocation> exerciseLocations = new ArrayList<>();
 
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY)
-    @Where(clause = "open_chat_room_deleted_at IS NULL")
+    @Where(clause = "open_chatroom_deleted_at IS NULL")
     private List<OpenChatRoom> activeOpenChatRoomList;
 
 
