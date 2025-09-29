@@ -36,13 +36,9 @@ public class OpenChatRoomCommandServiceImpl implements OpenChatRoomCommandServic
     @Transactional
     public CreateOpenChatRoomResponse createOpenChatRoom(CreateOpenChatRoomRequest request) {
         Member member = getMember(UserContextHolder.getUserId());
-
         String openChatroomUrl = normalizeUrl(request.getOpenChatroomUrl());
 
-        // 이미 등록한 오픈카톡 ID가 있는지 우선 검사
-        if (openChatRoomRepository.existsByMemberAndDeletedAtNull(member)) {
-            throw new CustomException(ErrorCode.OPEN_CHAT_ROOM_ALREADY_EXIST);
-        }
+        validateForOpenChatRoomCreation(member, openChatroomUrl);
 
         OpenChatRoom openChatRoom = OpenChatRoom.of(member, openChatroomUrl);
 
@@ -54,6 +50,23 @@ public class OpenChatRoomCommandServiceImpl implements OpenChatRoomCommandServic
 
             log.warn("생성시 DB Race Condition 발생으로 인한 오류 발생");
             // 다른 사람이 사용중인 오픈카톡 URL로 생성 시도시 오류 반환
+            throw new CustomException(ErrorCode.OPEN_CHAT_ROOM_URL_DUPLICATED);
+        }
+    }
+
+    /**
+     * 오픈채팅방 생성을 위한 유효성 검사를 수행합니다.
+     * <p>
+     * 검사 대상
+     * 1. 회원이 이미 오픈 채팅방을 보유중인지 확인
+     * 2. 생성하려는 URL이 다른 사용자가 사용중인 URL인지 확인
+     */
+    private void validateForOpenChatRoomCreation(Member member, String openChatUrl) {
+        if (openChatRoomRepository.existsByMemberAndDeletedAtNull(member)) {
+            throw new CustomException(ErrorCode.OPEN_CHAT_ROOM_ALREADY_EXIST);
+        }
+
+        if (openChatRoomRepository.existsByUrlAndDeletedAtNull(openChatUrl)) {
             throw new CustomException(ErrorCode.OPEN_CHAT_ROOM_URL_DUPLICATED);
         }
     }
