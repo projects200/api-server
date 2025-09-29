@@ -56,9 +56,6 @@ public class OpenChatRoom {
         return OpenChatRoom.builder()
                 .member(member)
                 .url(openChatroomUrl)
-                .createdAt(LocalDateTime.now())
-                .memberIdUniqueKey(0L)
-                .urlUniqueKey(0L)
                 .build();
     }
 
@@ -70,5 +67,6 @@ public class OpenChatRoom {
     public boolean isSameUrl(String urlToCompare) {
         return this.url.equals(urlToCompare);
     }
+
     // Todo : 논리적 삭제 구현시 두개의 UNIQUE에 모두 PK 값을 넣어주어야 한다. 그래서 회원은 새로운 채팅방을 만들 수 있고, 다른 회원은 URL을 재사용 할 수 있음(혹시 재사용 하게 된다면)
 }

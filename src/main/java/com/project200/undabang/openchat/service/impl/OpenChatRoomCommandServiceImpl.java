@@ -29,10 +29,7 @@ public class OpenChatRoomCommandServiceImpl implements OpenChatRoomCommandServic
 
     /**
      * 새로운 오픈채팅방을 생성합니다.
-     *
-     * @param request 오픈채팅방 생성 요청 정보를 담고 있는 객체
-     * @return 생성된 오픈채팅방의 ID를 포함한 응답 객체
-     * @throws CustomException 오픈채팅방 URL 중복, 회원 정보 미존재, 또는 이미 존재하는 오픈채팅방이 있는 경우 발생
+     * 요청된 URL의 정규화 및 유효성 검사를 수행하며, 생성 중 데이터 충돌이 발생할 경우 예외를 반환합니다.
      */
     @Override
     @Transactional
@@ -56,6 +53,9 @@ public class OpenChatRoomCommandServiceImpl implements OpenChatRoomCommandServic
         }
     }
 
+    /**
+     * 주어진 오픈채팅방 ID와 요청 데이터를 기반으로 오픈채팅방 정보를 업데이트합니다.
+     */
     @Override
     @Transactional
     public UpdateOpenChatRoomResponse updateOpenChatRoom(Long openChatRoomId, UpdateOpenChatRoomRequest request) {
@@ -68,7 +68,7 @@ public class OpenChatRoomCommandServiceImpl implements OpenChatRoomCommandServic
             return UpdateOpenChatRoomResponse.of(openChatRoomId);
         }
 
-        validateUrlUniqueness(openChatUrl, openChatRoomId);
+        validateUrlIsUniqueForUpdate(openChatUrl, openChatRoomId);
 
         openChatRoom.updateOpenChatUrl(openChatUrl);
 
@@ -77,12 +77,8 @@ public class OpenChatRoomCommandServiceImpl implements OpenChatRoomCommandServic
 
     /**
      * 주어진 오픈채팅방 URL이 중복되지 않았는지 검사합니다.
-     *
-     * @param openChatUrl       검사할 오픈채팅방 URL
-     * @param currentChatRoomId 현재 오픈채팅방 ID. 중복 검사 시 제외할 ID
-     * @throws CustomException URL이 다른 오픈채팅방에서 이미 사용 중인 경우 발생
      */
-    private void validateUrlUniqueness(String openChatUrl, Long currentChatRoomId) {
+    private void validateUrlIsUniqueForUpdate(String openChatUrl, Long currentChatRoomId) {
         if (openChatRoomRepository.existsByUrlAndIdNotAndDeletedAtNull(openChatUrl, currentChatRoomId)) {
             throw new CustomException(ErrorCode.OPEN_CHAT_ROOM_URL_DUPLICATED);
         }
@@ -90,7 +86,6 @@ public class OpenChatRoomCommandServiceImpl implements OpenChatRoomCommandServic
 
     /**
      * 오픈채팅방 생성을 위한 유효성 검사를 수행합니다.
-     * <p>
      * 검사 대상
      * 1. 회원이 이미 오픈 채팅방을 보유중인지 확인
      * 2. 생성하려는 URL이 다른 사용자가 사용중인 URL인지 확인

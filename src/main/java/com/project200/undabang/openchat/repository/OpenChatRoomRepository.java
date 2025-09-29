@@ -9,7 +9,8 @@ import java.util.Optional;
 public interface OpenChatRoomRepository extends JpaRepository<OpenChatRoom, Long> {
     boolean existsByMemberAndDeletedAtNull(Member member);
 
-    Optional<OpenChatRoom> findByIdAndDeletedAtNull(Long id);
-
     boolean existsByUrlAndIdNotAndDeletedAtNull(String url, Long id);
+
+    boolean existsByUrlAndDeletedAtNull(String url);
+    Optional<OpenChatRoom> findByIdAndDeletedAtNull(Long id);
 }
