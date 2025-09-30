@@ -3,10 +3,7 @@ package com.project200.undabang.member.service.impl;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
-import com.project200.undabang.member.dto.response.CheckNicknameDuplicateResponse;
-import com.project200.undabang.member.dto.response.MemberProfileResponse;
-import com.project200.undabang.member.dto.response.MemberRegistrationStatusResponseDto;
-import com.project200.undabang.member.dto.response.MemberScoreResponseDto;
+import com.project200.undabang.member.dto.response.*;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.member.service.MemberQueryService;
@@ -28,6 +25,33 @@ public class MemberQueryServiceImpl implements MemberQueryService {
     private final PolicyService policyService;
 
     private static final int RECENT_EXERCISE_PERIOD_DAYS = 30; // 최근 운동기간
+
+    /**
+     * 다른 사용자의 멤버 프로필 정보를 조회합니다.
+     * 요청한 사용자가 자신에 대해 요청한 경우 예외를 발생시킵니다.
+     * 삭제된 사용자이거나 존재하지 않는 사용자에 대해 요청한 경우 예외를 발생시킵니다.
+     *
+     * @param memberId 조회할 다른 사용자의 멤버 ID
+     * @return GetOtherMemberProfileResponse 객체로, 조회된 사용자의 프로필 정보 및 연간 운동 횟수, 최근 운동 횟수를 포함합니다.
+     */
+    @Override
+    public GetOtherMemberProfileResponse getOtherMemberProfile(UUID memberId) {
+        UUID currentMemberId = UserContextHolder.getUserId();
+
+        if (memberId.equals(currentMemberId)) {
+            throw new CustomException(ErrorCode.MEMBER_SELF_REQUEST_NOT_ALLOWED);
+        }
+
+        Member otherMember = memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(memberId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        // TODO : 추후 차단 기능 개발 시, 다른 회원이 차단한 경우 검색 안되게 하는 기능 추가
+
+        int yearlyExerciseCounts = memberRepository.countMemberExerciseInThisYear(otherMember.getMemberId()).intValue();
+        int exerciseCountInLastDays = memberRepository.countMemberExerciseInLastDays(otherMember.getMemberId(), RECENT_EXERCISE_PERIOD_DAYS).intValue();
+
+        return GetOtherMemberProfileResponse.of(otherMember, yearlyExerciseCounts, exerciseCountInLastDays);
+    }
 
     /**
      * 현재 사용자가 시스템에 등록되어 있는지의 여부를 확인합니다.
