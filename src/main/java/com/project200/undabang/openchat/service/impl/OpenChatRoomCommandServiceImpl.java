@@ -76,6 +76,20 @@ public class OpenChatRoomCommandServiceImpl implements OpenChatRoomCommandServic
     }
 
     /**
+     * 주어진 오픈채팅방 ID를 기반으로 오픈채팅방을 삭제합니다.
+     * 현재 로그인한 회원이 소유한 오픈채팅방인지 확인하며,
+     * 다른 사용자가 소유한 채팅방을 삭제하려고 시도할 경우 예외를 발생시킵니다.
+     */
+    @Override
+    @Transactional
+    public void deleteOpenChatRoom(Long openChatId) {
+        Member member = getMember(UserContextHolder.getUserId());
+        OpenChatRoom openChatRoom = getOpenChatRoom(member, openChatId);
+
+        openChatRoom.softDelete();
+    }
+
+    /**
      * 주어진 오픈채팅방 URL이 중복되지 않았는지 검사합니다.
      */
     private void validateUrlIsUniqueForUpdate(String openChatUrl, Long currentChatRoomId) {
@@ -104,7 +118,7 @@ public class OpenChatRoomCommandServiceImpl implements OpenChatRoomCommandServic
      * 주어진 URL을 정규화합니다. URL이 "http://"로 시작하는 경우 "https://"로 변경합니다.
      */
     private String normalizeUrl(String url) {
-        if (url.startsWith("http://")) {
+        if (url != null && url.startsWith("http://")) {
             // 혹시 쿼리 파라미터로 redirect?=http:// 가 있을 수 있으므로 프로토콜 부분만 검사
             return url.replaceFirst("http://", "https://");
         }

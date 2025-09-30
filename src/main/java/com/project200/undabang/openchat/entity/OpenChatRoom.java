@@ -24,7 +24,7 @@ public class OpenChatRoom {
     @Column(name = "open_chatroom_id")
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
@@ -62,14 +62,28 @@ public class OpenChatRoom {
                 .build();
     }
 
+    /**
+     * 현재 객체의 URL과 주어진 URL이 동일한지 확인합니다.
+     */
+    public boolean isSameUrl(String urlToCompare) {
+        return this.url.equals(urlToCompare);
+    }
+
+    /**
+     * 오픈 채팅방 URL을 업데이트하고, 업데이트 시간을 현재 시간으로 설정합니다.
+     */
     public void updateOpenChatUrl(String openChatUrl) {
         this.url = openChatUrl;
         this.updatedAt = LocalDateTime.now();
     }
 
-    public boolean isSameUrl(String urlToCompare) {
-        return this.url.equals(urlToCompare);
+    /**
+     * 특정 오픈 채팅방을 삭제 처리합니다. 삭제 시 해당 오픈 채팅방의 삭제 시간을 현재 시간으로 설정하며,
+     * 고유 멤버 아이디 키와 URL 고유 키를 주어진 ID 값으로 업데이트합니다.
+     */
+    public void softDelete() {
+        this.deletedAt = LocalDateTime.now();
+        this.memberIdUniqueKey = this.id;
+        this.urlUniqueKey = this.id;
     }
-
-    // Todo : 논리적 삭제 구현시 두개의 UNIQUE에 모두 PK 값을 넣어주어야 한다. 그래서 회원은 새로운 채팅방을 만들 수 있고, 다른 회원은 URL을 재사용 할 수 있음(혹시 재사용 하게 된다면)
 }

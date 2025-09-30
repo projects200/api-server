@@ -7,6 +7,7 @@ import com.project200.undabang.openchat.dto.response.UpdateOpenChatRoomResponse;
 
 public interface OpenChatRoomCommandService {
     CreateOpenChatRoomResponse createOpenChatRoom(CreateOpenChatRoomRequest request);
-
     UpdateOpenChatRoomResponse updateOpenChatRoom(Long openChatRoomId, UpdateOpenChatRoomRequest request);
+
+    void deleteOpenChatRoom(Long openChatId);
 }

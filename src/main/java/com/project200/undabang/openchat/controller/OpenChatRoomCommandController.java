@@ -31,4 +31,11 @@ public class OpenChatRoomCommandController {
 
         return ResponseEntity.ok(CommonResponse.success(openChatRoomCommandService.updateOpenChatRoom(openChatId, request)));
     }
+
+    @DeleteMapping("/v1/open-chats/{openChatId}")
+    public ResponseEntity<CommonResponse<Void>> DeleteOpenChatRoom(@PathVariable long openChatId) {
+
+        openChatRoomCommandService.deleteOpenChatRoom(openChatId);
+        return ResponseEntity.ok(CommonResponse.delete(null));
+    }
 }
