@@ -215,8 +215,8 @@ class ExerciseLocationRepositoryImplTest {
 
             ExerciseLocationRecord locationRecord = result.getLocations().get(0);
             assertThat(locationRecord.exerciseLocationName()).isEqualTo(activeLocation.getExerciseLocationName());
-            assertThat(locationRecord.latitude()).isEqualTo(37.5);
-            assertThat(locationRecord.longitude()).isEqualTo(127.0);
+            assertThat(locationRecord.longitude()).isEqualTo(37.5);
+            assertThat(locationRecord.latitude()).isEqualTo(127.0);
         }
 
         @Test

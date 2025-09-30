@@ -35,7 +35,6 @@ public class ExerciseLocationRepositoryImpl implements ExerciseLocationRepositor
         QMemberPicture memberPicture = QMemberPicture.memberPicture;
         QExerciseLocation exerciseLocation = QExerciseLocation.exerciseLocation;
         QPicture picture = QPicture.picture;
-
         return queryFactory
                 .from(exerciseLocation)
                 .join(exerciseLocation.member, member)
@@ -57,8 +56,8 @@ public class ExerciseLocationRepositoryImpl implements ExerciseLocationRepositor
                                                 Projections.constructor(
                                                         ExerciseLocationRecord.class,
                                                         exerciseLocation.exerciseLocationName,
-                                                        Expressions.numberTemplate(Double.class, "ST_Y({0})", exerciseLocation.exerciseLocationPoint), // 위도 좌표 매핑
-                                                        Expressions.numberTemplate(Double.class, "ST_X({0})", exerciseLocation.exerciseLocationPoint) // 경도 좌표 매핑
+                                                        Expressions.numberTemplate(Double.class, "ST_X({0})", exerciseLocation.exerciseLocationPoint), // 위도 좌표 매핑
+                                                        Expressions.numberTemplate(Double.class, "ST_Y({0})", exerciseLocation.exerciseLocationPoint) // 경도 좌표 매핑
                                                 )
                                         )
                                 )
