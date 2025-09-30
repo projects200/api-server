@@ -5,6 +5,7 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.match.service.MatchService;
 import com.project200.undabang.member.repository.MemberRepository;
+import com.project200.undabang.openchat.dto.response.GetOpenChatUrlResponse;
 import com.project200.undabang.openchat.dto.response.GetOtherMemberOpenChatUrlResponse;
 import com.project200.undabang.openchat.entity.OpenChatRoom;
 import com.project200.undabang.openchat.repository.OpenChatRoomRepository;
@@ -24,6 +25,17 @@ public class OpenChatQueryServiceImpl implements OpenChatQueryService {
     private final OpenChatRoomRepository openChatRoomRepository;
     private final MemberRepository memberRepository;
     private final MatchService matchService;
+
+    /**
+     * 현재 사용자와 연관된 오픈 채팅방의 URL을 조회하여 반환합니다.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public GetOpenChatUrlResponse getOpenChatroomUrl() {
+        OpenChatRoom openChatRoom = getMemberOpenChatRoom(UserContextHolder.getUserId());
+
+        return GetOpenChatUrlResponse.of(openChatRoom.getUrl());
+    }
 
     /**
      * 주어진 회원 ID를 기반으로 해당 회원의 오픈 채팅방 URL을 조회하고 반환합니다.

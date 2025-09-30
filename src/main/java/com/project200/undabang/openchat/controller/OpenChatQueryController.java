@@ -1,6 +1,7 @@
 package com.project200.undabang.openchat.controller;
 
 import com.project200.undabang.common.web.response.CommonResponse;
+import com.project200.undabang.openchat.dto.response.GetOpenChatUrlResponse;
 import com.project200.undabang.openchat.dto.response.GetOtherMemberOpenChatUrlResponse;
 import com.project200.undabang.openchat.service.OpenChatQueryService;
 import lombok.RequiredArgsConstructor;
@@ -23,5 +24,11 @@ public class OpenChatQueryController {
     public ResponseEntity<CommonResponse<GetOtherMemberOpenChatUrlResponse>> getOtherMemberOpenChatroomUrl(@PathVariable UUID memberId) {
 
         return ResponseEntity.ok(CommonResponse.success(openChatQueryService.getOtherMemberOpenChatroomUrl(memberId)));
+    }
+
+    @GetMapping("/v1/open-chat")
+    public ResponseEntity<CommonResponse<GetOpenChatUrlResponse>> getOpenChatroomUrl() {
+
+        return ResponseEntity.ok(CommonResponse.success(openChatQueryService.getOpenChatroomUrl()));
     }
 }
