@@ -510,6 +510,21 @@ class MemberQueryServiceImplTest {
 
             then(memberRepository).should(times(1)).findMemberProfileByMemberIdAndMemberDeletedAtNull(otherMemberId);
         }
+
+        @Test
+        @DisplayName("본인 UUID로 다른 회원 프로필 조회 시 MEMBER_SELF_REQUEST_NOT_ALLOWED 예외를 던진다")
+        void getOtherMemberProfile_SelfRequest_ThrowsException() {
+            UUID selfId = UUID.randomUUID();
+
+            try (MockedStatic<UserContextHolder> ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
+                BDDMockito.given(UserContextHolder.getUserId()).willReturn(selfId);
+
+                assertThatThrownBy(() -> memberQueryService.getOtherMemberProfile(selfId))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_SELF_REQUEST_NOT_ALLOWED);
+            }
+        }
+
     }
 
     @Nested
@@ -623,6 +638,22 @@ class MemberQueryServiceImplTest {
             assertThatThrownBy(() -> memberQueryService.getOtherMemberCalendars(otherMemberId, startDate, endDate))
                     .isInstanceOf(CustomException.class)
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.IMPOSSIBLE_INPUT_DATE);
+        }
+
+        @Test
+        @DisplayName("본인 UUID로 다른 회원 운동 달력 조회 시 MEMBER_SELF_REQUEST_NOT_ALLOWED 예외를 던진다")
+        void getOtherMemberCalendars_SelfRequest_ThrowsException() {
+            UUID selfId = UUID.randomUUID();
+            LocalDate startDate = LocalDate.now().minusDays(10);
+            LocalDate endDate = LocalDate.now();
+
+            try (MockedStatic<UserContextHolder> ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
+                BDDMockito.given(UserContextHolder.getUserId()).willReturn(selfId);
+
+                assertThatThrownBy(() -> memberQueryService.getOtherMemberCalendars(selfId, startDate, endDate))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_SELF_REQUEST_NOT_ALLOWED);
+            }
         }
     }
 }

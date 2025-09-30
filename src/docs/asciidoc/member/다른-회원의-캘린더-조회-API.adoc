@@ -27,7 +27,8 @@ operation::get-other-member-calendars/get-other-member-calendars_success[snippet
 |상태 코드|설명
 |200|요청이 성공적으로 처리되었습니다. +
 다른 회원의 캘린더 정보를 반환합니다.
-|400|유효하지 않은 입력 값입니다.
+|400|유효하지 않은 입력 값입니다. +
+자기 자신을 대상으로 한 요청은 유효하지 않습니다.
 |401|인증되지 않은 요청입니다. +
 Access Token이 없거나 유효하지 않습니다
 |404|존재하지 않는 회원 입니다.
