@@ -4,11 +4,10 @@ import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.entity.Picture;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
+import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodResponseDto;
 import com.project200.undabang.exercise.entity.ExerciseType;
-import com.project200.undabang.member.dto.response.CheckNicknameDuplicateResponse;
-import com.project200.undabang.member.dto.response.MemberProfileResponse;
-import com.project200.undabang.member.dto.response.MemberRegistrationStatusResponseDto;
-import com.project200.undabang.member.dto.response.MemberScoreResponseDto;
+import com.project200.undabang.exercise.repository.ExerciseRepository;
+import com.project200.undabang.member.dto.response.*;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.MemberPicture;
 import com.project200.undabang.member.entity.PreferredExercise;
@@ -52,6 +51,9 @@ class MemberQueryServiceImplTest {
 
     @Mock
     private PolicyService policyService;
+
+    @Mock
+    private ExerciseRepository exerciseRepository;
 
     /**
      * 등록된 회원의 상태를 확인하는 테스트
@@ -410,6 +412,248 @@ class MemberQueryServiceImplTest {
             // then
             assertThat(response.isAvailable()).isTrue();
             then(memberRepository).should().existsByMemberNickname(availableNickname);
+        }
+    }
+
+    @Nested
+    @DisplayName("다른 회원 프로필 조회")
+    class GetOtherMemberProfile {
+
+        @Test
+        @DisplayName("성공적으로 다른 회원의 프로필 정보를 반환한다")
+        void getOtherMemberProfile_Success() {
+            // given
+            UUID otherMemberId = UUID.randomUUID();
+            Member mockMember = createMember();
+            ReflectionTestUtils.setField(mockMember, "memberId", otherMemberId);
+            setMemberPicture(mockMember);
+            setPreferredExercise(mockMember);
+
+            long expectedYearlyCount = 15L;
+            long expectedMonthlyCount = 5L;
+
+            BDDMockito.given(memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(otherMemberId))
+                    .willReturn(Optional.of(mockMember));
+            BDDMockito.given(memberRepository.countMemberExerciseInThisYear(otherMemberId))
+                    .willReturn(expectedYearlyCount);
+            BDDMockito.given(memberRepository.countMemberExerciseInLastDays(otherMemberId, 30))
+                    .willReturn(expectedMonthlyCount);
+
+            // when
+            GetOtherMemberProfileResponse response = memberQueryService.getOtherMemberProfile(otherMemberId);
+
+            // then
+            assertSoftly(softly -> {
+                softly.assertThat(response).isNotNull();
+                softly.assertThat(response.getProfileThumbnailUrl()).isEqualTo("http://example.com/profile_thumbnail.jpg");
+                softly.assertThat(response.getProfileImageUrl()).isEqualTo("http://example.com/profile_image.jpg");
+                softly.assertThat(response.getNickname()).isEqualTo("테스트유저");
+                softly.assertThat(response.getGender()).isEqualTo(MemberGender.UNKNOWN);
+                softly.assertThat(response.getBirthDate()).isEqualTo("1990-01-01");
+                softly.assertThat(response.getBio()).isEqualTo("테스트 자기소개입니다.");
+                softly.assertThat(response.getYearlyExerciseDays()).isEqualTo((int) expectedYearlyCount);
+                softly.assertThat(response.getExerciseCountInLast30Days()).isEqualTo((int) expectedMonthlyCount);
+                softly.assertThat(response.getExerciseScore()).isEqualTo(50);
+                softly.assertThat(response.getPreferredExercises()).hasSize(1);
+            });
+
+            then(memberRepository).should(times(1)).findMemberProfileByMemberIdAndMemberDeletedAtNull(otherMemberId);
+            then(memberRepository).should(times(1)).countMemberExerciseInThisYear(otherMemberId);
+            then(memberRepository).should(times(1)).countMemberExerciseInLastDays(otherMemberId, 30);
+        }
+
+        @Test
+        @DisplayName("회원 정보만 있는 경우 성공적으로 다른 회원 프로필 정보를 반환한다")
+        void getOtherMemberProfileOnlyMember_Success() {
+            // given
+            UUID otherMemberId = UUID.randomUUID();
+            Member mockMember = createMember();
+            ReflectionTestUtils.setField(mockMember, "memberId", otherMemberId);
+
+            long expectedYearlyCount = 0L;
+            long expectedMonthlyCount = 0L;
+
+            BDDMockito.given(memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(otherMemberId))
+                    .willReturn(Optional.of(mockMember));
+            BDDMockito.given(memberRepository.countMemberExerciseInThisYear(otherMemberId))
+                    .willReturn(expectedYearlyCount);
+            BDDMockito.given(memberRepository.countMemberExerciseInLastDays(otherMemberId, 30))
+                    .willReturn(expectedMonthlyCount);
+
+            // when
+            GetOtherMemberProfileResponse response = memberQueryService.getOtherMemberProfile(otherMemberId);
+
+            // then
+            assertSoftly(softly -> {
+                softly.assertThat(response).isNotNull();
+                softly.assertThat(response.getProfileThumbnailUrl()).isNull();
+                softly.assertThat(response.getProfileImageUrl()).isNull();
+                softly.assertThat(response.getNickname()).isEqualTo("테스트유저");
+                softly.assertThat(response.getYearlyExerciseDays()).isEqualTo(0);
+                softly.assertThat(response.getExerciseCountInLast30Days()).isEqualTo(0);
+                softly.assertThat(response.getPreferredExercises()).isEmpty();
+            });
+        }
+
+        @Test
+        @DisplayName("회원을 찾을 수 없을 때 MEMBER_NOT_FOUND 예외를 던진다")
+        void getOtherMemberProfile_ThrowsMemberNotFound() {
+            // given
+            UUID otherMemberId = UUID.randomUUID();
+            BDDMockito.given(memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(otherMemberId))
+                    .willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> memberQueryService.getOtherMemberProfile(otherMemberId))
+                    .isInstanceOf(CustomException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
+
+            then(memberRepository).should(times(1)).findMemberProfileByMemberIdAndMemberDeletedAtNull(otherMemberId);
+        }
+
+        @Test
+        @DisplayName("본인 UUID로 다른 회원 프로필 조회 시 MEMBER_SELF_REQUEST_NOT_ALLOWED 예외를 던진다")
+        void getOtherMemberProfile_SelfRequest_ThrowsException() {
+            UUID selfId = UUID.randomUUID();
+
+            try (MockedStatic<UserContextHolder> ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
+                BDDMockito.given(UserContextHolder.getUserId()).willReturn(selfId);
+
+                assertThatThrownBy(() -> memberQueryService.getOtherMemberProfile(selfId))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_SELF_REQUEST_NOT_ALLOWED);
+            }
+        }
+
+    }
+
+    @Nested
+    @DisplayName("다른 회원 운동 달력 조회")
+    class GetOtherMemberCalendars {
+
+        @Test
+        @DisplayName("성공적으로 다른 회원의 운동 기록을 반환한다")
+        void getOtherMemberCalendars_Success() {
+            // given
+            UUID otherMemberId = UUID.randomUUID();
+            LocalDate startDate = LocalDate.now().minusDays(10);
+            LocalDate endDate = LocalDate.now();
+            Member mockMember = createMember();
+            ReflectionTestUtils.setField(mockMember, "memberId", otherMemberId);
+
+            List<FindExerciseRecordByPeriodResponseDto> mockResponse = List.of(
+                    new FindExerciseRecordByPeriodResponseDto(startDate, 1L),
+                    new FindExerciseRecordByPeriodResponseDto(endDate, 2L)
+            );
+
+            given(memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(otherMemberId))
+                    .willReturn(Optional.of(mockMember));
+            given(exerciseRepository.findExercisesByPeriod(otherMemberId, startDate, endDate))
+                    .willReturn(mockResponse);
+
+            // when
+            List<FindExerciseRecordByPeriodResponseDto> response = memberQueryService.getOtherMemberCalendars(otherMemberId, startDate, endDate);
+
+            // then
+            assertSoftly(softly -> {
+                softly.assertThat(response).isNotNull();
+                softly.assertThat(response).hasSize(2);
+                softly.assertThat(response.get(0).getDate()).isEqualTo(startDate);
+                softly.assertThat(response.get(0).getExerciseCount()).isEqualTo(1);
+            });
+
+            then(memberRepository).should(times(1)).findMemberProfileByMemberIdAndMemberDeletedAtNull(otherMemberId);
+            then(exerciseRepository).should(times(1)).findExercisesByPeriod(otherMemberId, startDate, endDate);
+        }
+
+        @Test
+        @DisplayName("회원을 찾을 수 없을 때 MEMBER_NOT_FOUND 예외를 던진다")
+        void getOtherMemberCalendars_ThrowsMemberNotFound() {
+            // given
+            UUID nonExistentMemberId = UUID.randomUUID();
+            LocalDate startDate = LocalDate.now().minusDays(10);
+            LocalDate endDate = LocalDate.now();
+
+            given(memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(nonExistentMemberId))
+                    .willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> memberQueryService.getOtherMemberCalendars(nonExistentMemberId, startDate, endDate))
+                    .isInstanceOf(CustomException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
+
+            then(memberRepository).should(times(1)).findMemberProfileByMemberIdAndMemberDeletedAtNull(nonExistentMemberId);
+            then(exerciseRepository).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("시작 날짜가 너무 과거일 때 INVALID_INPUT_VALUE 예외를 던진다")
+        void getOtherMemberCalendars_ThrowsInvalidInputValueForPastStartDate() {
+            // given
+            UUID otherMemberId = UUID.randomUUID();
+            LocalDate startDate = LocalDate.of(1945, 8, 14);
+            LocalDate endDate = LocalDate.now();
+            Member mockMember = createMember();
+
+            given(memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(otherMemberId))
+                    .willReturn(Optional.of(mockMember));
+
+            // when & then
+            assertThatThrownBy(() -> memberQueryService.getOtherMemberCalendars(otherMemberId, startDate, endDate))
+                    .isInstanceOf(CustomException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        @Test
+        @DisplayName("종료 날짜가 미래일 때 INVALID_INPUT_VALUE 예외를 던진다")
+        void getOtherMemberCalendars_ThrowsInvalidInputValueForFutureEndDate() {
+            // given
+            UUID otherMemberId = UUID.randomUUID();
+            LocalDate startDate = LocalDate.now().minusDays(10);
+            LocalDate endDate = LocalDate.now().plusDays(1);
+            Member mockMember = createMember();
+
+            given(memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(otherMemberId))
+                    .willReturn(Optional.of(mockMember));
+
+            // when & then
+            assertThatThrownBy(() -> memberQueryService.getOtherMemberCalendars(otherMemberId, startDate, endDate))
+                    .isInstanceOf(CustomException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        @Test
+        @DisplayName("시작 날짜가 종료 날짜보다 늦을 때 IMPOSSIBLE_INPUT_DATE 예외를 던진다")
+        void getOtherMemberCalendars_ThrowsImpossibleInputDate() {
+            // given
+            UUID otherMemberId = UUID.randomUUID();
+            LocalDate startDate = LocalDate.now();
+            LocalDate endDate = LocalDate.now().minusDays(1);
+            Member mockMember = createMember();
+
+            given(memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(otherMemberId))
+                    .willReturn(Optional.of(mockMember));
+
+            // when & then
+            assertThatThrownBy(() -> memberQueryService.getOtherMemberCalendars(otherMemberId, startDate, endDate))
+                    .isInstanceOf(CustomException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.IMPOSSIBLE_INPUT_DATE);
+        }
+
+        @Test
+        @DisplayName("본인 UUID로 다른 회원 운동 달력 조회 시 MEMBER_SELF_REQUEST_NOT_ALLOWED 예외를 던진다")
+        void getOtherMemberCalendars_SelfRequest_ThrowsException() {
+            UUID selfId = UUID.randomUUID();
+            LocalDate startDate = LocalDate.now().minusDays(10);
+            LocalDate endDate = LocalDate.now();
+
+            try (MockedStatic<UserContextHolder> ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
+                BDDMockito.given(UserContextHolder.getUserId()).willReturn(selfId);
+
+                assertThatThrownBy(() -> memberQueryService.getOtherMemberCalendars(selfId, startDate, endDate))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_SELF_REQUEST_NOT_ALLOWED);
+            }
         }
     }
 }

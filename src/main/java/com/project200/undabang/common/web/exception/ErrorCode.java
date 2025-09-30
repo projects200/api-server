@@ -22,6 +22,7 @@ public enum ErrorCode {
     LOGOUT_FAILED(401, "LOGOUT_FAILED", "로그아웃에 실패했습니다. 일치하는 회원을 찾을 수 없습니다."),
 
     // 사용자 관련 에러
+    MEMBER_SELF_REQUEST_NOT_ALLOWED(400, "MEMBER_SELF_REQUEST_NOT_ALLOWED", "자기 자신을 대상으로 한 요청은 유효하지 않습니다"),
     MEMBER_NOT_FOUND(404, "USER_NOT_FOUND", "해당 사용자를 찾을 수 없습니다."),
     MEMBER_EMAIL_DUPLICATED(409, "MEMBER_EMAIL_DUPLICATED", "이미 사용 중인 이메일입니다."),
     MEMBER_ID_DUPLICATED(409, "MEMBER_ID_DUPLICATED", "이미 가입한 회원 입니다."),
