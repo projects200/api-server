@@ -30,12 +30,18 @@ public class MatchServiceImpl implements MatchService {
     @Async("generalPurposeAsyncExecutor")
     @Transactional
     public void createMatchRecordBetweenMembers(UUID requesterId, UUID receiverId) {
-        Member requester = getMember(requesterId);
-        Member receiver = getMember(receiverId);
+        try {
+            Member requester = getMember(requesterId);
+            Member receiver = getMember(receiverId);
 
-        Match match = Match.from(requester, receiver);
+            Match match = Match.from(requester, receiver);
 
-        matchRepository.save(match);
+            matchRepository.save(match);
+        } catch (Exception e) {
+            log.error("매칭 기록 생성 실패! requesterId: {}, receiverId: {}", requesterId, receiverId, e);
+            // 필요하면 추후 슬랙 등 알림 로직 추가
+        }
+
     }
 
     /**

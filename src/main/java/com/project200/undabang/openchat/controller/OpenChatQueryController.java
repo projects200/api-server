@@ -20,8 +20,8 @@ public class OpenChatQueryController {
     private final OpenChatQueryService openChatQueryService;
 
     @GetMapping("/v1/members/{memberId}/open-chat")
-    public ResponseEntity<CommonResponse<GetOtherMemberOpenChatUrlResponse>> getOtherMemberOpenChatUrl(@PathVariable UUID memberId) {
+    public ResponseEntity<CommonResponse<GetOtherMemberOpenChatUrlResponse>> getOtherMemberOpenChatroomUrl(@PathVariable UUID memberId) {
 
-        return ResponseEntity.ok(CommonResponse.success(openChatQueryService.getOtherMemberOpenChatUrl(memberId)));
+        return ResponseEntity.ok(CommonResponse.success(openChatQueryService.getOtherMemberOpenChatroomUrl(memberId)));
     }
 }

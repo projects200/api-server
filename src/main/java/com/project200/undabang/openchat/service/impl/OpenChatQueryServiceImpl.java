@@ -30,8 +30,8 @@ public class OpenChatQueryServiceImpl implements OpenChatQueryService {
      * 매칭 서비스 호출을 통해 회원 간 매칭 정보를 생성하며, 추후 성공/실패/취소 상태는 업데이트 됩니다.
      */
     @Override
-    @Transactional(readOnly = true)
-    public GetOtherMemberOpenChatUrlResponse getOtherMemberOpenChatUrl(UUID memberId) {
+    @Transactional
+    public GetOtherMemberOpenChatUrlResponse getOtherMemberOpenChatroomUrl(UUID memberId) {
         OpenChatRoom openChatRoom = getMemberOpenChatRoom(memberId);
         UUID requesterMemberId = UserContextHolder.getUserId();
 
@@ -48,12 +48,15 @@ public class OpenChatQueryServiceImpl implements OpenChatQueryService {
      * 해당 멤버 ID로 조회된 오픈 채팅방 정보가 없거나 이미 삭제된 경우 예외를 발생시킵니다.
      */
     private OpenChatRoom getMemberOpenChatRoom(UUID memberId) {
-        if (!memberRepository.existsById(memberId)) {
-            throw new CustomException(ErrorCode.MEMBER_NOT_FOUND);
+        OpenChatRoom openChatRoom = openChatRoomRepository.findByMember_MemberIdAndDeletedAtNull(memberId).orElse(null);
+
+        if (openChatRoom == null) {
+            if (!memberRepository.existsById(memberId)) {
+                throw new CustomException(ErrorCode.MEMBER_NOT_FOUND);
+            }
+            throw new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND);
         }
 
-        return openChatRoomRepository.findByMember_MemberIdAndDeletedAtNull(memberId).orElseThrow(
-                () -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND)
-        );
+        return openChatRoom;
     }
 }

@@ -5,5 +5,5 @@ import com.project200.undabang.openchat.dto.response.GetOtherMemberOpenChatUrlRe
 import java.util.UUID;
 
 public interface OpenChatQueryService {
-    GetOtherMemberOpenChatUrlResponse getOtherMemberOpenChatUrl(UUID memberId);
+    GetOtherMemberOpenChatUrlResponse getOtherMemberOpenChatroomUrl(UUID memberId);
 }
