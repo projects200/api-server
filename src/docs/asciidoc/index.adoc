@@ -117,6 +117,7 @@ include::overview/공통-개발-참고-사항.adoc[]
 
 - 다른 회원의 프로필 조회 API #GET# `/api/v1/members/{memberId}/profile`
 
+- 다른 회원의 캘린더 조회 API #GET# `/api/v1/members/{memberId}/calendars?start={startDate}&end={endDate}`
 
 === xref:운동-API.html[운동 API]
 

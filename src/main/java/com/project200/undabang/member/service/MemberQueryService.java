@@ -1,7 +1,10 @@
 package com.project200.undabang.member.service;
 
+import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodResponseDto;
 import com.project200.undabang.member.dto.response.*;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 public interface MemberQueryService {
@@ -18,4 +21,6 @@ public interface MemberQueryService {
     CheckNicknameDuplicateResponse checkDuplicateNickname(String nickname);
 
     GetOtherMemberProfileResponse getOtherMemberProfile(UUID memberId);
+
+    List<FindExerciseRecordByPeriodResponseDto> getOtherMemberCalendars(UUID memberId, LocalDate startDate, LocalDate endDate);
 }

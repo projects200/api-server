@@ -5,6 +5,7 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
+import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodResponseDto;
 import com.project200.undabang.exercise.entity.ExerciseType;
 import com.project200.undabang.member.dto.response.GetOtherMemberProfileResponse;
 import com.project200.undabang.member.dto.response.MemberProfileResponse;
@@ -33,13 +34,11 @@ import java.util.UUID;
 
 import static com.project200.undabang.configuration.DocumentFormatGenerator.getTypeFormat;
 import static com.project200.undabang.configuration.HeadersGenerator.getCommonApiHeaders;
-import static com.project200.undabang.configuration.RestDocsUtils.HEADER_ACCESS_TOKEN;
-import static com.project200.undabang.configuration.RestDocsUtils.commonResponseFields;
+import static com.project200.undabang.configuration.RestDocsUtils.*;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
-import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -393,6 +392,125 @@ class MemberQueryControllerTest extends AbstractRestDocSupport {
 
             // when & then
             mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/members/{memberId}/profile", otherMemberId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isUnauthorized())
+                    .andDo(print());
+        }
+    }
+
+    @Nested
+    @DisplayName("getOtherMemberCalendars 메소드는")
+    class GetOtherMemberCalendars {
+
+        @Test
+        @DisplayName("다른 회원의 운동 달력 조회를 성공한다")
+        void getOtherMemberCalendars_success() throws Exception {
+            // given
+            UUID currentMemberId = UUID.randomUUID();
+            UUID otherMemberId = UUID.randomUUID();
+            LocalDate startDate = LocalDate.now().minusDays(10);
+            LocalDate endDate = LocalDate.now();
+
+            List<FindExerciseRecordByPeriodResponseDto> respDto = List.of(
+                    new FindExerciseRecordByPeriodResponseDto(startDate, 1L),
+                    new FindExerciseRecordByPeriodResponseDto(endDate, 2L)
+            );
+
+            BDDMockito.given(memberQueryService.getOtherMemberCalendars(otherMemberId, startDate, endDate))
+                    .willReturn(respDto);
+
+            // when
+            String response = mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/members/{memberId}/calendars", otherMemberId)
+                            .param("start", startDate.toString())
+                            .param("end", endDate.toString())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(currentMemberId)))
+                    .andExpect(status().isOk())
+                    .andDo(document.document(
+                            requestHeaders(HEADER_ACCESS_TOKEN),
+                            pathParameters(
+                                    parameterWithName("memberId").attributes(getTypeFormat(JsonFieldType.STRING)).description("조회할 회원의 식별자(UUID) 정보를 나타냅니다.")
+                            ),
+                            queryParameters(
+                                    parameterWithName("start").attributes(getTypeFormat(JsonFieldType.STRING)).description("운동 기록을 조회할 시작 날짜입니다. 형식은 ISO 8601 (YYYY-MM-DD)입니다. 시작 날짜는 오늘 이전이어야 합니다."),
+                                    parameterWithName("end").attributes(getTypeFormat(JsonFieldType.STRING)).description("운동 기록을 조회할 종료 날짜입니다. 형식은 ISO 8601 (YYYY-MM-DD)입니다.")
+                            ),
+                            responseFields(commonResponseFieldsForList(
+                                    fieldWithPath("data[].date").type(JsonFieldType.STRING).description("운동한 날짜를 의미합니다."),
+                                    fieldWithPath("data[].exerciseCount").type(JsonFieldType.NUMBER).description("해당 날짜의 운동 횟수를 의미합니다.")
+                            ))
+                    )).andReturn().getResponse().getContentAsString();
+
+            // then
+            CommonResponse<List<FindExerciseRecordByPeriodResponseDto>> expectedData = CommonResponse.success(respDto);
+            String expected = objectMapper.writeValueAsString(expectedData);
+            Assertions.assertThat(response).as("응답 본문 검증").isEqualTo(expected);
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 회원 ID로 조회 시 실패한다")
+        void getOtherMemberCalendars_Failed_MemberNotFound() throws Exception {
+            // given
+            UUID currentMemberId = UUID.randomUUID();
+            UUID otherMemberId = UUID.randomUUID();
+            LocalDate startDate = LocalDate.now().minusDays(10);
+            LocalDate endDate = LocalDate.now();
+
+            BDDMockito.given(memberQueryService.getOtherMemberCalendars(otherMemberId, startDate, endDate))
+                    .willThrow(new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+            // when
+            mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/members/{memberId}/calendars", otherMemberId)
+                            .param("start", startDate.toString())
+                            .param("end", endDate.toString())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(currentMemberId)))
+                    .andExpect(status().isNotFound());
+
+            // then
+            BDDMockito.then(memberQueryService).should(BDDMockito.times(1)).getOtherMemberCalendars(otherMemberId, startDate, endDate);
+        }
+
+        @Test
+        @DisplayName("잘못된 날짜 범위로 조회 시 실패한다")
+        void getOtherMemberCalendars_Failed_InvalidDateRange() throws Exception {
+            // given
+            UUID currentMemberId = UUID.randomUUID();
+            UUID otherMemberId = UUID.randomUUID();
+            LocalDate startDate = LocalDate.now();
+            LocalDate endDate = LocalDate.now().minusDays(1); // 시작 날짜가 종료 날짜보다 늦음
+
+            BDDMockito.given(memberQueryService.getOtherMemberCalendars(otherMemberId, startDate, endDate))
+                    .willThrow(new CustomException(ErrorCode.IMPOSSIBLE_INPUT_DATE));
+
+            // when
+            mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/members/{memberId}/calendars", otherMemberId)
+                            .param("start", startDate.toString())
+                            .param("end", endDate.toString())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(currentMemberId)))
+                    .andExpect(status().isBadRequest());
+
+            // then
+            BDDMockito.then(memberQueryService).should(BDDMockito.times(1)).getOtherMemberCalendars(otherMemberId, startDate, endDate);
+        }
+
+        @Test
+        @DisplayName("Access 토큰이 없는 경우 401 Unauthorized 오류를 반환한다")
+        public void getOtherMemberCalendars_Failed_Not_Having_Token() throws Exception {
+            // given
+            UUID otherMemberId = UUID.randomUUID();
+            LocalDate startDate = LocalDate.now().minusDays(10);
+            LocalDate endDate = LocalDate.now();
+
+            // when & then
+            mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/members/{memberId}/calendars", otherMemberId)
+                            .param("start", startDate.toString())
+                            .param("end", endDate.toString())
                             .contentType(MediaType.APPLICATION_JSON)
                             .accept(MediaType.APPLICATION_JSON))
                     .andExpect(status().isUnauthorized())

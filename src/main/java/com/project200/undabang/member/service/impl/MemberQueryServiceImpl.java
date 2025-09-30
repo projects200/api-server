@@ -3,6 +3,8 @@ package com.project200.undabang.member.service.impl;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
+import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodResponseDto;
+import com.project200.undabang.exercise.repository.ExerciseRepository;
 import com.project200.undabang.member.dto.response.*;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
@@ -13,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -21,10 +25,36 @@ import java.util.UUID;
 public class MemberQueryServiceImpl implements MemberQueryService {
 
     private final MemberRepository memberRepository;
+    private final ExerciseRepository exerciseRepository;
 
     private final PolicyService policyService;
 
     private static final int RECENT_EXERCISE_PERIOD_DAYS = 30; // 최근 운동기간
+
+    /**
+     * 특정 회원의 운동 기록을 지정된 기간 동안 조회합니다.
+     * 조회 대상 회원은 삭제된 상태가 아니어야 하며, 기간이 유효하지 않을 경우 예외가 발생합니다.
+     * 기한은 광복부터 오늘 이내여야 하며, 시작날짜는 끝 날짜를 넘을 수 없습니다.
+     */
+    @Override
+    public List<FindExerciseRecordByPeriodResponseDto> getOtherMemberCalendars(UUID memberId, LocalDate startDate, LocalDate endDate) {
+        validateNotSelfRequest(memberId);
+
+        Member otherMember = memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(memberId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        // TODO : 추후 차단 기능 개발 시, 다른 회원이 차단한 경우 검색 안되게 하는 기능 추가
+
+        if (startDate.isBefore(LocalDate.of(1945, 8, 15)) || endDate.isAfter(LocalDate.now())) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        if (startDate.isAfter(endDate)) {
+            throw new CustomException(ErrorCode.IMPOSSIBLE_INPUT_DATE);
+        }
+
+        return exerciseRepository.findExercisesByPeriod(otherMember.getMemberId(), startDate, endDate);
+    }
 
     /**
      * 다른 사용자의 멤버 프로필 정보를 조회합니다.
@@ -36,11 +66,7 @@ public class MemberQueryServiceImpl implements MemberQueryService {
      */
     @Override
     public GetOtherMemberProfileResponse getOtherMemberProfile(UUID memberId) {
-        UUID currentMemberId = UserContextHolder.getUserId();
-
-        if (memberId.equals(currentMemberId)) {
-            throw new CustomException(ErrorCode.MEMBER_SELF_REQUEST_NOT_ALLOWED);
-        }
+        validateNotSelfRequest(memberId);
 
         Member otherMember = memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(memberId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
@@ -126,5 +152,17 @@ public class MemberQueryServiceImpl implements MemberQueryService {
     private Member findMemberById() {
         return memberRepository.findByMemberIdAndMemberDeletedAtNull(UserContextHolder.getUserId())
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+    }
+
+    /**
+     * 사용자가 본인에게 요청을 보내는 것을 방지하기 위한 검증 메서드입니다.
+     * 요청한 사용자의 ID가 확인 대상 ID와 동일할 경우 예외를 발생시킵니다.
+     */
+    private void validateNotSelfRequest(UUID memberId) {
+        UUID currentUserId = UserContextHolder.getUserId();
+
+        if (memberId.equals(currentUserId)) {
+            throw new CustomException(ErrorCode.MEMBER_SELF_REQUEST_NOT_ALLOWED);
+        }
     }
 }
