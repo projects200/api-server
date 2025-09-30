@@ -6,7 +6,9 @@ import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.openchat.dto.request.CreateOpenChatRoomRequest;
+import com.project200.undabang.openchat.dto.request.UpdateOpenChatRoomRequest;
 import com.project200.undabang.openchat.dto.response.CreateOpenChatRoomResponse;
+import com.project200.undabang.openchat.dto.response.UpdateOpenChatRoomResponse;
 import com.project200.undabang.openchat.entity.OpenChatRoom;
 import com.project200.undabang.openchat.repository.OpenChatRoomRepository;
 import com.project200.undabang.openchat.service.OpenChatRoomCommandService;
@@ -27,10 +29,7 @@ public class OpenChatRoomCommandServiceImpl implements OpenChatRoomCommandServic
 
     /**
      * 새로운 오픈채팅방을 생성합니다.
-     *
-     * @param request 오픈채팅방 생성 요청 정보를 담고 있는 객체
-     * @return 생성된 오픈채팅방의 ID를 포함한 응답 객체
-     * @throws CustomException 오픈채팅방 URL 중복, 회원 정보 미존재, 또는 이미 존재하는 오픈채팅방이 있는 경우 발생
+     * 요청된 URL의 정규화 및 유효성 검사를 수행하며, 생성 중 데이터 충돌이 발생할 경우 예외를 반환합니다.
      */
     @Override
     @Transactional
@@ -55,8 +54,38 @@ public class OpenChatRoomCommandServiceImpl implements OpenChatRoomCommandServic
     }
 
     /**
+     * 주어진 오픈채팅방 ID와 요청 데이터를 기반으로 오픈채팅방 정보를 업데이트합니다.
+     */
+    @Override
+    @Transactional
+    public UpdateOpenChatRoomResponse updateOpenChatRoom(Long openChatRoomId, UpdateOpenChatRoomRequest request) {
+        Member member = getMember(UserContextHolder.getUserId());
+        String openChatUrl = normalizeUrl(request.getOpenChatroomUrl());
+
+        OpenChatRoom openChatRoom = getOpenChatRoom(member, openChatRoomId);
+
+        if (openChatRoom.isSameUrl(openChatUrl)) {
+            return UpdateOpenChatRoomResponse.of(openChatRoomId);
+        }
+
+        validateUrlIsUniqueForUpdate(openChatUrl, openChatRoomId);
+
+        openChatRoom.updateOpenChatUrl(openChatUrl);
+
+        return UpdateOpenChatRoomResponse.of(openChatRoom.getId());
+    }
+
+    /**
+     * 주어진 오픈채팅방 URL이 중복되지 않았는지 검사합니다.
+     */
+    private void validateUrlIsUniqueForUpdate(String openChatUrl, Long currentChatRoomId) {
+        if (openChatRoomRepository.existsByUrlAndIdNotAndDeletedAtNull(openChatUrl, currentChatRoomId)) {
+            throw new CustomException(ErrorCode.OPEN_CHAT_ROOM_URL_DUPLICATED);
+        }
+    }
+
+    /**
      * 오픈채팅방 생성을 위한 유효성 검사를 수행합니다.
-     * <p>
      * 검사 대상
      * 1. 회원이 이미 오픈 채팅방을 보유중인지 확인
      * 2. 생성하려는 URL이 다른 사용자가 사용중인 URL인지 확인
@@ -88,5 +117,22 @@ public class OpenChatRoomCommandServiceImpl implements OpenChatRoomCommandServic
      */
     private Member getMember(UUID memberId) {
         return memberRepository.findById(memberId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+    }
+
+    /**
+     * 지정된 회원과 오픈채팅방 ID를 기반으로 오픈채팅방 정보를 조회합니다.
+     * 회원이 소유하지 않은 오픈채팅방에 접근할 경우 예외를 발생시킵니다.
+     */
+    private OpenChatRoom getOpenChatRoom(Member member, Long openChatId) {
+        OpenChatRoom openChatRoom = openChatRoomRepository.findByIdAndDeletedAtNull(openChatId).orElseThrow(
+                () -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND)
+        );
+
+        // 자신이 소유한 오픈 채팅방이 아닐경우 403 에러
+        if (!member.getMemberId().equals(openChatRoom.getMember().getMemberId())) {
+            throw new CustomException(ErrorCode.AUTHORIZATION_DENIED);
+        }
+
+        return openChatRoom;
     }
 }

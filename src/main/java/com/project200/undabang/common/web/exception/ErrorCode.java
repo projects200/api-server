@@ -66,7 +66,8 @@ public enum ErrorCode {
 
     // 오픈 채팅 관련 에러
     OPEN_CHAT_ROOM_ALREADY_EXIST(409, "OPEN_CHAT_ROOM_ALREADY_EXIST", "이미 오픈 채팅방을 보유한 회원입니다."),
-    OPEN_CHAT_ROOM_URL_DUPLICATED(409, "OPEN_CHAT_ROOM_URL_DUPLICATED", "이미 사용중인 오픈 채팅 링크입니다");
+    OPEN_CHAT_ROOM_URL_DUPLICATED(409, "OPEN_CHAT_ROOM_URL_DUPLICATED", "이미 사용중인 오픈 채팅 링크입니다"),
+    OPEN_CHAT_ROOM_NOT_FOUND(404, "OPEN_CHAT_ROOM_NOT_FOUND", "존재하지 않는 오픈 채팅방 입니다.");
 
     private final HttpStatusCode status;
     private final String code;
