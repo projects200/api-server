@@ -2,6 +2,7 @@ package com.project200.undabang.member.entity;
 
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
+import com.project200.undabang.match.entity.Match;
 import com.project200.undabang.member.dto.command.SignUpMemberCommand;
 import com.project200.undabang.member.enums.MemberGender;
 import com.project200.undabang.openchat.entity.OpenChatRoom;
@@ -94,6 +95,13 @@ public class Member {
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY)
     @Where(clause = "open_chatroom_deleted_at IS NULL")
     private List<OpenChatRoom> activeOpenChatRoomList;
+
+    @OneToMany(mappedBy = "requester")
+    private List<Match> requestedMatches;
+
+    @OneToMany(mappedBy = "receiver")
+    private List<Match> receivedMatches;
+
 
 
     /**
