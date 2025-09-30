@@ -35,6 +35,11 @@ public class OpenChatQueryServiceImpl implements OpenChatQueryService {
         OpenChatRoom openChatRoom = getMemberOpenChatRoom(memberId);
         UUID requesterMemberId = UserContextHolder.getUserId();
 
+        if (requesterMemberId.equals(memberId)) {
+            // 자신의 정보로 조회하려는 경우는 400 에러 반환
+            throw new CustomException(ErrorCode.MEMBER_SELF_REQUEST_NOT_ALLOWED);
+        }
+
         // 회원간의 매칭 정보를 연관시킴
         // todo : 현재는 매칭이 성공하지 않아도 비동기적으로 DB에 저장하도록 설정함. 차후에는 매칭 성공/실패/취소 여부와 매칭 처리 시간을 저장해야 함 (일단은 보류상태로 저장).
         matchService.createMatchRecordBetweenMembers(requesterMemberId, memberId);
