@@ -1,0 +1,38 @@
+== 오픈 채팅 생성 API
+
+=== 설명
+
+- #POST# `/api/v1/open-chat`
+- 회원이 자신의 카카오톡 오픈 채팅 URL을 등록하는 API 입니다.
+- 회원은 단 하나의 오픈 채팅 URL을 등록할 수 있습니다.
+- 회원은 이미 존재하는 오픈 채팅 URL로 새로운 오픈 채팅을 생성할 수 없습니다.
+- 오픈 채팅은 반드시 카카오톡에서 제공하는 URL을 입력해야 합니다.
+
+=== 개발 이력
+
+- Sprint 12 (2025-09-30): 기능 개발이 완료되었습니다.
+
+=== 개발 참고 사항
+
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+
+operation::create-open-chat-room/create-open-chat-room_-success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+
+operation::create-open-chat-room/create-open-chat-room_-success[snippets="request-headers,request-fields,response-fields"]
+
+==== 응답 상태 코드
+
+|===
+|상태 코드|설명
+|201|리소스가 성공적으로 생성되었습니다.
+|401|인증되지 않은 요청입니다. Access Token이 없거나 유효하지 않습니다.
+|403|권한이 없는 요청입니다.
+|404|존재하지 않는 회원입니다.
+|409|회원이 이미 오픈 채팅방을 보유하고 있습니다. +
+이미 사용중인 오픈 채팅 URL입니다.
+|===
+

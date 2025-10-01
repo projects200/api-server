@@ -192,3 +192,15 @@ include::overview/공통-개발-참고-사항.adoc[]
 - 운동 장소 이름 수정 API #PATCH# `/api/v1/exercise-locations/{locationId}`
 
 - 운동 장소 삭제 API #DELETE# `/api/v1/exercise-locations/{locationId}`
+
+=== xref:카카오톡-오픈-채팅-API.html[오픈 채팅 API]
+
+- 오픈 채팅 생성 API #POST# `/api/v1/open-chat`
+
+- 오픈 채팅 수정 API #PATCH# `/api/v1/open-chats/{openChatId}`
+
+- 오픈 채팅 삭제 API #DELETE# `/api/v1/open-chats/{openChatId}`
+
+- 회원의 오픈 채팅 URL 조회 #GET# `/api/v1/open-chat`
+
+- 다른 회원의 오픈 채팅 URL 조회 #GET# `/api/v1/members/{memberId}/open-chat`

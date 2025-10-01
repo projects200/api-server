@@ -42,7 +42,7 @@ class OpenChatRoomQueryServiceImplTest {
     private MatchService matchService;
 
     @InjectMocks
-    private OpenChatRoomRoomQueryServiceImpl openChatQueryService;
+    private OpenChatRoomQueryServiceImpl openChatQueryService;
 
     private OpenChatRoom createOpenChatRoom(String url) {
         OpenChatRoom openChatRoom = mock(OpenChatRoom.class);

@@ -20,7 +20,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class OpenChatRoomRoomQueryServiceImpl implements OpenChatRoomQueryService {
+public class OpenChatRoomQueryServiceImpl implements OpenChatRoomQueryService {
 
     private final OpenChatRoomRepository openChatRoomRepository;
     private final MemberRepository memberRepository;
