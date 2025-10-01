@@ -12,6 +12,5 @@ public interface OpenChatRoomRepository extends JpaRepository<OpenChatRoom, Long
     boolean existsByUrlAndIdNotAndDeletedAtNull(String url, Long id);
     boolean existsByUrlAndDeletedAtNull(String url);
     Optional<OpenChatRoom> findByIdAndDeletedAtNull(Long id);
-
     Optional<OpenChatRoom> findByMember_MemberIdAndDeletedAtNull(UUID memberId);
 }
