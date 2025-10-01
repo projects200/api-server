@@ -23,9 +23,4 @@ public class PolicyGroupMapping {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "policy_groups_id", nullable = false)
     private PolicyGroup policyGroup;
-
-    public PolicyGroupMapping(Policy policy, PolicyGroup policyGroup) {
-        this.policy = policy;
-        this.policyGroup = policyGroup;
-    }
 }
