@@ -30,5 +30,6 @@ operation::get-members-exercise-locations/get-members-exercise-locations_-succes
 |200|요청이 성공적으로 처리되었습니다. +
 다른 회원들의 운동 장소 정보를 반환합니다.
 |401|인증되지 않은 요청입니다. Access Token이 없거나 유효하지 않습니다
+|404|존재하지 않는 회원입니다.
 |===
 
