@@ -86,21 +86,26 @@ public class Member {
     @JoinColumn(name = "member_picture_id")
     private MemberPicture memberPicture;
 
+    @Builder.Default
     @OneToMany(mappedBy = "member")
     private List<PreferredExercise> preferredExercises = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "member")
     private List<ExerciseLocation> exerciseLocations = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY)
     @Where(clause = "open_chatroom_deleted_at IS NULL")
-    private List<OpenChatRoom> activeOpenChatRoomList;
+    private List<OpenChatRoom> activeOpenChatRoomList = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "requester")
-    private List<Match> requestedMatches;
+    private List<Match> requestedMatches = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "receiver")
-    private List<Match> receivedMatches;
+    private List<Match> receivedMatches = new ArrayList<>();
 
 
 

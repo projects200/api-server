@@ -9,7 +9,7 @@ import com.project200.undabang.openchat.dto.response.GetOpenChatUrlResponse;
 import com.project200.undabang.openchat.dto.response.GetOtherMemberOpenChatUrlResponse;
 import com.project200.undabang.openchat.entity.OpenChatRoom;
 import com.project200.undabang.openchat.repository.OpenChatRoomRepository;
-import com.project200.undabang.openchat.service.OpenChatQueryService;
+import com.project200.undabang.openchat.service.OpenChatRoomQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,7 +20,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class OpenChatQueryServiceImpl implements OpenChatQueryService {
+public class OpenChatRoomQueryServiceImpl implements OpenChatRoomQueryService {
 
     private final OpenChatRoomRepository openChatRoomRepository;
     private final MemberRepository memberRepository;
