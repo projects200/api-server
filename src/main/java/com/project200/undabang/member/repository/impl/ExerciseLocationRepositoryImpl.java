@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 import static com.querydsl.core.group.GroupBy.groupBy;
 import static com.querydsl.core.group.GroupBy.list;
@@ -30,7 +31,7 @@ public class ExerciseLocationRepositoryImpl implements ExerciseLocationRepositor
      * @return 회원의 운동 위치 및 프로필 정보를 담은 GetMembersExerciseLocationsResponse 객체의 리스트
      */
     @Override
-    public List<GetMembersExerciseLocationsResponse> getMembersExerciseLocations() {
+    public List<GetMembersExerciseLocationsResponse> getMembersExerciseLocations(UUID currentMemberId) {
         QMember member = QMember.member;
         QMemberPicture memberPicture = QMemberPicture.memberPicture;
         QExerciseLocation exerciseLocation = QExerciseLocation.exerciseLocation;
@@ -41,7 +42,8 @@ public class ExerciseLocationRepositoryImpl implements ExerciseLocationRepositor
                 .leftJoin(memberPicture).on(member.memberPicture.id.eq(memberPicture.id))
                 .leftJoin(memberPicture.picture, picture)
                 .where(exerciseLocation.exerciseLocationDeletedAt.isNull() // 삭제된 운동장소 제외
-                        .and(member.memberDeletedAt.isNull())) // 탈퇴한 회원 제외
+                        .and(member.memberDeletedAt.isNull()) // 탈퇴한 회원 제외
+                        .and(member.memberId.ne(currentMemberId)))
                 .transform(
                         groupBy(member.memberId).list(
                                 Projections.constructor(

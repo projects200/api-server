@@ -27,14 +27,16 @@ public class ExerciseLocationQueryServiceImpl implements ExerciseLocationQuerySe
     private final MemberRepository memberRepository;
 
     /**
-     * 회원들의 운동 위치 정보를 조회하여 반환합니다.
+     * 현재 사용자를 제외한 다른 회원들의 운동 위치 정보를 가져옵니다.
+     * 데이터는 GetMembersExerciseLocationsResponse 객체의 리스트 형태로 반환됩니다.
      *
-     * @return 회원들의 운동 위치 정보를 담고 있는 GetMembersExerciseLocationsResponse 객체 리스트
+     * @return 다른 회원들의 운동 위치 정보를 포함하는 GetMembersExerciseLocationsResponse 객체 리스트
      */
     @Override
     public List<GetMembersExerciseLocationsResponse> getMembersExerciseLocations() {
+        Member member = getMember(UserContextHolder.getUserId());
 
-        return exerciseLocationRepository.getMembersExerciseLocations();
+        return exerciseLocationRepository.getMembersExerciseLocations(member.getMemberId());
     }
 
     /**
