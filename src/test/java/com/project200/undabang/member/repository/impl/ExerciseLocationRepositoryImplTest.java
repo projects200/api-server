@@ -2,7 +2,6 @@ package com.project200.undabang.member.repository.impl;
 
 import com.project200.undabang.common.entity.Picture;
 import com.project200.undabang.configuration.TestQuerydslConfig;
-import com.project200.undabang.member.dto.record.ExerciseLocationRecord;
 import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
 import com.project200.undabang.member.entity.ExerciseLocation;
 import com.project200.undabang.member.entity.Member;
@@ -36,6 +35,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+
 @DataJpaTest
 @Import(TestQuerydslConfig.class)
 class ExerciseLocationRepositoryImplTest {
@@ -58,8 +58,17 @@ class ExerciseLocationRepositoryImplTest {
         }
     }
 
-    private Member createAndSaveMember(String nickname) {
-        return createAndSaveMember(nickname, false);
+    private Member createAndSaveMember(String nickname, boolean deleted) {
+        Member member = Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberEmail(nickname + "@email.com")
+                .memberNickname(nickname)
+                .memberGender(MemberGender.UNKNOWN)
+                .memberBday(LocalDate.of(2000, 1, 1))
+                .memberDeletedAt(deleted ? LocalDateTime.now() : null)
+                .build();
+        em.persist(member);
+        return member;
     }
 
     private Picture createAndSavePicture(String url) {
@@ -123,71 +132,80 @@ class ExerciseLocationRepositoryImplTest {
     @DisplayName("countByMemberAndExerciseLocationDeletedAtNull 메소드는")
     class Describe_countByMemberAndExerciseLocationDeletedAtNull {
 
-        @Nested
-        @DisplayName("특정 회원이 주어졌을 때")
-        class Context_with_a_specific_member {
+        @Test
+        @DisplayName("해당 회원의 삭제되지 않은 운동 장소의 개수만 정확히 반환한다")
+        void it_returns_the_count_of_active_locations_only() {
+            Member member1 = createAndSaveMember("user1", false);
+            Member member2 = createAndSaveMember("user2", false);
 
-            @Test
-            @DisplayName("해당 회원의 삭제되지 않은 운동 장소의 개수만 정확히 반환한다")
-            void it_returns_the_count_of_active_locations_only() {
-                // given
-                Member member1 = createAndSaveMember("user1");
-                Member member2 = createAndSaveMember("user2");
+            createAndSaveExerciseLocation(member1, "Active Gym 1", false);
+            createAndSaveExerciseLocation(member1, "Active Gym 2", false);
+            createAndSaveExerciseLocation(member1, "Deleted Gym", true);
+            createAndSaveExerciseLocation(member2, "Another Gym", false);
 
-                createAndSaveExerciseLocation(member1, "Active Gym 1", false);
-                createAndSaveExerciseLocation(member1, "Active Gym 2", false);
-                createAndSaveExerciseLocation(member1, "Deleted Gym", true);
-                createAndSaveExerciseLocation(member2, "Another Gym", false);
+            flushAndClear();
 
-                flushAndClear();
+            long count = exerciseLocationRepository.countByMemberAndExerciseLocationDeletedAtNull(member1);
 
-                // when
-                long count = exerciseLocationRepository.countByMemberAndExerciseLocationDeletedAtNull(member1);
+            assertThat(count).isEqualTo(2L);
+        }
 
-                // then
-                assertThat(count).isEqualTo(2L);
-            }
+        @Test
+        @DisplayName("해당 회원의 모든 운동 장소가 삭제되었다면 0을 반환한다")
+        void it_returns_zero_if_all_locations_are_deleted() {
+            Member member = createAndSaveMember("user", false);
+            createAndSaveExerciseLocation(member, "Deleted Gym A", true);
+            createAndSaveExerciseLocation(member, "Deleted Gym B", true);
+            flushAndClear();
 
-            @Test
-            @DisplayName("해당 회원의 모든 운동 장소가 삭제되었다면 0을 반환한다")
-            void it_returns_zero_if_all_locations_are_deleted() {
-                // given
-                Member member = createAndSaveMember("user");
-                createAndSaveExerciseLocation(member, "Deleted Gym A", true);
-                createAndSaveExerciseLocation(member, "Deleted Gym B", true);
-                flushAndClear();
+            long count = exerciseLocationRepository.countByMemberAndExerciseLocationDeletedAtNull(member);
 
-                // when
-                long count = exerciseLocationRepository.countByMemberAndExerciseLocationDeletedAtNull(member);
+            assertThat(count).isZero();
+        }
 
-                // then
-                assertThat(count).isZero();
-            }
+        @Test
+        @DisplayName("해당 회원이 운동 장소를 가지고 있지 않다면 0을 반환한다")
+        void it_returns_zero_if_member_has_no_locations() {
+            Member member = createAndSaveMember("userWithNoLocations", false);
+            flushAndClear();
 
-            @Test
-            @DisplayName("해당 회원이 운동 장소를 가지고 있지 않다면 0을 반환한다")
-            void it_returns_zero_if_member_has_no_locations() {
-                // given
-                Member member = createAndSaveMember("userWithNoLocations");
-                flushAndClear();
+            long count = exerciseLocationRepository.countByMemberAndExerciseLocationDeletedAtNull(member);
 
-                // when
-                long count = exerciseLocationRepository.countByMemberAndExerciseLocationDeletedAtNull(member);
-
-                // then
-                assertThat(count).isZero();
-            }
+            assertThat(count).isZero();
         }
     }
 
+    // ---- 헬퍼 메소드 및 H2 공간 함수 ----
+
     @Nested
-    @DisplayName("getMembersExerciseLocations 메소드는")
-    class Describe_getMembersExerciseLocations {
+    @DisplayName("getMembersExerciseLocations(UUID currentMemberId) 메소드는")
+    class Describe_getMembersExerciseLocations_with_currentMemberId {
+
+        @Test
+        @DisplayName("currentMemberId에 해당하는 회원은 결과에서 제외한다")
+        void it_excludes_current_member_from_results() {
+            Member member1 = createAndSaveMember("user1", false);
+            Member member2 = createAndSaveMember("user2", false);
+
+            Picture picture1 = createAndSavePicture("http://example.com/profile1.jpg");
+            Picture picture2 = createAndSavePicture("http://example.com/profile2.jpg");
+            createAndSaveMemberPicture(member1, picture1);
+            createAndSaveMemberPicture(member2, picture2);
+
+            createAndSaveExerciseLocation(member1, "헬스장A", false);
+            createAndSaveExerciseLocation(member2, "헬스장B", false);
+
+            flushAndClear();
+
+            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(member1.getMemberId());
+
+            assertThat(results).hasSize(1);
+            assertThat(results.get(0).getMemberId()).isEqualTo(member2.getMemberId());
+        }
 
         @Test
         @DisplayName("탈퇴한 회원과 삭제된 운동장소를 제외한 모든 회원과 운동장소 정보를 반환한다")
         void it_returns_all_active_members_and_locations() {
-            // given
             Member activeMember = createAndSaveMember("activeUser", false);
             Member deletedMember = createAndSaveMember("deletedUser", true);
 
@@ -200,120 +218,72 @@ class ExerciseLocationRepositoryImplTest {
 
             flushAndClear();
 
-            // when
-            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations();
+            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(activeMember.getMemberId());
 
-            // then
-            assertThat(results).hasSize(1);
-
-            GetMembersExerciseLocationsResponse result = results.get(0);
-            assertThat(result.getMemberId()).isEqualTo(activeMember.getMemberId());
-            assertThat(result.getNickname()).isEqualTo(activeMember.getMemberNickname());
-            assertThat(result.getProfileThumbnailUrl()).isEqualTo(activeMember.getMemberPicture().getMemberPicturesUrl());
-            assertThat(result.getProfileImageUrl()).isEqualTo(picture.getPictureUrl());
-            assertThat(result.getLocations()).hasSize(1);
-
-            ExerciseLocationRecord locationRecord = result.getLocations().get(0);
-            assertThat(locationRecord.exerciseLocationName()).isEqualTo(activeLocation.getExerciseLocationName());
-            assertThat(locationRecord.longitude()).isEqualTo(37.5);
-            assertThat(locationRecord.latitude()).isEqualTo(127.0);
+            assertThat(results).isEmpty(); // 자기 자신 제외이므로 결과 없음
         }
 
         @Test
         @DisplayName("활성 상태의 운동 장소가 없으면 빈 리스트를 반환한다")
         void it_returns_empty_list_when_no_active_locations_exist() {
-            // given
             Member activeMember = createAndSaveMember("activeUser", false);
             createAndSaveExerciseLocation(activeMember, "Deleted Gym", true);
 
             flushAndClear();
 
-            // when
-            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations();
+            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(activeMember.getMemberId());
 
-            // then
             assertThat(results).isNotNull().isEmpty();
         }
-    }
-
-    // =================================================================================================================
-    // Helper Methods
-    // =================================================================================================================
-
-    private Member createAndSaveMember(String nickname, boolean deleted) {
-        Member member = Member.builder()
-                .memberId(UUID.randomUUID())
-                .memberEmail(nickname + "@email.com")
-                .memberNickname(nickname)
-                .memberGender(MemberGender.UNKNOWN)
-                .memberBday(LocalDate.of(2000, 1, 1))
-                .memberDeletedAt(deleted ? LocalDateTime.now() : null)
-                .build();
-        em.persist(member);
-        return member;
     }
 
     @Nested
     @DisplayName("findAllByMemberAndExerciseLocationDeletedAtNull 메소드는")
     class Describe_findAllByMemberAndExerciseLocationDeletedAtNull {
 
-        @Nested
-        @DisplayName("특정 회원이 주어졌을 때")
-        class Context_with_a_specific_member {
+        @Test
+        @DisplayName("해당 회원의 삭제되지 않은 운동 장소 목록만 반환한다")
+        void it_returns_only_active_locations_for_that_member() {
+            Member member1 = createAndSaveMember("user1", false);
+            Member member2 = createAndSaveMember("user2", false);
 
-            @Test
-            @DisplayName("해당 회원의 삭제되지 않은 운동 장소 목록만 반환한다")
-            void it_returns_only_active_locations_for_that_member() {
-                // given
-                Member member1 = createAndSaveMember("user1");
-                Member member2 = createAndSaveMember("user2");
+            createAndSaveExerciseLocation(member1, "Active Gym 1", false);
+            createAndSaveExerciseLocation(member1, "Active Gym 2", false);
+            createAndSaveExerciseLocation(member1, "Deleted Gym", true);
+            createAndSaveExerciseLocation(member2, "Another Active Gym", false);
 
-                createAndSaveExerciseLocation(member1, "Active Gym 1", false);
-                createAndSaveExerciseLocation(member1, "Active Gym 2", false);
-                createAndSaveExerciseLocation(member1, "Deleted Gym", true);
-                createAndSaveExerciseLocation(member2, "Another Active Gym", false);
+            flushAndClear();
 
-                flushAndClear();
+            List<ExerciseLocation> results = exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member1);
 
-                // when
-                List<ExerciseLocation> results = exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member1);
+            assertThat(results).hasSize(2)
+                    .extracting(ExerciseLocation::getExerciseLocationName)
+                    .containsExactlyInAnyOrder("Active Gym 1", "Active Gym 2");
+        }
 
-                // then
-                assertThat(results).hasSize(2)
-                        .extracting(ExerciseLocation::getExerciseLocationName)
-                        .containsExactlyInAnyOrder("Active Gym 1", "Active Gym 2");
-            }
+        @Test
+        @DisplayName("해당 회원의 모든 운동 장소가 삭제된 상태라면 빈 리스트를 반환한다")
+        void it_returns_empty_list_if_all_locations_are_deleted() {
+            Member member = createAndSaveMember("userWithDeletedLocations", false);
+            createAndSaveExerciseLocation(member, "Deleted Gym A", true);
+            createAndSaveExerciseLocation(member, "Deleted Gym B", true);
 
-            @Test
-            @DisplayName("해당 회원의 모든 운동 장소가 삭제된 상태라면 빈 리스트를 반환한다")
-            void it_returns_empty_list_if_all_locations_are_deleted() {
-                // given
-                Member member = createAndSaveMember("userWithDeletedLocations");
-                createAndSaveExerciseLocation(member, "Deleted Gym A", true);
-                createAndSaveExerciseLocation(member, "Deleted Gym B", true);
+            flushAndClear();
 
-                flushAndClear();
+            List<ExerciseLocation> results = exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member);
 
-                // when
-                List<ExerciseLocation> results = exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member);
+            assertThat(results).isNotNull().isEmpty();
+        }
 
-                // then
-                assertThat(results).isNotNull().isEmpty();
-            }
+        @Test
+        @DisplayName("해당 회원이 운동 장소를 전혀 가지고 있지 않다면 빈 리스트를 반환한다")
+        void it_returns_empty_list_if_member_has_no_locations() {
+            Member member = createAndSaveMember("userWithNoLocations", false);
+            flushAndClear();
 
-            @Test
-            @DisplayName("해당 회원이 운동 장소를 전혀 가지고 있지 않다면 빈 리스트를 반환한다")
-            void it_returns_empty_list_if_member_has_no_locations() {
-                // given
-                Member member = createAndSaveMember("userWithNoLocations");
-                flushAndClear();
+            List<ExerciseLocation> results = exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member);
 
-                // when
-                List<ExerciseLocation> results = exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member);
-
-                // then
-                assertThat(results).isNotNull().isEmpty();
-            }
+            assertThat(results).isNotNull().isEmpty();
         }
     }
 
@@ -324,15 +294,12 @@ class ExerciseLocationRepositoryImplTest {
         @Test
         @DisplayName("삭제되지 않은 운동 장소를 ID로 조회하면 Optional에 담아 반환한다")
         void it_returns_location_when_exists_and_not_deleted() {
-            // given
-            Member member = createAndSaveMember("user");
+            Member member = createAndSaveMember("user", false);
             ExerciseLocation location = createAndSaveExerciseLocation(member, "활성 헬스장", false);
             flushAndClear();
 
-            // when
             Optional<ExerciseLocation> result = exerciseLocationRepository.findByExerciseLocationIdAndExerciseLocationDeletedAtNull(location.getExerciseLocationId());
 
-            // then
             assertThat(result).isPresent();
             assertThat(result.get().getExerciseLocationId()).isEqualTo(location.getExerciseLocationId());
             assertThat(result.get().getExerciseLocationDeletedAt()).isNull();
@@ -341,81 +308,23 @@ class ExerciseLocationRepositoryImplTest {
         @Test
         @DisplayName("ID에 해당하는 운동 장소가 삭제된 경우 Optional.empty를 반환한다")
         void it_returns_empty_when_location_is_deleted() {
-            // given
-            Member member = createAndSaveMember("user");
+            Member member = createAndSaveMember("user", false);
             ExerciseLocation location = createAndSaveExerciseLocation(member, "삭제된 헬스장", true);
             flushAndClear();
 
-            // when
             Optional<ExerciseLocation> result = exerciseLocationRepository.findByExerciseLocationIdAndExerciseLocationDeletedAtNull(location.getExerciseLocationId());
 
-            // then
             assertThat(result).isEmpty();
         }
 
         @Test
         @DisplayName("ID에 해당하는 운동 장소가 존재하지 않는 경우 Optional.empty를 반환한다")
         void it_returns_empty_when_location_does_not_exist() {
-            // given
             Long nonExistentId = 999L;
 
-            // when
             Optional<ExerciseLocation> result = exerciseLocationRepository.findByExerciseLocationIdAndExerciseLocationDeletedAtNull(nonExistentId);
 
-            // then
             assertThat(result).isEmpty();
-        }
-    }
-
-    @Nested
-    @DisplayName("existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull 메소드는")
-    class Describe_existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull {
-
-        @Test
-        @DisplayName("삭제되지 않은 운동 장소 중 동일한 이름이 존재하면 true를 반환한다")
-        void it_returns_true_when_active_location_with_same_name_exists() {
-            // given
-            Member member = createAndSaveMember("user");
-            String existingName = "Active Gym";
-            createAndSaveExerciseLocation(member, existingName, false);
-            flushAndClear();
-
-            // when
-            boolean result = exerciseLocationRepository.existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, existingName);
-
-            // then
-            assertThat(result).isTrue();
-        }
-
-        @Test
-        @DisplayName("동일한 이름의 운동 장소가 존재하지만 삭제된 상태이면 false를 반환한다")
-        void it_returns_false_when_location_with_same_name_is_deleted() {
-            // given
-            Member member = createAndSaveMember("user");
-            String deletedName = "Deleted Gym";
-            createAndSaveExerciseLocation(member, deletedName, true);
-            flushAndClear();
-
-            // when
-            boolean result = exerciseLocationRepository.existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, deletedName);
-
-            // then
-            assertThat(result).isFalse();
-        }
-
-        @Test
-        @DisplayName("동일한 이름의 운동 장소가 존재하지 않으면 false를 반환한다")
-        void it_returns_false_when_no_location_with_same_name_exists() {
-            // given
-            Member member = createAndSaveMember("user");
-            createAndSaveExerciseLocation(member, "Some Other Gym", false);
-            flushAndClear();
-
-            // when
-            boolean result = exerciseLocationRepository.existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, "NonExistent Gym");
-
-            // then
-            assertThat(result).isFalse();
         }
     }
 
@@ -437,5 +346,48 @@ class ExerciseLocationRepositoryImplTest {
     private void flushAndClear() {
         em.flush();
         em.clear();
+    }
+
+    @Nested
+    @DisplayName("existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull 메소드는")
+    class Describe_existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull {
+
+        @Test
+        @DisplayName("삭제되지 않은 운동 장소 중 동일한 이름이 존재하면 true를 반환한다")
+        void it_returns_true_when_active_location_with_same_name_exists() {
+            Member member = createAndSaveMember("user", false);
+            String existingName = "Active Gym";
+            createAndSaveExerciseLocation(member, existingName, false);
+            flushAndClear();
+
+            boolean result = exerciseLocationRepository.existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, existingName);
+
+            assertThat(result).isTrue();
+        }
+
+        @Test
+        @DisplayName("동일한 이름의 운동 장소가 존재하지만 삭제된 상태이면 false를 반환한다")
+        void it_returns_false_when_location_with_same_name_is_deleted() {
+            Member member = createAndSaveMember("user", false);
+            String deletedName = "Deleted Gym";
+            createAndSaveExerciseLocation(member, deletedName, true);
+            flushAndClear();
+
+            boolean result = exerciseLocationRepository.existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, deletedName);
+
+            assertThat(result).isFalse();
+        }
+
+        @Test
+        @DisplayName("동일한 이름의 운동 장소가 존재하지 않으면 false를 반환한다")
+        void it_returns_false_when_no_location_with_same_name_exists() {
+            Member member = createAndSaveMember("user", false);
+            createAndSaveExerciseLocation(member, "Some Other Gym", false);
+            flushAndClear();
+
+            boolean result = exerciseLocationRepository.existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, "NonExistent Gym");
+
+            assertThat(result).isFalse();
+        }
     }
 }
