@@ -26,7 +26,7 @@ public class OpenChatRoomQueryController {
         return ResponseEntity.ok(CommonResponse.success(openChatQueryService.getOtherMemberOpenChatroomUrl(memberId)));
     }
 
-    @GetMapping("/v1/open-chat")
+    @GetMapping("/v1/open-chats")
     public ResponseEntity<CommonResponse<GetOpenChatUrlResponse>> getOpenChatroomUrl() {
 
         return ResponseEntity.ok(CommonResponse.success(openChatQueryService.getOpenChatroomUrl()));

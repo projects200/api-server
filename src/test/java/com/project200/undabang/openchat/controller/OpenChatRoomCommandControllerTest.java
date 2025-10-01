@@ -224,7 +224,7 @@ class OpenChatRoomCommandControllerTest extends AbstractRestDocSupport {
                     .andDo(document.document(
                             requestHeaders(HEADER_ACCESS_TOKEN),
                             pathParameters(
-                                    parameterWithName("openChatId").attributes(getTypeFormat(JsonFieldType.STRING)).description("삭제할 오픈채팅방의 식별자 입니다.")
+                                    parameterWithName("openChatId").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("삭제할 오픈채팅방의 식별자 입니다.")
                             ),
                             responseFields(commonResponseFields())
                     ));

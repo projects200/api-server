@@ -2,7 +2,7 @@
 
 === 설명
 
-- #DELETE# `/api/v1/open-chat`
+- #DELETE# `/api/v1/open-chats/{openChatId}`
 - 회원이 자신의 카카오톡 오픈 채팅 URL을 삭제하는 API 입니다.
 
 === 개발 이력

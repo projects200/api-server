@@ -2,7 +2,7 @@
 
 === 설명
 
-- #PATCH# `/api/v1/open-chat`
+- #PATCH# `/api/v1/open-chats/{openChatId}`
 - 회원이 자신의 카카오톡 오픈 채팅 URL을 수정하는 API 입니다.
 - 회원은 이미 존재하는 오픈 채팅 URL로 오픈 채팅 URL을 수정할 수 없습니다.
 - 오픈 채팅은 반드시 카카오톡에서 제공하는 URL을 입력해야 합니다.

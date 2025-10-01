@@ -36,18 +36,6 @@ class OpenChatRoomQueryControllerTest extends AbstractRestDocSupport {
     @MockitoBean
     private OpenChatRoomQueryService openChatQueryService;
 
-    private GetOtherMemberOpenChatUrlResponse createOtherMemberChatUrlResponse(String url) {
-        return GetOtherMemberOpenChatUrlResponse.builder()
-                .openChatroomUrl(url)
-                .build();
-    }
-
-    private GetOpenChatUrlResponse createMyChatUrlResponse(String url) {
-        return GetOpenChatUrlResponse.builder()
-                .openChatroomUrl(url)
-                .build();
-    }
-
     @Nested
     @DisplayName("GET /api/v1/members/{memberId}/open-chat API는")
     class GetOtherMemberOpenChatUrl {
@@ -112,8 +100,20 @@ class OpenChatRoomQueryControllerTest extends AbstractRestDocSupport {
         }
     }
 
+    private GetOtherMemberOpenChatUrlResponse createOtherMemberChatUrlResponse(String url) {
+        return GetOtherMemberOpenChatUrlResponse.builder()
+                .openChatroomUrl(url)
+                .build();
+    }
+
+    private GetOpenChatUrlResponse createMyChatUrlResponse(String url) {
+        return GetOpenChatUrlResponse.builder()
+                .openChatroomUrl(url)
+                .build();
+    }
+
     @Nested
-    @DisplayName("GET /api/v1/open-chat API는")
+    @DisplayName("GET /api/v1/open-chats API는")
     class GetMyOpenChatUrl {
 
         @Test
@@ -127,7 +127,7 @@ class OpenChatRoomQueryControllerTest extends AbstractRestDocSupport {
             BDDMockito.given(openChatQueryService.getOpenChatroomUrl()).willReturn(response);
 
             // when & then
-            mockMvc.perform(get("/api/v1/open-chat")
+            mockMvc.perform(get("/api/v1/open-chats")
                             .contentType(MediaType.APPLICATION_JSON)
                             .accept(MediaType.APPLICATION_JSON)
                             .headers(getCommonApiHeaders(memberId)))
@@ -156,7 +156,7 @@ class OpenChatRoomQueryControllerTest extends AbstractRestDocSupport {
                     .willThrow(new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND));
 
             // when & then
-            mockMvc.perform(get("/api/v1/open-chat")
+            mockMvc.perform(get("/api/v1/open-chats")
                             .contentType(MediaType.APPLICATION_JSON)
                             .accept(MediaType.APPLICATION_JSON)
                             .headers(getCommonApiHeaders(memberId)))
