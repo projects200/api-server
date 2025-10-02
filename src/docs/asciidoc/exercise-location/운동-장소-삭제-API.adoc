@@ -1,0 +1,35 @@
+== 운동 장소 삭제 API
+
+=== 설명
+
+- #DELETE# `/api/v1/exercise-locations/{locationId}`
+- 회원이 등록한 운동 장소를 삭제하는 API 입니다.
+
+=== 개발 이력
+
+- Sprint 12 (2025-09-25): 기능 개발이 완료되었습니다.
+
+=== 개발 참고 사항
+
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+
+operation::delete-exercise-location/delete-exercise-location_-success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+
+operation::delete-exercise-location/delete-exercise-location_-success[snippets="request-headers,path-parameters,response-fields"]
+
+==== 응답 상태 코드
+
+|===
+|상태 코드|설명
+|200|리소스가 성공적으로 삭제되었습니다.
+|401|인증되지 않은 요청입니다. +
+Access Token이 없거나 유효하지 않습니다.
+|403|접근 권한이 없습니다.
+|404|존재하지 않는 회원입니다. +
+존재하지 않는 운동 장소 입니다.
+|===
+

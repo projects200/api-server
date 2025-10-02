@@ -22,6 +22,7 @@ public enum ErrorCode {
     LOGOUT_FAILED(401, "LOGOUT_FAILED", "로그아웃에 실패했습니다. 일치하는 회원을 찾을 수 없습니다."),
 
     // 사용자 관련 에러
+    MEMBER_SELF_REQUEST_NOT_ALLOWED(400, "MEMBER_SELF_REQUEST_NOT_ALLOWED", "자기 자신을 대상으로 한 요청은 유효하지 않습니다"),
     MEMBER_NOT_FOUND(404, "USER_NOT_FOUND", "해당 사용자를 찾을 수 없습니다."),
     MEMBER_EMAIL_DUPLICATED(409, "MEMBER_EMAIL_DUPLICATED", "이미 사용 중인 이메일입니다."),
     MEMBER_ID_DUPLICATED(409, "MEMBER_ID_DUPLICATED", "이미 가입한 회원 입니다."),
@@ -56,7 +57,17 @@ public enum ErrorCode {
     PICTURE_UPLOAD_FAILED(500, "PICTURE_UPLOAD_FAILED", "이미지 업로드에 실패했습니다."),
     PICTURE_DELETE_FAILED(500, "PICTURE_DELETE_FAILED", "이미지 삭제에 실패했습니다."),
     PICTURE_IS_EMPTY(400, "PICTURE_IS_EMPTY", "요청받은 이미지가 비어있습니다."),
-    PICTURE_NOT_FOUND(404, "PICTURE_NOT_FOUND", "존재하지 않는 사진입니다.");
+    PICTURE_NOT_FOUND(404, "PICTURE_NOT_FOUND", "존재하지 않는 사진입니다."),
+
+    // 운동 주소 관련 에러
+    EXERCISE_LOCATION_MAX_COUNT_VIOLATION(409, "EXERCISE_LOCATION_MAX_COUNT_VIOLATION", "최대 운동 장소 저장 갯수(10개)를 초과했습니다."),
+    EXERCISE_LOCATION_NAME_DUPLICATED(409, "EXERCISE_LOCATION_NAME_DUPLICATED", "이미 사용중인 운동 장소 명 입니다."),
+    EXERCISE_LOCATION_NOT_FOUND(404, "EXERCISE_LOCATION_NOT_FOUND", "존재하지 않는 운동장소 입니다"),
+
+    // 오픈 채팅 관련 에러
+    OPEN_CHAT_ROOM_ALREADY_EXIST(409, "OPEN_CHAT_ROOM_ALREADY_EXIST", "이미 오픈 채팅방을 보유한 회원입니다."),
+    OPEN_CHAT_ROOM_URL_DUPLICATED(409, "OPEN_CHAT_ROOM_URL_DUPLICATED", "이미 사용중인 오픈 채팅 링크입니다"),
+    OPEN_CHAT_ROOM_NOT_FOUND(404, "OPEN_CHAT_ROOM_NOT_FOUND", "존재하지 않는 오픈 채팅방 입니다.");
 
     private final HttpStatusCode status;
     private final String code;

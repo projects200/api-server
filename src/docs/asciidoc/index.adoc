@@ -113,6 +113,11 @@ include::overview/공통-개발-참고-사항.adoc[]
 
 - 대표 프로필 사진 변경 API #PUT# `/api/v1/profile-pictures/{pictureId}/represent`
 
+- 다른 회원들의 운동 장소 목록 조회 API #GET# `/api/v1/members`
+
+- 다른 회원의 프로필 조회 API #GET# `/api/v1/members/{memberId}/profile`
+
+- 다른 회원의 캘린더 조회 API #GET# `/api/v1/members/{memberId}/calendars?start={startDate}&end={endDate}`
 
 === xref:운동-API.html[운동 API]
 
@@ -177,3 +182,25 @@ include::overview/공통-개발-참고-사항.adoc[]
 - 프로필 사진 생성 API #POST# `/api/v1/profile-pictures`
 
 - 프로필 사진 삭제 API #DELETE# `/api/v1/profile-pictures/{profileId}`
+
+=== xref:운동-장소-API.html[운동 장소 API]
+
+- 회원 운동 장소 목록 상세 조회 API #GET# `/api/v1/exercise-locations`
+
+- 운동 장소 생성 API #POST# `/api/v1/exercise-locations`
+
+- 운동 장소 이름 수정 API #PATCH# `/api/v1/exercise-locations/{locationId}`
+
+- 운동 장소 삭제 API #DELETE# `/api/v1/exercise-locations/{locationId}`
+
+=== xref:카카오톡-오픈-채팅-API.html[오픈 채팅 API]
+
+- 오픈 채팅 생성 API #POST# `/api/v1/open-chats`
+
+- 오픈 채팅 수정 API #PATCH# `/api/v1/open-chats/{openChatId}`
+
+- 오픈 채팅 삭제 API #DELETE# `/api/v1/open-chats/{openChatId}`
+
+- 회원의 오픈 채팅 URL 조회 #GET# `/api/v1/open-chats`
+
+- 다른 회원의 오픈 채팅 URL 조회 #GET# `/api/v1/members/{memberId}/open-chat`

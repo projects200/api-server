@@ -95,17 +95,23 @@ public class MemberPictureCommandServiceImpl implements MemberPictureCommandServ
     @Override
     public void deleteProfilePicture(Long pictureId) {
         Member member = getMember(UserContextHolder.getUserId());
+        Picture picture = getPicture(pictureId);
 
-        Picture picture = pictureRepository.findById(pictureId).orElseThrow(() -> new CustomException(ErrorCode.PICTURE_NOT_FOUND));
-
-        MemberPicture memberPicture = memberPictureRepository.findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(member, pictureId)
-                .orElseThrow(() -> new CustomException(ErrorCode.AUTHORIZATION_DENIED));
+        MemberPicture memberPicture = validateAndGetMemberPicture(member, picture);
 
         // 썸네일 사진, 프로필 사진 논리적 삭제 및 S3에 저장된 프로필 사진 삭제
-        pictureService.deletePictureFromS3AndDB(picture);
-        memberPicture.deleteMemberPicture();
-
+        deleteProfileAndThumbnailImageFromS3AndDB(picture, memberPicture);
         // 회원 테이블의 대표사진을 제거합니다. 그 후, 가장 최근에 생성된 사진 데이터를 넣어주고 그렇지 않으면 null 을 넣어줘야 합니다.
+        updateRepresentativeProfileImageAfterDelete(member, memberPicture);
+
+        // todo 썸네일 생성 이후 삭제를 진행해야 함 S3에 업로드 및 삭제 과정에 대한 고려 후 개발 진행
+    }
+
+    /**
+     * 특정 프로필 사진을 삭제한 후, 회원의 대표 프로필 사진을 갱신합니다.
+     * 대표 프로필 사진이 삭제된 경우, 남아 있는 사진 중 가장 최신의 사진으로 갱신하거나, 사진이 없는 경우 null로 설정합니다.
+     */
+    private void updateRepresentativeProfileImageAfterDelete(Member member, MemberPicture memberPicture) {
         if (member.getMemberPicture() != null && Objects.equals(member.getMemberPicture().getId(), memberPicture.getId())) {
             memberPictureRepository.findFirstByMemberAndMemberPicturesDeletedAtNullAndPicture_PictureDeletedAtNullOrderByPicture_PictureCreatedAtDesc(member)
                     .ifPresentOrElse(
@@ -113,8 +119,30 @@ public class MemberPictureCommandServiceImpl implements MemberPictureCommandServ
                             () -> member.updateProfilePicture(null)
                     );
         }
+    }
 
-        // todo 썸네일 생성 이후 삭제를 진행해야 함 S3에 업로드 및 삭제 과정에 대한 고려 후 개발 진행
+    /**
+     * 주어진 Picture와 MemberPicture 객체를 사용하여 해당 사진 및 관련 정보를 삭제합니다.
+     */
+    private void deleteProfileAndThumbnailImageFromS3AndDB(Picture picture, MemberPicture memberPicture) {
+        pictureService.deletePictureFromS3AndDB(picture);
+        memberPicture.deleteMemberPicture();
+    }
+
+    /**
+     * 주어진 회원과 사진 정보를 검증하고, 해당 회원과 연관된 MemberPicture 정보를 반환합니다.
+     */
+    private MemberPicture validateAndGetMemberPicture(Member member, Picture picture) {
+        return memberPictureRepository.findByMemberAndPicture_IdAndPicture_PictureDeletedAtNull(member, picture.getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.AUTHORIZATION_DENIED));
+    }
+
+    /**
+     * 주어진 사진 ID를 기반으로 사진 정보를 조회합니다.
+     * 사진 정보를 찾을 수 없는 경우 예외를 발생시킵니다.
+     */
+    private Picture getPicture(Long pictureId) {
+        return pictureRepository.findById(pictureId).orElseThrow(() -> new CustomException(ErrorCode.PICTURE_NOT_FOUND));
     }
 
     /**

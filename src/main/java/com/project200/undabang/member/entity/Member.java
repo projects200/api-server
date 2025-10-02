@@ -2,8 +2,10 @@ package com.project200.undabang.member.entity;
 
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
+import com.project200.undabang.match.entity.Match;
 import com.project200.undabang.member.dto.command.SignUpMemberCommand;
 import com.project200.undabang.member.enums.MemberGender;
+import com.project200.undabang.openchat.entity.OpenChatRoom;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -11,6 +13,7 @@ import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Comment;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Where;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
@@ -83,8 +86,28 @@ public class Member {
     @JoinColumn(name = "member_picture_id")
     private MemberPicture memberPicture;
 
+    @Builder.Default
     @OneToMany(mappedBy = "member")
     private List<PreferredExercise> preferredExercises = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "member")
+    private List<ExerciseLocation> exerciseLocations = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "member", fetch = FetchType.LAZY)
+    @Where(clause = "open_chatroom_deleted_at IS NULL")
+    private List<OpenChatRoom> activeOpenChatRoomList = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "requester")
+    private List<Match> requestedMatches = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "receiver")
+    private List<Match> receivedMatches = new ArrayList<>();
+
+
 
     /**
      * 회원의 점수를 증가시킵니다. 점수는 정책에 정의된 최소/최대 값을 벗어나지 않습니다.

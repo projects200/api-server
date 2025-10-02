@@ -31,6 +31,7 @@ public class PolicyGroup {
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    @Builder.Default
     @OneToMany(mappedBy = "policyGroup")
     private List<PolicyGroupMapping> policyMappings = new ArrayList<>();
 }
