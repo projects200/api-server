@@ -370,6 +370,38 @@ class OpenChatRoomCommandServiceImplTest {
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.OPEN_CHAT_ROOM_URL_DUPLICATED);
             }
         }
+
+        @Test
+        @DisplayName("http로 시작하는 URL로 수정하면 https로 정규화되어 updateOpenChatUrl이 호출된다")
+        void normalizes_http_url_to_https_on_update() {
+            UUID userId = UUID.randomUUID();
+            Member member = createMember(userId);
+            Long openChatId = 30L;
+            String httpUrl = "http://open.chat/update";
+            String expectedHttpsUrl = "https://open.chat/update";
+            UpdateOpenChatRoomRequest request = updateRequest(httpUrl);
+
+            OpenChatRoom existing = mock(OpenChatRoom.class);
+            given(existing.getMember()).willReturn(member);
+            given(existing.isSameUrl(expectedHttpsUrl)).willReturn(false);
+            given(existing.getId()).willReturn(openChatId);
+
+            given(openChatRoomRepository.findByIdAndDeletedAtNull(openChatId)).willReturn(Optional.of(existing));
+            given(openChatRoomRepository.existsByUrlAndIdNotAndDeletedAtNull(expectedHttpsUrl, openChatId)).willReturn(false);
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(userId);
+                given(memberRepository.findById(userId)).willReturn(Optional.of(member));
+
+                var response = openChatRoomCommandService.updateOpenChatRoom(openChatId, request);
+
+                ArgumentCaptor<String> urlCaptor = ArgumentCaptor.forClass(String.class);
+                verify(existing).updateOpenChatUrl(urlCaptor.capture());
+                assertThat(urlCaptor.getValue()).isEqualTo(expectedHttpsUrl);
+                assertThat(response).isNotNull();
+                assertThat(response.getOpenChatroomId()).isEqualTo(openChatId);
+            }
+        }
     }
 
     @Nested

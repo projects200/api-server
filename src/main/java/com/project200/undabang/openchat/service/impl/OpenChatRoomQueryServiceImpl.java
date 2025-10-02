@@ -34,7 +34,7 @@ public class OpenChatRoomQueryServiceImpl implements OpenChatRoomQueryService {
     public GetOpenChatUrlResponse getOpenChatroomUrl() {
         OpenChatRoom openChatRoom = getMemberOpenChatRoom(UserContextHolder.getUserId());
 
-        return GetOpenChatUrlResponse.of(openChatRoom.getUrl());
+        return GetOpenChatUrlResponse.of(openChatRoom.getId(), openChatRoom.getUrl());
     }
 
     /**
