@@ -46,76 +46,9 @@ class OpenChatRoomQueryServiceImplTest {
 
     private OpenChatRoom createOpenChatRoom(String url) {
         OpenChatRoom openChatRoom = mock(OpenChatRoom.class);
-        // lenient stubbing: 일부 테스트에서 mock.getUrl()이 사용되지 않더라도 UnnecessaryStubbingException을 피함
         lenient().when(openChatRoom.getUrl()).thenReturn(url);
+        lenient().when(openChatRoom.getId()).thenReturn(1L);
         return openChatRoom;
-    }
-
-    private Member createMember(UUID memberId) {
-        return Member.builder()
-                .memberId(memberId)
-                .memberEmail(memberId + "@test.com")
-                .memberNickname("test-user-" + memberId)
-                .memberGender(MemberGender.UNKNOWN)
-                .memberBday(LocalDate.now().minusYears(20))
-                .build();
-    }
-
-    @Nested
-    @DisplayName("getOpenChatroomUrl() 메소드는")
-    class Describe_getOpenChatroomUrl {
-
-        @Test
-        @DisplayName("현재 사용자의 오픈 채팅 URL을 정상적으로 반환한다")
-        void returns_url_for_current_user() {
-            UUID userId = UUID.randomUUID();
-            Member member = createMember(userId);
-            OpenChatRoom openChatRoom = createOpenChatRoom("https://open.chat/test");
-
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                given(UserContextHolder.getUserId()).willReturn(userId);
-                // 불필요한 stubbing 제거: memberRepository.existsById(...) 삭제
-                given(openChatRoomRepository.findByMember_MemberIdAndDeletedAtNull(member.getMemberId())).willReturn(Optional.of(openChatRoom));
-
-                GetOpenChatUrlResponse response = openChatQueryService.getOpenChatroomUrl();
-
-                assertThat(response).isNotNull();
-                assertThat(response.getOpenChatroomUrl()).isEqualTo("https://open.chat/test");
-            }
-        }
-
-        @Test
-        @DisplayName("회원이 존재하지 않으면 MEMBER_NOT_FOUND 예외를 던진다")
-        void throws_when_member_not_found() {
-            UUID userId = UUID.randomUUID();
-
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                given(UserContextHolder.getUserId()).willReturn(userId);
-                given(openChatRoomRepository.findByMember_MemberIdAndDeletedAtNull(userId)).willReturn(Optional.empty());
-                given(memberRepository.existsById(userId)).willReturn(false);
-
-                assertThatThrownBy(() -> openChatQueryService.getOpenChatroomUrl())
-                        .isInstanceOf(CustomException.class)
-                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
-            }
-        }
-
-        @Test
-        @DisplayName("회원은 존재하지만 오픈 채팅방이 없으면 OPEN_CHAT_ROOM_NOT_FOUND 예외를 던진다")
-        void throws_when_open_chat_not_found() {
-            UUID userId = UUID.randomUUID();
-            Member member = createMember(userId);
-
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                given(UserContextHolder.getUserId()).willReturn(userId);
-                given(openChatRoomRepository.findByMember_MemberIdAndDeletedAtNull(member.getMemberId())).willReturn(Optional.empty());
-                given(memberRepository.existsById(userId)).willReturn(true);
-
-                assertThatThrownBy(() -> openChatQueryService.getOpenChatroomUrl())
-                        .isInstanceOf(CustomException.class)
-                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND);
-            }
-        }
     }
 
     @Nested
@@ -190,6 +123,73 @@ class OpenChatRoomQueryServiceImplTest {
                 given(memberRepository.existsById(targetMemberId)).willReturn(true);
 
                 assertThatThrownBy(() -> openChatQueryService.getOtherMemberOpenChatroomUrl(targetMemberId))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND);
+            }
+        }
+    }
+
+    private Member createMember(UUID memberId) {
+        return Member.builder()
+                .memberId(memberId)
+                .memberEmail(memberId + "@test.com")
+                .memberNickname("test-user-" + memberId)
+                .memberGender(MemberGender.UNKNOWN)
+                .memberBday(LocalDate.now().minusYears(20))
+                .build();
+    }
+
+    @Nested
+    @DisplayName("getOpenChatroomUrl() 메소드는")
+    class Describe_getOpenChatroomUrl {
+
+        @Test
+        @DisplayName("현재 사용자의 오픈 채팅 URL을 정상적으로 반환한다")
+        void returns_url_for_current_user() {
+            UUID userId = UUID.randomUUID();
+            Member member = createMember(userId);
+            OpenChatRoom openChatRoom = createOpenChatRoom("https://open.chat/test");
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(userId);
+                given(openChatRoomRepository.findByMember_MemberIdAndDeletedAtNull(member.getMemberId())).willReturn(Optional.of(openChatRoom));
+
+                GetOpenChatUrlResponse response = openChatQueryService.getOpenChatroomUrl();
+
+                assertThat(response).isNotNull();
+                assertThat(response.getOpenChatroomUrl()).isEqualTo("https://open.chat/test");
+                assertThat(response.getOpenChatroomId()).isEqualTo(1L);
+            }
+        }
+
+        @Test
+        @DisplayName("회원이 존재하지 않으면 MEMBER_NOT_FOUND 예외를 던진다")
+        void throws_when_member_not_found() {
+            UUID userId = UUID.randomUUID();
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(userId);
+                given(openChatRoomRepository.findByMember_MemberIdAndDeletedAtNull(userId)).willReturn(Optional.empty());
+                given(memberRepository.existsById(userId)).willReturn(false);
+
+                assertThatThrownBy(() -> openChatQueryService.getOpenChatroomUrl())
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
+            }
+        }
+
+        @Test
+        @DisplayName("회원은 존재하지만 오픈 채팅방이 없으면 OPEN_CHAT_ROOM_NOT_FOUND 예외를 던진다")
+        void throws_when_open_chat_not_found() {
+            UUID userId = UUID.randomUUID();
+            Member member = createMember(userId);
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(userId);
+                given(openChatRoomRepository.findByMember_MemberIdAndDeletedAtNull(member.getMemberId())).willReturn(Optional.empty());
+                given(memberRepository.existsById(userId)).willReturn(true);
+
+                assertThatThrownBy(() -> openChatQueryService.getOpenChatroomUrl())
                         .isInstanceOf(CustomException.class)
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND);
             }

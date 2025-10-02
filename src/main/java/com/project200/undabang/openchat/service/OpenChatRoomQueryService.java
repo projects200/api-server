@@ -7,6 +7,5 @@ import java.util.UUID;
 
 public interface OpenChatRoomQueryService {
     GetOtherMemberOpenChatUrlResponse getOtherMemberOpenChatroomUrl(UUID memberId);
-
     GetOpenChatUrlResponse getOpenChatroomUrl();
 }

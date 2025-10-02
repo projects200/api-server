@@ -10,9 +10,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GetOpenChatUrlResponse {
+    private Long openChatroomId;
     private String openChatroomUrl;
 
-    public static GetOpenChatUrlResponse of(String openChatroomUrl) {
-        return new GetOpenChatUrlResponse(openChatroomUrl);
+    public static GetOpenChatUrlResponse of(Long openChatroomId, String openChatroomUrl) {
+        return GetOpenChatUrlResponse.builder()
+                .openChatroomId(openChatroomId)
+                .openChatroomUrl(openChatroomUrl)
+                .build();
     }
 }

@@ -106,8 +106,9 @@ class OpenChatRoomQueryControllerTest extends AbstractRestDocSupport {
                 .build();
     }
 
-    private GetOpenChatUrlResponse createMyChatUrlResponse(String url) {
+    private GetOpenChatUrlResponse createMyChatUrlResponse(Long id, String url) {
         return GetOpenChatUrlResponse.builder()
+                .openChatroomId(id)
                 .openChatroomUrl(url)
                 .build();
     }
@@ -121,8 +122,9 @@ class OpenChatRoomQueryControllerTest extends AbstractRestDocSupport {
         void getMyOpenChatUrl_Success() throws Exception {
             // given
             UUID memberId = UUID.randomUUID();
+            Long openChatId = 123456789L;
             String openChatUrl = "https://open.kakao.com/o/myurl456";
-            GetOpenChatUrlResponse response = createMyChatUrlResponse(openChatUrl);
+            GetOpenChatUrlResponse response = createMyChatUrlResponse(openChatId, openChatUrl);
 
             BDDMockito.given(openChatQueryService.getOpenChatroomUrl()).willReturn(response);
 
@@ -135,11 +137,13 @@ class OpenChatRoomQueryControllerTest extends AbstractRestDocSupport {
                             status().isOk(),
                             jsonPath("$.succeed").value(true),
                             jsonPath("$.code").value("SUCCESS"),
+                            jsonPath("$.data.openChatroomId").value(openChatId),
                             jsonPath("$.data.openChatroomUrl").value(openChatUrl)
                     )
                     .andDo(document.document(
                             requestHeaders(HEADER_ACCESS_TOKEN),
                             responseFields(commonResponseFields(
+                                    fieldWithPath("data.openChatroomId").type(JsonFieldType.NUMBER).description("자신의 카카오톡 오픈채팅방 식별자 정보 입니다."),
                                     fieldWithPath("data.openChatroomUrl").type(JsonFieldType.STRING).description("자신의 카카오톡 오픈채팅방 URL 링크 입니다.")
                             ))
                     ));
