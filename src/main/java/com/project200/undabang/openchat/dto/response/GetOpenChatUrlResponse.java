@@ -14,9 +14,6 @@ public class GetOpenChatUrlResponse {
     private String openChatroomUrl;
 
     public static GetOpenChatUrlResponse of(Long openChatroomId, String openChatroomUrl) {
-        return GetOpenChatUrlResponse.builder()
-                .openChatroomId(openChatroomId)
-                .openChatroomUrl(openChatroomUrl)
-                .build();
+        return new GetOpenChatUrlResponse(openChatroomId, openChatroomUrl);
     }
 }
