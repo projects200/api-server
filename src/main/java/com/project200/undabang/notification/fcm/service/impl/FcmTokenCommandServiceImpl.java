@@ -19,6 +19,11 @@ public class FcmTokenCommandServiceImpl implements FcmTokenCommandService {
 
     private final FcmTokenRepository fcmTokenRepository;
 
+    /**
+     * 주어진 회원에 대한 FCM 토큰을 저장하거나 활성화합니다.
+     * 데이터베이스에 동일한 FCM 토큰이 존재하면 해당 토큰을 활성화하고,
+     * 존재하지 않을 경우 새로 생성하여 저장합니다.
+     */
     @Override
     public void saveFcmToken(Member member, String fcmToken, String userAgent) {
         fcmTokenRepository.findByFcmTokenValueAndMember_MemberId(fcmToken, member.getMemberId())
@@ -38,6 +43,24 @@ public class FcmTokenCommandServiceImpl implements FcmTokenCommandService {
                 });
     }
 
+    /**
+     * 특정 회원의 FCM 토큰을 활성화합니다.
+     * 주어진 FCM 토큰이 데이터베이스에 이미 존재하면 해당 토큰을 활성화하고,
+     * 그렇지 않다면 경고 메시지를 기록합니다.
+     */
+    @Override
+    public void activateFcmToken(Member member, String fcmToken) {
+        fcmTokenRepository.findByFcmTokenValueAndMember_MemberId(fcmToken, member.getMemberId())
+                .ifPresentOrElse(existingToken -> {
+                    log.debug("FCM 토큰을 활성화 합니다. 회원 id : {}", member.getMemberId());
+                    existingToken.activate();
+                }, () -> log.warn("활성화할 FCM 토큰이 존재하지 않습니다. 회원 id: {}", member.getMemberId()));
+    }
+
+    /**
+     * 주어진 회원의 특정 FCM 토큰을 비활성화합니다.
+     * 해당 토큰이 존재하지 않을 경우 경고 메시지를 기록합니다.
+     */
     @Override
     public void deactivateFcmToken(Member member, String fcmToken) {
         fcmTokenRepository.findByFcmTokenValueAndMember_MemberId(fcmToken, member.getMemberId())

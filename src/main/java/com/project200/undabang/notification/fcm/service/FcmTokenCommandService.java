@@ -8,6 +8,8 @@ public interface FcmTokenCommandService {
 
     void saveFcmToken(Member member, String fcmToken, String userAgent);
 
+    void activateFcmToken(Member member, String fcmToken);
+
     void deactivateFcmToken(Member member, String fcmToken);
 
     /**
