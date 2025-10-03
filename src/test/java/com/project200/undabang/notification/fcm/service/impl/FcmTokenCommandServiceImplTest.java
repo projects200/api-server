@@ -169,4 +169,46 @@ class FcmTokenCommandServiceImplTest {
             then(fcmTokenRepository).should(BDDMockito.never()).deleteByFcmTokenValueIn(BDDMockito.anyList());
         }
     }
+
+    @Nested
+    @DisplayName("FCM 토큰 활성화 기능 테스트")
+    class ActivateFcmToken {
+
+        @Test
+        @DisplayName("존재하는 FCM 토큰을 성공적으로 활성화한다")
+        void activateFcmToken_ExistingToken_Success() {
+            // given
+            FcmToken existingToken = BDDMockito.spy(FcmToken.builder()
+                    .member(member)
+                    .fcmTokenValue(fcmTokenValue)
+                    .build());
+            existingToken.deactivate(); // 테스트를 위해 비활성 상태로 시작
+
+            BDDMockito.given(fcmTokenRepository.findByFcmTokenValueAndMember_MemberId(fcmTokenValue, testUserId))
+                    .willReturn(Optional.of(existingToken));
+
+            // when
+            fcmTokenCommandService.activateFcmToken(member, fcmTokenValue);
+
+            // then
+            then(existingToken).should().activate(); // activate 메소드 호출 검증
+            assertThat(existingToken.getFcmTokenIsActive()).as("토큰이 활성화 상태여야 합니다.").isTrue();
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 FCM 토큰을 활성화 시도 시 아무 작업도 수행하지 않는다")
+        void activateFcmToken_NonExistingToken_DoesNothing() {
+            // given
+            BDDMockito.given(fcmTokenRepository.findByFcmTokenValueAndMember_MemberId(fcmTokenValue, testUserId))
+                    .willReturn(Optional.empty());
+
+            // when
+            fcmTokenCommandService.activateFcmToken(member, fcmTokenValue);
+
+            // then
+            // findBy... 메소드 호출 외에 다른 상호작용이 없었는지 확인
+            then(fcmTokenRepository).should().findByFcmTokenValueAndMember_MemberId(fcmTokenValue, testUserId);
+            then(fcmTokenRepository).shouldHaveNoMoreInteractions();
+        }
+    }
 }
