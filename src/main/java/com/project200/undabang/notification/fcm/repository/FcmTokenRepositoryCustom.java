@@ -1,5 +1,6 @@
 package com.project200.undabang.notification.fcm.repository;
 
+import com.project200.undabang.member.entity.Member;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -13,4 +14,8 @@ public interface FcmTokenRepositoryCustom {
      * @return 페이징된 FCM 토큰 문자열 목록
      */
     Page<String> findFcmTokensForInactiveMembers(int penaltyThresholdDays, Pageable pageable);
+
+    long deactivateAllActiveTokensByMember(Member member);
+
+    long activateAllInactiveTokensByMember(Member member);
 }

@@ -1,6 +1,9 @@
 package com.project200.undabang.alert.service;
 
+import com.project200.undabang.alert.dto.response.UpdateExerciseEncouragementResponse;
+
 public interface AlertCommandService {
-    void activateAlert(String fcmToken);
-    void deactivateAlert(String fcmToken);
+    UpdateExerciseEncouragementResponse activateAllExerciseEncouragementToken();
+
+    UpdateExerciseEncouragementResponse deactivateAllExerciseEncouragementToken();
 }

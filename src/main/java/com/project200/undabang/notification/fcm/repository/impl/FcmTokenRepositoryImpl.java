@@ -1,6 +1,7 @@
 package com.project200.undabang.notification.fcm.repository.impl;
 
 import com.project200.undabang.exercise.entity.QExercise;
+import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.QMember;
 import com.project200.undabang.notification.fcm.entity.QFcmToken;
 import com.project200.undabang.notification.fcm.repository.FcmTokenRepositoryCustom;
@@ -80,5 +81,51 @@ public class FcmTokenRepositoryImpl implements FcmTokenRepositoryCustom {
 
         // --- 6. Page 객체 생성 ---
         return new PageImpl<>(tokens, pageable, total);
+    }
+
+    /**
+     * 주어진 회원과 연관된 모든 비활성화된 FCM 토큰을 활성화합니다.
+     *
+     * @param member 토큰을 활성화할 대상 회원 객체
+     * @return 활성화된 토큰의 개수
+     */
+    @Override
+    public long activateAllInactiveTokensByMember(Member member) {
+        QFcmToken fcmToken = QFcmToken.fcmToken;
+
+        long activatedTokenCount = queryFactory
+                .update(fcmToken)
+                .set(fcmToken.fcmTokenIsActive, true)
+                .where(
+                        fcmToken.member.eq(member),
+                        fcmToken.fcmTokenIsActive.isFalse(), // 비활성화 된 토큰
+                        fcmToken.fcmTokenExpiredAt.goe(LocalDateTime.now()) // 만료되지 않은 토큰
+                )
+                .execute();
+
+        return activatedTokenCount;
+    }
+
+    /**
+     * 주어진 회원과 연관된 모든 활성화된 FCM 토큰을 비활성화합니다.
+     *
+     * @param member 토큰을 비활성화할 대상 회원 객체
+     * @return 비활성화된 토큰의 개수
+     */
+    @Override
+    public long deactivateAllActiveTokensByMember(Member member) {
+        QFcmToken fcmToken = QFcmToken.fcmToken;
+
+        long deactivatedTokenCount = queryFactory
+                .update(fcmToken)
+                .set(fcmToken.fcmTokenIsActive, false)
+                .where(
+                        fcmToken.member.eq(member),
+                        fcmToken.fcmTokenIsActive.isTrue(), // 활성화 된 토큰
+                        fcmToken.fcmTokenExpiredAt.goe(LocalDateTime.now()) // 만료되지 않은 토큰
+                )
+                .execute();
+
+        return deactivatedTokenCount;
     }
 }

@@ -1,5 +1,6 @@
 package com.project200.undabang.alert.service.impl;
 
+import com.project200.undabang.alert.dto.response.UpdateExerciseEncouragementResponse;
 import com.project200.undabang.alert.service.AlertCommandService;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
@@ -11,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.Objects;
 import java.util.UUID;
 
 @Slf4j
@@ -22,27 +22,25 @@ public class AlertCommandServiceImpl implements AlertCommandService {
     private final MemberRepository memberRepository;
 
     /**
-     * 사용자 알림을 활성화합니다. 주어진 FCM 토큰을 저장하고 관련된 사용자 정보를 업데이트합니다.
+     * 주어진 FCM 토큰을 활성화합니다.
+     * 현재 사용자와 연관된 모든 토큰을 활성화 처리합니다.
      */
     @Override
-    public void activateAlert(String fcmToken) {
+    public UpdateExerciseEncouragementResponse activateAllExerciseEncouragementToken() {
         Member member = getMember(UserContextHolder.getUserId());
 
-        if (Objects.nonNull(fcmToken) && !fcmToken.isBlank()) {
-            fcmTokenCommandService.activateFcmToken(member, fcmToken);
-        }
+        return UpdateExerciseEncouragementResponse.of(fcmTokenCommandService.activateAllTokens(member));
     }
 
     /**
      * 주어진 FCM 토큰을 비활성화합니다.
+     * 현재 사용자와 연관된 모든 토큰을 비활성화 처리합니다.
      */
     @Override
-    public void deactivateAlert(String fcmToken) {
+    public UpdateExerciseEncouragementResponse deactivateAllExerciseEncouragementToken() {
         Member member = getMember(UserContextHolder.getUserId());
 
-        if (Objects.nonNull(fcmToken) && !fcmToken.isBlank()) {
-            fcmTokenCommandService.deactivateFcmToken(member, fcmToken);
-        }
+        return UpdateExerciseEncouragementResponse.of(fcmTokenCommandService.deactivateAllTokens(member));
     }
 
     /**

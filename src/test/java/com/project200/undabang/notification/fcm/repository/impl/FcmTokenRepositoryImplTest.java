@@ -35,42 +35,6 @@ class FcmTokenRepositoryImplTest {
     @Autowired
     FcmTokenRepository fcmTokenRepository;
 
-    private Member createAndPersistMember(String email, String nickname, LocalDateTime createdAt) {
-        Member member = Member.builder()
-                .memberId(UUID.randomUUID())
-                .memberEmail(email)
-                .memberNickname(nickname)
-                .memberCreatedAt(createdAt)
-                .memberDeletedAt(null) // 명시적으로 null 설정
-                .build();
-        em.persist(member);
-        return member;
-    }
-
-    // --- Helper Methods ---
-
-    private void createAndPersistExercise(Member member, LocalDateTime createdAt) {
-        Exercise exercise = Exercise.builder()
-                .member(member)
-                .exerciseTitle("Sample Exercise")
-                .exerciseCreatedAt(createdAt)
-                .exerciseStartedAt(createdAt)
-                .exerciseEndedAt(createdAt.plusHours(1))
-                .build();
-        em.persist(exercise);
-    }
-
-    private FcmToken createAndPersistFcmToken(Member member, String tokenValue, boolean isActive, LocalDateTime expiredAt) {
-        FcmToken fcmToken = FcmToken.builder()
-                .member(member)
-                .fcmTokenValue(tokenValue)
-                .fcmTokenIsActive(isActive)
-                .fcmTokenExpiredAt(expiredAt)
-                .build();
-        em.persist(fcmToken);
-        return fcmToken;
-    }
-
     @Nested
     @DisplayName("findFcmTokensForInactiveMembers 메소드")
     class FindFcmTokensForInactiveMembersTest {
@@ -206,6 +170,150 @@ class FcmTokenRepositoryImplTest {
             assertThat(allFetchedTokens.size()).as("페이징을 통해 조회된 전체 토큰 수는 12개여야 합니다.").isEqualTo(12);
             assertThat(allFetchedTokens).as("조회된 모든 토큰이 기대한 토큰 목록과 일치해야 합니다.")
                     .containsExactlyInAnyOrderElementsOf(allExpectedTokens);
+        }
+    }
+
+    private Member createAndPersistMember(String email, String nickname, LocalDateTime createdAt) {
+        Member member = Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberEmail(email)
+                .memberNickname(nickname)
+                .memberCreatedAt(createdAt)
+                .memberDeletedAt(null) // 명시적으로 null 설정
+                .build();
+        em.persist(member);
+        return member;
+    }
+
+    private void createAndPersistExercise(Member member, LocalDateTime createdAt) {
+        Exercise exercise = Exercise.builder()
+                .member(member)
+                .exerciseTitle("Sample Exercise")
+                .exerciseCreatedAt(createdAt)
+                .exerciseStartedAt(createdAt)
+                .exerciseEndedAt(createdAt.plusHours(1))
+                .build();
+        em.persist(exercise);
+    }
+
+    private FcmToken createAndPersistFcmToken(Member member, String tokenValue, boolean isActive, LocalDateTime expiredAt) {
+        FcmToken fcmToken = FcmToken.builder()
+                .member(member)
+                .fcmTokenValue(tokenValue)
+                .fcmTokenIsActive(isActive)
+                .fcmTokenExpiredAt(expiredAt)
+                .build();
+        em.persist(fcmToken);
+        return fcmToken;
+    }
+
+    private void flushAndClear() {
+        em.flush();
+        em.clear();
+    }
+
+    @Nested
+    @DisplayName("activateAllInactiveTokensByMember 메소드")
+    class ActivateTokensTest {
+
+        @Test
+        @DisplayName("비활성이고 만료되지 않은 토큰만 활성화된다")
+        void activateShouldOnlyAffectInactiveAndNotExpiredTokens() {
+            LocalDateTime now = LocalDateTime.now();
+
+            Member target = createAndPersistMember("target@test.com", "target", now.minusDays(10));
+            Member other = createAndPersistMember("other@test.com", "other", now.minusDays(10));
+
+            // 대상 멤버: 비활성 & 만료 아님 -> 활성화 대상
+            createAndPersistFcmToken(target, "t-activate-1", false, now.plusDays(1));
+            // 대상 멤버: 비활성 & 만료됨 -> 대상 아님
+            createAndPersistFcmToken(target, "t-activate-expired", false, now.minusDays(1));
+            // 대상 멤버: 이미 활성 -> 영향 없음
+            createAndPersistFcmToken(target, "t-already-active", true, now.plusDays(1));
+            // 다른 멤버: 비활성 & 만료 아님 -> 영향 없음
+            createAndPersistFcmToken(other, "other-should-not-change", false, now.plusDays(1));
+
+            flushAndClear();
+
+            long updated = fcmTokenRepository.activateAllInactiveTokensByMember(target);
+            flushAndClear();
+
+            // 검증: 업데이트 카운트
+            assertThat(updated).isEqualTo(1);
+
+            // DB에서 해당 멤버 토큰 상태 확인
+            List<FcmToken> targetTokens = em.createQuery("SELECT ft FROM FcmToken ft WHERE ft.member = :m", FcmToken.class)
+                    .setParameter("m", target)
+                    .getResultList();
+
+            assertThat(targetTokens).extracting(FcmToken::getFcmTokenValue)
+                    .contains("t-activate-1", "t-activate-expired", "t-already-active");
+
+            // 값별 상태 검증
+            assertThat(targetTokens.stream()
+                    .filter(t -> t.getFcmTokenValue().equals("t-activate-1"))
+                    .findFirst().get().getFcmTokenIsActive()).isTrue();
+
+            assertThat(targetTokens.stream()
+                    .filter(t -> t.getFcmTokenValue().equals("t-activate-expired"))
+                    .findFirst().get().getFcmTokenIsActive()).isFalse();
+
+            assertThat(targetTokens.stream()
+                    .filter(t -> t.getFcmTokenValue().equals("t-already-active"))
+                    .findFirst().get().getFcmTokenIsActive()).isTrue();
+
+            // 다른 멤버 토큰은 변경되지 않음
+            FcmToken otherToken = em.createQuery("SELECT ft FROM FcmToken ft WHERE ft.fcmTokenValue = :v", FcmToken.class)
+                    .setParameter("v", "other-should-not-change")
+                    .getSingleResult();
+            assertThat(otherToken.getFcmTokenIsActive()).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("deactivateAllActiveTokensByMember 메소드")
+    class DeactivateTokensTest {
+
+        @Test
+        @DisplayName("활성이고 만료되지 않은 토큰만 비활성화된다")
+        void deactivateShouldOnlyAffectActiveAndNotExpiredTokens() {
+            LocalDateTime now = LocalDateTime.now();
+
+            Member target = createAndPersistMember("target2@test.com", "target2", now.minusDays(10));
+            Member other = createAndPersistMember("other2@test.com", "other2", now.minusDays(10));
+
+            // 대상 멤버: 활성 & 만료 아님 -> 비활성화 대상
+            createAndPersistFcmToken(target, "t-deactivate-1", true, now.plusDays(1));
+            // 대상 멤버: 활성 & 만료됨 -> 대상 아님
+            createAndPersistFcmToken(target, "t-deactivate-expired", true, now.minusDays(1));
+            // 대상 멤버: 이미 비활성 -> 영향 없음
+            createAndPersistFcmToken(target, "t-already-inactive", false, now.plusDays(1));
+            // 다른 멤버: 활성 & 만료 아님 -> 영향 없음
+            createAndPersistFcmToken(other, "other-not-changed-2", true, now.plusDays(1));
+
+            flushAndClear();
+
+            long updated = fcmTokenRepository.deactivateAllActiveTokensByMember(target);
+            flushAndClear();
+
+            // 업데이트 카운트 검증
+            assertThat(updated).isEqualTo(1);
+
+            List<FcmToken> targetTokens = em.createQuery("SELECT ft FROM FcmToken ft WHERE ft.member = :m", FcmToken.class)
+                    .setParameter("m", target)
+                    .getResultList();
+
+            // 상태별 검증
+            assertThat(targetTokens.stream().collect(java.util.stream.Collectors.toMap(FcmToken::getFcmTokenValue, FcmToken::getFcmTokenIsActive)))
+                    .containsEntry("t-deactivate-1", false)
+                    .containsEntry("t-deactivate-expired", true)
+                    .containsEntry("t-already-inactive", false);
+
+            // 다른 멤버는 변경되지 않음
+            FcmToken otherToken = em.createQuery("SELECT ft FROM FcmToken ft WHERE ft.fcmTokenValue = :v", FcmToken.class)
+                    .setParameter("v", "other-not-changed-2")
+                    .getSingleResult();
+            assertThat(otherToken.getFcmTokenIsActive()).isTrue();
         }
     }
 }

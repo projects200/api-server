@@ -30,8 +30,10 @@ class FcmTokenCommandServiceImplTest {
     private final Member member = Member.builder().memberId(testUserId).build();
     private final String fcmTokenValue = "test-fcm-token";
     private final String userAgent = "Test-User-Agent";
+
     @InjectMocks
     private FcmTokenCommandServiceImpl fcmTokenCommandService;
+
     @Mock
     private FcmTokenRepository fcmTokenRepository;
 
@@ -170,44 +172,38 @@ class FcmTokenCommandServiceImplTest {
         }
     }
 
+    // --- 헬퍼 메소드: 파일 최하부에 위치시킬 것 ---
+    private Member createMember(UUID id) {
+        return Member.builder().memberId(id).build();
+    }
+
     @Nested
-    @DisplayName("FCM 토큰 활성화 기능 테스트")
-    class ActivateFcmToken {
+    @DisplayName("모든 토큰 일괄 활성화/비활성화 테스트")
+    class BulkToggleTokensTest {
 
         @Test
-        @DisplayName("존재하는 FCM 토큰을 성공적으로 활성화한다")
-        void activateFcmToken_ExistingToken_Success() {
-            // given
-            FcmToken existingToken = BDDMockito.spy(FcmToken.builder()
-                    .member(member)
-                    .fcmTokenValue(fcmTokenValue)
-                    .build());
-            existingToken.deactivate(); // 테스트를 위해 비활성 상태로 시작
+        @DisplayName("activateAllTokens: 레포지토리 호출하고 반환 값을 그대로 리턴한다")
+        void activateAllTokens_callsRepositoryAndReturnsCount() {
+            Member member = createMember(testUserId);
+            BDDMockito.given(fcmTokenRepository.activateAllInactiveTokensByMember(member)).willReturn(3L);
 
-            BDDMockito.given(fcmTokenRepository.findByFcmTokenValueAndMember_MemberId(fcmTokenValue, testUserId))
-                    .willReturn(Optional.of(existingToken));
+            Long result = fcmTokenCommandService.activateAllTokens(member);
 
-            // when
-            fcmTokenCommandService.activateFcmToken(member, fcmTokenValue);
-
-            // then
-            then(existingToken).should().activate(); // activate 메소드 호출 검증
-            assertThat(existingToken.getFcmTokenIsActive()).as("토큰이 활성화 상태여야 합니다.").isTrue();
+            assertThat(result).isEqualTo(3L);
+            then(fcmTokenRepository).should().activateAllInactiveTokensByMember(member);
+            then(fcmTokenRepository).shouldHaveNoMoreInteractions();
         }
 
         @Test
-        @DisplayName("존재하지 않는 FCM 토큰을 활성화 시도 시 아무 작업도 수행하지 않는다")
-        void activateFcmToken_NonExistingToken_DoesNothing() {
-            // given
-            BDDMockito.given(fcmTokenRepository.findByFcmTokenValueAndMember_MemberId(fcmTokenValue, testUserId))
-                    .willReturn(Optional.empty());
+        @DisplayName("deactivateAllTokens: 레포지토리 호출하고 반환 값을 그대로 리턴한다")
+        void deactivateAllTokens_callsRepositoryAndReturnsCount() {
+            Member member = createMember(testUserId);
+            BDDMockito.given(fcmTokenRepository.deactivateAllActiveTokensByMember(member)).willReturn(5L);
 
-            // when
-            fcmTokenCommandService.activateFcmToken(member, fcmTokenValue);
+            Long result = fcmTokenCommandService.deactivateAllTokens(member);
 
-            // then
-            // findBy... 메소드 호출 외에 다른 상호작용이 없었는지 확인
-            then(fcmTokenRepository).should().findByFcmTokenValueAndMember_MemberId(fcmTokenValue, testUserId);
+            assertThat(result).isEqualTo(5L);
+            then(fcmTokenRepository).should().deactivateAllActiveTokensByMember(member);
             then(fcmTokenRepository).shouldHaveNoMoreInteractions();
         }
     }

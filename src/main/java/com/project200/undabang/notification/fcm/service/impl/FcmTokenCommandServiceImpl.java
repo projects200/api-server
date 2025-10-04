@@ -43,19 +43,6 @@ public class FcmTokenCommandServiceImpl implements FcmTokenCommandService {
                 });
     }
 
-    /**
-     * 특정 회원의 FCM 토큰을 활성화합니다.
-     * 주어진 FCM 토큰이 데이터베이스에 이미 존재하면 해당 토큰을 활성화하고,
-     * 그렇지 않다면 경고 메시지를 기록합니다.
-     */
-    @Override
-    public void activateFcmToken(Member member, String fcmToken) {
-        fcmTokenRepository.findByFcmTokenValueAndMember_MemberId(fcmToken, member.getMemberId())
-                .ifPresentOrElse(existingToken -> {
-                    log.debug("FCM 토큰을 활성화 합니다. 회원 id : {}", member.getMemberId());
-                    existingToken.activate();
-                }, () -> log.warn("활성화할 FCM 토큰이 존재하지 않습니다. 회원 id: {}", member.getMemberId()));
-    }
 
     /**
      * 주어진 회원의 특정 FCM 토큰을 비활성화합니다.
@@ -68,6 +55,22 @@ public class FcmTokenCommandServiceImpl implements FcmTokenCommandService {
                     log.debug("FCM 토큰을 비활성화합니다. 회원 id: {}", member.getMemberId());
                     existingToken.deactivate();
                 }, () -> log.warn("비활성화할 FCM 토큰이 존재하지 않습니다. 회원 id: {}", member.getMemberId()));
+    }
+
+    /**
+     * 특정 회원의 모든 비활성화된 FCM 토큰을 활성화합니다.
+     */
+    @Override
+    public Long activateAllTokens(Member member) {
+        return fcmTokenRepository.activateAllInactiveTokensByMember(member);
+    }
+
+    /**
+     * 지정된 회원의 모든 활성화된 FCM 토큰을 비활성화합니다.
+     */
+    @Override
+    public Long deactivateAllTokens(Member member) {
+        return fcmTokenRepository.deactivateAllActiveTokensByMember(member);
     }
 
     /**

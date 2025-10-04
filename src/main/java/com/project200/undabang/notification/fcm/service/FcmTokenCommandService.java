@@ -8,8 +8,6 @@ public interface FcmTokenCommandService {
 
     void saveFcmToken(Member member, String fcmToken, String userAgent);
 
-    void activateFcmToken(Member member, String fcmToken);
-
     void deactivateFcmToken(Member member, String fcmToken);
 
     /**
@@ -19,4 +17,8 @@ public interface FcmTokenCommandService {
      * @param tokensToDelete 삭제할 토큰 값 리스트
      */
     void deleteInvalidTokens(List<String> tokensToDelete);
+
+    Long activateAllTokens(Member member);
+
+    Long deactivateAllTokens(Member member);
 }
