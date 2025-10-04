@@ -1,6 +1,6 @@
 package com.project200.undabang.alert.service.impl;
 
-import com.project200.undabang.alert.service.AlertService;
+import com.project200.undabang.alert.service.AlertCommandService;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
@@ -17,7 +17,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AlertServiceImpl implements AlertService {
+public class AlertCommandServiceImpl implements AlertCommandService {
     private final FcmTokenCommandService fcmTokenCommandService;
     private final MemberRepository memberRepository;
 

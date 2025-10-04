@@ -27,13 +27,13 @@ import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AlertServiceImpl 테스트")
-class AlertServiceImplTest {
+class AlertCommandServiceImplTest {
 
     private final UUID testUserId = UUID.randomUUID();
     private final Member member = createMember(testUserId);
     private final String fcmToken = "test-fcm-token";
     @InjectMocks
-    private AlertServiceImpl alertService;
+    private AlertCommandServiceImpl alertService;
     @Mock
     private FcmTokenCommandService fcmTokenCommandService;
     @Mock

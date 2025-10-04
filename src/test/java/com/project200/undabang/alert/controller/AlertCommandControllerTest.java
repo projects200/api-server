@@ -1,6 +1,6 @@
 package com.project200.undabang.alert.controller;
 
-import com.project200.undabang.alert.service.AlertService;
+import com.project200.undabang.alert.service.AlertCommandService;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
 import com.project200.undabang.configuration.RestDocsUtils;
 import org.junit.jupiter.api.DisplayName;
@@ -22,14 +22,14 @@ import static org.springframework.restdocs.headers.HeaderDocumentation.headerWit
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 
-@WebMvcTest(AlertController.class)
+@WebMvcTest(AlertCommandController.class)
 @DisplayName("AlertController 테스트")
-class AlertControllerTest extends AbstractRestDocSupport {
+class AlertCommandControllerTest extends AbstractRestDocSupport {
 
     private final String fcmToken = "test-fcm-token";
     private final UUID memberId = UUID.randomUUID();
     @MockitoBean
-    private AlertService alertService;
+    private AlertCommandService alertCommandService;
 
     @Nested
     @DisplayName("알림 활성화 API 테스트")
@@ -41,7 +41,7 @@ class AlertControllerTest extends AbstractRestDocSupport {
         @DisplayName("알림 활성화 성공")
         void activateAlert_Success() throws Exception {
             // given
-            BDDMockito.doNothing().when(alertService).activateAlert(fcmToken);
+            BDDMockito.doNothing().when(alertCommandService).activateAlert(fcmToken);
 
             // when & then
             mockMvc.perform(MockMvcRequestBuilders.patch(ACTIVATE_URL)
@@ -63,7 +63,7 @@ class AlertControllerTest extends AbstractRestDocSupport {
                             )
                     ));
 
-            BDDMockito.then(alertService).should().activateAlert(fcmToken);
+            BDDMockito.then(alertCommandService).should().activateAlert(fcmToken);
         }
 
         @Test
@@ -75,7 +75,7 @@ class AlertControllerTest extends AbstractRestDocSupport {
                             .headers(getCommonApiHeaders(memberId)))
                     .andExpect(MockMvcResultMatchers.status().isBadRequest());
 
-            BDDMockito.then(alertService).shouldHaveNoInteractions();
+            BDDMockito.then(alertCommandService).shouldHaveNoInteractions();
         }
     }
 
@@ -89,7 +89,7 @@ class AlertControllerTest extends AbstractRestDocSupport {
         @DisplayName("알림 비활성화 성공")
         void deactivateAlert_Success() throws Exception {
             // given
-            BDDMockito.doNothing().when(alertService).deactivateAlert(fcmToken);
+            BDDMockito.doNothing().when(alertCommandService).deactivateAlert(fcmToken);
 
             // when & then
             mockMvc.perform(MockMvcRequestBuilders.patch(DEACTIVATE_URL)
@@ -111,7 +111,7 @@ class AlertControllerTest extends AbstractRestDocSupport {
                             )
                     ));
 
-            BDDMockito.then(alertService).should().deactivateAlert(fcmToken);
+            BDDMockito.then(alertCommandService).should().deactivateAlert(fcmToken);
         }
 
         @Test
@@ -123,7 +123,7 @@ class AlertControllerTest extends AbstractRestDocSupport {
                             .headers(getCommonApiHeaders(memberId)))
                     .andExpect(MockMvcResultMatchers.status().isBadRequest());
 
-            BDDMockito.then(alertService).shouldHaveNoInteractions();
+            BDDMockito.then(alertCommandService).shouldHaveNoInteractions();
         }
     }
 }
