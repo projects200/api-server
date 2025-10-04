@@ -204,3 +204,9 @@ include::overview/공통-개발-참고-사항.adoc[]
 - 회원의 오픈 채팅 URL 조회 #GET# `/api/v1/open-chats`
 
 - 다른 회원의 오픈 채팅 URL 조회 #GET# `/api/v1/members/{memberId}/open-chat`
+
+=== xref:알림-API.html[알림 API]
+
+- 알림 일괄 활성화 API #PATCH# `/api/v1/alerts/exercise-encouragement/activate`
+
+- 알림 일괄 비활성화 API #PATCH# `/api/v1/alerts/exercise-encouragement/deactivate`
