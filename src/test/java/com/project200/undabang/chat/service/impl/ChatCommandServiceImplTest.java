@@ -230,5 +230,76 @@ class ChatCommandServiceImplTest {
                 verify(chatRepository, never()).save(any(Chat.class));
             }
         }
+
+        @Test
+        @DisplayName("비관적 락 이후 멤버를 찾지 못하면 예외를 발생시킨다")
+        void it_throws_exception_when_member_not_found_after_lock() {
+            // given
+            Member currentMember = createMember();
+            Member targetMember = createMember();
+            // DB 데이터와 불일치하는 상황을 가정하기 위해 다른 ID를 가진 멤버 생성
+            Member anotherMember = createMember();
+            CreateChatroomRequest request = new CreateChatroomRequest(targetMember.getMemberId());
+            List<UUID> sortedIds = Stream.of(currentMember.getMemberId(), targetMember.getMemberId()).sorted().toList();
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(currentMember.getMemberId());
+                // 락은 2개의 멤버를 반환했지만, 그 중 하나가 예상과 다른 멤버인 경우
+                given(memberRepository.findAllByIdWithPessimisticLock(sortedIds)).willReturn(List.of(currentMember, anotherMember));
+
+                // when & then
+                assertThatThrownBy(() -> chatCommandService.createChatroom(request))
+                        .isInstanceOf(CustomException.class)
+                        .hasMessage(ErrorCode.INTERNAL_SERVER_ERROR.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("비관적 락 이후 두 멤버 모두 찾지 못하면 예외를 발생시킨다")
+        void it_throws_exception_when_both_members_not_found_after_lock() {
+            // given
+            Member currentMember = createMember();
+            Member targetMember = createMember();
+            // DB 데이터와 불일치하는 상황을 가정하기 위해 다른 ID를 가진 멤버들 생성
+            Member anotherMember1 = createMember();
+            Member anotherMember2 = createMember();
+            CreateChatroomRequest request = new CreateChatroomRequest(targetMember.getMemberId());
+            List<UUID> sortedIds = Stream.of(currentMember.getMemberId(), targetMember.getMemberId()).sorted().toList();
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(currentMember.getMemberId());
+                // 락은 2개의 멤버를 반환했지만, 둘 다 예상과 다른 멤버인 경우
+                given(memberRepository.findAllByIdWithPessimisticLock(sortedIds)).willReturn(List.of(anotherMember1, anotherMember2));
+
+                // when & then
+                assertThatThrownBy(() -> chatCommandService.createChatroom(request))
+                        .isInstanceOf(CustomException.class)
+                        .hasMessage(ErrorCode.INTERNAL_SERVER_ERROR.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("재활성화 시 채팅방 멤버를 찾지 못하면 예외를 발생시킨다")
+        void it_throws_exception_when_chatroom_member_not_found_on_reactivation() {
+            // given
+            Member currentMember = createMember();
+            Member targetMember = createMember();
+            CreateChatroomRequest request = new CreateChatroomRequest(targetMember.getMemberId());
+            Chatroom existingChatroom = createChatroom(1L);
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(currentMember.getMemberId());
+                mockMemberLocking(currentMember, targetMember);
+                given(chatroomRepository.findChatroomInfoBetweenMembers(currentMember, targetMember)).willReturn(Optional.of(existingChatroom));
+                given(chatroomMemberRepository.checkAllMembersActive(existingChatroom.getId())).willReturn(false);
+                // getChatroomMember 메소드에서 예외가 발생하도록 Optional.empty() 반환
+                given(chatroomMemberRepository.findByChatroomAndMember(existingChatroom, currentMember)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> chatCommandService.createChatroom(request))
+                        .isInstanceOf(CustomException.class)
+                        .hasMessage(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND.getMessage());
+            }
+        }
     }
 }
