@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
-import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 
@@ -26,9 +25,8 @@ public class Chat {
     @JoinColumn(name = "chatroom_id", nullable = false, updatable = false)
     private Chatroom chatroom;
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "sender_id", nullable = false, updatable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sender_id", updatable = false)
     private Member sender;
 
     @Size(max = 500)
@@ -37,18 +35,14 @@ public class Chat {
     private String chatContent;
 
     @NotNull
-    @ColumnDefault("0")
-    @Column(name = "chat_is_read", nullable = false)
+    @Enumerated(EnumType.STRING)
     @Builder.Default
-    private Boolean chatIsRead = false;
+    @Column(name = "chat_type", length = 20)
+    private ChatType chatType = ChatType.USER;
 
     @NotNull
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "chat_sended_at", nullable = false, updatable = false)
     @Builder.Default
-    private LocalDateTime chatSendedAt = LocalDateTime.now();
-
-    @Column(name = "chat_deleted_at")
-    private LocalDateTime chatDeletedAt;
+    @Column(name = "chat_created_at", nullable = false, updatable = false)
+    private LocalDateTime chatCreatedAt = LocalDateTime.now();
 
 }
