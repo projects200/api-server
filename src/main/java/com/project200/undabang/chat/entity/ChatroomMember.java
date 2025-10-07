@@ -42,4 +42,15 @@ public class ChatroomMember {
 
     @Column(name = "last_read_chat_id")
     private Long lastReadChatId;
+
+    public static ChatroomMember of(Chatroom chatroom, Member member) {
+        return ChatroomMember.builder()
+                .chatroom(chatroom)
+                .member(member)
+                .build();
+    }
+
+    public void updateMemberStatus(ChatroomMemberStatus chatroomMemberStatus) {
+        this.chatroomMemberStatus = chatroomMemberStatus;
+    }
 }

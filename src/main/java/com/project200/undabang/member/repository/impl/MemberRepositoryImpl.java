@@ -1,13 +1,17 @@
 package com.project200.undabang.member.repository.impl;
 
 import com.project200.undabang.exercise.entity.QExercise;
+import com.project200.undabang.member.entity.Member;
+import com.project200.undabang.member.entity.QMember;
 import com.project200.undabang.member.repository.MemberRepositoryCustom;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Repository
@@ -15,6 +19,23 @@ import java.util.UUID;
 public class MemberRepositoryImpl implements MemberRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
+
+    /**
+     * 주어진 회원 ID 목록에 해당하는 모든 회원 데이터를 비관적 잠금을 사용하여 조회합니다.
+     *
+     * @param sortedMemberIdList 조회할 회원의 고유 식별자 목록 (UUID 형식). ID는 정렬된 순서로 제공됩니다.
+     * @return 비관적 잠금이 적용된 회원 엔티티 목록
+     */
+    @Override
+    public List<Member> findAllByIdWithPessimisticLock(List<UUID> sortedMemberIdList) {
+        QMember member = QMember.member;
+
+        return queryFactory
+                .selectFrom(member)
+                .where(member.memberId.in(sortedMemberIdList))
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .fetch();
+    }
 
     /**
      * 특정 회원이 지정된 기간 내에 수행한 운동 기록의 개수를 계산합니다.
