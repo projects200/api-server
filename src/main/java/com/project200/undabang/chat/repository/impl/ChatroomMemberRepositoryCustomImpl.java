@@ -31,6 +31,6 @@ public class ChatroomMemberRepositoryCustomImpl implements ChatroomMemberReposit
                 )
                 .fetchOne();
 
-        return result != null && result == 2;
+        return result == 2;
     }
 }

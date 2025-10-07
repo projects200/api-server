@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Import;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -188,6 +189,95 @@ class MemberRepositoryImplTest {
 
             // then
             assertThat(exerciseDays).isEqualTo(0);
+        }
+    }
+
+    @Nested
+    @DisplayName("findAllByIdWithPessimisticLock 메소드는")
+    class Describe_findAllByIdWithPessimisticLock {
+
+        @Test
+        @DisplayName("주어진 회원 ID 목록에 해당하는 회원들을 비관적 잠금과 함께 조회한다")
+        void it_returns_members_with_pessimistic_lock() {
+            // given
+            Member member1 = createAndSaveMember("user1");
+            Member member2 = createAndSaveMember("user2");
+            Member member3 = createAndSaveMember("user3");
+
+            List<UUID> memberIds = List.of(
+                    member1.getMemberId(),
+                    member2.getMemberId(),
+                    member3.getMemberId()
+            );
+
+            flushAndClear();
+
+            // when
+            List<Member> foundMembers = memberRepository.findAllByIdWithPessimisticLock(memberIds);
+
+            // then
+            assertThat(foundMembers).hasSize(3);
+            assertThat(foundMembers).extracting("memberId")
+                    .containsExactlyInAnyOrderElementsOf(memberIds);
+        }
+
+        @Test
+        @DisplayName("빈 ID 목록을 전달하면 빈 리스트를 반환한다")
+        void it_returns_empty_list_when_empty_ids_provided() {
+            // given
+            List<UUID> emptyIds = List.of();
+
+            // when
+            List<Member> foundMembers = memberRepository.findAllByIdWithPessimisticLock(emptyIds);
+
+            // then
+            assertThat(foundMembers).isEmpty();
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 ID는 결과에서 제외된다")
+        void it_excludes_non_existent_ids() {
+            // given
+            Member existingMember = createAndSaveMember("existingUser");
+            UUID nonExistentId = UUID.randomUUID();
+
+            List<UUID> memberIds = List.of(
+                    existingMember.getMemberId(),
+                    nonExistentId
+            );
+
+            flushAndClear();
+
+            // when
+            List<Member> foundMembers = memberRepository.findAllByIdWithPessimisticLock(memberIds);
+
+            // then
+            assertThat(foundMembers).hasSize(1);
+            assertThat(foundMembers.get(0).getMemberId()).isEqualTo(existingMember.getMemberId());
+        }
+
+        @Test
+        @DisplayName("ID 목록 순서와 상관없이 모든 회원을 조회한다")
+        void it_returns_all_members_regardless_of_id_order() {
+            // given
+            Member member1 = createAndSaveMember("user1");
+            Member member2 = createAndSaveMember("user2");
+
+            // 역순으로 ID 목록 생성
+            List<UUID> memberIds = List.of(
+                    member2.getMemberId(),
+                    member1.getMemberId()
+            );
+
+            flushAndClear();
+
+            // when
+            List<Member> foundMembers = memberRepository.findAllByIdWithPessimisticLock(memberIds);
+
+            // then
+            assertThat(foundMembers).hasSize(2);
+            assertThat(foundMembers).extracting("memberId")
+                    .containsExactlyInAnyOrderElementsOf(memberIds);
         }
     }
 }
