@@ -51,7 +51,7 @@ public class ChatCommandServiceImpl implements ChatCommandService {
             throw new CustomException(ErrorCode.SELF_CHAT_NOT_ALLOWED);
         }
 
-        // 혹시 두 회원이 동시에 채팅방을 생성할 가능성이 있기 때문에 비관적 락을 적용해서 채팅방이 동시에 생성되는것을 방지함
+        // 혹시 두 회원이 동시에 채팅방을 생성할 가능성이 있기 때문에 비관적 락을 적용해서 채팅방이 동시에 생성되는 것을 방지함
         List<UUID> sortedMemberIdList = Stream.of(currentMemberId, targetMemberId).sorted().toList();
         List<Member> pessimisticLockedMemberList = memberRepository.findAllByIdWithPessimisticLock(sortedMemberIdList);
 
@@ -108,7 +108,7 @@ public class ChatCommandServiceImpl implements ChatCommandService {
     /**
      * 주어진 채팅방과 현재 사용자 및 대상 사용자를 기준으로 채팅방을 재활성화합니다.
      * 채팅방 멤버의 상태를 업데이트하고, 필요 시 시스템 메시지를 생성하여 저장합니다.
-     * 현재는 1:1 채팅만 있어서 문제가 없지만 추후 그룹 채팅을 개발하려면 이 부분을 수정 해야 합니다.
+     * 현재는 1:1 채팅만 있어서 문제가 없지만 추후 그룹 채팅을 개발하려면 이 부분을 수정해야 합니다.
      */
     private Chatroom reActiveChatroom(Chatroom chatroom, Member currentMember, Member targetMember) {
 
@@ -133,7 +133,7 @@ public class ChatCommandServiceImpl implements ChatCommandService {
      * 생성된 채팅방에 현재 사용자와 대상 사용자를 멤버로 추가합니다.
      */
     private Chatroom createNewChatroom(Member currentMember, Member targetMember) {
-        // 채팅방 기능 개발
+        // 새로운 채팅방 생성
         Chatroom newChatroom = chatroomRepository.save(Chatroom.createChatroom());
 
         // 멤버 추가
