@@ -71,7 +71,7 @@ public enum ErrorCode {
     OPEN_CHAT_ROOM_NOT_FOUND(404, "OPEN_CHAT_ROOM_NOT_FOUND", "존재하지 않는 오픈 채팅방 입니다."),
 
     // 채팅방 관련 에러
-    SELF_CHAT_NOT_ALLOWED(400, "SELF_CHAT_NOT_ALLOWED", "자기 자신과 채팅방을 개설할 수 없습니다"),
+    SELF_CHAT_NOT_ALLOWED(400, "SELF_CHAT_NOT_ALLOWED", "자기 자신과 채팅방을 개설할 수 없습니다."),
     CHATROOM_MEMBERS_NOT_FOUND(404, "CHATROOM_MEMBERS_NOT_FOUND", "등록된 채팅방 참여자 정보를 확인할 수 없습니다.");
 
 

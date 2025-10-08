@@ -43,6 +43,6 @@ public class Chatroom {
     private List<ChatroomMember> chatroomMembers = new ArrayList<>();
 
     public static Chatroom createChatroom() {
-        return Chatroom.builder().build(); // 생성자를 사용하지 않고 정적 메소드를 사용해서 객체 생성하도록 설정
+        return Chatroom.builder().build(); // 생성자를 사용하지 않고 정적 메서드를 사용해서 객체 생성하도록 설정
     }
 }
