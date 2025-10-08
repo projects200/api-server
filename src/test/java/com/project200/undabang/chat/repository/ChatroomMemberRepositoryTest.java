@@ -3,6 +3,7 @@ package com.project200.undabang.chat.repository;
 
 import com.project200.undabang.chat.entity.Chatroom;
 import com.project200.undabang.chat.entity.ChatroomMember;
+import com.project200.undabang.chat.entity.ChatroomMemberStatus;
 import com.project200.undabang.configuration.TestQuerydslConfig;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.enums.MemberGender;
@@ -29,31 +30,6 @@ class ChatroomMemberRepositoryTest {
 
     @Autowired
     private TestEntityManager em;
-
-    private void flushAndClear() {
-        em.flush();
-        em.clear();
-    }
-
-    private Member createAndSaveMember(String nickname) {
-        Member member = Member.builder()
-                .memberId(UUID.randomUUID())
-                .memberEmail(nickname + "@example.com")
-                .memberNickname(nickname)
-                .memberGender(MemberGender.UNKNOWN)
-                .memberBday(LocalDate.of(1990, 1, 1))
-                .build();
-        return em.persist(member);
-    }
-
-    private Chatroom createAndSaveChatroom() {
-        return em.persist(Chatroom.createChatroom());
-    }
-
-    private ChatroomMember createAndSaveChatroomMember(Chatroom chatroom, Member member) {
-        ChatroomMember chatroomMember = ChatroomMember.of(chatroom, member);
-        return em.persist(chatroomMember);
-    }
 
     @Nested
     @DisplayName("findByChatroomAndMember 메소드는")
@@ -94,6 +70,74 @@ class ChatroomMemberRepositoryTest {
 
             // then
             assertThat(result).isEmpty();
+        }
+    }
+
+    private void flushAndClear() {
+        em.flush();
+        em.clear();
+    }
+
+    private Member createAndSaveMember(String nickname) {
+        Member member = Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberEmail(nickname + "@example.com")
+                .memberNickname(nickname)
+                .memberGender(MemberGender.UNKNOWN)
+                .memberBday(LocalDate.of(1990, 1, 1))
+                .build();
+        return em.persist(member);
+    }
+
+    private Chatroom createAndSaveChatroom() {
+        return em.persist(Chatroom.createChatroom());
+    }
+
+    private ChatroomMember createAndSaveChatroomMember(Chatroom chatroom, Member member) {
+        ChatroomMember chatroomMember = ChatroomMember.of(chatroom, member);
+        return em.persist(chatroomMember);
+    }
+
+    @Nested
+    @DisplayName("countByChatroomAndChatroomMemberStatus 메소드는")
+    class Describe_countByChatroomAndChatroomMemberStatus {
+
+        @Test
+        @DisplayName("채팅방과 상태에 해당하는 ChatroomMember 수를 반환한다")
+        void it_returns_count_of_chatroom_members_with_status() {
+            // given
+            Member member1 = createAndSaveMember("user1");
+            Member member2 = createAndSaveMember("user2");
+            Chatroom chatroom = createAndSaveChatroom();
+            createAndSaveChatroomMember(chatroom, member1);
+            createAndSaveChatroomMember(chatroom, member2);
+
+            flushAndClear();
+
+            // when
+            long count = chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(chatroom, ChatroomMemberStatus.ACTIVE);
+
+            // then
+            assertThat(count).isEqualTo(2L);
+        }
+
+        @Test
+        @DisplayName("채팅방과 상태에 해당하는 ChatroomMember가 없으면 0을 반환한다")
+        void it_returns_zero_when_no_members_with_status() {
+            // given
+            Member member = createAndSaveMember("user1");
+            Chatroom chatroom = createAndSaveChatroom();
+            ChatroomMember chatroomMember = createAndSaveChatroomMember(chatroom, member);
+            chatroomMember.updateMemberStatus(ChatroomMemberStatus.LEFT); // 상태 변경
+            em.persist(chatroomMember);
+
+            flushAndClear();
+
+            // when
+            long count = chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(chatroom, ChatroomMemberStatus.ACTIVE);
+
+            // then
+            assertThat(count).isEqualTo(0L);
         }
     }
 }

@@ -21,10 +21,12 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     /**
-     * 주어진 회원 ID 목록에 해당하는 모든 회원 데이터를 비관적 잠금을 사용하여 조회합니다.
+     * 주어진 회원 ID 목록에 대해 비관적 락(Pessimistic Lock)을 설정하여 회원 정보를 조회합니다.
+     * 회원 테이블의 특정 튜플(파라미터로 전달받음)에 대해서 베타적인 쓰기 락을 적용합니다.
+     * 베타적인 쓰기 락이 걸리면 다른 트랜잭션은 해당 데이터에 대해서 읽기 락을 거는것도 불가능합니다.
      *
-     * @param sortedMemberIdList 조회할 회원의 고유 식별자 목록 (UUID 형식). ID는 정렬된 순서로 제공됩니다.
-     * @return 비관적 잠금이 적용된 회원 엔티티 목록
+     * @param sortedMemberIdList 조회할 회원 ID(UUID) 목록, 정렬된 상태여야 합니다
+     * @return 비관적 락이 설정된 상태의 회원 정보 목록
      */
     @Override
     public List<Member> findAllByIdWithPessimisticLock(List<UUID> sortedMemberIdList) {

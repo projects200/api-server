@@ -133,7 +133,7 @@ class ChatCommandServiceImplTest {
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(currentMember.getMemberId());
                 mockMemberLocking(currentMember, targetMember);
-                given(chatroomRepository.findChatroomInfoBetweenMembers(currentMember, targetMember)).willReturn(Optional.empty());
+                given(chatroomRepository.findChatroomBetweenMembers(currentMember, targetMember)).willReturn(Optional.empty());
                 given(chatroomRepository.save(any(Chatroom.class))).willReturn(newChatroom);
 
                 // when
@@ -157,8 +157,8 @@ class ChatCommandServiceImplTest {
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(currentMember.getMemberId());
                 mockMemberLocking(currentMember, targetMember);
-                given(chatroomRepository.findChatroomInfoBetweenMembers(currentMember, targetMember)).willReturn(Optional.of(existingChatroom));
-                given(chatroomMemberRepository.checkAllMembersActive(existingChatroom.getId())).willReturn(true);
+                given(chatroomRepository.findChatroomBetweenMembers(currentMember, targetMember)).willReturn(Optional.of(existingChatroom));
+                given(chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(existingChatroom, ChatroomMemberStatus.ACTIVE)).willReturn(2L);
 
                 // when
                 CreateChatroomResponse response = chatCommandService.createChatroom(request);
@@ -184,8 +184,8 @@ class ChatCommandServiceImplTest {
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(currentMember.getMemberId());
                 mockMemberLocking(currentMember, targetMember);
-                given(chatroomRepository.findChatroomInfoBetweenMembers(currentMember, targetMember)).willReturn(Optional.of(existingChatroom));
-                given(chatroomMemberRepository.checkAllMembersActive(existingChatroom.getId())).willReturn(false);
+                given(chatroomRepository.findChatroomBetweenMembers(currentMember, targetMember)).willReturn(Optional.of(existingChatroom));
+                given(chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(existingChatroom, ChatroomMemberStatus.ACTIVE)).willReturn(1L);
                 given(chatroomMemberRepository.findByChatroomAndMember(existingChatroom, currentMember)).willReturn(Optional.of(currentChatroomMember));
                 given(chatroomMemberRepository.findByChatroomAndMember(existingChatroom, targetMember)).willReturn(Optional.of(targetChatroomMember));
 
@@ -214,8 +214,8 @@ class ChatCommandServiceImplTest {
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(currentMember.getMemberId());
                 mockMemberLocking(currentMember, targetMember);
-                given(chatroomRepository.findChatroomInfoBetweenMembers(currentMember, targetMember)).willReturn(Optional.of(existingChatroom));
-                given(chatroomMemberRepository.checkAllMembersActive(existingChatroom.getId())).willReturn(false);
+                given(chatroomRepository.findChatroomBetweenMembers(currentMember, targetMember)).willReturn(Optional.of(existingChatroom));
+                given(chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(existingChatroom, ChatroomMemberStatus.ACTIVE)).willReturn(1L);
                 given(chatroomMemberRepository.findByChatroomAndMember(existingChatroom, currentMember)).willReturn(Optional.of(currentChatroomMember));
                 given(chatroomMemberRepository.findByChatroomAndMember(existingChatroom, targetMember)).willReturn(Optional.of(targetChatroomMember));
 
@@ -290,8 +290,8 @@ class ChatCommandServiceImplTest {
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(currentMember.getMemberId());
                 mockMemberLocking(currentMember, targetMember);
-                given(chatroomRepository.findChatroomInfoBetweenMembers(currentMember, targetMember)).willReturn(Optional.of(existingChatroom));
-                given(chatroomMemberRepository.checkAllMembersActive(existingChatroom.getId())).willReturn(false);
+                given(chatroomRepository.findChatroomBetweenMembers(currentMember, targetMember)).willReturn(Optional.of(existingChatroom));
+                given(chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(existingChatroom, ChatroomMemberStatus.ACTIVE)).willReturn(1L);
                 // getChatroomMember 메소드에서 예외가 발생하도록 Optional.empty() 반환
                 given(chatroomMemberRepository.findByChatroomAndMember(existingChatroom, currentMember)).willReturn(Optional.empty());
 

@@ -6,5 +6,5 @@ import com.project200.undabang.member.entity.Member;
 import java.util.Optional;
 
 public interface ChatroomRepositoryCustom {
-    Optional<Chatroom> findChatroomInfoBetweenMembers(Member currentMember, Member targetMember);
+    Optional<Chatroom> findChatroomBetweenMembers(Member currentMember, Member targetMember);
 }

@@ -19,12 +19,11 @@ public class ChatroomRepositoryCustomImpl implements ChatroomRepositoryCustom {
 
     /**
      * 두 명의 회원(currentMember와 targetMember) 사이에 존재하는 채팅방을 검색합니다.
-     * 그룹 채팅은 검색되지 않습니다.
      */
     @Override
-    public Optional<Chatroom> findChatroomInfoBetweenMembers(Member currentMember, Member targetMember) {
+    public Optional<Chatroom> findChatroomBetweenMembers(Member currentMember, Member targetMember) {
         QChatroom chatroom = QChatroom.chatroom;
-        Long chatroomId = findChatroomWithExactTwoMembers(currentMember, targetMember);
+        Long chatroomId = findChatroomIdBetweenMembers(currentMember, targetMember);
 
         if (chatroomId == null) {
             return Optional.empty();
@@ -40,7 +39,7 @@ public class ChatroomRepositoryCustomImpl implements ChatroomRepositoryCustom {
     /**
      * 정확히 두 명의 회원(currentMember와 targetMember)이 포함된 채팅방의 ID를 찾습니다.
      */
-    private Long findChatroomWithExactTwoMembers(Member currentMember, Member targetMember) {
+    private Long findChatroomIdBetweenMembers(Member currentMember, Member targetMember) {
         QChatroomMember chatroomMember = QChatroomMember.chatroomMember;
 
         return queryFactory

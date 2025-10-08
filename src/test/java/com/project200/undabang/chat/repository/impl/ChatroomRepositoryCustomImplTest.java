@@ -57,8 +57,8 @@ class ChatroomRepositoryCustomImplTest {
     }
 
     @Nested
-    @DisplayName("findChatroomInfoBetweenMembers 메소드는")
-    class Describe_findChatroomInfoBetweenMembers {
+    @DisplayName("findChatroomBetweenMembers 메소드는")
+    class Describe_findChatroomBetweenMembers {
 
         @Test
         @DisplayName("두 회원 간의 채팅방이 존재하면 채팅방을 반환한다")
@@ -75,7 +75,7 @@ class ChatroomRepositoryCustomImplTest {
             flushAndClear();
 
             // when
-            Optional<Chatroom> result = chatroomRepository.findChatroomInfoBetweenMembers(member1, member2);
+            Optional<Chatroom> result = chatroomRepository.findChatroomBetweenMembers(member1, member2);
 
             // then
             assertThat(result).isPresent();
@@ -92,7 +92,7 @@ class ChatroomRepositoryCustomImplTest {
             flushAndClear();
 
             // when
-            Optional<Chatroom> result = chatroomRepository.findChatroomInfoBetweenMembers(member1, member2);
+            Optional<Chatroom> result = chatroomRepository.findChatroomBetweenMembers(member1, member2);
 
             // then
             assertThat(result).isEmpty();
@@ -115,7 +115,7 @@ class ChatroomRepositoryCustomImplTest {
             flushAndClear();
 
             // when
-            Optional<Chatroom> result = chatroomRepository.findChatroomInfoBetweenMembers(member1, member2);
+            Optional<Chatroom> result = chatroomRepository.findChatroomBetweenMembers(member1, member2);
 
             // then
             assertThat(result).isPresent();
@@ -137,7 +137,7 @@ class ChatroomRepositoryCustomImplTest {
             flushAndClear();
 
             // when
-            Optional<Chatroom> result = chatroomRepository.findChatroomInfoBetweenMembers(member1, member2);
+            Optional<Chatroom> result = chatroomRepository.findChatroomBetweenMembers(member1, member2);
 
             // then
             assertThat(result).isEmpty();
@@ -160,7 +160,7 @@ class ChatroomRepositoryCustomImplTest {
             flushAndClear();
 
             // when
-            Optional<Chatroom> result = chatroomRepository.findChatroomInfoBetweenMembers(member1, member2);
+            Optional<Chatroom> result = chatroomRepository.findChatroomBetweenMembers(member1, member2);
 
             // then
             assertThat(result).isEmpty();

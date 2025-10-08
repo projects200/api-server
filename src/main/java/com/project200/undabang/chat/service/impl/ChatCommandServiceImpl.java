@@ -32,11 +32,13 @@ public class ChatCommandServiceImpl implements ChatCommandService {
     private final ChatroomRepository chatroomRepository;
     private final ChatRepository chatRepository;
     private final ChatroomMemberRepository chatroomMemberRepository;
+
     private final int DIRECT_CHAT_MAX_MEMBER_COUNT = 2;
 
     /**
-     * 주어진 요청 데이터를 기반으로 채팅방을 생성하거나, 이미 존재하는 채팅방을 반환합니다.
-     * 현재 사용자와 대상 사용자가 동일한 경우 예외를 발생시킵니다.
+     * 주어진 요청 정보를 기반으로 채팅방을 생성하거나 기존 채팅방을 반환합니다.
+     * 동일 사용자가 자신과의 채팅을 시도하면 예외를 발생시킵니다.
+     * 두 사용자가 동시에 채팅방을 생성할 가능성을 방지하기 위해 비관적 락을 적용합니다.
      */
     @Override
     @Transactional
@@ -49,7 +51,7 @@ public class ChatCommandServiceImpl implements ChatCommandService {
             throw new CustomException(ErrorCode.SELF_CHAT_NOT_ALLOWED);
         }
 
-        // 혹시 두 회원이 동시에 채팅방을 생성할 가능성이 있기 때문에 비관적 락을 적용한다.
+        // 혹시 두 회원이 동시에 채팅방을 생성할 가능성이 있기 때문에 비관적 락을 적용해서 채팅방이 동시에 생성되는것을 방지함
         List<UUID> sortedMemberIdList = Stream.of(currentMemberId, targetMemberId).sorted().toList();
         List<Member> pessimisticLockedMemberList = memberRepository.findAllByIdWithPessimisticLock(sortedMemberIdList);
 
@@ -80,7 +82,7 @@ public class ChatCommandServiceImpl implements ChatCommandService {
      */
     private Chatroom findOrCreateChatroom(Member currentMember, Member targetMember) {
 
-        Optional<Chatroom> existingChatroom = chatroomRepository.findChatroomInfoBetweenMembers(currentMember, targetMember);
+        Optional<Chatroom> existingChatroom = chatroomRepository.findChatroomBetweenMembers(currentMember, targetMember);
 
         if (existingChatroom.isPresent()) {
             Chatroom chatroom = existingChatroom.get();
@@ -91,11 +93,12 @@ public class ChatCommandServiceImpl implements ChatCommandService {
     }
 
     /**
-     * 주어진 채팅방과 현재 사용자 및 대상 사용자를 기반으로 기존 채팅방을 검색하여 반환합니다.
-     * 채팅방 멤버들이 모두 활성 상태인지 확인하고 조건에 따라 재활성화 처리를 수행합니다.
+     * 주어진 채팅방과 현재 사용자 및 대상 사용자의 상태를 확인하여,
+     * 해당 채팅방을 그대로 반환하거나 재활성화된 새로운 채팅방을 반환합니다.
      */
     private Chatroom findExistingChatroom(Chatroom chatroom, Member currentMember, Member targetMember) {
-        if (chatroomMemberRepository.checkAllMembersActive(chatroom.getId())) {
+        // 이미 채팅방이 있는 경우 빠른 반환
+        if (chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(chatroom, ChatroomMemberStatus.ACTIVE) == DIRECT_CHAT_MAX_MEMBER_COUNT) {
             return chatroom;
         }
 
@@ -105,9 +108,10 @@ public class ChatCommandServiceImpl implements ChatCommandService {
     /**
      * 주어진 채팅방과 현재 사용자 및 대상 사용자를 기준으로 채팅방을 재활성화합니다.
      * 채팅방 멤버의 상태를 업데이트하고, 필요 시 시스템 메시지를 생성하여 저장합니다.
+     * 현재는 1:1 채팅만 있어서 문제가 없지만 추후 그룹 채팅을 개발하려면 이 부분을 수정 해야 합니다.
      */
     private Chatroom reActiveChatroom(Chatroom chatroom, Member currentMember, Member targetMember) {
-        // Todo : 현재는 1:1 채팅만 있어서 문제가 없지만 추후 그룹 채팅을 개발하려면 이 부분을 리팩토링 해야 함
+
         ChatroomMember currentChatroomMember = getChatroomMember(chatroom, currentMember);
         ChatroomMember targetChatroomMember = getChatroomMember(chatroom, targetMember);
 
@@ -125,8 +129,8 @@ public class ChatCommandServiceImpl implements ChatCommandService {
     }
 
     /**
-     * 주어진 두 멤버를 기반으로 새로운 채팅방을 생성합니다.
-     * 생성된 채팅방에는 두 멤버가 자동으로 추가되며, 관련 시스템 메시지가 생성됩니다.
+     * 주어진 현재 사용자와 대상 사용자를 기반으로 새로운 채팅방을 생성하고 반환합니다.
+     * 생성된 채팅방에 현재 사용자와 대상 사용자를 멤버로 추가합니다.
      */
     private Chatroom createNewChatroom(Member currentMember, Member targetMember) {
         // 채팅방 기능 개발
