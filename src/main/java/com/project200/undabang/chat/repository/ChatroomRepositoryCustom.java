@@ -10,6 +10,5 @@ import java.util.Optional;
 
 public interface ChatroomRepositoryCustom {
     Optional<Chatroom> findChatroomBetweenMembers(Member currentMember, Member targetMember);
-
     Slice<GetMemberChatResponse> getMemberChat(Long chatroomId, Long prevChatId, Pageable pageable, Member member);
 }

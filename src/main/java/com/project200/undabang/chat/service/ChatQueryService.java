@@ -9,6 +9,5 @@ import java.util.List;
 
 public interface ChatQueryService {
     List<GetMemberChatroomResponse> getMemberChatroomList();
-
     Slice<GetMemberChatResponse> getMemberChat(Long chatroomId, Long prevChatId, Pageable pageable);
 }

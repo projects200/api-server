@@ -1,6 +1,8 @@
 package com.project200.undabang.chat.controller;
 
+import com.project200.undabang.chat.dto.response.GetMemberChatResponse;
 import com.project200.undabang.chat.dto.response.GetMemberChatroomResponse;
+import com.project200.undabang.chat.entity.ChatType;
 import com.project200.undabang.chat.service.ChatQueryService;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
@@ -11,6 +13,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.BDDMockito;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -20,13 +26,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import static com.project200.undabang.configuration.DocumentFormatGenerator.getTypeFormat;
 import static com.project200.undabang.configuration.HeadersGenerator.getCommonApiHeaders;
-import static com.project200.undabang.configuration.RestDocsUtils.HEADER_ACCESS_TOKEN;
-import static com.project200.undabang.configuration.RestDocsUtils.commonResponseFieldsForList;
+import static com.project200.undabang.configuration.RestDocsUtils.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.request.RequestDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -36,6 +46,20 @@ class ChatQueryControllerTest extends AbstractRestDocSupport {
 
     @MockitoBean
     private ChatQueryService chatQueryService;
+
+    private GetMemberChatResponse createChatMessageResponse(Long chatId, String content, boolean isMine) {
+        return new GetMemberChatResponse(
+                chatId,
+                UUID.randomUUID(),
+                isMine ? "currentUser" : "otherUser",
+                "http://profile.url",
+                "http://thumbnail.url",
+                content,
+                ChatType.USER,
+                LocalDateTime.now(),
+                isMine
+        );
+    }
 
     private List<GetMemberChatroomResponse> createRichChatroomResponseList(LocalDateTime now) {
         return List.of(
@@ -98,7 +122,7 @@ class ChatQueryControllerTest extends AbstractRestDocSupport {
 
             List<GetMemberChatroomResponse> richResponseList = createRichChatroomResponseList(now);
 
-            BDDMockito.given(chatQueryService.getMemberChatroomList()).willReturn(richResponseList);
+            given(chatQueryService.getMemberChatroomList()).willReturn(richResponseList);
 
             // when
             String response = mockMvc.perform(get("/api/v1/chat-rooms")
@@ -137,7 +161,7 @@ class ChatQueryControllerTest extends AbstractRestDocSupport {
         void getChatRoomList_Success_Empty() throws Exception {
             // given
             UUID memberId = UUID.randomUUID();
-            BDDMockito.given(chatQueryService.getMemberChatroomList()).willReturn(Collections.emptyList());
+            given(chatQueryService.getMemberChatroomList()).willReturn(Collections.emptyList());
 
             // when & then
             mockMvc.perform(get("/api/v1/chat-rooms")
@@ -157,7 +181,7 @@ class ChatQueryControllerTest extends AbstractRestDocSupport {
         void getChatRoomList_Fail_MemberNotFound() throws Exception {
             // given
             UUID memberId = UUID.randomUUID();
-            BDDMockito.given(chatQueryService.getMemberChatroomList()).willThrow(new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+            given(chatQueryService.getMemberChatroomList()).willThrow(new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
             // when & then
             mockMvc.perform(get("/api/v1/chat-rooms")
@@ -165,6 +189,80 @@ class ChatQueryControllerTest extends AbstractRestDocSupport {
                     .andExpect(status().isNotFound());
 
             BDDMockito.then(chatQueryService).should(BDDMockito.times(1)).getMemberChatroomList();
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/v1/chat-rooms/{chatroomId}/messages API는")
+    class GetChatMessages {
+
+        @Test
+        @DisplayName("채팅방의 메시지 목록을 Slice 형태로 성공적으로 조회한다")
+        void getMessages_Success() throws Exception {
+            // given
+            Long chatroomId = 1L;
+            Long prevChatId = 11L; // 이전 페이지의 마지막 ID
+            int size = 10;
+            UUID memberId = UUID.randomUUID();
+
+            // Mock Service Response
+            List<GetMemberChatResponse> messages = List.of(createChatMessageResponse(10L, "이전 메시지", false));
+            Pageable pageable = PageRequest.of(0, size);
+            Slice<GetMemberChatResponse> mockSlice = new SliceImpl<>(messages, pageable, false); // 마지막 페이지라고 가정
+
+            given(chatQueryService.getMemberChat(anyLong(), anyLong(), any(Pageable.class)))
+                    .willReturn(mockSlice);
+
+            // when & then
+            mockMvc.perform(get("/api/v1/chat-rooms/{chatroomId}/messages", chatroomId)
+                            .param("prevChatId", String.valueOf(prevChatId))
+                            .param("size", String.valueOf(size))
+                            .headers(getCommonApiHeaders(memberId))
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.content").isArray())
+                    .andExpect(jsonPath("$.data.hasNext").value(false))
+                    .andDo(document.document(
+                            requestHeaders(HEADER_ACCESS_TOKEN),
+                            pathParameters(
+                                    parameterWithName("chatroomId").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("채팅방의 식별자 ID")
+                            ),
+                            queryParameters(
+                                    parameterWithName("prevChatId").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("이전 페이지의 마지막 메시지 ID (마지막 커서 위치)를 의미합니다. 첫 페이지 조회 시에는 생략합니다.").optional(),
+                                    parameterWithName("size").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("한 페이지에 보여줄 메시지의 개수를 의미합니다..")
+                            ),
+                            responseFields(commonResponseFields(
+                                    fieldWithPath("data.content[]").type(JsonFieldType.ARRAY).description("메시지 객체 목록"),
+                                    fieldWithPath("data.content[].chatId").type(JsonFieldType.NUMBER).description("메시지 식별자 ID를 의미합니다."),
+                                    fieldWithPath("data.content[].senderId").type(JsonFieldType.STRING).description("발신자의 회원 식별자 정보 (UUID)를 의미합니다."),
+                                    fieldWithPath("data.content[].senderNickname").type(JsonFieldType.STRING).description("발신자 닉네임을 의미합니다."),
+                                    fieldWithPath("data.content[].senderProfileUrl").type(JsonFieldType.STRING).description("발신자 프로필 이미지 URL을 의미합니다. 만약 존재하지 않으면 기본 이미지를 사용하셔야 합니다.").optional(),
+                                    fieldWithPath("data.content[].senderThumbnailUrl").type(JsonFieldType.STRING).description("발신자 썸네일 이미지 URL을 의미합니다. 만약 존재하지 않으면 프로필 이미지를 사용하셔야 합니다.").optional(),
+                                    fieldWithPath("data.content[].chatContent").type(JsonFieldType.STRING).description("메시지 내용입니다."),
+                                    fieldWithPath("data.content[].chatType").type(JsonFieldType.STRING).description("메시지 타입을 의미합니다. 발신한 사람이 USER인지 SYSTEM인지를 나타냅니다."),
+                                    fieldWithPath("data.content[].sentAt").type(JsonFieldType.STRING).description("메시지 발신 시간을 의미합니다."),
+                                    fieldWithPath("data.content[].mine").type(JsonFieldType.BOOLEAN).description("내(기기 소유주)가 보낸 메시지가 맞는지 확인하는 컬럼입니다."),
+                                    fieldWithPath("data.hasNext").type(JsonFieldType.BOOLEAN).description("다음에 조회할 페이지가 있는지 여부를 나타냅니다.")
+                            ))
+                    ));
+        }
+
+        @Test
+        @DisplayName("사용자가 채팅방 멤버가 아닐 경우 404 NOT FOUND를 반환한다")
+        void getMessages_Fail_AccessDenied() throws Exception {
+            // given
+            Long chatroomId = 1L;
+            UUID memberId = UUID.randomUUID();
+
+            // 서비스가 접근 거부 예외를 던진다고 가정
+            given(chatQueryService.getMemberChat(anyLong(), any(), any(Pageable.class)))
+                    .willThrow(new CustomException(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND));
+
+            // when & then
+            mockMvc.perform(get("/api/v1/chat-rooms/{chatroomId}/messages", chatroomId)
+                            .headers(getCommonApiHeaders(memberId))
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isNotFound());
         }
     }
 }
