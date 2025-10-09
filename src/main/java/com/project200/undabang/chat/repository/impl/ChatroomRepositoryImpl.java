@@ -13,7 +13,7 @@ import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
-public class ChatroomRepositoryCustomImpl implements ChatroomRepositoryCustom {
+public class ChatroomRepositoryImpl implements ChatroomRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
 
