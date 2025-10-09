@@ -23,6 +23,9 @@ public class ChatQueryServiceImpl implements ChatQueryService {
     private final MemberRepository memberRepository;
     private final ChatroomMemberRepository chatroomMemberRepository;
 
+    /**
+     * 사용자의 채팅방 목록을 반환합니다.
+     */
     @Override
     public List<GetMemberChatroomResponse> getMemberChatroomList() {
         Member member = getMember(UserContextHolder.getUserId());
@@ -30,6 +33,10 @@ public class ChatQueryServiceImpl implements ChatQueryService {
         return chatroomMemberRepository.getChatroomListByMemberId(member);
     }
 
+    /**
+     * 주어진 회원 ID에 해당하는 회원 정보를 반환합니다.
+     * 회원 정보가 존재하지 않을 경우 예외를 발생시킵니다.
+     */
     private Member getMember(UUID memberId) {
         return memberRepository.findById(memberId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
     }

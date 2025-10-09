@@ -18,6 +18,9 @@ public class ChatQueryController {
 
     private final ChatQueryService chatQueryService;
 
+    /**
+     * 회원이 참여 중인 채팅방 목록을 조회합니다.
+     */
     @GetMapping("/v1/chat-rooms")
     public ResponseEntity<CommonResponse<List<GetMemberChatroomResponse>>> getMemberChatroomList() {
 
