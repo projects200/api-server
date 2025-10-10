@@ -74,6 +74,67 @@ class ChatroomMemberRepositoryTest {
     }
 
     @Nested
+    @DisplayName("findByChatroom_IdAndMember 메소드는")
+    class Describe_findByChatroom_IdAndMember {
+
+        @Test
+        @DisplayName("채팅방 ID와 회원 엔티티로 ChatroomMember를 찾아 반환한다")
+        void it_returns_chatroom_member_when_exists() {
+            // given
+            Member member = createAndSaveMember("user1");
+            Chatroom chatroom = createAndSaveChatroom();
+            ChatroomMember expected = createAndSaveChatroomMember(chatroom, member);
+
+            flushAndClear();
+
+            // when
+            Optional<ChatroomMember> result = chatroomMemberRepository.findByChatroom_IdAndMember(chatroom.getId(), member);
+
+            // then
+            assertThat(result).isPresent();
+            assertThat(result.get().getChatroomMemberId()).isEqualTo(expected.getChatroomMemberId());
+            assertThat(result.get().getMember().getMemberId()).isEqualTo(member.getMemberId());
+            assertThat(result.get().getChatroom().getId()).isEqualTo(chatroom.getId());
+        }
+
+        @Test
+        @DisplayName("다른 채팅방의 멤버일 경우 결과를 반환하지 않는다")
+        void it_returns_empty_when_member_in_another_chatroom() {
+            // given
+            Member member = createAndSaveMember("user1");
+            Chatroom chatroom1 = createAndSaveChatroom();
+            Chatroom chatroom2 = createAndSaveChatroom(); // 다른 채팅방
+            createAndSaveChatroomMember(chatroom1, member); // 멤버는 chatroom1에만 속함
+
+            flushAndClear();
+
+            // when
+            // chatroom2에서 해당 멤버를 찾으려고 시도
+            Optional<ChatroomMember> result = chatroomMemberRepository.findByChatroom_IdAndMember(chatroom2.getId(), member);
+
+            // then
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("채팅방과 회원에 해당하는 ChatroomMember가 없으면 빈 Optional을 반환한다")
+        void it_returns_empty_when_not_exists() {
+            // given
+            Member member = createAndSaveMember("user1");
+            Chatroom chatroom = createAndSaveChatroom();
+            // ChatroomMember를 생성하지 않음
+
+            flushAndClear();
+
+            // when
+            Optional<ChatroomMember> result = chatroomMemberRepository.findByChatroom_IdAndMember(chatroom.getId(), member);
+
+            // then
+            assertThat(result).isEmpty();
+        }
+    }
+
+    @Nested
     @DisplayName("countByChatroomAndChatroomMemberStatus 메소드는")
     class Describe_countByChatroomAndChatroomMemberStatus {
 
@@ -114,31 +175,30 @@ class ChatroomMemberRepositoryTest {
             // then
             assertThat(count).isEqualTo(0L);
         }
-    }
 
-    private void flushAndClear() {
-        em.flush();
-        em.clear();
-    }
+        @Test
+        @DisplayName("다른 채팅방의 멤버는 카운트하지 않는다")
+        void it_does_not_count_members_from_other_chatrooms() {
+            // given
+            Member member1 = createAndSaveMember("user1");
+            Member member2 = createAndSaveMember("user2");
+            Chatroom chatroom1 = createAndSaveChatroom();
+            Chatroom chatroom2 = createAndSaveChatroom();
 
-    private Member createAndSaveMember(String nickname) {
-        Member member = Member.builder()
-                .memberId(UUID.randomUUID())
-                .memberEmail(nickname + "@example.com")
-                .memberNickname(nickname)
-                .memberGender(MemberGender.UNKNOWN)
-                .memberBday(LocalDate.of(1990, 1, 1))
-                .build();
-        return em.persist(member);
-    }
+            // chatroom1에 ACTIVE 멤버 1명
+            createAndSaveChatroomMember(chatroom1, member1, ChatroomMemberStatus.ACTIVE);
+            // chatroom2에 ACTIVE 멤버 1명
+            createAndSaveChatroomMember(chatroom2, member2, ChatroomMemberStatus.ACTIVE);
 
-    private Chatroom createAndSaveChatroom() {
-        return em.persist(Chatroom.createChatroom());
-    }
+            flushAndClear();
 
-    private ChatroomMember createAndSaveChatroomMember(Chatroom chatroom, Member member) {
-        ChatroomMember chatroomMember = ChatroomMember.of(chatroom, member);
-        return em.persist(chatroomMember);
+            // when
+            // chatroom1의 멤버만 카운트
+            long count = chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(chatroom1, ChatroomMemberStatus.ACTIVE);
+
+            // then
+            assertThat(count).isEqualTo(1L);
+        }
     }
 
     @Nested
@@ -215,5 +275,37 @@ class ChatroomMemberRepositoryTest {
             // then
             assertThat(result).isEmpty();
         }
+    }
+
+    private void flushAndClear() {
+        em.flush();
+        em.clear();
+    }
+
+    private Member createAndSaveMember(String nickname) {
+        Member member = Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberEmail(nickname + "@example.com")
+                .memberNickname(nickname)
+                .memberGender(MemberGender.UNKNOWN)
+                .memberBday(LocalDate.of(1990, 1, 1))
+                .build();
+        return em.persist(member);
+    }
+
+    private Chatroom createAndSaveChatroom() {
+        return em.persist(Chatroom.createChatroom());
+    }
+
+    private ChatroomMember createAndSaveChatroomMember(Chatroom chatroom, Member member) {
+        return createAndSaveChatroomMember(chatroom, member, ChatroomMemberStatus.ACTIVE);
+    }
+
+    private ChatroomMember createAndSaveChatroomMember(Chatroom chatroom, Member member, ChatroomMemberStatus status) {
+        ChatroomMember chatroomMember = ChatroomMember.of(chatroom, member);
+        if (status != ChatroomMemberStatus.ACTIVE) {
+            chatroomMember.updateMemberStatus(status);
+        }
+        return em.persist(chatroomMember);
     }
 }
