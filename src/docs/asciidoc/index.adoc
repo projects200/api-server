@@ -212,3 +212,5 @@ include::overview/공통-개발-참고-사항.adoc[]
 - 내 채팅방 목록 조회 API #GET# `/api/v1/chat-rooms`
 
 - 특정 채팅방 조회 API #GET# `/api/v1/chat-rooms/{chatroomId}/messages?prevChatId={prevChatId}&size={size}`
+
+- 메시지 생성(전송) API #POST# `/api/v1/chat-rooms/{chatroomId}/messages`
