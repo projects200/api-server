@@ -191,9 +191,9 @@ class ChatQueryServiceImplTest {
                 GetMemberChatResponse result = chatQueryService.getMemberChat(chatroomId, prevChatId, pageable);
 
                 // Then
-                assertThat(result.content()).isEqualTo(messages);
-                assertThat(result.hasNext()).isFalse();
-                assertThat(result.opponentActive()).isTrue();
+                assertThat(result.getContent()).isEqualTo(messages);
+                assertThat(result.isHasNext()).isFalse();
+                assertThat(result.isOpponentActive()).isTrue();
 
                 // 모든 Mock이 올바르게 호출되었는지 검증
                 verify(memberRepository).findById(memberId);
@@ -226,7 +226,7 @@ class ChatQueryServiceImplTest {
                 GetMemberChatResponse result = chatQueryService.getMemberChat(chatroomId, null, pageable);
 
                 // Then
-                assertThat(result.opponentActive()).isFalse();
+                assertThat(result.isOpponentActive()).isFalse();
             }
         }
 
