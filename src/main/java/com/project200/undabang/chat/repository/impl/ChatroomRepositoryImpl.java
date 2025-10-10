@@ -63,7 +63,7 @@ public class ChatroomRepositoryImpl implements ChatroomRepositoryCustom {
                 .leftJoin(memberPicture.picture, picture)
                 .where(
                         chat.chatroom.id.eq(chatroomId), // 내가 속한 채팅방
-                        olderThenPrevChatId(prevChatId) // 커서기반 페이지네이션을 위한 동적 조건
+                        olderThanPrevChatId(prevChatId) // 커서기반 페이지네이션을 위한 동적 조건
                 )
                 .orderBy(chat.id.desc()) // 최신 메시지부터 읽어줌
                 .limit(pageable.getPageSize() + 1) // 다음 채팅이 존재하는지 아닌지 구별할 수 있도록 30+1 로 설정함
