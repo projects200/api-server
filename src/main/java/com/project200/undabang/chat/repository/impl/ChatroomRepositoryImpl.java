@@ -94,7 +94,7 @@ public class ChatroomRepositoryImpl implements ChatroomRepositoryCustom {
      * 주어진 이전 채팅 ID(prevChatId)보다 더 오래된 채팅을 필터링하는 조건을 생성합니다.
      * prevChatId == null 인 경우는 첫 페이지 조회이므로 조건이 적용되지 않도록 null 반환
      */
-    private BooleanExpression olderThenPrevChatId(Long prevChatId) {
+    private BooleanExpression olderThanPrevChatId(Long prevChatId) {
         if (prevChatId == null) {
             return null;
         }
