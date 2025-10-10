@@ -1,0 +1,35 @@
+== 특정 채팅방 조회 API
+
+=== 설명
+
+- #GET# `/api/v1/chat-rooms/{chatroomId}/messages?prevChatId={prevChatId}&size={size}`
+- 회원이 자신의 특정 채팅방을 조회하는 기능을 가진 API 입니다.
+- 가장 최근 목록을 조회시에는 prevChatId 값을 전송하지 않으시면 됩니다.
+
+=== 개발 이력
+
+- Sprint 13 (2025-10-10): 기능 개발이 완료되었습니다.
+
+=== 개발 참고 사항
+
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+
+operation::get-chat-messages/get-messages_-success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+
+operation::get-chat-messages/get-messages_-success[snippets="request-headers,path-parameters,query-parameters,response-fields"]
+
+==== 응답 상태 코드
+
+|===
+|상태 코드|설명
+|200|요청이 성공적으로 처리되었습니다.
+|401|인증되지 않은 요청입니다. Access Token이 없거나 유효하지 않습니다.
+|404|존재하지 않는 회원입니다. +
+존재하지 않는 채팅방입니다.
+|500|서버 내부 오류가 발생했습니다.
+|===
+
