@@ -14,12 +14,32 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
 public class ChatroomMemberRepositoryImpl implements ChatroomMemberRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
+
+    /**
+     * 주어진 채팅방 ID와 현재 회원 정보를 기반으로 상대방의 채팅방 상태를 조회합니다.
+     */
+    @Override
+    public Optional<ChatroomMemberStatus> getOpponentStatusByChatroomId(Long chatroomId, Member currentMember) {
+        QChatroomMember cm = QChatroomMember.chatroomMember;
+
+        ChatroomMemberStatus status = queryFactory
+                .select(cm.chatroomMemberStatus)
+                .from(cm)
+                .where(
+                        cm.chatroom.id.eq(chatroomId),
+                        cm.member.ne(currentMember)
+                )
+                .fetchOne();
+
+        return Optional.ofNullable(status);
+    }
 
     /**
      * 주어진 회원(Member)의 ID를 기준으로 해당 회원이 속한 채팅방의 목록을 반환합니다.

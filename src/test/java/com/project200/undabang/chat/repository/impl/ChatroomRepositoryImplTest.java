@@ -1,6 +1,6 @@
 package com.project200.undabang.chat.repository.impl;
 
-import com.project200.undabang.chat.dto.response.GetMemberChatResponse;
+import com.project200.undabang.chat.dto.response.ChatMessageDto;
 import com.project200.undabang.chat.entity.Chat;
 import com.project200.undabang.chat.entity.ChatType;
 import com.project200.undabang.chat.entity.Chatroom;
@@ -213,7 +213,7 @@ class ChatroomRepositoryImplTest {
             Long prevChatId = null; // 첫 페이지 조회이므로 커서는 null
 
             // when
-            Slice<GetMemberChatResponse> result = chatroomRepository.getMemberChat(chatroom.getId(), prevChatId, pageable, currentUser);
+            Slice<ChatMessageDto> result = chatroomRepository.getMemberChat(chatroom.getId(), prevChatId, pageable, currentUser);
 
             // then
             assertThat(result).isNotNull();
@@ -222,12 +222,12 @@ class ChatroomRepositoryImplTest {
 
             // DB에서는 최신순(5,4,3)으로 가져오지만, 서비스에서 reverse 하므로 최종 결과는 시간순(3,4,5)이어야 함
             assertThat(result.getContent())
-                    .extracting(GetMemberChatResponse::getChatId)
+                    .extracting(ChatMessageDto::getChatId)
                     .containsExactly(chats.get(2).getId(), chats.get(3).getId(), chats.get(4).getId());
 
             // isMine 필드 검증
-            GetMemberChatResponse myMessage = result.getContent().get(1); // 4번 메시지 (currentUser가 보냄)
-            GetMemberChatResponse otherMessage = result.getContent().get(0); // 3번 메시지 (otherUser가 보냄)
+            ChatMessageDto myMessage = result.getContent().get(1); // 4번 메시지 (currentUser가 보냄)
+            ChatMessageDto otherMessage = result.getContent().get(0); // 3번 메시지 (otherUser가 보냄)
             assertThat(myMessage.isMine()).isTrue();
             assertThat(otherMessage.isMine()).isFalse();
         }
@@ -253,7 +253,7 @@ class ChatroomRepositoryImplTest {
             Long prevChatId = chats.get(2).getId();
 
             // when
-            Slice<GetMemberChatResponse> result = chatroomRepository.getMemberChat(chatroom.getId(), prevChatId, pageable, currentUser);
+            Slice<ChatMessageDto> result = chatroomRepository.getMemberChat(chatroom.getId(), prevChatId, pageable, currentUser);
 
             // then
             assertThat(result).isNotNull();
@@ -262,7 +262,7 @@ class ChatroomRepositoryImplTest {
 
             // 커서(3) 이전의 메시지 (1,2)가 시간순으로 반환되어야 함
             assertThat(result.getContent())
-                    .extracting(GetMemberChatResponse::getChatId)
+                    .extracting(ChatMessageDto::getChatId)
                     .containsExactly(chats.get(0).getId(), chats.get(1).getId());
         }
 
@@ -286,7 +286,7 @@ class ChatroomRepositoryImplTest {
             Long prevChatId = null;
 
             // when
-            Slice<GetMemberChatResponse> result = chatroomRepository.getMemberChat(chatroom.getId(), prevChatId, pageable, currentUser);
+            Slice<ChatMessageDto> result = chatroomRepository.getMemberChat(chatroom.getId(), prevChatId, pageable, currentUser);
 
             // then
             assertThat(result).isNotNull();
@@ -310,7 +310,7 @@ class ChatroomRepositoryImplTest {
             Long prevChatId = null;
 
             // when
-            Slice<GetMemberChatResponse> result = chatroomRepository.getMemberChat(chatroom.getId(), prevChatId, pageable, currentUser);
+            Slice<ChatMessageDto> result = chatroomRepository.getMemberChat(chatroom.getId(), prevChatId, pageable, currentUser);
 
             // then
             assertThat(result).isNotNull();

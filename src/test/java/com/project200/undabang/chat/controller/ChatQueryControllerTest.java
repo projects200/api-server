@@ -1,5 +1,6 @@
 package com.project200.undabang.chat.controller;
 
+import com.project200.undabang.chat.dto.response.ChatMessageDto;
 import com.project200.undabang.chat.dto.response.GetMemberChatResponse;
 import com.project200.undabang.chat.dto.response.GetMemberChatroomResponse;
 import com.project200.undabang.chat.entity.ChatType;
@@ -46,68 +47,6 @@ class ChatQueryControllerTest extends AbstractRestDocSupport {
 
     @MockitoBean
     private ChatQueryService chatQueryService;
-
-    private GetMemberChatResponse createChatMessageResponse(Long chatId, String content, boolean isMine) {
-        return new GetMemberChatResponse(
-                chatId,
-                UUID.randomUUID(),
-                isMine ? "currentUser" : "otherUser",
-                "http://profile.url",
-                "http://thumbnail.url",
-                content,
-                ChatType.USER,
-                LocalDateTime.now(),
-                isMine
-        );
-    }
-
-    private List<GetMemberChatroomResponse> createRichChatroomResponseList(LocalDateTime now) {
-        return List.of(
-                createChatroomResponse(101L, "운동메이트 김민준", "네, 그럼 내일 6시에 헬스장에서 뵐게요!", 2L, now.minusMinutes(5)),
-                createChatroomResponse(102L, "트레이너 C", "이모티콘", 0L, now.minusMinutes(30)),
-                createChatroomResponse(103L, "박서준 축구", "안녕하세요, 오늘 회의록 정리해서 보내드립니다. 검토해보시고 피드백 부탁드리겠습니다. 내용이 길어서...", 1L, now.minusHours(3)),
-                createChatroomResponse(104L, "런닝 이지은", "사진", 0L, now.minusDays(1).withHour(18).withMinute(30)),
-                createChatroomResponseWithNoProfile(105L, "(알수없음)", "혹시 중고거래 가능하신가요?", 1L, now.minusDays(3)),
-                createChatroomResponse(106L, "마성의 러너", "이번주 정모는 강남역 OOO에서 진행됩니다. 꼭 참석해주세요!", 99L, now.minusWeeks(1)),
-                createChatroomResponseWithNoChat(107L, "엣지러너", "https://example.com/profile_new.jpg", "https://example.com/thumbnail_new.jpg")
-        );
-    }
-
-    private GetMemberChatroomResponse createChatroomResponse(Long chatRoomId, String otherNickname, String lastChat, Long unreadCount, LocalDateTime receivedAt) {
-        return GetMemberChatroomResponse.builder()
-                .chatRoomId(chatRoomId)
-                .otherMemberNickname(otherNickname)
-                .otherMemberProfileImageUrl("https://example.com/profile_" + chatRoomId + ".jpg")
-                .otherMemberThumbnailImageUrl("https://example.com/thumbnail_" + chatRoomId + ".jpg")
-                .lastChatContent(lastChat)
-                .lastChatReceivedAt(receivedAt)
-                .unreadCount(unreadCount)
-                .build();
-    }
-
-    private GetMemberChatroomResponse createChatroomResponseWithNoProfile(Long chatRoomId, String otherNickname, String lastChat, Long unreadCount, LocalDateTime receivedAt) {
-        return GetMemberChatroomResponse.builder()
-                .chatRoomId(chatRoomId)
-                .otherMemberNickname(otherNickname)
-                .otherMemberProfileImageUrl(null)
-                .otherMemberThumbnailImageUrl(null)
-                .lastChatContent(lastChat)
-                .lastChatReceivedAt(receivedAt)
-                .unreadCount(unreadCount)
-                .build();
-    }
-
-    private GetMemberChatroomResponse createChatroomResponseWithNoChat(Long chatRoomId, String otherNickname, String profileUrl, String thumbUrl) {
-        return GetMemberChatroomResponse.builder()
-                .chatRoomId(chatRoomId)
-                .otherMemberNickname(otherNickname)
-                .otherMemberProfileImageUrl(profileUrl)
-                .otherMemberThumbnailImageUrl(thumbUrl)
-                .lastChatContent(null)
-                .lastChatReceivedAt(null)
-                .unreadCount(0L)
-                .build();
-    }
 
     @Nested
     @DisplayName("GET /api/v1/chat-rooms API는")
@@ -192,26 +131,89 @@ class ChatQueryControllerTest extends AbstractRestDocSupport {
         }
     }
 
+    private ChatMessageDto createChatMessageResponse(Long chatId, String content, boolean isMine) {
+        return new ChatMessageDto(
+                chatId,
+                UUID.randomUUID(),
+                isMine ? "currentUser" : "otherUser",
+                "http://profile.url",
+                "http://thumbnail.url",
+                content,
+                ChatType.USER,
+                LocalDateTime.now(),
+                isMine
+        );
+    }
+
+    private List<GetMemberChatroomResponse> createRichChatroomResponseList(LocalDateTime now) {
+        return List.of(
+                createChatroomResponse(101L, "운동메이트 김민준", "네, 그럼 내일 6시에 헬스장에서 뵐게요!", 2L, now.minusMinutes(5)),
+                createChatroomResponse(102L, "트레이너 C", "이모티콘", 0L, now.minusMinutes(30)),
+                createChatroomResponse(103L, "박서준 축구", "안녕하세요, 오늘 회의록 정리해서 보내드립니다. 검토해보시고 피드백 부탁드리겠습니다. 내용이 길어서...", 1L, now.minusHours(3)),
+                createChatroomResponse(104L, "런닝 이지은", "사진", 0L, now.minusDays(1).withHour(18).withMinute(30)),
+                createChatroomResponseWithNoProfile(105L, "(알수없음)", "혹시 중고거래 가능하신가요?", 1L, now.minusDays(3)),
+                createChatroomResponse(106L, "마성의 러너", "이번주 정모는 강남역 OOO에서 진행됩니다. 꼭 참석해주세요!", 99L, now.minusWeeks(1)),
+                createChatroomResponseWithNoChat(107L, "엣지러너", "https://example.com/profile_new.jpg", "https://example.com/thumbnail_new.jpg")
+        );
+    }
+
+    private GetMemberChatroomResponse createChatroomResponse(Long chatRoomId, String otherNickname, String lastChat, Long unreadCount, LocalDateTime receivedAt) {
+        return GetMemberChatroomResponse.builder()
+                .chatRoomId(chatRoomId)
+                .otherMemberNickname(otherNickname)
+                .otherMemberProfileImageUrl("https://example.com/profile_" + chatRoomId + ".jpg")
+                .otherMemberThumbnailImageUrl("https://example.com/thumbnail_" + chatRoomId + ".jpg")
+                .lastChatContent(lastChat)
+                .lastChatReceivedAt(receivedAt)
+                .unreadCount(unreadCount)
+                .build();
+    }
+
+    private GetMemberChatroomResponse createChatroomResponseWithNoProfile(Long chatRoomId, String otherNickname, String lastChat, Long unreadCount, LocalDateTime receivedAt) {
+        return GetMemberChatroomResponse.builder()
+                .chatRoomId(chatRoomId)
+                .otherMemberNickname(otherNickname)
+                .otherMemberProfileImageUrl(null)
+                .otherMemberThumbnailImageUrl(null)
+                .lastChatContent(lastChat)
+                .lastChatReceivedAt(receivedAt)
+                .unreadCount(unreadCount)
+                .build();
+    }
+
+    private GetMemberChatroomResponse createChatroomResponseWithNoChat(Long chatRoomId, String otherNickname, String profileUrl, String thumbUrl) {
+        return GetMemberChatroomResponse.builder()
+                .chatRoomId(chatRoomId)
+                .otherMemberNickname(otherNickname)
+                .otherMemberProfileImageUrl(profileUrl)
+                .otherMemberThumbnailImageUrl(thumbUrl)
+                .lastChatContent(null)
+                .lastChatReceivedAt(null)
+                .unreadCount(0L)
+                .build();
+    }
+
     @Nested
     @DisplayName("GET /api/v1/chat-rooms/{chatroomId}/messages API는")
     class GetChatMessages {
 
         @Test
-        @DisplayName("채팅방의 메시지 목록을 Slice 형태로 성공적으로 조회한다")
+        @DisplayName("채팅방의 메시지 목록과 상태 정보를 성공적으로 조회한다")
         void getMessages_Success() throws Exception {
             // given
             Long chatroomId = 1L;
-            Long prevChatId = 11L; // 이전 페이지의 마지막 ID
+            Long prevChatId = 11L;
             int size = 10;
             UUID memberId = UUID.randomUUID();
 
-            // Mock Service Response
-            List<GetMemberChatResponse> messages = List.of(createChatMessageResponse(10L, "이전 메시지", false));
+            List<ChatMessageDto> messages = List.of(createChatMessageResponse(10L, "이전 메시지", false));
             Pageable pageable = PageRequest.of(0, size);
-            Slice<GetMemberChatResponse> mockSlice = new SliceImpl<>(messages, pageable, false); // 마지막 페이지라고 가정
+            Slice<ChatMessageDto> mockSlice = new SliceImpl<>(messages, pageable, false); // 마지막 페이지라고 가정
 
-            given(chatQueryService.getMemberChat(anyLong(), anyLong(), any(Pageable.class)))
-                    .willReturn(mockSlice);
+            GetMemberChatResponse mockResponse = GetMemberChatResponse.from(mockSlice, true); // 상대방이 활성 상태라고 가정
+
+            given(chatQueryService.getMemberChat(anyLong(), any(), any(Pageable.class)))
+                    .willReturn(mockResponse);
 
             // when & then
             mockMvc.perform(get("/api/v1/chat-rooms/{chatroomId}/messages", chatroomId)
@@ -222,6 +224,7 @@ class ChatQueryControllerTest extends AbstractRestDocSupport {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.data.content").isArray())
                     .andExpect(jsonPath("$.data.hasNext").value(false))
+                    .andExpect(jsonPath("$.data.opponentActive").value(true))
                     .andDo(document.document(
                             requestHeaders(HEADER_ACCESS_TOKEN),
                             pathParameters(
@@ -229,7 +232,7 @@ class ChatQueryControllerTest extends AbstractRestDocSupport {
                             ),
                             queryParameters(
                                     parameterWithName("prevChatId").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("이전 페이지의 마지막 메시지 ID (마지막 커서 위치)를 의미합니다. 첫 페이지 조회 시에는 생략합니다.").optional(),
-                                    parameterWithName("size").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("한 페이지에 보여줄 메시지의 개수를 의미합니다..")
+                                    parameterWithName("size").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("한 페이지에 보여줄 메시지의 개수를 의미합니다.").optional()
                             ),
                             responseFields(commonResponseFields(
                                     fieldWithPath("data.content[]").type(JsonFieldType.ARRAY).description("메시지 객체 목록"),
@@ -242,7 +245,8 @@ class ChatQueryControllerTest extends AbstractRestDocSupport {
                                     fieldWithPath("data.content[].chatType").type(JsonFieldType.STRING).description("메시지 타입을 의미합니다. 발신한 사람이 USER인지 SYSTEM인지를 나타냅니다."),
                                     fieldWithPath("data.content[].sentAt").type(JsonFieldType.STRING).description("메시지 발신 시간을 의미합니다."),
                                     fieldWithPath("data.content[].mine").type(JsonFieldType.BOOLEAN).description("내(기기 소유주)가 보낸 메시지가 맞는지 확인하는 컬럼입니다."),
-                                    fieldWithPath("data.hasNext").type(JsonFieldType.BOOLEAN).description("다음에 조회할 페이지가 있는지 여부를 나타냅니다.")
+                                    fieldWithPath("data.hasNext").type(JsonFieldType.BOOLEAN).description("다음에 조회할 페이지가 있는지 여부를 나타냅니다."),
+                                    fieldWithPath("data.opponentActive").type(JsonFieldType.BOOLEAN).description("상대방이 현재 채팅방에 참여중(ACTIVE)인지 여부를 나타냅니다.")
                             ))
                     ));
         }
@@ -250,11 +254,11 @@ class ChatQueryControllerTest extends AbstractRestDocSupport {
         @Test
         @DisplayName("사용자가 채팅방 멤버가 아닐 경우 404 NOT FOUND를 반환한다")
         void getMessages_Fail_AccessDenied() throws Exception {
+            // 이 테스트는 서비스 계층에서 예외를 던지는 것을 테스트하므로 변경할 필요가 없습니다.
             // given
             Long chatroomId = 1L;
             UUID memberId = UUID.randomUUID();
 
-            // 서비스가 접근 거부 예외를 던진다고 가정
             given(chatQueryService.getMemberChat(anyLong(), any(), any(Pageable.class)))
                     .willThrow(new CustomException(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND));
 

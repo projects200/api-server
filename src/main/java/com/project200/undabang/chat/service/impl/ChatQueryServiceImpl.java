@@ -1,7 +1,9 @@
 package com.project200.undabang.chat.service.impl;
 
+import com.project200.undabang.chat.dto.response.ChatMessageDto;
 import com.project200.undabang.chat.dto.response.GetMemberChatResponse;
 import com.project200.undabang.chat.dto.response.GetMemberChatroomResponse;
+import com.project200.undabang.chat.entity.ChatroomMemberStatus;
 import com.project200.undabang.chat.repository.ChatroomMemberRepository;
 import com.project200.undabang.chat.repository.ChatroomRepository;
 import com.project200.undabang.chat.service.ChatQueryService;
@@ -42,14 +44,20 @@ public class ChatQueryServiceImpl implements ChatQueryService {
      * 주어진 채팅방 ID에 속하는 회원의 채팅 기록을 요청된 조건에 따라 반환합니다.
      */
     @Override
-    public Slice<GetMemberChatResponse> getMemberChat(Long chatroomId, Long prevChatId, Pageable pageable) {
+    public GetMemberChatResponse getMemberChat(Long chatroomId, Long prevChatId, Pageable pageable) {
         Member member = getMember(UserContextHolder.getUserId());
 
         if (!chatroomMemberRepository.existsByChatroom_IdAndMember(chatroomId, member)) {
             throw new CustomException(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND);
         }
 
-        return chatroomRepository.getMemberChat(chatroomId, prevChatId, pageable, member);
+        Slice<ChatMessageDto> dtoList = chatroomRepository.getMemberChat(chatroomId, prevChatId, pageable, member);
+
+        boolean isOpponentActive = chatroomMemberRepository.getOpponentStatusByChatroomId(chatroomId, member)
+                .filter(status -> status == ChatroomMemberStatus.ACTIVE)
+                .isPresent();
+
+        return GetMemberChatResponse.from(dtoList, isOpponentActive);
     }
 
     /**

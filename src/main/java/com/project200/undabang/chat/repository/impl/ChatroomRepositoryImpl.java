@@ -1,6 +1,6 @@
 package com.project200.undabang.chat.repository.impl;
 
-import com.project200.undabang.chat.dto.response.GetMemberChatResponse;
+import com.project200.undabang.chat.dto.response.ChatMessageDto;
 import com.project200.undabang.chat.entity.Chatroom;
 import com.project200.undabang.chat.entity.QChat;
 import com.project200.undabang.chat.entity.QChatroom;
@@ -38,15 +38,15 @@ public class ChatroomRepositoryImpl implements ChatroomRepositoryCustom {
      * 왜냐하면 무한 스크롤 방식의 구현이 필요하기 때문에 기존 방식으로는 성능 저하가 유발될 수 있기 때문입니다.
      */
     @Override
-    public Slice<GetMemberChatResponse> getMemberChat(Long chatroomId, Long prevChatId, Pageable pageable, Member currentMember) {
+    public Slice<ChatMessageDto> getMemberChat(Long chatroomId, Long prevChatId, Pageable pageable, Member currentMember) {
         QChat chat = QChat.chat;
         QMemberPicture memberPicture = QMemberPicture.memberPicture;
         QPicture picture = QPicture.picture;
         QMember member = QMember.member;
 
-        List<GetMemberChatResponse> result = queryFactory
+        List<ChatMessageDto> result = queryFactory
                 .select(Projections.constructor(
-                        GetMemberChatResponse.class,
+                        ChatMessageDto.class,
                         chat.id,
                         member.memberId,
                         member.memberNickname,
@@ -76,7 +76,7 @@ public class ChatroomRepositoryImpl implements ChatroomRepositoryCustom {
      * 주어진 Pageable 객체와 결과 리스트를 기반으로 Slice 객체를 생성하고,
      * 페이지에 포함될 요소와 다음 페이지 존재 여부를 판단합니다.
      */
-    private Slice<GetMemberChatResponse> checkNextPage(Pageable pageable, List<GetMemberChatResponse> result) {
+    private Slice<ChatMessageDto> checkNextPage(Pageable pageable, List<ChatMessageDto> result) {
 
         boolean hasNext = false;
 

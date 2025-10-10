@@ -1,8 +1,10 @@
 package com.project200.undabang.chat.service.impl;
 
+import com.project200.undabang.chat.dto.response.ChatMessageDto;
 import com.project200.undabang.chat.dto.response.GetMemberChatResponse;
 import com.project200.undabang.chat.dto.response.GetMemberChatroomResponse;
 import com.project200.undabang.chat.entity.ChatType;
+import com.project200.undabang.chat.entity.ChatroomMemberStatus;
 import com.project200.undabang.chat.repository.ChatroomMemberRepository;
 import com.project200.undabang.chat.repository.ChatroomRepository;
 import com.project200.undabang.common.context.UserContextHolder;
@@ -10,7 +12,6 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -141,8 +142,8 @@ class ChatQueryServiceImplTest {
                 .build();
     }
 
-    private GetMemberChatResponse createChatMessageResponse(Long chatId, String content, boolean isMine) {
-        return new GetMemberChatResponse(
+    private ChatMessageDto createChatMessageResponse(Long chatId, String content, boolean isMine) {
+        return new ChatMessageDto(
                 chatId,
                 UUID.randomUUID(),
                 isMine ? "currentUser" : "otherUser",
@@ -159,45 +160,73 @@ class ChatQueryServiceImplTest {
     @DisplayName("채팅방 메시지 조회 (getMemberChat)")
     class GetMemberChatTests {
 
-        private Member member;
-        private UUID memberId;
-
-        @BeforeEach
-        void setUp() {
-            memberId = UUID.randomUUID();
-            member = createMember(memberId, "test@example.com", "currentUser");
-        }
-
         @Test
-        @DisplayName("성공: 사용자가 채팅방 멤버일 경우 메시지 목록을 정상적으로 반환한다")
-        void shouldReturnMessageSliceWhenUserIsMember() {
-            // Given
+        @DisplayName("성공: 사용자가 채팅방 멤버이고 상대방이 활성 상태일 경우, 올바른 응답 DTO를 반환한다")
+        void shouldReturnResponseDtoWhenUserIsMemberAndOpponentIsActive() {
+            // Given: 각 테스트에 필요한 모든 엔티티를 헬퍼 메서드를 통해 로컬 변수로 생성
             Long chatroomId = 1L;
             Long prevChatId = null;
             Pageable pageable = PageRequest.of(0, 30);
+            UUID memberId = UUID.randomUUID();
+            Member member = createMember(memberId, "test@example.com", "currentUser");
 
-            List<GetMemberChatResponse> messages = List.of(createChatMessageResponse(1L, "Hello", true));
-            Slice<GetMemberChatResponse> expectedSlice = new SliceImpl<>(messages, pageable, false);
+            List<ChatMessageDto> messages = List.of(createChatMessageResponse(1L, "Hello", true));
+            Slice<ChatMessageDto> messageSlice = new SliceImpl<>(messages, pageable, false);
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 // 1. 현재 사용자 조회
                 ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
                 when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
 
-                // 2. 권한 검증 -> 성공 (true 반환)
+                // 2. 권한 검증 -> 성공
                 when(chatroomMemberRepository.existsByChatroom_IdAndMember(chatroomId, member)).thenReturn(true);
 
-                // 3. 실제 메시지 조회 -> 성공
-                when(chatroomRepository.getMemberChat(chatroomId, prevChatId, pageable, member)).thenReturn(expectedSlice);
+                // 3. 메시지 목록 조회 -> 성공
+                when(chatroomRepository.getMemberChat(chatroomId, prevChatId, pageable, member)).thenReturn(messageSlice);
+
+                // 4. 상대방 상태 조회 -> ACTIVE 반환
+                when(chatroomMemberRepository.getOpponentStatusByChatroomId(chatroomId, member)).thenReturn(Optional.of(ChatroomMemberStatus.ACTIVE));
 
                 // When
-                Slice<GetMemberChatResponse> result = chatQueryService.getMemberChat(chatroomId, prevChatId, pageable);
+                GetMemberChatResponse result = chatQueryService.getMemberChat(chatroomId, prevChatId, pageable);
 
                 // Then
-                assertThat(result).isEqualTo(expectedSlice);
+                assertThat(result.content()).isEqualTo(messages);
+                assertThat(result.hasNext()).isFalse();
+                assertThat(result.opponentActive()).isTrue();
+
+                // 모든 Mock이 올바르게 호출되었는지 검증
                 verify(memberRepository).findById(memberId);
                 verify(chatroomMemberRepository).existsByChatroom_IdAndMember(chatroomId, member);
                 verify(chatroomRepository).getMemberChat(chatroomId, prevChatId, pageable, member);
+                verify(chatroomMemberRepository).getOpponentStatusByChatroomId(chatroomId, member);
+            }
+        }
+
+        @Test
+        @DisplayName("성공: 상대방이 나간 상태일 경우 opponentActive가 false로 반환된다")
+        void shouldReturnOpponentActiveFalseWhenOpponentHasLeft() {
+            // Given
+            Long chatroomId = 1L;
+            Pageable pageable = PageRequest.of(0, 30);
+            UUID memberId = UUID.randomUUID();
+            Member member = createMember(memberId, "test@example.com", "currentUser");
+            Slice<ChatMessageDto> emptySlice = new SliceImpl<>(Collections.emptyList());
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
+                when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
+                when(chatroomMemberRepository.existsByChatroom_IdAndMember(chatroomId, member)).thenReturn(true);
+                when(chatroomRepository.getMemberChat(chatroomId, null, pageable, member)).thenReturn(emptySlice);
+
+                // [핵심] 상대방 상태 조회 -> LEFT 반환
+                when(chatroomMemberRepository.getOpponentStatusByChatroomId(chatroomId, member)).thenReturn(Optional.of(ChatroomMemberStatus.LEFT));
+
+                // When
+                GetMemberChatResponse result = chatQueryService.getMemberChat(chatroomId, null, pageable);
+
+                // Then
+                assertThat(result.opponentActive()).isFalse();
             }
         }
 
@@ -206,24 +235,23 @@ class ChatQueryServiceImplTest {
         void shouldThrowExceptionWhenUserIsNotMember() {
             // Given
             Long chatroomId = 1L;
-            Long prevChatId = null;
             Pageable pageable = PageRequest.of(0, 30);
+            UUID memberId = UUID.randomUUID();
+            Member member = createMember(memberId, "test@example.com", "currentUser");
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                // 1. 현재 사용자 조회
                 ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
                 when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
-
-                // 2. 권한 검증 -> 실패 (false 반환)
+                // 권한 검증 -> 실패
                 when(chatroomMemberRepository.existsByChatroom_IdAndMember(chatroomId, member)).thenReturn(false);
 
                 // When & Then
                 CustomException exception = assertThrows(CustomException.class,
-                        () -> chatQueryService.getMemberChat(chatroomId, prevChatId, pageable));
+                        () -> chatQueryService.getMemberChat(chatroomId, null, pageable));
                 assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND);
 
-                // 권한 검증에서 실패했으므로, 실제 메시지를 조회하는 chatroomRepository.getMemberChat은 절대 호출되면 안 됨
                 verify(chatroomRepository, never()).getMemberChat(anyLong(), any(), any(Pageable.class), any(Member.class));
+                verify(chatroomMemberRepository, never()).getOpponentStatusByChatroomId(anyLong(), any(Member.class));
             }
         }
 
@@ -232,21 +260,19 @@ class ChatQueryServiceImplTest {
         void shouldThrowExceptionWhenMemberNotFound() {
             // Given
             Long chatroomId = 1L;
-            Long prevChatId = null;
             Pageable pageable = PageRequest.of(0, 30);
+            UUID memberId = UUID.randomUUID();
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                // 1. 현재 사용자 조회 -> 실패
                 ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
+                // 사용자 조회 -> 실패
                 when(memberRepository.findById(memberId)).thenReturn(Optional.empty());
 
                 // When & Then
                 CustomException exception = assertThrows(CustomException.class,
-                        () -> chatQueryService.getMemberChat(chatroomId, prevChatId, pageable));
-                // getMember 메서드가 없다고 가정하고, MEMBER_NOT_FOUND를 사용
+                        () -> chatQueryService.getMemberChat(chatroomId, null, pageable));
                 assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.MEMBER_NOT_FOUND);
 
-                // 사용자 조회에서 실패했으므로, 권한 검증 및 메시지 조회는 절대 호출되면 안 됨
                 verify(chatroomMemberRepository, never()).existsByChatroom_IdAndMember(anyLong(), any(Member.class));
                 verify(chatroomRepository, never()).getMemberChat(anyLong(), any(), any(Pageable.class), any(Member.class));
             }

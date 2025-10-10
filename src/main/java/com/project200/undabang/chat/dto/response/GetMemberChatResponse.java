@@ -1,26 +1,24 @@
 package com.project200.undabang.chat.dto.response;
 
-import com.project200.undabang.chat.entity.ChatType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import org.springframework.data.domain.Slice;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.List;
 
-@Getter
+/**
+ * @param content        실제 데이터 리스트
+ * @param hasNext        다음 페이지 존재 유무
+ * @param opponentActive 상대방의 활성상태 조회
+ */
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class GetMemberChatResponse {
-    private Long chatId;
-    private UUID senderId;
-    private String senderNickname;
-    private String senderProfileUrl;
-    private String senderThumbnailUrl;
-    private String chatContent;
-    private ChatType chatType;
-    private LocalDateTime sentAt;
-    private boolean isMine;
+public record GetMemberChatResponse(List<ChatMessageDto> content, boolean hasNext, boolean opponentActive) {
+    public static GetMemberChatResponse from(Slice<ChatMessageDto> content, boolean isOpponentActive) {
+        return GetMemberChatResponse.builder()
+                .content(content.getContent())
+                .hasNext(content.hasNext())
+                .opponentActive(isOpponentActive)
+                .build();
+    }
 }
