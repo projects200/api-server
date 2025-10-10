@@ -1,7 +1,9 @@
 package com.project200.undabang.chat.service.impl;
 
 import com.project200.undabang.chat.dto.request.CreateChatroomRequest;
+import com.project200.undabang.chat.dto.request.CreateMessageRequest;
 import com.project200.undabang.chat.dto.response.CreateChatroomResponse;
+import com.project200.undabang.chat.dto.response.CreateMessageResponse;
 import com.project200.undabang.chat.entity.*;
 import com.project200.undabang.chat.repository.ChatRepository;
 import com.project200.undabang.chat.repository.ChatroomMemberRepository;
@@ -77,6 +79,25 @@ public class ChatCommandServiceImpl implements ChatCommandService {
     }
 
     /**
+     * 주어진 채팅방 ID와 요청 데이터를 사용하여 메시지를 생성하는 메서드입니다.
+     */
+    @Override
+    @Transactional
+    public CreateMessageResponse createMessage(Long chatroomId, CreateMessageRequest request) {
+        Member member = getMember(UserContextHolder.getUserId());
+
+        ChatroomMember chatroomMember = chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)
+                .orElseThrow(() -> new CustomException(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND));
+
+        validateChatroomMembersStatus(chatroomMember, member); // 채팅방에 참여한 회원들의 활성상태 체크
+
+        Chatroom chatroom = chatroomMember.getChatroom();
+        Chat savedChat = chatRepository.save(Chat.of(request.getContent(), chatroom, member)); // 채팅 엔티티 생성해서 DB에 저장
+
+        return CreateMessageResponse.of(savedChat.getId());
+    }
+
+    /**
      * 주어진 현재 사용자와 대상 사용자를 기준으로 채팅방을 검색하거나,
      * 존재하지 않을 경우 새롭게 생성하여 반환합니다.
      */
@@ -145,9 +166,40 @@ public class ChatCommandServiceImpl implements ChatCommandService {
     }
 
     /**
+     * 채팅방 멤버의 상태를 검증하는 메소드.
+     * 주어진 멤버들과 채팅방의 ID 정보를 기반으로 메시지 전송 가능 여부와
+     * 다른 멤버의 상태를 확인한다.
+     */
+    private void validateChatroomMembersStatus(ChatroomMember chatroomMember, Member member) {
+        Chatroom chatroom = chatroomMember.getChatroom();
+
+        chatroomMember.validateCanSendMessage();
+        validateOtherMemberStatus(chatroom, member); // 채팅방에 나간 회원이 있는지 검사하는 헬퍼 메소드
+    }
+
+    /**
+     * 다른 멤버의 상태를 검증하여 활성 멤버가 1명일 경우(본인만 남은 경우) 예외를 발생시킵니다.
+     *
+     * @param chatroom 검증할 채팅방 객체
+     * @param member   검증 대상 멤버 객체
+     */
+    private void validateOtherMemberStatus(Chatroom chatroom, Member member) {
+        if (chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(chatroom, ChatroomMemberStatus.ACTIVE) == 1L) {
+            throw new CustomException(ErrorCode.CHATROOM_OTHER_MEMBER_INACTIVE);
+        }
+    }
+
+    /**
      * 특정 채팅방과 회원에 해당하는 ChatroomMember 엔티티를 검색합니다.
      */
     private ChatroomMember getChatroomMember(Chatroom chatroom, Member member) {
         return chatroomMemberRepository.findByChatroomAndMember(chatroom, member).orElseThrow(() -> new CustomException(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND));
+    }
+
+    /**
+     * 주어진 ID를 사용하여 회원 정보를 조회합니다.
+     */
+    private Member getMember(UUID memberId) {
+        return memberRepository.findById(memberId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
     }
 }

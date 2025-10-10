@@ -13,6 +13,6 @@ public interface ChatroomMemberRepository extends JpaRepository<ChatroomMember, 
     Optional<ChatroomMember> findByChatroomAndMember(Chatroom chatroom, Member member);
     long countByChatroomAndChatroomMemberStatus(Chatroom chatroom, ChatroomMemberStatus chatroomMemberStatus);
     boolean existsByChatroom_IdAndMember(Long id, Member member);
-
+    Optional<ChatroomMember> findByChatroom_IdAndMember(Long id, Member member);
     Optional<ChatroomMember> findByChatroom_IdAndMember_MemberId(Long id, UUID memberId);
 }
