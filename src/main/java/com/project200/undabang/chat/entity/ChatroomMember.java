@@ -53,4 +53,8 @@ public class ChatroomMember {
     public void updateMemberStatus(ChatroomMemberStatus chatroomMemberStatus) {
         this.chatroomMemberStatus = chatroomMemberStatus;
     }
+
+    public void updateLastReadChatId(Long lastReadChatId) {
+        this.lastReadChatId = lastReadChatId;
+    }
 }
