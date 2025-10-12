@@ -151,43 +151,6 @@ class ChatroomRepositoryImplTest {
         }
     }
 
-    private Chat createAndSaveChat(Chatroom chatroom, Member sender, String content, LocalDateTime createdAt) {
-        Chat chat = Chat.builder()
-                .chatroom(chatroom)
-                .sender(sender)
-                .chatContent(content)
-                .chatType(ChatType.USER)
-                .chatCreatedAt(createdAt)
-                .build();
-        return em.persist(chat);
-    }
-
-    private Member createAndSaveMember(String nickname) {
-        Member member = Member.builder()
-                .memberId(UUID.randomUUID())
-                .memberEmail(nickname + "@example.com")
-                .memberNickname(nickname)
-                .memberGender(MemberGender.UNKNOWN)
-                .memberBday(LocalDate.of(1990, 1, 1))
-                .build();
-        return em.persist(member);
-    }
-
-    private Chatroom createAndSaveChatroom() {
-        Chatroom chatroom = Chatroom.createChatroom();
-        return em.persist(chatroom);
-    }
-
-    private ChatroomMember createAndSaveChatroomMember(Chatroom chatroom, Member member) {
-        ChatroomMember chatroomMember = ChatroomMember.of(chatroom, member);
-        return em.persist(chatroomMember);
-    }
-
-    private void flushAndClear() {
-        em.flush();
-        em.clear();
-    }
-
     @Nested
     @DisplayName("getMemberChat 메소드는")
     class Describe_getMemberChat {
@@ -316,6 +279,174 @@ class ChatroomRepositoryImplTest {
             assertThat(result).isNotNull();
             assertThat(result.hasNext()).isFalse();
             assertThat(result.getContent()).isEmpty();
+        }
+    }
+
+    private Chat createAndSaveChat(Chatroom chatroom, Member sender, String content, LocalDateTime createdAt) {
+        Chat chat = Chat.builder()
+                .chatroom(chatroom)
+                .sender(sender)
+                .chatContent(content)
+                .chatType(ChatType.USER)
+                .chatCreatedAt(createdAt)
+                .build();
+        return em.persist(chat);
+    }
+
+    private Member createAndSaveMember(String nickname) {
+        Member member = Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberEmail(nickname + "@example.com")
+                .memberNickname(nickname)
+                .memberGender(MemberGender.UNKNOWN)
+                .memberBday(LocalDate.of(1990, 1, 1))
+                .build();
+        return em.persist(member);
+    }
+
+    private Chatroom createAndSaveChatroom() {
+        Chatroom chatroom = Chatroom.createChatroom();
+        return em.persist(chatroom);
+    }
+
+    private ChatroomMember createAndSaveChatroomMember(Chatroom chatroom, Member member) {
+        ChatroomMember chatroomMember = ChatroomMember.of(chatroom, member);
+        return em.persist(chatroomMember);
+    }
+
+    private void flushAndClear() {
+        em.flush();
+        em.clear();
+    }
+
+    @Nested
+    @DisplayName("getNewMemberChat 메소드는")
+    class Describe_getNewMemberChat {
+
+        @Test
+        @DisplayName("마지막으로 읽은 메시지 ID 이후에 생성된 새로운 메시지 목록을 시간순으로 반환한다")
+        void it_returns_new_messages_after_last_read_id() {
+            // given
+            Member currentUser = createAndSaveMember("currentUser");
+            Member otherUser = createAndSaveMember("otherUser");
+            Chatroom chatroom = createAndSaveChatroom();
+            createAndSaveChatroomMember(chatroom, currentUser);
+            createAndSaveChatroomMember(chatroom, otherUser);
+
+            // 1, 2, 3번은 이미 읽은 메시지
+            List<Chat> readChats = IntStream.rangeClosed(1, 3)
+                    .mapToObj(i -> createAndSaveChat(chatroom, otherUser, "읽은 메시지 " + i, LocalDateTime.now().plusMinutes(i)))
+                    .collect(Collectors.toList());
+
+            // 4, 5번은 아직 안 읽은 새로운 메시지
+            Chat newChat4 = createAndSaveChat(chatroom, currentUser, "새 메시지 4", LocalDateTime.now().plusMinutes(4));
+            Chat newChat5 = createAndSaveChat(chatroom, otherUser, "새 메시지 5", LocalDateTime.now().plusMinutes(5));
+
+            Long lastReadChatId = readChats.get(2).getId();
+
+            flushAndClear();
+
+            // when
+            List<ChatMessageDto> result = chatroomRepository.getNewMemberChat(currentUser, chatroom.getId(), lastReadChatId);
+
+            // then
+            assertThat(result).hasSize(2);
+            assertThat(result)
+                    .extracting(ChatMessageDto::getChatId)
+                    .containsExactly(newChat4.getId(), newChat5.getId());
+        }
+
+        @Test
+        @DisplayName("새로운 메시지 목록에서 isMine 필드를 올바르게 설정한다")
+        void it_sets_isMine_field_correctly_for_new_messages() {
+            // given
+            Member currentUser = createAndSaveMember("currentUser");
+            Member otherUser = createAndSaveMember("otherUser");
+            Chatroom chatroom = createAndSaveChatroom();
+            createAndSaveChatroomMember(chatroom, currentUser);
+            createAndSaveChatroomMember(chatroom, otherUser);
+
+            // currentUser가 보낸 새 메시지
+            createAndSaveChat(chatroom, currentUser, "내 새 메시지", LocalDateTime.now().plusMinutes(1));
+            // otherUser가 보낸 새 메시지
+            createAndSaveChat(chatroom, otherUser, "상대 새 메시지", LocalDateTime.now().plusMinutes(2));
+
+            Long lastReadChatId = 0L; // 모든 메시지가 새 메시지인 상황
+
+            flushAndClear();
+
+            // when
+            List<ChatMessageDto> result = chatroomRepository.getNewMemberChat(currentUser, chatroom.getId(), lastReadChatId);
+
+            // then
+            assertThat(result).hasSize(2);
+
+            ChatMessageDto myNewMessage = result.get(0);
+            ChatMessageDto otherNewMessage = result.get(1);
+
+            assertThat(myNewMessage.isMine()).isTrue();
+            assertThat(myNewMessage.getChatContent()).isEqualTo("내 새 메시지");
+            assertThat(otherNewMessage.isMine()).isFalse();
+            assertThat(otherNewMessage.getChatContent()).isEqualTo("상대 새 메시지");
+        }
+
+        @Test
+        @DisplayName("새로운 메시지가 없을 경우 빈 리스트를 반환한다")
+        void it_returns_empty_list_when_no_new_messages() {
+            // given
+            Member currentUser = createAndSaveMember("currentUser");
+            Member otherUser = createAndSaveMember("otherUser");
+            Chatroom chatroom = createAndSaveChatroom();
+            createAndSaveChatroomMember(chatroom, currentUser);
+            createAndSaveChatroomMember(chatroom, otherUser);
+
+            // 3개의 메시지 생성
+            Chat chat1 = createAndSaveChat(chatroom, otherUser, "메시지 1", LocalDateTime.now().plusMinutes(1));
+            Chat chat2 = createAndSaveChat(chatroom, otherUser, "메시지 2", LocalDateTime.now().plusMinutes(2));
+            Chat chat3 = createAndSaveChat(chatroom, otherUser, "메시지 3", LocalDateTime.now().plusMinutes(3));
+
+            Long lastReadChatId = chat3.getId();
+
+            flushAndClear();
+
+            // when
+            List<ChatMessageDto> result = chatroomRepository.getNewMemberChat(currentUser, chatroom.getId(), lastReadChatId);
+
+            // then
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("다른 채팅방의 새로운 메시지는 조회하지 않는다")
+        void it_does_not_fetch_new_messages_from_other_chatrooms() {
+            // given
+            Member currentUser = createAndSaveMember("currentUser");
+            Member otherUser = createAndSaveMember("otherUser");
+
+            // 테스트 대상 채팅방
+            Chatroom chatroom1 = createAndSaveChatroom();
+            createAndSaveChatroomMember(chatroom1, currentUser);
+            createAndSaveChatroomMember(chatroom1, otherUser);
+
+            // 다른 채팅방
+            Chatroom chatroom2 = createAndSaveChatroom();
+            createAndSaveChatroomMember(chatroom2, currentUser);
+            createAndSaveChatroomMember(chatroom2, otherUser);
+
+            // chatroom2에만 새로운 메시지 추가
+            createAndSaveChat(chatroom2, otherUser, "다른 방 새 메시지", LocalDateTime.now().plusMinutes(1));
+
+            Long lastReadChatId = 0L;
+
+            flushAndClear();
+
+            // when
+            // chatroom1에 대한 새로운 메시지를 조회
+            List<ChatMessageDto> result = chatroomRepository.getNewMemberChat(currentUser, chatroom1.getId(), lastReadChatId);
+
+            // then
+            // chatroom1에는 새 메시지가 없으므로 결과는 비어있어야 함
+            assertThat(result).isEmpty();
         }
     }
 }

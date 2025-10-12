@@ -12,7 +12,6 @@ import com.project200.undabang.member.entity.QMember;
 import com.project200.undabang.member.entity.QMemberPicture;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +30,41 @@ import static com.project200.undabang.chat.entity.QChat.chat;
 public class ChatroomRepositoryImpl implements ChatroomRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
+
+    /**
+     * 새로운 멤버가 특정 채팅방에서 마지막으로 읽은 채팅 이후의 채팅 메시지들을 조회합니다.
+     */
+    @Override
+    public List<ChatMessageDto> getNewMemberChat(Member currentMember, Long chatroomId, Long lastReadChatId) {
+        QMemberPicture memberPicture = QMemberPicture.memberPicture;
+        QPicture picture = QPicture.picture;
+        QMember member = QMember.member;
+        QChat chat = QChat.chat;
+
+        return queryFactory
+                .select(Projections.constructor(
+                        ChatMessageDto.class,
+                        chat.id,
+                        member.memberId,
+                        member.memberNickname,
+                        picture.pictureUrl,
+                        memberPicture.memberPicturesUrl,
+                        chat.chatContent,
+                        chat.chatType,
+                        chat.chatCreatedAt,
+                        isMyChat(currentMember) // 동적 쿼리 (내 채팅과 타인의 채팅 구분) 구문을 생성하는 헬퍼 메소드
+                ))
+                .from(chat)
+                .join(chat.sender, member)
+                .leftJoin(member.memberPicture, memberPicture)
+                .leftJoin(memberPicture.picture, picture)
+                .where(
+                        chat.chatroom.id.eq(chatroomId),
+                        chat.id.gt(lastReadChatId)
+                )
+                .orderBy(chat.id.asc())
+                .fetch();
+    }
 
     /**
      * 주어진 채팅방 ID와 이전 채팅 ID, 페이지 요청 정보에 따라 해당 채팅방에서의 채팅 내용을 조회합니다.
@@ -106,9 +140,7 @@ public class ChatroomRepositoryImpl implements ChatroomRepositoryCustom {
      * 주어진 사용자가 현재 채팅의 발신자인지를 확인하는 조건을 생성합니다.
      */
     private BooleanExpression isMyChat(Member currentUser) {
-        return new CaseBuilder()
-                .when(chat.sender.eq(currentUser)).then(true)
-                .otherwise(false);
+        return chat.sender.eq(currentUser);
     }
 
     /**

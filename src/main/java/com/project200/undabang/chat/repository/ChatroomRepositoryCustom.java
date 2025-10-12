@@ -6,9 +6,12 @@ import com.project200.undabang.member.entity.Member;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ChatroomRepositoryCustom {
     Optional<Chatroom> findChatroomBetweenMembers(Member currentMember, Member targetMember);
     Slice<ChatMessageDto> getMemberChat(Long chatroomId, Long prevChatId, Pageable pageable, Member member);
+
+    List<ChatMessageDto> getNewMemberChat(Member member, Long chatroomId, Long lastReadChatId);
 }
