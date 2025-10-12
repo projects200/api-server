@@ -94,6 +94,9 @@ public class ChatCommandServiceImpl implements ChatCommandService {
         Chatroom chatroom = chatroomMember.getChatroom();
         Chat savedChat = chatRepository.save(Chat.of(request.getContent(), chatroom, member)); // 채팅 엔티티 생성해서 DB에 저장
 
+        chatroom.updateLastChatContent(savedChat.getChatContent());
+        chatroomMember.updateLastReadChatId(savedChat.getId());
+
         return CreateMessageResponse.of(savedChat.getId());
     }
 

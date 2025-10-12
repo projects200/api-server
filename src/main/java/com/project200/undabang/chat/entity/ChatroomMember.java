@@ -56,6 +56,10 @@ public class ChatroomMember {
         this.chatroomMemberStatus = chatroomMemberStatus;
     }
 
+    public void updateLastReadChatId(Long lastReadChatId) {
+        this.lastReadChatId = lastReadChatId;
+    }
+
     public void validateCanSendMessage() {
         if (this.chatroomMemberStatus != ChatroomMemberStatus.ACTIVE) {
             throw new CustomException(ErrorCode.CHATROOM_MEMBER_INACTIVE);

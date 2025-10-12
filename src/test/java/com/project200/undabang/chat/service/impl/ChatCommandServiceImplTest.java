@@ -313,35 +313,46 @@ class ChatCommandServiceImplTest {
         private final String messageContent = "안녕하세요!";
 
         @Test
-        @DisplayName("유효한 요청이 들어오면 메시지를 성공적으로 생성하고 저장한다")
-        void it_creates_and_saves_a_message_successfully() {
+        @DisplayName("메시지를 성공적으로 생성하고, 채팅방의 마지막 메시지와 멤버의 마지막 읽은 ID를 업데이트한다")
+        void it_creates_message_and_updates_chatroom_and_member_status() {
             // given
             Member member = createMember();
-            Chatroom chatroom = createChatroom(chatroomId);
+            Chatroom chatroom = createChatroom(chatroomId); // 실제 Chatroom 객체
             CreateMessageRequest request = new CreateMessageRequest(messageContent);
 
+            // lastReadChatId가 null인 초기 상태의 실제 ChatroomMember 객체
             ChatroomMember chatroomMember = createChatroomMember(chatroom, member, ChatroomMemberStatus.ACTIVE);
-            Chat savedChat = Chat.of(messageContent, chatroom, member);
+
+            // 저장될 Chat 엔티티 Mock (ID를 부여하기 위해)
+            Chat savedChat = mock(Chat.class);
+            given(savedChat.getId()).willReturn(100L); // 새로운 메시지 ID
+            given(savedChat.getChatContent()).willReturn(messageContent);
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
 
                 given(memberRepository.findById(member.getMemberId())).willReturn(Optional.of(member));
                 given(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).willReturn(Optional.of(chatroomMember));
-                // validateOtherMemberStatus 통과를 위해 활성 멤버 수를 2로 설정
                 given(chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(chatroom, ChatroomMemberStatus.ACTIVE)).willReturn(2L);
+                // chatRepository.save()가 호출되면 위에서 만든 Mock 객체를 반환하도록 설정
                 given(chatRepository.save(any(Chat.class))).willReturn(savedChat);
 
                 // when
                 CreateMessageResponse response = chatCommandService.createMessage(chatroomId, request);
 
                 // then
-                assertThat(response.getChatId()).isEqualTo(savedChat.getId());
-                verify(chatRepository).save(argThat(chat ->
-                        chat.getChatContent().equals(messageContent) &&
-                                chat.getSender().equals(member) &&
-                                chat.getChatroom().equals(chatroom)
-                ));
+                // 1. 응답 검증
+                assertThat(response.getChatId()).isEqualTo(100L);
+
+                // 2. Chatroom 상태 변경 검증
+                assertThat(chatroom.getLastChatContent()).isEqualTo(messageContent);
+                assertThat(chatroom.getLastChatReceivedAt()).isNotNull(); // 시간은 현재 시간이라 null이 아닌지만 체크
+
+                // 3. ChatroomMember 상태 변경 검증
+                assertThat(chatroomMember.getLastReadChatId()).isEqualTo(100L);
+
+                // 4. Repository 호출 검증
+                verify(chatRepository).save(any(Chat.class));
             }
         }
 
