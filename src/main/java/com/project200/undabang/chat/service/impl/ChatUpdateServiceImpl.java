@@ -2,12 +2,11 @@ package com.project200.undabang.chat.service.impl;
 
 import com.project200.undabang.chat.repository.ChatroomMemberRepository;
 import com.project200.undabang.chat.service.ChatUpdateService;
+import com.project200.undabang.member.entity.Member;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -22,8 +21,8 @@ public class ChatUpdateServiceImpl implements ChatUpdateService {
      */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void updateLastReadChatId(Long chatId, UUID memberId, Long lastReadChatId) {
-        chatroomMemberRepository.findByChatroom_IdAndMember_MemberId(chatId, memberId)
+    public void updateLastReadChatId(Long chatId, Member member, Long lastReadChatId) {
+        chatroomMemberRepository.findByChatroom_IdAndMember(chatId, member)
                 .ifPresent(cm -> cm.updateLastReadChatId(lastReadChatId));
     }
 }

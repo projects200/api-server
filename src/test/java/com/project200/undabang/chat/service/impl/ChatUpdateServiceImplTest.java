@@ -2,6 +2,7 @@ package com.project200.undabang.chat.service.impl;
 
 import com.project200.undabang.chat.entity.ChatroomMember;
 import com.project200.undabang.chat.repository.ChatroomMemberRepository;
+import com.project200.undabang.member.entity.Member;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,10 @@ class ChatUpdateServiceImplTest {
     @Mock
     private ChatroomMemberRepository chatroomMemberRepository;
 
+    private Member createMember(UUID memberId) {
+        return Member.builder().memberId(memberId).build();
+    }
+
     @Nested
     @DisplayName("updateLastReadChatId 메소드는")
     class Describe_updateLastReadChatId {
@@ -35,28 +40,27 @@ class ChatUpdateServiceImplTest {
             // given
             Long chatroomId = 1L;
             UUID memberId = UUID.randomUUID();
+            Member member = createMember(memberId); // UUID 대신 Member 객체 생성
             Long lastReadChatIdToUpdate = 100L;
 
-            // 실제 ChatroomMember 객체를 생성하여 상태 변경을 확인할 수 있도록 함
             ChatroomMember chatroomMember = spy(ChatroomMember.builder()
-                    .lastReadChatId(50L) // 초기 상태는 50
+                    .lastReadChatId(50L)
                     .build());
 
-            // Repository가 이 chatroomMember를 반환하도록 설정
-            given(chatroomMemberRepository.findByChatroom_IdAndMember_MemberId(chatroomId, memberId))
+            // [수정] 변경된 Repository 메소드를 Mocking
+            given(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member))
                     .willReturn(Optional.of(chatroomMember));
 
             // when
-            chatUpdateService.updateLastReadChatId(chatroomId, memberId, lastReadChatIdToUpdate);
+            // [수정] memberId 대신 member 객체를 전달
+            chatUpdateService.updateLastReadChatId(chatroomId, member, lastReadChatIdToUpdate);
 
             // then
-            // 1. Repository의 find 메소드가 올바른 인자와 함께 호출되었는지 검증
-            then(chatroomMemberRepository).should(times(1)).findByChatroom_IdAndMember_MemberId(chatroomId, memberId);
+            // [수정] 변경된 Repository 메소드 호출을 검증
+            then(chatroomMemberRepository).should(times(1)).findByChatroom_IdAndMember(chatroomId, member);
 
-            // 2. 찾아낸 ChatroomMember 객체의 updateLastReadChatId 메소드가 호출되었는지 검증
             then(chatroomMember).should(times(1)).updateLastReadChatId(lastReadChatIdToUpdate);
 
-            // 3. (선택적) 실제 객체의 상태가 변경되었는지 확인하여 더 확실하게 검증
             assertThat(chatroomMember.getLastReadChatId()).isEqualTo(lastReadChatIdToUpdate);
         }
 
@@ -66,20 +70,22 @@ class ChatUpdateServiceImplTest {
             // given
             Long chatroomId = 1L;
             UUID memberId = UUID.randomUUID();
+            Member member = createMember(memberId); // UUID 대신 Member 객체 생성
             Long lastReadChatIdToUpdate = 100L;
 
-            // Repository가 빈 Optional을 반환하도록 설정
-            given(chatroomMemberRepository.findByChatroom_IdAndMember_MemberId(chatroomId, memberId))
+            // [수정] 변경된 Repository 메소드를 Mocking
+            given(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member))
                     .willReturn(Optional.empty());
 
             // when
-            chatUpdateService.updateLastReadChatId(chatroomId, memberId, lastReadChatIdToUpdate);
+            // [수정] memberId 대신 member 객체를 전달
+            chatUpdateService.updateLastReadChatId(chatroomId, member, lastReadChatIdToUpdate);
 
             // then
-            // find 메소드는 호출되지만, 그 이후의 어떤 상호작용도 없어야 함
-            then(chatroomMemberRepository).should(times(1)).findByChatroom_IdAndMember_MemberId(chatroomId, memberId);
+            // [수정] 변경된 Repository 메소드 호출을 검증
+            then(chatroomMemberRepository).should(times(1)).findByChatroom_IdAndMember(chatroomId, member);
 
-            // 추가적인 검증을 위해 다른 Mock 객체(만약 있다면)와의 상호작용이 없는지 확인
+            // ifPresent 람다식이 실행되지 않으므로, 추가적인 상호작용이 없어야 함
             // verifyNoMoreInteractions(someOtherMock);
         }
     }

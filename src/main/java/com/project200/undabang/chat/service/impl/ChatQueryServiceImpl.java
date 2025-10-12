@@ -61,7 +61,7 @@ public class ChatQueryServiceImpl implements ChatQueryService {
             Long lastChatId = dtoList.getContent().getLast().getChatId();
 
             try {
-                chatUpdateService.updateLastReadChatId(chatroomId, member.getMemberId(), lastChatId);
+                chatUpdateService.updateLastReadChatId(chatroomId, member, lastChatId);
             } catch (Exception e) {
                 log.error("최근에 읽은 메시지 목록 업데이트 실패");
             }

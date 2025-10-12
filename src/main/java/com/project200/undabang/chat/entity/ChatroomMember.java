@@ -65,8 +65,4 @@ public class ChatroomMember {
             throw new CustomException(ErrorCode.CHATROOM_MEMBER_INACTIVE);
         }
     }
-
-    public void updateLastReadChatId(Long lastReadChatId) {
-        this.lastReadChatId = lastReadChatId;
-    }
 }
