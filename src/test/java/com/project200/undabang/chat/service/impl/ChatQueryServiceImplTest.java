@@ -307,14 +307,14 @@ class ChatQueryServiceImplTest {
                 when(chatroomRepository.getMemberChat(chatroomId, prevChatId, pageable, member)).thenReturn(messageSlice);
                 when(chatroomMemberRepository.getOpponentStatusByChatroomId(chatroomId, member)).thenReturn(Optional.of(ChatroomMemberStatus.ACTIVE));
                 // updateLastReadChatId가 void를 반환하므로 doNothing() 설정
-                doNothing().when(chatUpdateService).updateLastReadChatId(anyLong(), any(UUID.class), anyLong());
+                doNothing().when(chatUpdateService).updateLastReadChatId(anyLong(), any(Member.class), anyLong());
 
                 // When
                 chatQueryService.getMemberChat(chatroomId, prevChatId, pageable);
 
                 // Then
                 // 가장 최신 메시지 ID인 100L로 업데이트 메소드가 호출되었는지 검증
-                verify(chatUpdateService, times(1)).updateLastReadChatId(chatroomId, memberId, 100L);
+                verify(chatUpdateService, times(1)).updateLastReadChatId(chatroomId, member, 100L);
             }
         }
 
@@ -343,7 +343,7 @@ class ChatQueryServiceImplTest {
 
                 // Then
                 // chatUpdateService가 전혀 호출되지 않았음을 검증
-                verify(chatUpdateService, never()).updateLastReadChatId(anyLong(), any(UUID.class), anyLong());
+                verify(chatUpdateService, never()).updateLastReadChatId(anyLong(), any(Member.class), anyLong());
             }
         }
 
@@ -371,7 +371,7 @@ class ChatQueryServiceImplTest {
                 chatQueryService.getMemberChat(chatroomId, prevChatId, pageable);
 
                 // Then
-                verify(chatUpdateService, never()).updateLastReadChatId(anyLong(), any(UUID.class), anyLong());
+                verify(chatUpdateService, never()).updateLastReadChatId(anyLong(), any(Member.class), anyLong());
             }
         }
 
@@ -395,7 +395,7 @@ class ChatQueryServiceImplTest {
                 when(chatroomRepository.getMemberChat(chatroomId, prevChatId, pageable, member)).thenReturn(messageSlice);
                 when(chatroomMemberRepository.getOpponentStatusByChatroomId(chatroomId, member)).thenReturn(Optional.of(ChatroomMemberStatus.ACTIVE));
                 // [핵심] updateLastReadChatId 호출 시 RuntimeException을 던지도록 설정
-                doThrow(new RuntimeException("DB connection failed")).when(chatUpdateService).updateLastReadChatId(anyLong(), any(UUID.class), anyLong());
+                doThrow(new RuntimeException("DB connection failed")).when(chatUpdateService).updateLastReadChatId(anyLong(), any(Member.class), anyLong());
 
                 // When & Then
                 // 예외가 발생하지 않고, 정상적으로 GetMemberChatResponse 객체를 반환하는지 확인

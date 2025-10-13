@@ -1,6 +1,8 @@
 package com.project200.undabang.chat.entity;
 
 
+import com.project200.undabang.common.web.exception.CustomException;
+import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.entity.Member;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -56,5 +58,11 @@ public class ChatroomMember {
 
     public void updateLastReadChatId(Long lastReadChatId) {
         this.lastReadChatId = lastReadChatId;
+    }
+
+    public void validateCanSendMessage() {
+        if (this.chatroomMemberStatus != ChatroomMemberStatus.ACTIVE) {
+            throw new CustomException(ErrorCode.CHATROOM_MEMBER_INACTIVE);
+        }
     }
 }

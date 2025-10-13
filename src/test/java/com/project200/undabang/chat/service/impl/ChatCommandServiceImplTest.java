@@ -1,7 +1,9 @@
 package com.project200.undabang.chat.service.impl;
 
 import com.project200.undabang.chat.dto.request.CreateChatroomRequest;
+import com.project200.undabang.chat.dto.request.CreateMessageRequest;
 import com.project200.undabang.chat.dto.response.CreateChatroomResponse;
+import com.project200.undabang.chat.dto.response.CreateMessageResponse;
 import com.project200.undabang.chat.entity.Chat;
 import com.project200.undabang.chat.entity.Chatroom;
 import com.project200.undabang.chat.entity.ChatroomMember;
@@ -49,36 +51,6 @@ class ChatCommandServiceImplTest {
     private ChatRepository chatRepository;
     @Mock
     private ChatroomMemberRepository chatroomMemberRepository;
-
-    private Member createMember() {
-        return Member.builder()
-                .memberId(UUID.randomUUID())
-                .memberNickname("user_" + UUID.randomUUID().toString().substring(0, 8))
-                .build();
-    }
-
-    private Chatroom createChatroom(Long id) {
-        return Chatroom.builder()
-                .id(id)
-                .build();
-    }
-
-    private ChatroomMember createChatroomMember(Chatroom chatroom, Member member, ChatroomMemberStatus status) {
-        return ChatroomMember.builder()
-                .chatroom(chatroom)
-                .member(member)
-                .chatroomMemberStatus(status)
-                .build();
-    }
-
-    private void mockMemberLocking(Member member1, Member member2) {
-        List<UUID> sortedIds = Stream.of(member1.getMemberId(), member2.getMemberId()).sorted().toList();
-        // 정렬된 ID 순서에 맞춰 Member 객체도 정렬하여 반환하도록 설정
-        List<Member> sortedMembers = Stream.of(member1, member2)
-                .sorted((m1, m2) -> m1.getMemberId().compareTo(m2.getMemberId()))
-                .toList();
-        given(memberRepository.findAllByIdWithPessimisticLock(sortedIds)).willReturn(sortedMembers);
-    }
 
     @Nested
     @DisplayName("createChatroom 메소드는")
@@ -299,6 +271,186 @@ class ChatCommandServiceImplTest {
                 assertThatThrownBy(() -> chatCommandService.createChatroom(request))
                         .isInstanceOf(CustomException.class)
                         .hasMessage(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND.getMessage());
+            }
+        }
+    }
+
+    private Member createMember() {
+        return Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberNickname("user_" + UUID.randomUUID().toString().substring(0, 8))
+                .build();
+    }
+
+    private Chatroom createChatroom(Long id) {
+        return Chatroom.builder()
+                .id(id)
+                .build();
+    }
+
+    private ChatroomMember createChatroomMember(Chatroom chatroom, Member member, ChatroomMemberStatus status) {
+        return ChatroomMember.builder()
+                .chatroom(chatroom)
+                .member(member)
+                .chatroomMemberStatus(status)
+                .build();
+    }
+
+    private void mockMemberLocking(Member member1, Member member2) {
+        List<UUID> sortedIds = Stream.of(member1.getMemberId(), member2.getMemberId()).sorted().toList();
+        // 정렬된 ID 순서에 맞춰 Member 객체도 정렬하여 반환하도록 설정
+        List<Member> sortedMembers = Stream.of(member1, member2)
+                .sorted((m1, m2) -> m1.getMemberId().compareTo(m2.getMemberId()))
+                .toList();
+        given(memberRepository.findAllByIdWithPessimisticLock(sortedIds)).willReturn(sortedMembers);
+    }
+
+    @Nested
+    @DisplayName("createMessage 메소드는")
+    class Describe_createMessage {
+
+        private final Long chatroomId = 1L;
+        private final String messageContent = "안녕하세요!";
+
+        @Test
+        @DisplayName("메시지를 성공적으로 생성하고, 채팅방의 마지막 메시지와 멤버의 마지막 읽은 ID를 업데이트한다")
+        void it_creates_message_and_updates_chatroom_and_member_status() {
+            // given
+            Member member = createMember();
+            Chatroom chatroom = createChatroom(chatroomId); // 실제 Chatroom 객체
+            CreateMessageRequest request = new CreateMessageRequest(messageContent);
+
+            // lastReadChatId가 null인 초기 상태의 실제 ChatroomMember 객체
+            ChatroomMember chatroomMember = createChatroomMember(chatroom, member, ChatroomMemberStatus.ACTIVE);
+
+            // 저장될 Chat 엔티티 Mock (ID를 부여하기 위해)
+            Chat savedChat = mock(Chat.class);
+            given(savedChat.getId()).willReturn(100L); // 새로운 메시지 ID
+            given(savedChat.getChatContent()).willReturn(messageContent);
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
+
+                given(memberRepository.findById(member.getMemberId())).willReturn(Optional.of(member));
+                given(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).willReturn(Optional.of(chatroomMember));
+                given(chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(chatroom, ChatroomMemberStatus.ACTIVE)).willReturn(2L);
+                // chatRepository.save()가 호출되면 위에서 만든 Mock 객체를 반환하도록 설정
+                given(chatRepository.save(any(Chat.class))).willReturn(savedChat);
+
+                // when
+                CreateMessageResponse response = chatCommandService.createMessage(chatroomId, request);
+
+                // then
+                // 1. 응답 검증
+                assertThat(response.getChatId()).isEqualTo(100L);
+
+                // 2. Chatroom 상태 변경 검증
+                assertThat(chatroom.getLastChatContent()).isEqualTo(messageContent);
+                assertThat(chatroom.getLastChatReceivedAt()).isNotNull(); // 시간은 현재 시간이라 null이 아닌지만 체크
+
+                // 3. ChatroomMember 상태 변경 검증
+                assertThat(chatroomMember.getLastReadChatId()).isEqualTo(100L);
+
+                // 4. Repository 호출 검증
+                verify(chatRepository).save(any(Chat.class));
+            }
+        }
+
+        @Test
+        @DisplayName("요청한 유저가 채팅방 멤버가 아니면 예외를 발생시킨다")
+        void it_throws_exception_when_user_is_not_a_chatroom_member() {
+            // given
+            Member member = createMember();
+            CreateMessageRequest request = new CreateMessageRequest(messageContent);
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
+
+                given(memberRepository.findById(member.getMemberId())).willReturn(Optional.of(member));
+                // findBy 결과가 비어있도록 설정
+                given(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> chatCommandService.createMessage(chatroomId, request))
+                        .isInstanceOf(CustomException.class)
+                        .hasMessage(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("채팅방에 다른 활성 멤버가 없으면 (상대방이 나갔으면) 예외를 발생시킨다")
+        void it_throws_exception_when_other_member_is_inactive() {
+            // given
+            Member member = createMember();
+            Chatroom chatroom = createChatroom(chatroomId);
+            CreateMessageRequest request = new CreateMessageRequest(messageContent);
+
+            ChatroomMember chatroomMember = createChatroomMember(chatroom, member, ChatroomMemberStatus.ACTIVE);
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
+
+                given(memberRepository.findById(member.getMemberId())).willReturn(Optional.of(member));
+                given(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).willReturn(Optional.of(chatroomMember));
+                // validateOtherMemberStatus 실패를 위해 활성 멤버 수를 1로 설정
+                given(chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(chatroom, ChatroomMemberStatus.ACTIVE)).willReturn(1L);
+
+                // when & then
+                assertThatThrownBy(() -> chatCommandService.createMessage(chatroomId, request))
+                        .isInstanceOf(CustomException.class)
+                        .hasMessage(ErrorCode.CHATROOM_OTHER_MEMBER_INACTIVE.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("사용자가 메시지를 보낼 수 없는 상태(LEFT)이면 예외를 발생시킨다")
+        void it_throws_exception_when_user_status_is_not_active() {
+            // given
+            Member member = createMember();
+            Chatroom chatroom = createChatroom(chatroomId);
+            CreateMessageRequest request = new CreateMessageRequest(messageContent);
+
+            // 사용자의 상태가 LEFT인 ChatroomMember 생성
+            ChatroomMember chatroomMember = createChatroomMember(chatroom, member, ChatroomMemberStatus.LEFT);
+            // ChatroomMember의 validateCanSendMessage() 메소드가 예외를 던지도록 설정하기 위해 Mockito.spy() 사용
+            ChatroomMember spiedChatroomMember = spy(chatroomMember);
+            doThrow(new CustomException(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND))
+                    .when(spiedChatroomMember).validateCanSendMessage();
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
+
+                given(memberRepository.findById(member.getMemberId())).willReturn(Optional.of(member));
+                given(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).willReturn(Optional.of(spiedChatroomMember));
+
+                // when & then
+                assertThatThrownBy(() -> chatCommandService.createMessage(chatroomId, request))
+                        .isInstanceOf(CustomException.class)
+                        .hasMessage(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 사용자 ID로 요청하면 예외를 발생시킨다")
+        void it_throws_exception_when_member_not_found() {
+            // given
+            UUID nonExistentMemberId = UUID.randomUUID();
+            CreateMessageRequest request = new CreateMessageRequest("안녕하세요!");
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(nonExistentMemberId);
+
+                // [핵심] getMember()의 실패 경로를 테스트하기 위해 Optional.empty()를 반환하도록 설정
+                given(memberRepository.findById(nonExistentMemberId)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> chatCommandService.createMessage(chatroomId, request))
+                        .isInstanceOf(CustomException.class)
+                        .hasMessage(ErrorCode.MEMBER_NOT_FOUND.getMessage());
+
+                // getMember() 실패 시 다른 repository는 호출되지 않아야 함
+                verify(chatroomMemberRepository, never()).findByChatroom_IdAndMember(any(), any());
+                verify(chatRepository, never()).save(any());
             }
         }
     }

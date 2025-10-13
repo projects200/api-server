@@ -42,7 +42,18 @@ public class Chatroom {
     @Builder.Default
     private List<ChatroomMember> chatroomMembers = new ArrayList<>();
 
+    /**
+     * 새로운 Chatroom 객체를 생성하여 반환합니다.
+     */
     public static Chatroom createChatroom() {
-        return Chatroom.builder().build(); // 생성자를 사용하지 않고 정적 메서드를 사용해서 객체 생성하도록 설정
+        return new Chatroom();
+    }
+
+    /**
+     * 마지막 채팅 내용을 업데이트하고 해당 업데이트 시간을 현재 시간으로 설정합니다.
+     */
+    public void updateLastChatContent(String lastChatContent) {
+        this.lastChatContent = lastChatContent;
+        this.lastChatReceivedAt = LocalDateTime.now();
     }
 }

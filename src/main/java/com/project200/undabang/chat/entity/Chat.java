@@ -55,4 +55,16 @@ public class Chat {
                 .chatType(ChatType.SYSTEM)
                 .build();
     }
+
+    /**
+     * 주어진 대화 내용과 채팅방을 기반으로 사용자 유형의 Chat 객체를 생성합니다.
+     */
+    public static Chat of(String chatContent, Chatroom chatroom, Member sender) {
+        return Chat.builder()
+                .chatroom(chatroom)
+                .chatContent(chatContent)
+                .sender(sender)
+                .chatType(ChatType.USER)
+                .build();
+    }
 }
