@@ -56,4 +56,13 @@ public class Chatroom {
         this.lastChatContent = lastChatContent;
         this.lastChatReceivedAt = LocalDateTime.now();
     }
+
+    /**
+     * 특정 채팅방을 삭제 처리합니다.
+     * 채팅방 삭제 시간(chatroomDeletedAt)을 현재 시간으로 설정하여
+     * 논리적 삭제를 수행합니다.
+     */
+    public void deleteChatroom() {
+        this.chatroomDeletedAt = LocalDateTime.now();
+    }
 }

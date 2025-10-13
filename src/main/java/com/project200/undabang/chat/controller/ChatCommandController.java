@@ -37,4 +37,14 @@ public class ChatCommandController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(chatCommandService.createMessage(chatroomId, request)));
     }
+
+    /**
+     * 주어진 채팅방 ID에 해당하는 채팅방을 삭제합니다.
+     */
+    @DeleteMapping("/v1/chat-rooms/{chatroomId}")
+    public ResponseEntity<CommonResponse<Void>> leaveChatRoom(@PathVariable Long chatroomId) {
+
+        chatCommandService.leaveChatroom(chatroomId);
+        return ResponseEntity.ok(CommonResponse.delete(null));
+    }
 }
