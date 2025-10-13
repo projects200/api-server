@@ -128,7 +128,7 @@ public class ChatCommandServiceImpl implements ChatCommandService {
     }
 
     /**
-     * 주어진 현재 사용자와 대상 사용자를 기준으로 채팅방을 검색하거나,ㅌ
+     * 주어진 현재 사용자와 대상 사용자를 기준으로 채팅방을 검색하거나,
      * 존재하지 않을 경우 새롭게 생성하여 반환합니다.
      */
     private Chatroom findOrCreateChatroom(Member currentMember, Member targetMember) {
