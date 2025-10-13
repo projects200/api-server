@@ -98,7 +98,7 @@ public class ChatQueryServiceImpl implements ChatQueryService {
             try {
                 chatUpdateService.updateLastReadChatId(chatroomId, member, lastChatId);
             } catch (Exception e) {
-                log.error("마지막으로 확인한 메시지 식별자 업데이트 실패. chatroomId={}, memberId={}", chatroomId, member.getMemberId(), e);
+                log.error("마지막으로 확인한 메시지 식별자 업데이트 실패. chatroomId={}, memberId={}, {}", chatroomId, member.getMemberId(), e);
             }
         }
 

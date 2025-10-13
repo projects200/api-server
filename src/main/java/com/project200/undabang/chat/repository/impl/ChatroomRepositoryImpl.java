@@ -52,7 +52,7 @@ public class ChatroomRepositoryImpl implements ChatroomRepositoryCustom {
                         chat.chatContent,
                         chat.chatType,
                         chat.chatCreatedAt,
-                        isMyChat(currentMember) // 동적 쿼리 (내 채팅과 타인의 채팅 구분) 구문을 생성하는 헬퍼 메소드
+                        isMyChat(currentMember) // 현재 멤버가 보낸 채팅 메시지인지 여부를 판단하는 BooleanExpression 반환
                 ))
                 .from(chat)
                 .join(chat.sender, member)
