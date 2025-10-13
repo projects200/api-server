@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @Import(TestQuerydslConfig.class)
-class ChatroomRepositoryCustomImplTest {
+class ChatroomRepositoryImplTest {
 
     @Autowired
     private ChatroomRepository chatroomRepository;
