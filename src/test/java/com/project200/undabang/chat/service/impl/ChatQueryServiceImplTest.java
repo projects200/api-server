@@ -3,7 +3,9 @@ package com.project200.undabang.chat.service.impl;
 import com.project200.undabang.chat.dto.response.ChatMessageDto;
 import com.project200.undabang.chat.dto.response.GetMemberChatResponse;
 import com.project200.undabang.chat.dto.response.GetMemberChatroomResponse;
+import com.project200.undabang.chat.dto.response.GetNewChatResponse;
 import com.project200.undabang.chat.entity.ChatType;
+import com.project200.undabang.chat.entity.ChatroomMember;
 import com.project200.undabang.chat.entity.ChatroomMemberStatus;
 import com.project200.undabang.chat.repository.ChatroomMemberRepository;
 import com.project200.undabang.chat.repository.ChatroomRepository;
@@ -124,41 +126,6 @@ class ChatQueryServiceImplTest {
                 verify(chatroomMemberRepository, never()).getChatroomListByMemberId(any(Member.class));
             }
         }
-    }
-
-    private Member createMember(UUID id, String email, String nickname) {
-        return Member.builder()
-                .memberId(id)
-                .memberEmail(email)
-                .memberNickname(nickname)
-                .memberBday(LocalDate.of(1996, 10, 20))
-                .build();
-    }
-
-    private GetMemberChatroomResponse createGetMemberChatroomResponse() {
-        return GetMemberChatroomResponse.builder()
-                .chatRoomId(1L)
-                .otherMemberNickname("otherUser")
-                .otherMemberProfileImageUrl("http://example.com/profile.jpg")
-                .otherMemberThumbnailImageUrl("http://example.com/thumbnail.jpg")
-                .lastChatContent("Hello")
-                .lastChatReceivedAt(LocalDateTime.now())
-                .unreadCount(1L)
-                .build();
-    }
-
-    private ChatMessageDto createChatMessageResponse(Long chatId, String content, boolean isMine) {
-        return new ChatMessageDto(
-                chatId,
-                UUID.randomUUID(),
-                isMine ? "currentUser" : "otherUser",
-                "http://profile.url",
-                "http://thumbnail.url",
-                content,
-                ChatType.USER,
-                LocalDateTime.now(),
-                isMine
-        );
     }
 
     @Nested
@@ -406,6 +373,168 @@ class ChatQueryServiceImplTest {
                 // 반환된 DTO의 내용도 정상적인지 추가로 확인
                 assertThat(result).isNotNull();
                 assertThat(result.getContent()).hasSize(1);
+            }
+        }
+    }
+
+    private Member createMember(UUID id, String email, String nickname) {
+        return Member.builder()
+                .memberId(id)
+                .memberEmail(email)
+                .memberNickname(nickname)
+                .memberBday(LocalDate.of(1996, 10, 20))
+                .build();
+    }
+
+    private GetMemberChatroomResponse createGetMemberChatroomResponse() {
+        return GetMemberChatroomResponse.builder()
+                .chatRoomId(1L)
+                .otherMemberNickname("otherUser")
+                .otherMemberProfileImageUrl("http://example.com/profile.jpg")
+                .otherMemberThumbnailImageUrl("http://example.com/thumbnail.jpg")
+                .lastChatContent("Hello")
+                .lastChatReceivedAt(LocalDateTime.now())
+                .unreadCount(1L)
+                .build();
+    }
+
+    private ChatMessageDto createChatMessageResponse(Long chatId, String content, boolean isMine) {
+        return new ChatMessageDto(
+                chatId,
+                UUID.randomUUID(),
+                isMine ? "currentUser" : "otherUser",
+                "http://profile.url",
+                "http://thumbnail.url",
+                content,
+                ChatType.USER,
+                LocalDateTime.now(),
+                isMine
+        );
+    }
+
+    @Nested
+    @DisplayName("새로운 메시지 조회 (getNewChat)")
+    class GetNewChatTests {
+
+        private final Long chatroomId = 1L;
+
+        @Test
+        @DisplayName("성공: 새로운 메시지가 있을 경우, 메시지 목록을 반환하고 읽음 상태를 업데이트한다")
+        void shouldReturnNewMessagesAndUpdateReadStatus() {
+            // Given
+            UUID memberId = UUID.randomUUID();
+            Member member = createMember(memberId, "test@example.com", "currentUser");
+
+            // lastReadChatId가 50인 ChatroomMember Mock 생성
+            ChatroomMember chatroomMember = mock(ChatroomMember.class);
+            when(chatroomMember.getLastReadChatId()).thenReturn(50L);
+
+            // 50 이후의 새로운 메시지 목록 Mock 생성
+            List<ChatMessageDto> newMessages = List.of(
+                    createChatMessageResponse(51L, "Hi", false),
+                    createChatMessageResponse(52L, "Hello there", true)
+            );
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
+                when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
+                // getChatroomMember가 성공적으로 ChatroomMember를 반환하도록 설정
+                when(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).thenReturn(Optional.of(chatroomMember));
+                // getNewMemberChat이 새로운 메시지 목록을 반환하도록 설정
+                when(chatroomRepository.getNewMemberChat(member, chatroomId, 50L)).thenReturn(newMessages);
+                // 상대방은 활성 상태로 설정
+                when(chatroomMemberRepository.getOpponentStatusByChatroomId(chatroomId, member)).thenReturn(Optional.of(ChatroomMemberStatus.ACTIVE));
+                // updateLastReadChatId는 아무것도 하지 않도록 설정
+                doNothing().when(chatUpdateService).updateLastReadChatId(anyLong(), any(Member.class), anyLong());
+
+                // When
+                GetNewChatResponse result = chatQueryService.getNewChat(chatroomId);
+
+                // Then
+                assertThat(result.getNewChats()).isEqualTo(newMessages);
+                assertThat(result.isOpponentActive()).isTrue();
+
+                // 가장 최신 메시지 ID인 52L로 업데이트 메소드가 호출되었는지 검증
+                verify(chatUpdateService, times(1)).updateLastReadChatId(chatroomId, member, 52L);
+            }
+        }
+
+        @Test
+        @DisplayName("성공: 새로운 메시지가 없을 경우, 빈 목록을 반환하고 업데이트는 호출하지 않는다")
+        void shouldReturnEmptyListWhenNoNewMessages() {
+            // Given
+            UUID memberId = UUID.randomUUID();
+            Member member = createMember(memberId, "test@example.com", "currentUser");
+            ChatroomMember chatroomMember = mock(ChatroomMember.class);
+            when(chatroomMember.getLastReadChatId()).thenReturn(100L); // 100번까지 읽음
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
+                when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
+                when(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).thenReturn(Optional.of(chatroomMember));
+                // [핵심] 새로운 메시지가 없으므로 빈 리스트를 반환하도록 설정
+                when(chatroomRepository.getNewMemberChat(member, chatroomId, 100L)).thenReturn(Collections.emptyList());
+                when(chatroomMemberRepository.getOpponentStatusByChatroomId(chatroomId, member)).thenReturn(Optional.of(ChatroomMemberStatus.ACTIVE));
+
+                // When
+                GetNewChatResponse result = chatQueryService.getNewChat(chatroomId);
+
+                // Then
+                assertThat(result.getNewChats()).isEmpty();
+                // 메시지가 없으므로 업데이트 메소드는 호출되지 않아야 함
+                verify(chatUpdateService, never()).updateLastReadChatId(anyLong(), any(Member.class), anyLong());
+            }
+        }
+
+        @Test
+        @DisplayName("실패: 사용자가 채팅방 멤버가 아닐 경우 예외를 발생시킨다")
+        void shouldThrowExceptionWhenUserIsNotMember() {
+            // Given
+            UUID memberId = UUID.randomUUID();
+            Member member = createMember(memberId, "test@example.com", "currentUser");
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
+                when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
+                // [핵심] getChatroomMember 내부의 findBy가 실패하도록 설정
+                when(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).thenReturn(Optional.empty());
+
+                // When & Then
+                CustomException exception = assertThrows(CustomException.class, () -> chatQueryService.getNewChat(chatroomId));
+                assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND);
+
+                // 멤버가 아니므로 그 이후의 어떤 repository 메소드도 호출되면 안 됨
+                verify(chatroomRepository, never()).getNewMemberChat(any(Member.class), anyLong(), anyLong());
+                verify(chatUpdateService, never()).updateLastReadChatId(anyLong(), any(Member.class), anyLong());
+            }
+        }
+
+        @Test
+        @DisplayName("성공: 읽음 상태 업데이트 중 예외가 발생해도, 새로운 메시지 목록은 정상적으로 반환된다")
+        void shouldReturnNewMessagesEvenIfUpdateFails() {
+            // Given
+            UUID memberId = UUID.randomUUID();
+            Member member = createMember(memberId, "test@example.com", "currentUser");
+            ChatroomMember chatroomMember = mock(ChatroomMember.class);
+            when(chatroomMember.getLastReadChatId()).thenReturn(50L);
+            List<ChatMessageDto> newMessages = List.of(createChatMessageResponse(51L, "Hi", false));
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
+                when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
+                when(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).thenReturn(Optional.of(chatroomMember));
+                when(chatroomRepository.getNewMemberChat(member, chatroomId, 50L)).thenReturn(newMessages);
+                when(chatroomMemberRepository.getOpponentStatusByChatroomId(chatroomId, member)).thenReturn(Optional.of(ChatroomMemberStatus.ACTIVE));
+                // [핵심] updateLastReadChatId 호출 시 예외를 던지도록 설정
+                doThrow(new RuntimeException("DB Error")).when(chatUpdateService).updateLastReadChatId(anyLong(), any(Member.class), anyLong());
+
+                // When & Then
+                // 예외가 발생하지 않고 정상적으로 응답 객체를 반환하는지 확인
+                GetNewChatResponse result = assertDoesNotThrow(() -> chatQueryService.getNewChat(chatroomId));
+
+                // 반환된 DTO의 내용도 정상적인지 추가로 확인
+                assertThat(result).isNotNull();
+                assertThat(result.getNewChats()).isEqualTo(newMessages);
             }
         }
     }
