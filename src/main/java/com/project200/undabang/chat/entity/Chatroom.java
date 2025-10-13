@@ -1,12 +1,12 @@
 package com.project200.undabang.chat.entity;
 
-import com.project200.undabang.member.entity.Member;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
-import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Builder
@@ -20,23 +20,29 @@ public class Chatroom {
     @Column(name = "chatroom_id", updatable = false, nullable = false)
     private Long id;
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "sender_id", nullable = false, updatable = false)
-    private Member sender;
+    @Column(name = "last_chat_content", length = 255)
+    private String lastChatContent;
+
+    @Column(name = "last_chat_received_at")
+    private LocalDateTime lastChatReceivedAt;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "receiver_id", nullable = false, updatable = false)
-    private Member receiver;
-
-    @NotNull
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "chatroom_created_at", nullable = false, updatable = false)
     @Builder.Default
+    @Column(name = "chatroom_created_at", nullable = false, updatable = false)
     private LocalDateTime chatroomCreatedAt = LocalDateTime.now();
 
     @Column(name = "chatroom_deleted_at")
     private LocalDateTime chatroomDeletedAt;
 
+    @OneToMany(mappedBy = "chatroom")
+    @Builder.Default
+    private List<Chat> chats = new ArrayList<>();
+
+    @OneToMany(mappedBy = "chatroom")
+    @Builder.Default
+    private List<ChatroomMember> chatroomMembers = new ArrayList<>();
+
+    public static Chatroom createChatroom() {
+        return Chatroom.builder().build(); // 생성자를 사용하지 않고 정적 메서드를 사용해서 객체 생성하도록 설정
+    }
 }

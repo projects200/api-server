@@ -204,3 +204,7 @@ include::overview/공통-개발-참고-사항.adoc[]
 - 회원의 오픈 채팅 URL 조회 #GET# `/api/v1/open-chats`
 
 - 다른 회원의 오픈 채팅 URL 조회 #GET# `/api/v1/members/{memberId}/open-chat`
+
+=== xref:채팅-API.html[채팅 API]
+
+- 채팅방 생성 API #POST# `/api/v1/chat-rooms`

@@ -1,5 +1,8 @@
 package com.project200.undabang.member.repository;
 
+import com.project200.undabang.member.entity.Member;
+
+import java.util.List;
 import java.util.UUID;
 
 public interface MemberRepositoryCustom {
@@ -7,4 +10,6 @@ public interface MemberRepositoryCustom {
     Long countMemberExerciseInLastDays(UUID memberId, int daysAgo);
 
     Long countMemberExerciseInThisYear(UUID memberId);
+
+    List<Member> findAllByIdWithPessimisticLock(List<UUID> sortedMemberIdList);
 }

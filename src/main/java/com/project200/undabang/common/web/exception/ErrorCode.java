@@ -8,6 +8,7 @@ public enum ErrorCode {
     INVALID_INPUT_VALUE(400, "INVALID_INPUT_VALUE", "유효하지 않은 입력 값입니다."),
     METHOD_NOT_ALLOWED(405, "METHOD_NOT_ALLOWED", "지원하지 않는 HTTP 메소드입니다."),
     INTERNAL_SERVER_ERROR(500, "INTERNAL_SERVER_ERROR", "서버 내부 오류가 발생했습니다."),
+    SERVICE_UNAVAILABLE(503, "SERVICE_UNAVAILABLE", "일시적으로 서버를 이용할 수 없습니다."),
 
     // 이미지 에러
     INVALID_FILE_NAME(400, "INVALID_FILE_NAME", "파일 이름이 유효하지 않습니다."),
@@ -67,7 +68,12 @@ public enum ErrorCode {
     // 오픈 채팅 관련 에러
     OPEN_CHAT_ROOM_ALREADY_EXIST(409, "OPEN_CHAT_ROOM_ALREADY_EXIST", "이미 오픈 채팅방을 보유한 회원입니다."),
     OPEN_CHAT_ROOM_URL_DUPLICATED(409, "OPEN_CHAT_ROOM_URL_DUPLICATED", "이미 사용중인 오픈 채팅 링크입니다"),
-    OPEN_CHAT_ROOM_NOT_FOUND(404, "OPEN_CHAT_ROOM_NOT_FOUND", "존재하지 않는 오픈 채팅방 입니다.");
+    OPEN_CHAT_ROOM_NOT_FOUND(404, "OPEN_CHAT_ROOM_NOT_FOUND", "존재하지 않는 오픈 채팅방 입니다."),
+
+    // 채팅방 관련 에러
+    SELF_CHAT_NOT_ALLOWED(400, "SELF_CHAT_NOT_ALLOWED", "자기 자신과 채팅방을 개설할 수 없습니다."),
+    CHATROOM_MEMBERS_NOT_FOUND(404, "CHATROOM_MEMBERS_NOT_FOUND", "등록된 채팅방 참여자 정보를 확인할 수 없습니다.");
+
 
     private final HttpStatusCode status;
     private final String code;

@@ -1,13 +1,17 @@
 package com.project200.undabang.member.repository.impl;
 
 import com.project200.undabang.exercise.entity.QExercise;
+import com.project200.undabang.member.entity.Member;
+import com.project200.undabang.member.entity.QMember;
 import com.project200.undabang.member.repository.MemberRepositoryCustom;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Repository
@@ -15,6 +19,25 @@ import java.util.UUID;
 public class MemberRepositoryImpl implements MemberRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
+
+    /**
+     * 주어진 회원 ID 목록에 대해 비관적 락(Pessimistic Lock)을 설정하여 회원 정보를 조회합니다.
+     * 회원 테이블의 특정 튜플(파라미터로 전달받음)에 대해서 베타적인 쓰기 락을 적용합니다.
+     * 베타적인 쓰기 락이 걸리면 다른 트랜잭션은 해당 데이터에 대해서 읽기 락을 거는것도 불가능합니다.
+     *
+     * @param sortedMemberIdList 조회할 회원 ID(UUID) 목록, 정렬된 상태여야 합니다
+     * @return 비관적 락이 설정된 상태의 회원 정보 목록
+     */
+    @Override
+    public List<Member> findAllByIdWithPessimisticLock(List<UUID> sortedMemberIdList) {
+        QMember member = QMember.member;
+
+        return queryFactory
+                .selectFrom(member)
+                .where(member.memberId.in(sortedMemberIdList))
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .fetch();
+    }
 
     /**
      * 특정 회원이 지정된 기간 내에 수행한 운동 기록의 개수를 계산합니다.
