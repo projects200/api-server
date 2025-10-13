@@ -7,8 +7,12 @@ import com.project200.undabang.member.entity.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 public interface ChatroomMemberRepository extends JpaRepository<ChatroomMember, Long>, ChatroomMemberRepositoryCustom {
     Optional<ChatroomMember> findByChatroomAndMember(Chatroom chatroom, Member member);
     long countByChatroomAndChatroomMemberStatus(Chatroom chatroom, ChatroomMemberStatus chatroomMemberStatus);
+    boolean existsByChatroom_IdAndMember(Long id, Member member);
+
+    Optional<ChatroomMember> findByChatroom_IdAndMember_MemberId(Long id, UUID memberId);
 }

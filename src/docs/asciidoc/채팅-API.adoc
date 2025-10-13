@@ -22,3 +22,5 @@ include::overview/공통-개발-참고-사항.adoc[]
 include::chat/채팅방-생성-API.adoc[]
 
 include::chat/내-채팅방-목록-조회-API.adoc[]
+
+include::chat/특정-채팅방-조회-API.adoc[]
