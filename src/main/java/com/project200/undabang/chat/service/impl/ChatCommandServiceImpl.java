@@ -9,7 +9,6 @@ import com.project200.undabang.chat.repository.ChatRepository;
 import com.project200.undabang.chat.repository.ChatroomMemberRepository;
 import com.project200.undabang.chat.repository.ChatroomRepository;
 import com.project200.undabang.chat.service.ChatCommandService;
-import com.project200.undabang.common.aop.LogExecutionTime;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
@@ -44,7 +43,6 @@ public class ChatCommandServiceImpl implements ChatCommandService {
      */
     @Override
     @Transactional
-    @LogExecutionTime
     public CreateChatroomResponse createChatroom(CreateChatroomRequest request) {
         UUID currentMemberId = UserContextHolder.getUserId();
         UUID targetMemberId = request.getReceiverId();
@@ -98,6 +96,35 @@ public class ChatCommandServiceImpl implements ChatCommandService {
         chatroomMember.updateLastReadChatId(savedChat.getId());
 
         return CreateMessageResponse.of(savedChat.getId());
+    }
+
+    /**
+     * 주어진 채팅방 ID에 해당하는 채팅방에서 사용자를 탈퇴 처리하고,
+     * 채팅방 상태를 업데이트하며, 시스템 메시지를 생성하여 저장합니다.
+     */
+    @Override
+    @Transactional
+    public void leaveChatroom(Long chatroomId) {
+        Member member = getMember(UserContextHolder.getUserId());
+        ChatroomMember chatroomMember = chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)
+                .orElseThrow(() -> new CustomException(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND));
+
+        // 이미 나간 회원의 경우 빠르게 반환해서 추가 연산을 줄임
+        if (chatroomMember.getChatroomMemberStatus() == ChatroomMemberStatus.LEFT) {
+            return;
+        }
+
+        chatroomMember.updateMemberStatus(ChatroomMemberStatus.LEFT);
+
+        Chatroom chatroom = chatroomMember.getChatroom();
+
+        // 활성화된 회원이 없다면 채팅방 논리적 삭제
+        if (chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(chatroom, ChatroomMemberStatus.ACTIVE) == 0) {
+            chatroom.deleteChatroom();
+        }
+
+        Chat systemChat = Chat.ofRoomCreation(SystemMessage.USER_LEFT_CHAT_ROOM.format(member.getMemberNickname()), chatroom);
+        chatRepository.save(systemChat);
     }
 
     /**

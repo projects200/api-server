@@ -27,10 +27,10 @@ import static com.project200.undabang.configuration.RestDocsUtils.HEADER_ACCESS_
 import static com.project200.undabang.configuration.RestDocsUtils.commonResponseFields;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.times;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
@@ -46,14 +46,6 @@ class ChatCommandControllerTest extends AbstractRestDocSupport {
 
     @Autowired
     private ObjectMapper objectMapper;
-
-    private CreateChatroomRequest createRequest(UUID targetMemberId) {
-        return new CreateChatroomRequest(targetMemberId);
-    }
-
-    private CreateChatroomResponse createResponse(long chatroomId) {
-        return new CreateChatroomResponse(chatroomId);
-    }
 
     @Nested
     @DisplayName("POST /api/v1/chat-rooms API는")
@@ -247,6 +239,73 @@ class ChatCommandControllerTest extends AbstractRestDocSupport {
                     .andExpect(status().isBadRequest());
 
             then(chatCommandService).shouldHaveNoInteractions();
+        }
+    }
+
+    private CreateChatroomRequest createRequest(UUID targetMemberId) {
+        return new CreateChatroomRequest(targetMemberId);
+    }
+
+    private CreateChatroomResponse createResponse(long chatroomId) {
+        return new CreateChatroomResponse(chatroomId);
+    }
+
+    @Nested
+    @DisplayName("DELETE /api/v1/chat-rooms/{chatroomId} API는")
+    class LeaveChatRoom {
+
+        private final Long chatroomId = 1L;
+
+        @Test
+        @DisplayName("채팅방 나가기를 성공적으로 처리한다")
+        void LeaveChatRoom_Success() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            // deleteChatroom 서비스 메소드는 void를 반환하므로, 아무것도 하지 않도록 설정
+            willDoNothing().given(chatCommandService).leaveChatroom(chatroomId);
+
+            // when & then
+            mockMvc.perform(delete("/api/v1/chat-rooms/{chatroomId}", chatroomId)
+                            .headers(getCommonApiHeaders(memberId))
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpectAll(
+                            status().isOk(),
+                            jsonPath("$.succeed").value(true),
+                            jsonPath("$.code").value("DELETED"),
+                            jsonPath("$.data").doesNotExist() // data 필드가 없는지 확인
+                    )
+                    .andDo(document.document(
+                            requestHeaders(HEADER_ACCESS_TOKEN),
+                            pathParameters(
+                                    parameterWithName("chatroomId").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("나가기를 원하는 채팅방의 식별자 ID값을 의미합니다.")
+                            ),
+                            responseFields(
+                                    fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("요청 성공 여부"),
+                                    fieldWithPath("code").type(JsonFieldType.STRING).description("결과 코드"),
+                                    fieldWithPath("message").type(JsonFieldType.STRING).description("결과 메시지"),
+                                    fieldWithPath("data").type(JsonFieldType.NULL).description("응답 데이터를 나타냅니다.")
+                            )
+                    ));
+
+            then(chatCommandService).should(times(1)).leaveChatroom(chatroomId);
+        }
+
+        @Test
+        @DisplayName("사용자가 채팅방 멤버가 아닐 경우 404 Not Found 에러를 반환한다")
+        void deleteChatRoom_Fail_NotMember() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            // 서비스가 예외를 던지는 상황을 Mocking
+            willThrow(new CustomException(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND))
+                    .given(chatCommandService).leaveChatroom(chatroomId);
+
+            // when & then
+            mockMvc.perform(delete("/api/v1/chat-rooms/{chatroomId}", chatroomId)
+                            .headers(getCommonApiHeaders(memberId))
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.succeed").value(false))
+                    .andExpect(jsonPath("$.code").value(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND.getCode()));
         }
     }
 }

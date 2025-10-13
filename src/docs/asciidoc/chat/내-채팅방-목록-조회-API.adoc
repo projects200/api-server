@@ -4,6 +4,7 @@
 
 - #GET# `/api/v1/chat-rooms`
 - 회원이 자신의 채팅방 목록을 조회하는 기능을 가진 API 입니다.
+- 회원이 나간 채팅방은 조회되지 않습니다.
 
 === 개발 이력
 
@@ -28,6 +29,7 @@ operation::get-chat-room-list/get-chat-room-list_-success[snippets="request-head
 |200|채팅방 목록 조회가 성공적으로 완료되었습니다.
 |401|인증되지 않은 요청입니다. Access Token이 없거나 유효하지 않습니다.
 |404|존재하지 않는 회원입니다.
+|409|회원님이 나간 채팅방 입니다.
 |500|서버 내부 오류가 발생했습니다.
 |===
 
