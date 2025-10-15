@@ -351,7 +351,7 @@ class ChatQueryServiceImplTest {
                 ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
                 when(memberRepository.findById(member.getMemberId())).thenReturn(Optional.of(member));
                 when(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).thenReturn(Optional.of(activeMember));
-                // 0L이 전달되는지 확인
+                // -1L이 전달되는지 확인
                 when(chatroomRepository.getNewMemberChat(member, chatroomId, -1L)).thenReturn(messages);
                 when(chatroomMemberRepository.getOpponentStatusByChatroomId(chatroomId, member)).thenReturn(Optional.of(ChatroomMemberStatus.ACTIVE));
 
