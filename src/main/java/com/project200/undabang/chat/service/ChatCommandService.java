@@ -8,6 +8,5 @@ import com.project200.undabang.chat.dto.response.CreateMessageResponse;
 public interface ChatCommandService {
     CreateChatroomResponse createChatroom(CreateChatroomRequest request);
     CreateMessageResponse createMessage(Long chatroomId, CreateMessageRequest request);
-
     void leaveChatroom(Long chatroomId);
 }

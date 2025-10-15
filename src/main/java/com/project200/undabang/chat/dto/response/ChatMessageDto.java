@@ -22,5 +22,5 @@ public class ChatMessageDto {
     private String chatContent;
     private ChatType chatType;
     private LocalDateTime sentAt;
-    private boolean isMine;
+    private boolean mine;
 }
