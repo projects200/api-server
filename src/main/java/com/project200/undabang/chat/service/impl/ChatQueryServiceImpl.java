@@ -78,7 +78,7 @@ public class ChatQueryServiceImpl implements ChatQueryService {
 
         // 혹시 마지막으로 읽은 값이 없는 경우
         if (lastChatId == null) {
-            lastChatId = 0L;
+            lastChatId = -1L;
         }
 
         List<ChatMessageDto> dtoList = chatroomRepository.getNewMemberChat(member, chatroomId, lastChatId);

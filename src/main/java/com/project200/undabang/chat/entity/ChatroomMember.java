@@ -44,13 +44,13 @@ public class ChatroomMember {
 
     @Column(name = "last_read_chat_id")
     @Builder.Default
-    private Long lastReadChatId = 0L;
+    private Long lastReadChatId = -1L;
 
     public static ChatroomMember of(Chatroom chatroom, Member member) {
         return ChatroomMember.builder()
                 .chatroom(chatroom)
                 .member(member)
-                .lastReadChatId(0L)
+                .lastReadChatId(-1L)
                 .build();
     }
 

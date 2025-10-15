@@ -339,7 +339,7 @@ class ChatQueryServiceImplTest {
         }
 
         @Test
-        @DisplayName("성공: lastReadChatId가 null인 경우 0L로 처리되어 호출된다")
+        @DisplayName("성공: lastReadChatId가 null인 경우 -1L로 처리되어 호출된다")
         void shouldConvertNullLastReadChatIdToZero() {
             // Given
             Member member = createMember(UUID.randomUUID());
@@ -352,14 +352,14 @@ class ChatQueryServiceImplTest {
                 when(memberRepository.findById(member.getMemberId())).thenReturn(Optional.of(member));
                 when(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).thenReturn(Optional.of(activeMember));
                 // 0L이 전달되는지 확인
-                when(chatroomRepository.getNewMemberChat(member, chatroomId, 0L)).thenReturn(messages);
+                when(chatroomRepository.getNewMemberChat(member, chatroomId, -1L)).thenReturn(messages);
                 when(chatroomMemberRepository.getOpponentStatusByChatroomId(chatroomId, member)).thenReturn(Optional.of(ChatroomMemberStatus.ACTIVE));
 
                 // When
                 GetNewChatResponse result = chatQueryService.getNewChat(chatroomId);
 
                 // Then
-                verify(chatroomRepository).getNewMemberChat(member, chatroomId, 0L);
+                verify(chatroomRepository).getNewMemberChat(member, chatroomId, -1L);
                 assertThat(result.getNewChats()).isEqualTo(messages);
             }
         }
