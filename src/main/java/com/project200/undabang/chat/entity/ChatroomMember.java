@@ -43,12 +43,14 @@ public class ChatroomMember {
     private ChatroomMemberStatus chatroomMemberStatus = ChatroomMemberStatus.ACTIVE;
 
     @Column(name = "last_read_chat_id")
-    private Long lastReadChatId;
+    @Builder.Default
+    private Long lastReadChatId = 0L;
 
     public static ChatroomMember of(Chatroom chatroom, Member member) {
         return ChatroomMember.builder()
                 .chatroom(chatroom)
                 .member(member)
+                .lastReadChatId(0L)
                 .build();
     }
 

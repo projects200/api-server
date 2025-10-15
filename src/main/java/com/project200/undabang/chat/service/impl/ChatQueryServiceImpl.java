@@ -74,8 +74,14 @@ public class ChatQueryServiceImpl implements ChatQueryService {
     public GetNewChatResponse getNewChat(Long chatroomId) {
         Member member = getMember(UserContextHolder.getUserId());
         ChatroomMember chatroomMember = validateActiveChatroomMember(member, chatroomId);
+        Long lastChatId = chatroomMember.getLastReadChatId();
 
-        List<ChatMessageDto> dtoList = chatroomRepository.getNewMemberChat(member, chatroomId, chatroomMember.getLastReadChatId());
+        // 혹시 마지막으로 읽은 값이 없는 경우
+        if (lastChatId == null) {
+            lastChatId = 0L;
+        }
+
+        List<ChatMessageDto> dtoList = chatroomRepository.getNewMemberChat(member, chatroomId, lastChatId);
 
         updateLastReadStatus(chatroomId, member, dtoList);
         boolean isOpponentActive = getOpponentStatus(chatroomId, member);

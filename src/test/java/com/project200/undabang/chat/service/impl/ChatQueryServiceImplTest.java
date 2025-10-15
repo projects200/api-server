@@ -337,5 +337,57 @@ class ChatQueryServiceImplTest {
                 verify(chatroomRepository, never()).getNewMemberChat(any(Member.class), anyLong(), anyLong());
             }
         }
+
+        @Test
+        @DisplayName("성공: lastReadChatId가 null인 경우 0L로 처리되어 호출된다")
+        void shouldConvertNullLastReadChatIdToZero() {
+            // Given
+            Member member = createMember(UUID.randomUUID());
+            // lastReadChatId를 null로 설정
+            ChatroomMember activeMember = createChatroomMember(member, ChatroomMemberStatus.ACTIVE, null);
+            List<ChatMessageDto> messages = List.of(createChatMessageDto(1L, "Message"));
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
+                when(memberRepository.findById(member.getMemberId())).thenReturn(Optional.of(member));
+                when(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).thenReturn(Optional.of(activeMember));
+                // 0L이 전달되는지 확인
+                when(chatroomRepository.getNewMemberChat(member, chatroomId, 0L)).thenReturn(messages);
+                when(chatroomMemberRepository.getOpponentStatusByChatroomId(chatroomId, member)).thenReturn(Optional.of(ChatroomMemberStatus.ACTIVE));
+
+                // When
+                GetNewChatResponse result = chatQueryService.getNewChat(chatroomId);
+
+                // Then
+                verify(chatroomRepository).getNewMemberChat(member, chatroomId, 0L);
+                assertThat(result.getNewChats()).isEqualTo(messages);
+            }
+        }
+
+        @Test
+        @DisplayName("성공: lastReadChatId가 정상값인 경우 그대로 전달된다")
+        void shouldPassNormalLastReadChatId() {
+            // Given
+            Member member = createMember(UUID.randomUUID());
+            Long lastReadId = 50L;
+            ChatroomMember activeMember = createChatroomMember(member, ChatroomMemberStatus.ACTIVE, lastReadId);
+            List<ChatMessageDto> messages = List.of(createChatMessageDto(51L, "New Message"));
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
+                when(memberRepository.findById(member.getMemberId())).thenReturn(Optional.of(member));
+                when(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).thenReturn(Optional.of(activeMember));
+                // lastReadId 그대로 전달되는지 확인
+                when(chatroomRepository.getNewMemberChat(member, chatroomId, lastReadId)).thenReturn(messages);
+                when(chatroomMemberRepository.getOpponentStatusByChatroomId(chatroomId, member)).thenReturn(Optional.of(ChatroomMemberStatus.ACTIVE));
+
+                // When
+                GetNewChatResponse result = chatQueryService.getNewChat(chatroomId);
+
+                // Then
+                verify(chatroomRepository).getNewMemberChat(member, chatroomId, lastReadId);
+                assertThat(result.getNewChats()).isEqualTo(messages);
+            }
+        }
     }
 }
