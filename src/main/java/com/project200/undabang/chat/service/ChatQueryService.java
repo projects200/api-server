@@ -1,0 +1,15 @@
+package com.project200.undabang.chat.service;
+
+import com.project200.undabang.chat.dto.response.GetMemberChatResponse;
+import com.project200.undabang.chat.dto.response.GetMemberChatroomResponse;
+import com.project200.undabang.chat.dto.response.GetNewChatResponse;
+import org.springframework.data.domain.Pageable;
+
+import java.util.List;
+
+public interface ChatQueryService {
+    List<GetMemberChatroomResponse> getMemberChatroomList();
+    GetMemberChatResponse getMemberChat(Long chatroomId, Long prevChatId, Pageable pageable);
+
+    GetNewChatResponse getNewChat(Long chatroomId);
+}

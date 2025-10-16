@@ -1,0 +1,35 @@
+== 채팅방 생성 API
+
+=== 설명
+
+- #POST# `/api/v1/chat-rooms`
+- 회원이 다른 회원의 식별자를 사용해 1:1 DM을 보낼 수 있는 채팅방을 생성하는 기능 입니다.
+
+=== 개발 이력
+
+- Sprint 13 (2025-10-08): 기능 개발이 완료되었습니다.
+
+=== 개발 참고 사항
+
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+
+operation::create-chat-room/create-chat-room_-success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+
+operation::create-chat-room/create-chat-room_-success[snippets="request-headers,request-fields,response-fields"]
+
+==== 응답 상태 코드
+
+|===
+|상태 코드|설명
+|201|리소스가 성공적으로 생성되었습니다.
+|400|자기 자신과 채팅방을 개설할 수 없습니다.
+|401|인증되지 않은 요청입니다. Access Token이 없거나 유효하지 않습니다.
+|404|존재하지 않는 회원입니다. +
+등록된 채팅방 참여자 정보를 확인할 수 없습니다.
+|500|서버 내부 오류가 발생했습니다.
+|===
+

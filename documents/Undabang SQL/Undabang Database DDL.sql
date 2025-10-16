@@ -23,6 +23,7 @@ DROP TABLE IF EXISTS notification_messages;
 DROP TABLE IF EXISTS notification_scenarios;
 
 drop table if exists chats;
+drop table if exists chatroom_members;
 drop table if exists chatrooms;
 drop table if exists comment_reports;
 drop table if exists comment_report_subjects;
@@ -193,36 +194,6 @@ create table if not exists members
         unique (member_nickname),
     constraint check_member_gender
         check (member_gender in ('M', 'F', 'U'))
-);
-
-create table if not exists chatrooms
-(
-    chatroom_id         bigint auto_increment
-        primary key,
-    sender_id           char(36)                           not null,
-    receiver_id         char(36)                           not null,
-    chatroom_created_at datetime default CURRENT_TIMESTAMP not null,
-    chatroom_deleted_at datetime                           null,
-    constraint FK_cr_receiver
-        foreign key (receiver_id) references members (member_id),
-    constraint FK_cr_sender
-        foreign key (sender_id) references members (member_id)
-);
-
-create table if not exists chats
-(
-    chat_id         bigint auto_increment
-        primary key,
-    chatroom_id     bigint                               not null,
-    sender_id       char(36)                             not null,
-    chat_content    varchar(500)                         not null,
-    chat_is_read    tinyint(1) default 0                 not null,
-    chat_sended_at  datetime   default CURRENT_TIMESTAMP not null,
-    chat_deleted_at datetime                             null,
-    constraint FK_c_chatroom
-        foreign key (chatroom_id) references chatrooms (chatroom_id),
-    constraint FK_c_sender
-        foreign key (sender_id) references members (member_id)
 );
 
 create table if not exists exercises
@@ -628,4 +599,44 @@ CREATE TABLE matches
         REFERENCES members (member_id),
     CONSTRAINT FK_members_TO_matches_2 FOREIGN KEY (receiver_id)
         REFERENCES members (member_id)
+);
+
+CREATE TABLE chatrooms
+(
+    chatroom_id           BIGINT       NOT NULL AUTO_INCREMENT COMMENT '채팅방 식별자',
+    last_chat_content     VARCHAR(255) NULL COMMENT '목록 조회를 위한 마지막 메시지 내용',
+    last_chat_received_at DATETIME     NULL COMMENT '목록 정렬을 위한 마지막 메시지 시간',
+    chatroom_created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    chatroom_deleted_at   DATETIME     NULL,
+    CONSTRAINT PK_CHATROOMS PRIMARY KEY (chatroom_id)
+);
+
+CREATE TABLE chatroom_members
+(
+    chatroom_member_id     BIGINT      NOT NULL AUTO_INCREMENT COMMENT '채팅방 멤버 식별자',
+    chatroom_id            BIGINT      NOT NULL COMMENT '채팅방 식별자',
+    member_id              CHAR(36)    NOT NULL COMMENT 'UUID_SELF',
+    chatroom_member_status VARCHAR(10) NULL DEFAULT 'ACTIVE' COMMENT 'ACTIVE(참여중), LEFT(나감)',
+    last_read_chat_id      BIGINT      NULL COMMENT '회원이 마지막으로 읽은 채팅 식별자',
+    CONSTRAINT PK_CHATROOM_MEMBERS PRIMARY KEY (chatroom_member_id),
+    CONSTRAINT UQ_chatroom_members_chatroom_member UNIQUE (chatroom_id, member_id),
+    CONSTRAINT FK_chatrooms_TO_chatroom_members_1 FOREIGN KEY (chatroom_id)
+        REFERENCES chatrooms (chatroom_id),
+    CONSTRAINT FK_members_TO_chatroom_members_1 FOREIGN KEY (member_id)
+        REFERENCES members (member_id)
+);
+
+CREATE TABLE chats
+(
+    chat_id         BIGINT       NOT NULL AUTO_INCREMENT COMMENT '채팅 식별자',
+    sender_id       CHAR(36)     NULL COMMENT 'UUID_SELF',
+    chatroom_id     BIGINT       NOT NULL COMMENT '채팅방 식별자',
+    chat_content    VARCHAR(500) NOT NULL,
+    chat_type       VARCHAR(20)  NOT NULL DEFAULT 'USER' COMMENT 'USER,SYSTEM',
+    chat_created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT PK_CHATS PRIMARY KEY (chat_id),
+    CONSTRAINT FK_members_TO_chats_1 FOREIGN KEY (sender_id)
+        REFERENCES members (member_id),
+    CONSTRAINT FK_chatrooms_TO_chats_1 FOREIGN KEY (chatroom_id)
+        REFERENCES chatrooms (chatroom_id)
 );

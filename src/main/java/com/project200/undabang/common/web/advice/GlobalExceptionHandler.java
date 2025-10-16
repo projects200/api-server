@@ -3,12 +3,14 @@ package com.project200.undabang.common.web.advice;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.response.CommonResponse;
+import jakarta.persistence.LockTimeoutException;
 import jakarta.persistence.PersistenceException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.MethodParameter;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -172,6 +174,24 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(errorCode.getStatus()).body(response);
 
+    }
+
+    /**
+     * PessimisticLockingFailureException 및 LockTimeoutException을 처리하는 메서드입니다.
+     * <p>
+     * 데이터베이스 잠금 충돌 혹은 타임아웃이 발생했을 경우, 서비스 이용 불가 상태를 나타내는
+     * HTTP 응답을 반환합니다.
+     *
+     * @param ex 처리할 PessimisticLockingFailureException 또는 LockTimeoutException 예외
+     * @return 서비스 이용 불가 상태와 관련된 오류 응답을 포함한 ResponseEntity 객체
+     */
+    @ExceptionHandler({PessimisticLockingFailureException.class, LockTimeoutException.class})
+    protected ResponseEntity<CommonResponse<Void>> handlePessimisticLockingFailure(RuntimeException ex) {
+        log.warn("데이터베이스 잠금 충돌 발생: {}", ex.getMessage());
+        ErrorCode errorCode = ErrorCode.SERVICE_UNAVAILABLE;
+
+        CommonResponse<Void> response = CommonResponse.<Void>error(errorCode).build();
+        return new ResponseEntity<>(response, HttpStatus.SERVICE_UNAVAILABLE);
     }
 
 

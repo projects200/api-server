@@ -1,12 +1,12 @@
 package com.project200.undabang.chat.entity;
 
-import com.project200.undabang.member.entity.Member;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
-import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Builder
@@ -20,23 +20,49 @@ public class Chatroom {
     @Column(name = "chatroom_id", updatable = false, nullable = false)
     private Long id;
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "sender_id", nullable = false, updatable = false)
-    private Member sender;
+    @Column(name = "last_chat_content", length = 255)
+    private String lastChatContent;
+
+    @Column(name = "last_chat_received_at")
+    private LocalDateTime lastChatReceivedAt;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "receiver_id", nullable = false, updatable = false)
-    private Member receiver;
-
-    @NotNull
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "chatroom_created_at", nullable = false, updatable = false)
     @Builder.Default
+    @Column(name = "chatroom_created_at", nullable = false, updatable = false)
     private LocalDateTime chatroomCreatedAt = LocalDateTime.now();
 
     @Column(name = "chatroom_deleted_at")
     private LocalDateTime chatroomDeletedAt;
 
+    @OneToMany(mappedBy = "chatroom")
+    @Builder.Default
+    private List<Chat> chats = new ArrayList<>();
+
+    @OneToMany(mappedBy = "chatroom")
+    @Builder.Default
+    private List<ChatroomMember> chatroomMembers = new ArrayList<>();
+
+    /**
+     * 새로운 Chatroom 객체를 생성하여 반환합니다.
+     */
+    public static Chatroom createChatroom() {
+        return new Chatroom();
+    }
+
+    /**
+     * 마지막 채팅 내용을 업데이트하고 해당 업데이트 시간을 현재 시간으로 설정합니다.
+     */
+    public void updateLastChatContent(String lastChatContent) {
+        this.lastChatContent = lastChatContent;
+        this.lastChatReceivedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 특정 채팅방을 삭제 처리합니다.
+     * 채팅방 삭제 시간(chatroomDeletedAt)을 현재 시간으로 설정하여
+     * 논리적 삭제를 수행합니다.
+     */
+    public void deleteChatroom() {
+        this.chatroomDeletedAt = LocalDateTime.now();
+    }
 }
