@@ -1,8 +1,9 @@
-package com.project200.undabang.member.controller.block;
+package com.project200.undabang.member.controller;
 
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
+import com.project200.undabang.member.controller.block.MemberBlockCommandController;
 import com.project200.undabang.member.dto.response.CreateMemberBlockResponse;
 import com.project200.undabang.member.service.MemberBlockCommandService;
 import org.junit.jupiter.api.DisplayName;
@@ -69,7 +70,7 @@ class MemberBlockCommandControllerTest extends AbstractRestDocSupport {
                             ),
                             responseFields(commonResponseFields(
                                     fieldWithPath("data.memberBlockId").type(JsonFieldType.NUMBER)
-                                            .description("새롭게 생성된 차단 관계의 식별자 정보를 나타냅니다.")
+                                            .description("새롭게 생성된 회원간 차단 관계의 식별자 정보 입니다.")
                             ))
                     ));
 

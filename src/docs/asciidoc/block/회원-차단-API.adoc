@@ -1,0 +1,38 @@
+== 회원 차단 API
+
+=== 설명
+
+- #POST# `/api/v1/members/{memberId}/block`
+- 회원이 다른 회원을 차단하는 API입니다.
+- 회원은 한 회원을 한번만 차단 할 수 있습니다.
+또한, 두 사용자가 상호간의 차단이 가능합니다.
+- 해당 API를 사용하여 다른 회원 차단 및 차단 해제 후 재차단 기능이 가능합니다.
+
+=== 개발 이력
+
+- Sprint 15 (2025-10-23): 기능 개발이 완료되었습니다.
+
+=== 개발 참고 사항
+
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+
+operation::create-member-block/create-member-block_-success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+
+operation::create-member-block/create-member-block_-success[snippets="request-headers,path-parameters,response-fields"]
+
+==== 응답 상태 코드
+
+|===
+|상태 코드|설명
+|201|리소스가 성공적으로 생성되었습니다.
+|400|자기 자신을 차단할 수 없습니다. 요청의 내용이 비즈니스 규칙에 위배됩니다.
+|401|인증되지 않은 요청입니다. Access Token이 없거나 유효하지 않습니다.
+|404|차단하려는 대상 회원 또는 요청자 본인이 존재하지 않는 회원입니다.
+|409|이미 차단된 회원입니다. 중복된 요청으로 서버의 현재 상태와 충돌합니다.
+|500|서버 내부 오류가 발생했습니다.
+|===
+
