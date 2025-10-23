@@ -21,8 +21,6 @@ public class MemberBlockCommandController {
 
     @PostMapping("/v1/members/{memberId}/block")
     public ResponseEntity<CommonResponse<CreateMemberBlockResponse>> blockMember(@PathVariable UUID memberId) {
-
-
         return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(memberBlockCommandService.CreateMemberBlock(memberId)));
     }
 }
