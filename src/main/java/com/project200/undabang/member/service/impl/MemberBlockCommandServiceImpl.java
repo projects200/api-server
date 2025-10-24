@@ -48,6 +48,11 @@ public class MemberBlockCommandServiceImpl implements MemberBlockCommandService 
         return CreateMemberBlockResponse.of(savedMemberBlock.getId());
     }
 
+    /**
+     * 회원 차단 해제를 수행하는 메서드.
+     * 현재 로그인한 회원과 차단 해제를 요청한 회원 간의 관계를 확인하고,
+     * 유효한 차단 정보를 찾아 해당 차단을 해제합니다.
+     */
     @Override
     @Transactional
     public void unBlockMember(UUID blockMemberId) {
@@ -64,6 +69,10 @@ public class MemberBlockCommandServiceImpl implements MemberBlockCommandService 
         memberBlock.unBlock();
     }
 
+    /**
+     * 주어진 회원 ID와 차단 대상 회원 ID가 동일한지 검증하는 메서드.
+     * 동일할 경우 예외를 발생시킵니다.
+     */
     private void validateSelfRequest(UUID memberId, UUID blockMemberId) {
         if (memberId.equals(blockMemberId)) {
             throw new CustomException(ErrorCode.MEMBER_SELF_REQUEST_NOT_ALLOWED);
