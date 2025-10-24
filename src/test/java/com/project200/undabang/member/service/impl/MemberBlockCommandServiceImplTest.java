@@ -84,7 +84,7 @@ class MemberBlockCommandServiceImplTest {
             CreateMemberBlockResponse response;
             try (MockedStatic<UserContextHolder> mocked = mockStatic(UserContextHolder.class)) {
                 mocked.when(UserContextHolder::getUserId).thenReturn(MEMBER_ID);
-                response = memberBlockCommandService.CreateMemberBlock(BLOCKED_MEMBER_ID);
+                response = memberBlockCommandService.createMemberBlock(BLOCKED_MEMBER_ID);
             }
 
             // then
@@ -111,7 +111,7 @@ class MemberBlockCommandServiceImplTest {
                 mocked.when(UserContextHolder::getUserId).thenReturn(MEMBER_ID);
 
                 CustomException exception = assertThrows(CustomException.class, () ->
-                        memberBlockCommandService.CreateMemberBlock(BLOCKED_MEMBER_ID)
+                        memberBlockCommandService.createMemberBlock(BLOCKED_MEMBER_ID)
                 );
 
                 assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.MEMBER_BLOCK_DUPLICATED);
@@ -136,7 +136,7 @@ class MemberBlockCommandServiceImplTest {
             CreateMemberBlockResponse response;
             try (MockedStatic<UserContextHolder> mocked = mockStatic(UserContextHolder.class)) {
                 mocked.when(UserContextHolder::getUserId).thenReturn(MEMBER_ID);
-                response = memberBlockCommandService.CreateMemberBlock(BLOCKED_MEMBER_ID);
+                response = memberBlockCommandService.createMemberBlock(BLOCKED_MEMBER_ID);
             }
 
             // then
@@ -155,7 +155,7 @@ class MemberBlockCommandServiceImplTest {
                 mocked.when(UserContextHolder::getUserId).thenReturn(SAME_ID);
 
                 CustomException exception = assertThrows(CustomException.class, () ->
-                        memberBlockCommandService.CreateMemberBlock(SAME_ID)
+                        memberBlockCommandService.createMemberBlock(SAME_ID)
                 );
 
                 assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.MEMBER_SELF_REQUEST_NOT_ALLOWED);
@@ -175,10 +175,64 @@ class MemberBlockCommandServiceImplTest {
                 mocked.when(UserContextHolder::getUserId).thenReturn(MEMBER_ID);
 
                 CustomException exception = assertThrows(CustomException.class, () ->
-                        memberBlockCommandService.CreateMemberBlock(BLOCKED_MEMBER_ID)
+                        memberBlockCommandService.createMemberBlock(BLOCKED_MEMBER_ID)
                 );
 
                 assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.MEMBER_NOT_FOUND);
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("deleteMemberBlock 메소드는")
+    class Describe_deleteMemberBlock {
+        private final UUID MEMBER_ID = UUID.randomUUID();
+        private final UUID BLOCKED_MEMBER_ID = UUID.randomUUID();
+
+        @Test
+        @DisplayName("유효한 차단 기록을 성공적으로 해제한다")
+        void it_unblocks_a_member_successfully() {
+            // given
+            Member blocker = createMember(MEMBER_ID, "차단하는사람");
+            Member blocked = createMember(BLOCKED_MEMBER_ID, "차단당하는사람");
+            MemberBlock existingBlock = MemberBlock.of(blocker, blocked);
+
+            when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(blocker));
+            when(memberRepository.findById(BLOCKED_MEMBER_ID)).thenReturn(Optional.of(blocked));
+            when(memberBlockRepository.findByBlockerAndBlockedAndMemberBlockDeletedAtNull(blocker, blocked))
+                    .thenReturn(Optional.of(existingBlock));
+
+            // when
+            try (MockedStatic<UserContextHolder> mocked = mockStatic(UserContextHolder.class)) {
+                mocked.when(UserContextHolder::getUserId).thenReturn(MEMBER_ID);
+                memberBlockCommandService.unBlockMember(BLOCKED_MEMBER_ID);
+            }
+
+            // then
+            assertThat(existingBlock.getMemberBlockDeletedAt()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("차단 기록이 존재하지 않을 때 해제하려고 하면 예외를 발생시킨다")
+        void it_throws_exception_when_block_not_found() {
+            // given
+            Member blocker = createMember(MEMBER_ID, "차단하는사람");
+            Member blocked = createMember(BLOCKED_MEMBER_ID, "차단당하는사람");
+
+            when(memberRepository.findById(MEMBER_ID)).thenReturn(Optional.of(blocker));
+            when(memberRepository.findById(BLOCKED_MEMBER_ID)).thenReturn(Optional.of(blocked));
+            when(memberBlockRepository.findByBlockerAndBlockedAndMemberBlockDeletedAtNull(blocker, blocked))
+                    .thenReturn(Optional.empty());
+
+            // when & then
+            try (MockedStatic<UserContextHolder> mocked = mockStatic(UserContextHolder.class)) {
+                mocked.when(UserContextHolder::getUserId).thenReturn(MEMBER_ID);
+
+                CustomException exception = assertThrows(CustomException.class, () ->
+                        memberBlockCommandService.unBlockMember(BLOCKED_MEMBER_ID)
+                );
+
+                assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.MEMBER_BLOCK_NOT_FOUND);
             }
         }
     }

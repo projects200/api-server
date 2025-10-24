@@ -5,5 +5,7 @@ import com.project200.undabang.member.dto.response.CreateMemberBlockResponse;
 import java.util.UUID;
 
 public interface MemberBlockCommandService {
-    CreateMemberBlockResponse CreateMemberBlock(UUID blockMemberId);
+    CreateMemberBlockResponse createMemberBlock(UUID blockMemberId);
+
+    void unBlockMember(UUID blockMemberId);
 }

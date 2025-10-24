@@ -30,23 +30,6 @@ class MemberBlockRepositoryTest {
     @Autowired
     private TestEntityManager em;
 
-    private Member createMember(String nickname) {
-        return Member.builder()
-                .memberId(UUID.randomUUID())
-                .memberEmail(nickname + "@test.com")
-                .memberNickname(nickname)
-                .memberBday(LocalDate.of(2000, 1, 1))
-                .build();
-    }
-
-    private void saveAndFlush(Object... entities) {
-        for (Object entity : entities) {
-            em.persist(entity);
-        }
-        em.flush();
-        em.clear();
-    }
-
     @Nested
     @DisplayName("findByBlockerAndBlocked 메소드는")
     class Describe_findByBlockerAndBlocked {
@@ -80,6 +63,62 @@ class MemberBlockRepositoryTest {
 
             // when
             Optional<MemberBlock> foundBlockOpt = memberBlockRepository.findByBlockerAndBlocked(user1, user2);
+
+            // then
+            assertThat(foundBlockOpt).isEmpty();
+        }
+    }
+
+    private Member createMember(String nickname) {
+        return Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberEmail(nickname + "@test.com")
+                .memberNickname(nickname)
+                .memberBday(LocalDate.of(2000, 1, 1))
+                .build();
+    }
+
+    private void saveAndFlush(Object... entities) {
+        for (Object entity : entities) {
+            em.persist(entity);
+        }
+        em.flush();
+        em.clear();
+    }
+
+    @Nested
+    @DisplayName("findByBlockerAndBlockedAndMemberBlockDeletedAtIsNull 메소드는")
+    class Describe_findByBlockerAndBlockedAndMemberBlockDeletedAtIsNull {
+
+        @Test
+        @DisplayName("유효한(삭제되지 않은) 차단 기록이 존재할 경우, 해당 엔티티를 Optional로 감싸 반환한다")
+        void it_returns_entity_when_valid_block_exists() {
+            // given
+            Member blocker = createMember("차단하는사람");
+            Member blocked = createMember("차단당한사람");
+            MemberBlock memberBlock = MemberBlock.of(blocker, blocked);
+            saveAndFlush(blocker, blocked, memberBlock);
+
+            // when
+            Optional<MemberBlock> foundBlockOpt = memberBlockRepository.findByBlockerAndBlockedAndMemberBlockDeletedAtNull(blocker, blocked);
+
+            // then
+            assertThat(foundBlockOpt).isPresent();
+            assertThat(foundBlockOpt.get().getMemberBlockDeletedAt()).isNull();
+        }
+
+        @Test
+        @DisplayName("차단 기록이 존재하지만 삭제된 경우, 비어있는 Optional을 반환한다")
+        void it_returns_empty_optional_when_block_is_soft_deleted() {
+            // given
+            Member blocker = createMember("차단하는사람");
+            Member blocked = createMember("차단당한사람");
+            MemberBlock memberBlock = MemberBlock.of(blocker, blocked);
+            memberBlock.unBlock(); // 삭제된 상태로 만듦
+            saveAndFlush(blocker, blocked, memberBlock);
+
+            // when
+            Optional<MemberBlock> foundBlockOpt = memberBlockRepository.findByBlockerAndBlockedAndMemberBlockDeletedAtNull(blocker, blocked);
 
             // then
             assertThat(foundBlockOpt).isEmpty();

@@ -18,16 +18,15 @@ import java.util.UUID;
 
 import static com.project200.undabang.configuration.DocumentFormatGenerator.getTypeFormat;
 import static com.project200.undabang.configuration.HeadersGenerator.getCommonApiHeaders;
-import static com.project200.undabang.configuration.RestDocsUtils.HEADER_ACCESS_TOKEN;
-import static com.project200.undabang.configuration.RestDocsUtils.commonResponseFields;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
+import static com.project200.undabang.configuration.RestDocsUtils.*;
+import static org.mockito.BDDMockito.*;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -51,7 +50,7 @@ class MemberBlockCommandControllerTest extends AbstractRestDocSupport {
             CreateMemberBlockResponse expectedResponse = new CreateMemberBlockResponse(1L);
 
             // 서비스 계층의 응답을 모킹(mocking)합니다.
-            given(memberBlockCommandService.CreateMemberBlock(BLOCKED_MEMBER_ID))
+            given(memberBlockCommandService.createMemberBlock(BLOCKED_MEMBER_ID))
                     .willReturn(expectedResponse);
 
             // when & then
@@ -75,7 +74,7 @@ class MemberBlockCommandControllerTest extends AbstractRestDocSupport {
                     ));
 
             // 서비스 메소드가 정확히 1번 호출되었는지 검증합니다.
-            then(memberBlockCommandService).should().CreateMemberBlock(BLOCKED_MEMBER_ID);
+            then(memberBlockCommandService).should().createMemberBlock(BLOCKED_MEMBER_ID);
         }
 
         @Test
@@ -83,7 +82,7 @@ class MemberBlockCommandControllerTest extends AbstractRestDocSupport {
         void shouldReturn400_whenBlockingOneself() throws Exception {
             // given
             // 서비스 계층에서 '자기 자신 차단 시도' 예외가 발생하도록 설정
-            given(memberBlockCommandService.CreateMemberBlock(MEMBER_ID))
+            given(memberBlockCommandService.createMemberBlock(MEMBER_ID))
                     .willThrow(new CustomException(ErrorCode.MEMBER_SELF_REQUEST_NOT_ALLOWED));
 
             // when & then
@@ -93,7 +92,7 @@ class MemberBlockCommandControllerTest extends AbstractRestDocSupport {
                     .andExpect(jsonPath("$.message").value(ErrorCode.MEMBER_SELF_REQUEST_NOT_ALLOWED.getMessage()));
 
             // 서비스 메소드가 호출되었는지 검증합니다.
-            then(memberBlockCommandService).should().CreateMemberBlock(MEMBER_ID);
+            then(memberBlockCommandService).should().createMemberBlock(MEMBER_ID);
         }
 
         @Test
@@ -113,7 +112,7 @@ class MemberBlockCommandControllerTest extends AbstractRestDocSupport {
             // given
             UUID nonExistentMemberId = UUID.randomUUID();
             // 서비스 계층에서 '회원 없음' 예외가 발생하도록 설정
-            given(memberBlockCommandService.CreateMemberBlock(nonExistentMemberId))
+            given(memberBlockCommandService.createMemberBlock(nonExistentMemberId))
                     .willThrow(new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
             // when & then
@@ -122,7 +121,7 @@ class MemberBlockCommandControllerTest extends AbstractRestDocSupport {
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message").value(ErrorCode.MEMBER_NOT_FOUND.getMessage()));
 
-            then(memberBlockCommandService).should().CreateMemberBlock(nonExistentMemberId);
+            then(memberBlockCommandService).should().createMemberBlock(nonExistentMemberId);
         }
 
         @Test
@@ -130,7 +129,7 @@ class MemberBlockCommandControllerTest extends AbstractRestDocSupport {
         void shouldReturn409_whenBlockIsDuplicated() throws Exception {
             // given
             // 서비스 계층에서 '중복 차단' 예외가 발생하도록 설정
-            given(memberBlockCommandService.CreateMemberBlock(BLOCKED_MEMBER_ID))
+            given(memberBlockCommandService.createMemberBlock(BLOCKED_MEMBER_ID))
                     .willThrow(new CustomException(ErrorCode.MEMBER_BLOCK_DUPLICATED));
 
             // when & then
@@ -139,7 +138,53 @@ class MemberBlockCommandControllerTest extends AbstractRestDocSupport {
                     .andExpect(status().isConflict())
                     .andExpect(jsonPath("$.message").value(ErrorCode.MEMBER_BLOCK_DUPLICATED.getMessage()));
 
-            then(memberBlockCommandService).should().CreateMemberBlock(BLOCKED_MEMBER_ID);
+            then(memberBlockCommandService).should().createMemberBlock(BLOCKED_MEMBER_ID);
+        }
+    }
+
+    @Nested
+    @DisplayName("회원 차단 해제 API (DELETE /api/v1/members/{memberId}/block)")
+    class UnblockMemberAPI {
+
+        private final UUID MEMBER_ID = UUID.randomUUID(); // 요청하는 사용자
+        private final UUID TARGET_MEMBER_ID = UUID.randomUUID(); // 차단 해제 대상
+
+        @Test
+        @DisplayName("[200 OK] 성공적으로 다른 회원의 차단을 해제한다")
+        void unblockMember_Success() throws Exception {
+            // given
+            // void를 반환하는 서비스 메소드는 willDoNothing()으로 모킹합니다.
+            willDoNothing().given(memberBlockCommandService).unBlockMember(TARGET_MEMBER_ID);
+
+            // when & then
+            mockMvc.perform(delete("/api/v1/members/{memberId}/block", TARGET_MEMBER_ID)
+                            .headers(getCommonApiHeaders(MEMBER_ID)))
+                    .andExpectAll(
+                            status().isOk(),
+                            jsonPath("$.message").value("리소스가 성공적으로 삭제되었습니다."),
+                            jsonPath("$.data").doesNotExist()
+                    )
+                    .andDo(document.document(
+                            requestHeaders(HEADER_ACCESS_TOKEN),
+                            pathParameters(
+                                    parameterWithName("memberId").attributes(getTypeFormat(JsonFieldType.STRING)).description("차단을 해제할 회원의 식별자 정보입니다.")
+                            ),
+                            responseFields(commonResponseFieldsOnly())
+                    ));
+        }
+
+        @Test
+        @DisplayName("[404 Not Found] 차단 기록이 없는 회원의 차단을 해제하려고 하면 실패한다")
+        void shouldReturn404_whenBlockRecordNotFound() throws Exception {
+            // given
+            // void 메소드에서 예외를 발생시키려면 willThrow()를 사용합니다.
+            willThrow(new CustomException(ErrorCode.MEMBER_BLOCK_NOT_FOUND))
+                    .given(memberBlockCommandService).unBlockMember(TARGET_MEMBER_ID);
+
+            // when & then
+            mockMvc.perform(delete("/api/v1/members/{memberId}/block", TARGET_MEMBER_ID)
+                            .headers(getCommonApiHeaders(MEMBER_ID)))
+                    .andExpect(status().isNotFound());
         }
     }
 }

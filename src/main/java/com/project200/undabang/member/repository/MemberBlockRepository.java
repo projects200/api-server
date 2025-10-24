@@ -8,4 +8,6 @@ import java.util.Optional;
 
 public interface MemberBlockRepository extends JpaRepository<MemberBlock, Long> {
     Optional<MemberBlock> findByBlockerAndBlocked(Member blocker, Member blocked);
+
+    Optional<MemberBlock> findByBlockerAndBlockedAndMemberBlockDeletedAtNull(Member blocker, Member blocked);
 }

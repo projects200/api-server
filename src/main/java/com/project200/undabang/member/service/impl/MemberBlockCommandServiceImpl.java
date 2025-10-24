@@ -31,12 +31,9 @@ public class MemberBlockCommandServiceImpl implements MemberBlockCommandService 
      */
     @Override
     @Transactional
-    public CreateMemberBlockResponse CreateMemberBlock(UUID blockMemberId) {
+    public CreateMemberBlockResponse createMemberBlock(UUID blockMemberId) {
         UUID memberId = UserContextHolder.getUserId();
-
-        if (memberId.equals(blockMemberId)) {
-            throw new CustomException(ErrorCode.MEMBER_SELF_REQUEST_NOT_ALLOWED);
-        }
+        validateSelfRequest(memberId, blockMemberId);
 
         Member member = getMember(memberId);
         Member blockedMember = getMember(blockMemberId);
@@ -49,6 +46,28 @@ public class MemberBlockCommandServiceImpl implements MemberBlockCommandService 
 
         MemberBlock savedMemberBlock = memberBlockRepository.save(MemberBlock.of(member, blockedMember));
         return CreateMemberBlockResponse.of(savedMemberBlock.getId());
+    }
+
+    @Override
+    @Transactional
+    public void unBlockMember(UUID blockMemberId) {
+        UUID memberId = UserContextHolder.getUserId();
+        validateSelfRequest(memberId, blockMemberId);
+
+        Member member = getMember(memberId);
+        Member blockedMember = getMember(blockMemberId);
+
+        MemberBlock memberBlock = memberBlockRepository.findByBlockerAndBlockedAndMemberBlockDeletedAtNull(member, blockedMember).orElseThrow(
+                () -> new CustomException(ErrorCode.MEMBER_BLOCK_NOT_FOUND)
+        );
+
+        memberBlock.unBlock();
+    }
+
+    private void validateSelfRequest(UUID memberId, UUID blockMemberId) {
+        if (memberId.equals(blockMemberId)) {
+            throw new CustomException(ErrorCode.MEMBER_SELF_REQUEST_NOT_ALLOWED);
+        }
     }
 
     /**
