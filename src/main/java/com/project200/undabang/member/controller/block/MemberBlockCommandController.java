@@ -23,7 +23,6 @@ public class MemberBlockCommandController {
 
     @DeleteMapping("/v1/members/{memberId}/block")
     public ResponseEntity<CommonResponse<Void>> unBlockMember(@PathVariable UUID memberId) {
-
         memberBlockCommandService.unBlockMember(memberId);
 
         return ResponseEntity.ok(CommonResponse.delete(null));
