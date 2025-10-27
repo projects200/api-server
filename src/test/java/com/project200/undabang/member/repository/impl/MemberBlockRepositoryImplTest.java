@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Import;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,35 +30,6 @@ class MemberBlockRepositoryImplTest {
 
     @Autowired
     private TestEntityManager em;
-
-    private Member createMember(String nickname) {
-        return Member.builder()
-                .memberId(UUID.randomUUID())
-                .memberEmail(nickname + "@test.com")
-                .memberNickname(nickname)
-                .memberBday(LocalDate.of(2000, 1, 1))
-                .build();
-    }
-
-    private MemberPicture createMemberPicture(Member member, Picture picture) {
-        return MemberPicture.builder()
-                .member(member)
-                .picture(picture)
-                .memberPicturesUrl(picture.getPictureUrl())
-                .build();
-    }
-
-    private Picture createPicture(String url) {
-        return Picture.builder().pictureUrl(url).build();
-    }
-
-    private void saveAndFlush(Object... entities) {
-        for (Object entity : entities) {
-            em.persist(entity);
-        }
-        em.flush();
-        em.clear();
-    }
 
     @Nested
     @DisplayName("findAllMemberBlockRecordsByMember 메소드는")
@@ -138,6 +110,124 @@ class MemberBlockRepositoryImplTest {
 
             // then
             assertThat(records).isEmpty();
+        }
+    }
+
+    private Member createMember(String nickname) {
+        return Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberEmail(nickname + "@test.com")
+                .memberNickname(nickname)
+                .memberBday(LocalDate.of(2000, 1, 1))
+                .build();
+    }
+
+    private MemberPicture createMemberPicture(Member member, Picture picture) {
+        return MemberPicture.builder()
+                .member(member)
+                .picture(picture)
+                .memberPicturesUrl(picture.getPictureUrl())
+                .build();
+    }
+
+    private Picture createPicture(String url) {
+        return Picture.builder().pictureUrl(url).build();
+    }
+
+    private void saveAndFlush(Object... entities) {
+        for (Object entity : entities) {
+            em.persist(entity);
+        }
+        em.flush();
+        em.clear();
+    }
+
+    @Nested
+    @DisplayName("findAllBlockedMemberIdsByMember 메소드는")
+    class Describe_findAllBlockedMemberIdsByMember {
+
+        @Test
+        @DisplayName("나 자신, 내가 차단한 회원, 나를 차단한 회원의 ID를 모두 포함한 Set을 반환한다")
+        void it_returns_set_containing_self_i_blocked_and_blocked_by_members() {
+            // given
+            Member currentUser = createMember("currentUser");
+            Member blockedByUser = createMember("blockedByUser");        // 내가 차단할 사용자
+            Member blockedByOther = createMember("blockedByOther");      // 나를 차단할 사용자
+            Member otherUser = createMember("otherUser");               // 관계 없는 사용자
+
+            MemberBlock block1 = MemberBlock.of(currentUser, blockedByUser);  // 내가 차단
+            MemberBlock block2 = MemberBlock.of(blockedByOther, currentUser); // 나를 차단
+
+            saveAndFlush(currentUser, blockedByUser, blockedByOther, otherUser, block1, block2);
+
+            // when
+            Set<UUID> exclusionIds = memberBlockRepository.findAllBlockedMemberIdsByMember(currentUser);
+
+            // then
+            assertThat(exclusionIds).hasSize(3)
+                    .containsExactlyInAnyOrder(
+                            currentUser.getMemberId(),
+                            blockedByUser.getMemberId(),
+                            blockedByOther.getMemberId()
+                    );
+        }
+
+        @Test
+        @DisplayName("차단 관계가 전혀 없으면 자기 자신의 ID만 포함한 Set을 반환한다")
+        void it_returns_set_with_only_self_id_when_no_blocks_exist() {
+            // given
+            Member currentUser = createMember("currentUser");
+            Member otherUser = createMember("otherUser");
+            saveAndFlush(currentUser, otherUser);
+
+            // when
+            Set<UUID> exclusionIds = memberBlockRepository.findAllBlockedMemberIdsByMember(currentUser);
+
+            // then
+            assertThat(exclusionIds).hasSize(1)
+                    .containsExactly(currentUser.getMemberId());
+        }
+
+        @Test
+        @DisplayName("차단했다가 해제한 회원은 결과 Set에 포함하지 않는다")
+        void it_excludes_unblocked_members_from_the_set() {
+            // given
+            Member currentUser = createMember("currentUser");
+            Member unblockedUser = createMember("unblockedUser");
+
+            MemberBlock unblockedRelation = MemberBlock.of(currentUser, unblockedUser);
+            unblockedRelation.unBlock(); // 차단 해제 (soft-delete)
+
+            saveAndFlush(currentUser, unblockedUser, unblockedRelation);
+
+            // when
+            Set<UUID> exclusionIds = memberBlockRepository.findAllBlockedMemberIdsByMember(currentUser);
+
+            // then
+            // 내가 차단했던 unblockedUser는 제외되고, 나 자신만 포함되어야 함
+            assertThat(exclusionIds).hasSize(1)
+                    .containsExactly(currentUser.getMemberId());
+        }
+
+        @Test
+        @DisplayName("나를 차단했다가 해제한 회원도 결과 Set에 포함하지 않는다")
+        void it_excludes_members_who_unblocked_me_from_the_set() {
+            // given
+            Member currentUser = createMember("currentUser");
+            Member userWhoUnblockedMe = createMember("userWhoUnblockedMe");
+
+            MemberBlock unblockedRelation = MemberBlock.of(userWhoUnblockedMe, currentUser);
+            unblockedRelation.unBlock(); // 차단 해제
+
+            saveAndFlush(currentUser, userWhoUnblockedMe, unblockedRelation);
+
+            // when
+            Set<UUID> exclusionIds = memberBlockRepository.findAllBlockedMemberIdsByMember(currentUser);
+
+            // then
+            // 나를 차단했던 userWhoUnblockedMe는 제외되고, 나 자신만 포함되어야 함
+            assertThat(exclusionIds).hasSize(1)
+                    .containsExactly(currentUser.getMemberId());
         }
     }
 }
