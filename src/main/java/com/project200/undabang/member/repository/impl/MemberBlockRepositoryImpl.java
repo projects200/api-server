@@ -12,7 +12,10 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @Repository
 @RequiredArgsConstructor
@@ -47,5 +50,40 @@ public class MemberBlockRepositoryImpl implements MemberBlockRepositoryCustom {
                 )
                 .orderBy(memberBlock.memberBlockCreatedAt.desc())
                 .fetch();
+    }
+
+    /**
+     * 주어진 회원과 관련된 모든 차단 회원 ID를 조회합니다.
+     */
+    @Override
+    public Set<UUID> findAllBlockedMemberIdsByMember(Member currentMember) {
+        QMemberBlock memberBlock = QMemberBlock.memberBlock;
+
+        // 내가 차단한 사람들의 식별자 모음
+        List<UUID> membersThatIBanned = queryFactory
+                .select(memberBlock.blocked.memberId)
+                .from(memberBlock)
+                .where(
+                        memberBlock.blocker.eq(currentMember),
+                        memberBlock.memberBlockDeletedAt.isNull()
+                )
+                .fetch();
+
+        // 나를 차단한 사람들의 식별자 모음
+        List<UUID> membersThatBannedMe = queryFactory
+                .select(memberBlock.blocker.memberId)
+                .from(memberBlock)
+                .where(
+                        memberBlock.blocked.eq(currentMember),
+                        memberBlock.memberBlockDeletedAt.isNull()
+                )
+                .fetch();
+
+        Set<UUID> result = new HashSet<>();
+        result.addAll(membersThatIBanned);
+        result.addAll(membersThatBannedMe);
+        result.add(currentMember.getMemberId()); // 지도에서 나도 포함되면 안됨
+
+        return result;
     }
 }

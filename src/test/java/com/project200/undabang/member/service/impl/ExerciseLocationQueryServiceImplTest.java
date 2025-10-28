@@ -8,8 +8,8 @@ import com.project200.undabang.member.dto.response.GetExerciseLocationsResponse;
 import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
 import com.project200.undabang.member.entity.ExerciseLocation;
 import com.project200.undabang.member.entity.Member;
-import com.project200.undabang.member.enums.MemberGender;
 import com.project200.undabang.member.repository.ExerciseLocationRepository;
+import com.project200.undabang.member.repository.MemberBlockRepository;
 import com.project200.undabang.member.repository.MemberRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -23,11 +23,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
@@ -45,123 +41,13 @@ class ExerciseLocationQueryServiceImplTest {
     @Mock
     private MemberRepository memberRepository;
 
+    @Mock
+    private MemberBlockRepository memberBlockRepository;
+
     private final GeometryFactory geometryFactory = new GeometryFactory();
 
     private ExerciseLocationRecord createExerciseLocationRecord(String name, double lat, double lon) {
         return new ExerciseLocationRecord(name, lat, lon);
-    }
-
-    private GetMembersExerciseLocationsResponse createGetMembersExerciseLocationsResponse(
-            UUID memberId, String thumbnailUrl, String imageUrl, String nickname,
-            MemberGender gender, LocalDate birthDate, List<ExerciseLocationRecord> locations
-    ) {
-        return GetMembersExerciseLocationsResponse.builder()
-                .memberId(memberId)
-                .profileThumbnailUrl(thumbnailUrl)
-                .profileImageUrl(imageUrl)
-                .nickname(nickname)
-                .gender(gender)
-                .birthDate(birthDate)
-                .locations(locations)
-                .build();
-    }
-
-    private ExerciseLocation createExerciseLocation(Long id, String name, double lon, double lat) {
-        Point point = geometryFactory.createPoint(new Coordinate(lon, lat));
-        point.setSRID(4326);
-        return ExerciseLocation.builder()
-                .exerciseLocationId(id)
-                .exerciseLocationName(name)
-                .exerciseLocationPoint(point)
-                .build();
-    }
-
-    @Nested
-    @DisplayName("getMembersExerciseLocations 메소드는")
-    class Describe_getMembersExerciseLocations {
-
-        @Test
-        @DisplayName("레포지토리에서 받은 데이터를 그대로 반환한다")
-        void it_returns_data_from_repository() {
-            // given
-            UUID currentMemberId = UUID.randomUUID();
-            Member currentMember = Member.builder().memberId(currentMemberId).build();
-            LocalDate birthDate = LocalDate.of(1990, 1, 1);
-
-            List<ExerciseLocationRecord> locations = List.of(
-                    createExerciseLocationRecord("헬스장A", 37.5, 127.0)
-            );
-
-            GetMembersExerciseLocationsResponse response = createGetMembersExerciseLocationsResponse(
-                    currentMemberId, "url1", "url1", "user1", MemberGender.MALE, birthDate, locations
-            );
-
-            List<GetMembersExerciseLocationsResponse> mockResponses = List.of(response);
-
-            given(memberRepository.findById(currentMemberId)).willReturn(Optional.of(currentMember));
-            given(exerciseLocationRepository.getMembersExerciseLocations(currentMemberId)).willReturn(mockResponses);
-
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                ignored.when(UserContextHolder::getUserId).thenReturn(currentMemberId);
-
-                // when
-                List<GetMembersExerciseLocationsResponse> results = exerciseLocationQueryService.getMembersExerciseLocations();
-
-                // then
-                assertThat(results).isEqualTo(mockResponses);
-            }
-        }
-
-        @Test
-        @DisplayName("레포지토리에서 빈 리스트를 반환하면 빈 리스트를 반환한다")
-        void it_returns_empty_list_when_repository_returns_empty() {
-            // given
-            UUID currentMemberId = UUID.randomUUID();
-            Member currentMember = Member.builder().memberId(currentMemberId).build();
-            given(memberRepository.findById(currentMemberId)).willReturn(Optional.of(currentMember));
-            given(exerciseLocationRepository.getMembersExerciseLocations(currentMemberId)).willReturn(List.of());
-
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                ignored.when(UserContextHolder::getUserId).thenReturn(currentMemberId);
-
-                // when
-                List<GetMembersExerciseLocationsResponse> results = exerciseLocationQueryService.getMembersExerciseLocations();
-
-                // then
-                assertThat(results).isNotNull().isEmpty();
-            }
-        }
-
-        @Test
-        @DisplayName("현재 사용자의 memberId가 있으면 결과에서 제외된다")
-        void it_excludes_current_member_from_results() {
-            // given
-            UUID currentMemberId = UUID.randomUUID();
-            Member currentMember = Member.builder().memberId(currentMemberId).build();
-            UUID otherMemberId = UUID.randomUUID();
-
-            List<ExerciseLocationRecord> locations = List.of(
-                    createExerciseLocationRecord("헬스장A", 37.5, 127.0)
-            );
-
-            GetMembersExerciseLocationsResponse otherUserResponse = createGetMembersExerciseLocationsResponse(
-                    otherMemberId, "url2", "url2", "user2", MemberGender.FEMALE, LocalDate.of(1995, 5, 5), locations
-            );
-
-            given(memberRepository.findById(currentMemberId)).willReturn(Optional.of(currentMember));
-            given(exerciseLocationRepository.getMembersExerciseLocations(currentMemberId)).willReturn(List.of(otherUserResponse));
-
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                ignored.when(UserContextHolder::getUserId).thenReturn(currentMemberId);
-
-                // when
-                List<GetMembersExerciseLocationsResponse> results = exerciseLocationQueryService.getMembersExerciseLocations();
-
-                // then
-                assertThat(results).hasSize(1);
-                assertThat(results.get(0).getMemberId()).isEqualTo(otherMemberId);
-            }
-        }
     }
 
     @Nested
@@ -233,6 +119,88 @@ class ExerciseLocationQueryServiceImplTest {
                         .hasMessageContaining(ErrorCode.MEMBER_NOT_FOUND.getMessage());
 
                 verify(exerciseLocationRepository, never()).findAllByMemberAndExerciseLocationDeletedAtNull(any());
+            }
+        }
+    }
+
+    private GetMembersExerciseLocationsResponse createGetMembersExerciseLocationsResponse(
+            UUID memberId, String nickname, List<ExerciseLocationRecord> locations
+    ) {
+        return GetMembersExerciseLocationsResponse.builder()
+                .memberId(memberId)
+                .nickname(nickname)
+                .locations(locations)
+                .build();
+    }
+
+    private ExerciseLocation createExerciseLocation(Long id, String name, double lon, double lat) {
+        Point point = geometryFactory.createPoint(new Coordinate(lon, lat));
+        point.setSRID(4326);
+        return ExerciseLocation.builder()
+                .exerciseLocationId(id)
+                .exerciseLocationName(name)
+                .exerciseLocationPoint(point)
+                .build();
+    }
+
+    @Nested
+    @DisplayName("getMembersExerciseLocations 메소드는")
+    class Describe_getMembersExerciseLocations {
+
+        @Test
+        @DisplayName("차단 목록을 조회하고, 이를 기반으로 주변 회원 목록을 조회하여 반환한다")
+        void it_finds_exclusion_list_and_then_finds_nearby_members() {
+            try (MockedStatic<UserContextHolder> mockedUserContext = mockStatic(UserContextHolder.class)) {
+                // given
+                UUID currentUserId = UUID.randomUUID();
+                Member currentUser = Member.builder().memberId(currentUserId).build();
+                mockedUserContext.when(UserContextHolder::getUserId).thenReturn(currentUserId);
+
+                UUID otherUser1Id = UUID.randomUUID();
+                UUID otherUser2Id = UUID.randomUUID(); // 차단된 유저
+
+                // 1. 차단 목록 조회 Mocking
+                Set<UUID> exclusionIds = Set.of(currentUserId, otherUser2Id);
+                given(memberRepository.findById(currentUserId)).willReturn(Optional.of(currentUser));
+                given(memberBlockRepository.findAllBlockedMemberIdsByMember(currentUser)).willReturn(exclusionIds);
+
+                // 2. 주변 회원 목록 조회 Mocking
+                List<ExerciseLocationRecord> locations = List.of(createExerciseLocationRecord("헬스장A", 37.5, 127.0));
+                GetMembersExerciseLocationsResponse response1 = createGetMembersExerciseLocationsResponse(otherUser1Id, "user1", locations);
+                List<GetMembersExerciseLocationsResponse> finalResponse = List.of(response1);
+                given(exerciseLocationRepository.getMembersExerciseLocations(exclusionIds)).willReturn(finalResponse);
+
+                // when
+                List<GetMembersExerciseLocationsResponse> results = exerciseLocationQueryService.getMembersExerciseLocations();
+
+                // then
+                assertThat(results).hasSize(1);
+                assertThat(results.get(0).getMemberId()).isEqualTo(otherUser1Id);
+
+                // verify: 각 Mock 객체가 올바른 순서와 파라미터로 호출되었는지 검증
+                verify(memberRepository, times(1)).findById(currentUserId);
+                verify(memberBlockRepository, times(1)).findAllBlockedMemberIdsByMember(currentUser);
+                verify(exerciseLocationRepository, times(1)).getMembersExerciseLocations(exclusionIds);
+            }
+        }
+
+        @Test
+        @DisplayName("사용자 정보를 찾을 수 없으면 CustomException(MEMBER_NOT_FOUND) 예외를 던진다")
+        void it_throws_exception_when_member_not_found() {
+            try (MockedStatic<UserContextHolder> mockedUserContext = mockStatic(UserContextHolder.class)) {
+                // given
+                UUID currentUserId = UUID.randomUUID();
+                mockedUserContext.when(UserContextHolder::getUserId).thenReturn(currentUserId);
+                given(memberRepository.findById(currentUserId)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> exerciseLocationQueryService.getMembersExerciseLocations())
+                        .isInstanceOf(CustomException.class)
+                        .hasMessageContaining(ErrorCode.MEMBER_NOT_FOUND.getMessage());
+
+                // verify: 예외 발생 시 다른 리포지토리들은 호출되지 않아야 함
+                verify(memberBlockRepository, never()).findAllBlockedMemberIdsByMember(any());
+                verify(exerciseLocationRepository, never()).getMembersExerciseLocations(any());
             }
         }
     }
