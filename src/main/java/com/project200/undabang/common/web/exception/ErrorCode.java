@@ -74,6 +74,7 @@ public enum ErrorCode {
     SELF_CHAT_NOT_ALLOWED(400, "SELF_CHAT_NOT_ALLOWED", "자기 자신과 채팅방을 개설할 수 없습니다."),
     MESSAGE_SEND_TO_BLOCKED_MEMBER(403, "MESSAGE_SEND_TO_BLOCKED_MEMBER", "차단한 회원님께는 메시지를 보낼 수 없습니다."),
     CHATROOM_MEMBERS_NOT_FOUND(404, "CHATROOM_MEMBERS_NOT_FOUND", "등록된 채팅방 참여자 정보를 확인할 수 없습니다."),
+    CHATROOM_NOT_FOUND(404, "CHATROOM_NOT_FOUND", "존재하지 않는 채팅방 입니다."),
     CHATROOM_MEMBER_INACTIVE(409, "CHATROOM_MEMBER_INACTIVE", "회원님이 나간 채팅방 입니다."),
     CHATROOM_OTHER_MEMBER_INACTIVE(409, "CHATROOM_OTHER_MEMBER_INACTIVE", "다른 회원님이 나간 채팅방입니다."),
 

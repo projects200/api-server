@@ -4,6 +4,7 @@ import com.project200.undabang.chat.dto.response.ChatMessageDto;
 import com.project200.undabang.chat.dto.response.GetMemberChatResponse;
 import com.project200.undabang.chat.dto.response.GetMemberChatroomResponse;
 import com.project200.undabang.chat.dto.response.GetNewChatResponse;
+import com.project200.undabang.chat.entity.Chatroom;
 import com.project200.undabang.chat.entity.ChatroomMember;
 import com.project200.undabang.chat.entity.ChatroomMemberStatus;
 import com.project200.undabang.chat.repository.ChatroomMemberRepository;
@@ -62,8 +63,9 @@ public class ChatQueryServiceImpl implements ChatQueryService {
         }
 
         boolean isOpponentActive = getOpponentStatus(chatroomId, member);
+        boolean isOpponentBlocked = getOpponentBlocked(chatroomId, member);
 
-        return GetMemberChatResponse.from(dtoList, isOpponentActive);
+        return GetMemberChatResponse.from(dtoList, isOpponentActive, isOpponentBlocked);
     }
 
     /**
@@ -122,6 +124,12 @@ public class ChatQueryServiceImpl implements ChatQueryService {
         return chatroomMemberRepository.getOpponentStatusByChatroomId(chatroomId, member)
                 .filter(status -> status == ChatroomMemberStatus.ACTIVE)
                 .isPresent();
+    }
+
+    private boolean getOpponentBlocked(Long chatroomId, Member member) {
+        Chatroom chatroom = chatroomRepository.findById(chatroomId).orElseThrow(() -> new CustomException(ErrorCode.CHATROOM_NOT_FOUND));
+
+        return chatroomMemberRepository.checkOtherMemberBlocked(chatroom, member);
     }
 
     /**

@@ -149,7 +149,8 @@ class ChatQueryControllerTest extends AbstractRestDocSupport {
             Pageable pageable = PageRequest.of(0, size);
             Slice<ChatMessageDto> mockSlice = new SliceImpl<>(messages, pageable, false); // 마지막 페이지라고 가정
 
-            GetMemberChatResponse mockResponse = GetMemberChatResponse.from(mockSlice, true); // 상대방이 활성 상태라고 가정
+            // [수정] opponentBlocked 필드를 포함한 Mock 응답 생성
+            GetMemberChatResponse mockResponse = GetMemberChatResponse.from(mockSlice, true, false); // 상대방 활성, 차단 안됨
 
             given(chatQueryService.getMemberChat(anyLong(), any(), any(Pageable.class)))
                     .willReturn(mockResponse);
@@ -164,6 +165,8 @@ class ChatQueryControllerTest extends AbstractRestDocSupport {
                     .andExpect(jsonPath("$.data.content").isArray())
                     .andExpect(jsonPath("$.data.hasNext").value(false))
                     .andExpect(jsonPath("$.data.opponentActive").value(true))
+                    // [추가] opponentBlocked 필드 검증
+                    .andExpect(jsonPath("$.data.opponentBlocked").value(false))
                     .andDo(document.document(
                             requestHeaders(HEADER_ACCESS_TOKEN),
                             pathParameters(
@@ -185,7 +188,8 @@ class ChatQueryControllerTest extends AbstractRestDocSupport {
                                     fieldWithPath("data.content[].sentAt").type(JsonFieldType.STRING).description("메시지 발신 시간을 의미합니다."),
                                     fieldWithPath("data.content[].mine").type(JsonFieldType.BOOLEAN).description("내(기기 소유주)가 보낸 메시지가 맞는지 확인하는 컬럼입니다."),
                                     fieldWithPath("data.hasNext").type(JsonFieldType.BOOLEAN).description("다음에 조회할 페이지가 있는지 여부를 나타냅니다."),
-                                    fieldWithPath("data.opponentActive").type(JsonFieldType.BOOLEAN).description("상대방이 현재 채팅방에 참여중(ACTIVE)인지 여부를 나타냅니다.")
+                                    fieldWithPath("data.opponentActive").type(JsonFieldType.BOOLEAN).description("상대방이 현재 채팅방에 참여중(ACTIVE)인지 여부를 나타냅니다."),
+                                    fieldWithPath("data.opponentBlocked").type(JsonFieldType.BOOLEAN).description("내가 상대방을 차단했는지 여부를 나타냅니다.")
                             ))
                     ));
         }
