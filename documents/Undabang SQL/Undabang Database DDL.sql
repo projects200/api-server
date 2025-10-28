@@ -224,7 +224,9 @@ create table if not exists member_blocks
     constraint FK_mb_blocked
         foreign key (blocked_id) references members (member_id),
     constraint FK_mb_blocker
-        foreign key (blocker_id) references members (member_id)
+        foreign key (blocker_id) references members (member_id),
+    constraint UQ_member_blocks_blocker_blocked
+        unique (blocker_id, blocked_id)
 );
 
 create table if not exists member_locations
