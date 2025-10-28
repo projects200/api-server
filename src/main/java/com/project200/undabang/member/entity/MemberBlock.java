@@ -49,4 +49,8 @@ public class MemberBlock {
     public void reBlock() {
         this.memberBlockDeletedAt = null;
     }
+
+    public void unBlock() {
+        this.memberBlockDeletedAt = LocalDateTime.now();
+    }
 }

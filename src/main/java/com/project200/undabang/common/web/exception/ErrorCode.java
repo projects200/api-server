@@ -77,6 +77,7 @@ public enum ErrorCode {
     CHATROOM_OTHER_MEMBER_INACTIVE(409, "CHATROOM_OTHER_MEMBER_INACTIVE", "다른 회원님이 나간 채팅방입니다."),
 
     // 차단 관련 에러
+    MEMBER_BLOCK_NOT_FOUND(404, "MEMBER_BLOCK_NOT_FOUND", "해당 회원을 차단한 이력이 없습니다."),
     MEMBER_BLOCK_DUPLICATED(409, "MEMBER_BLOCK_DUPLICATED", "이미 차단한 회원입니다.");
 
 

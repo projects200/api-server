@@ -6,10 +6,7 @@ import com.project200.undabang.member.service.MemberBlockCommandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
@@ -21,6 +18,13 @@ public class MemberBlockCommandController {
 
     @PostMapping("/v1/members/{memberId}/block")
     public ResponseEntity<CommonResponse<CreateMemberBlockResponse>> blockMember(@PathVariable UUID memberId) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(memberBlockCommandService.CreateMemberBlock(memberId)));
+        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(memberBlockCommandService.createMemberBlock(memberId)));
+    }
+
+    @DeleteMapping("/v1/members/{memberId}/block")
+    public ResponseEntity<CommonResponse<Void>> unBlockMember(@PathVariable UUID memberId) {
+        memberBlockCommandService.unBlockMember(memberId);
+
+        return ResponseEntity.ok(CommonResponse.delete(null));
     }
 }

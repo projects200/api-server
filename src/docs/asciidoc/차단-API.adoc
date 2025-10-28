@@ -20,3 +20,5 @@
 include::overview/공통-개발-참고-사항.adoc[]
 
 include::block/회원-차단-API.adoc[]
+
+include::block/회원-차단-해제-API.adoc[]
