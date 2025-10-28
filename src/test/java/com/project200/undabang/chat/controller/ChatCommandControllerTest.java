@@ -129,6 +129,14 @@ class ChatCommandControllerTest extends AbstractRestDocSupport {
 
             then(chatCommandService).shouldHaveNoInteractions();
         }
+
+        private CreateChatroomRequest createRequest(UUID targetMemberId) {
+            return new CreateChatroomRequest(targetMemberId);
+        }
+
+        private CreateChatroomResponse createResponse(long chatroomId) {
+            return new CreateChatroomResponse(chatroomId);
+        }
     }
 
     @Nested
@@ -240,14 +248,34 @@ class ChatCommandControllerTest extends AbstractRestDocSupport {
 
             then(chatCommandService).shouldHaveNoInteractions();
         }
-    }
 
-    private CreateChatroomRequest createRequest(UUID targetMemberId) {
-        return new CreateChatroomRequest(targetMemberId);
-    }
+        @Test
+        @DisplayName("차단한 사용자에게 메시지를 보내려 하면 403 Forbidden 에러를 반환한다")
+        void createMessage_Fail_BlockedUser() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            String content = "이 메시지는 차단되어 전송되지 않아야 합니다.";
+            CreateMessageRequest request = new CreateMessageRequest(content);
 
-    private CreateChatroomResponse createResponse(long chatroomId) {
-        return new CreateChatroomResponse(chatroomId);
+            // [핵심] 서비스 레이어가 '차단' 예외를 던지는 상황을 Mocking
+            given(chatCommandService.createMessage(eq(chatroomId), any(CreateMessageRequest.class)))
+                    .willThrow(new CustomException(ErrorCode.MESSAGE_SEND_TO_BLOCKED_MEMBER));
+
+            // when & then
+            mockMvc.perform(post("/api/v1/chat-rooms/{chatroomId}/messages", chatroomId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpectAll(
+                            status().isForbidden(), // 403 Forbidden 상태 코드 검증
+                            jsonPath("$.succeed").value(false),
+                            jsonPath("$.code").value(ErrorCode.MESSAGE_SEND_TO_BLOCKED_MEMBER.getCode()),
+                            jsonPath("$.message").value(ErrorCode.MESSAGE_SEND_TO_BLOCKED_MEMBER.getMessage())
+                    );
+
+            then(chatCommandService).should(times(1)).createMessage(eq(chatroomId), any(CreateMessageRequest.class));
+        }
     }
 
     @Nested
