@@ -83,6 +83,7 @@ public class ChatroomMemberRepositoryImpl implements ChatroomMemberRepositoryCus
 
         return queryFactory
                 .select(Projections.constructor(GetMemberChatroomResponse.class,
+                        otherMember.memberId,
                         chatroom.id,
                         otherMember.memberNickname,
                         otherMemberPicture.memberPicturesUrl,

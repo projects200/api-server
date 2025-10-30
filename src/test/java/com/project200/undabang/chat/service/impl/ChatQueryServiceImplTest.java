@@ -42,7 +42,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class dChatQueryServiceImplTest {
+class ChatQueryServiceImplTest {
 
     @InjectMocks
     private ChatQueryServiceImpl chatQueryService;
@@ -126,10 +126,6 @@ class dChatQueryServiceImplTest {
                 verify(chatroomMemberRepository, never()).getChatroomListByMemberId(any(Member.class));
             }
         }
-    }
-
-    private Member createMember(UUID id) {
-        return Member.builder().memberId(id).memberEmail("test@test.com").memberNickname("test").build();
     }
 
     @Nested
@@ -281,30 +277,6 @@ class dChatQueryServiceImplTest {
                 assertThat(result.getNewChats()).isEqualTo(messages);
             }
         }
-    }
-
-    private ChatroomMember createChatroomMember(Member member, ChatroomMemberStatus status) {
-        return createChatroomMember(member, status, null);
-    }
-
-    private ChatroomMember createChatroomMember(Member member, ChatroomMemberStatus status, Long lastReadChatId) {
-        return ChatroomMember.builder().member(member).chatroomMemberStatus(status).lastReadChatId(lastReadChatId).build();
-    }
-
-    private ChatMessageDto createChatMessageDto(Long chatId, String content) {
-        return new ChatMessageDto(chatId, UUID.randomUUID(), "sender", null, null, content, ChatType.USER, LocalDateTime.now(), false);
-    }
-
-    private GetMemberChatroomResponse createGetMemberChatroomResponse() {
-        return GetMemberChatroomResponse.builder()
-                .chatRoomId(1L)
-                .otherMemberNickname("otherUser")
-                .otherMemberProfileImageUrl("http://example.com/profile.jpg")
-                .otherMemberThumbnailImageUrl("http://example.com/thumbnail.jpg")
-                .lastChatContent("Hello")
-                .lastChatReceivedAt(LocalDateTime.now())
-                .unreadCount(1L)
-                .build();
     }
 
     @Nested
@@ -486,5 +458,34 @@ class dChatQueryServiceImplTest {
                 verify(chatroomMemberRepository, never()).checkOtherMemberBlocked(any(), any());
             }
         }
+    }
+
+    private Member createMember(UUID id) {
+        return Member.builder().memberId(id).memberEmail("test@test.com").memberNickname("test").build();
+    }
+
+    private ChatroomMember createChatroomMember(Member member, ChatroomMemberStatus status) {
+        return createChatroomMember(member, status, null);
+    }
+
+    private ChatroomMember createChatroomMember(Member member, ChatroomMemberStatus status, Long lastReadChatId) {
+        return ChatroomMember.builder().member(member).chatroomMemberStatus(status).lastReadChatId(lastReadChatId).build();
+    }
+
+    private ChatMessageDto createChatMessageDto(Long chatId, String content) {
+        return new ChatMessageDto(chatId, UUID.randomUUID(), "sender", null, null, content, ChatType.USER, LocalDateTime.now(), false);
+    }
+
+    private GetMemberChatroomResponse createGetMemberChatroomResponse() {
+        return GetMemberChatroomResponse.builder()
+                .otherMemberId(UUID.randomUUID()) // 추가된 필드
+                .chatRoomId(1L)
+                .otherMemberNickname("otherUser")
+                .otherMemberProfileImageUrl("http://example.com/profile.jpg")
+                .otherMemberThumbnailImageUrl("http://example.com/thumbnail.jpg")
+                .lastChatContent("Hello")
+                .lastChatReceivedAt(LocalDateTime.now())
+                .unreadCount(1L)
+                .build();
     }
 }

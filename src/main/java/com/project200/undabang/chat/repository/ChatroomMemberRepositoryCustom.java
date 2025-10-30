@@ -11,6 +11,5 @@ import java.util.Optional;
 public interface ChatroomMemberRepositoryCustom {
     List<GetMemberChatroomResponse> getChatroomListByMemberId(Member member);
     Optional<ChatroomMemberStatus> getOpponentStatusByChatroomId(Long chatroomId, Member member);
-
     boolean checkOtherMemberBlocked(Chatroom currentChatroom, Member currentMember);
 }
