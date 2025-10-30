@@ -40,83 +40,6 @@ class ChatroomMemberRepositoryImplTest {
         em.clear();
     }
 
-    private Member createMember(String email, String nickname) {
-        return Member.builder()
-                .memberId(UUID.randomUUID())
-                .memberEmail(email)
-                .memberNickname(nickname)
-                .memberGender(MemberGender.UNKNOWN)
-                .memberBday(LocalDate.of(1990, 1, 1))
-                .build();
-    }
-
-    private Chatroom createChatroom() {
-        return Chatroom.builder().build();
-    }
-
-    // ===== Helper Methods (One per Entity) =====
-
-    private ChatroomMember createChatroomMember(Chatroom chatroom, Member member, ChatroomMemberStatus status, Long lastReadChatId) {
-        return ChatroomMember.builder()
-                .chatroom(chatroom)
-                .member(member)
-                .chatroomMemberStatus(status)
-                .lastReadChatId(lastReadChatId)
-                .build();
-    }
-
-    private Chat createChat(Chatroom chatroom, Member sender, String content, ChatType chatType) {
-        return Chat.builder()
-                .chatroom(chatroom)
-                .sender(sender)
-                .chatContent(content)
-                .chatType(chatType)
-                .build();
-    }
-
-    private MemberBlock createMemberBlock(Member blocker, Member blocked) {
-        return MemberBlock.builder()
-                .blocker(blocker)
-                .blocked(blocked)
-                .build();
-    }
-
-    @Nested
-    class GetChatroomListByMemberIdTests {
-
-        @Test
-        void shouldReturnEmptyListWhenNoChatrooms() {
-            Member member = createMember("test@example.com", "testUser");
-            persistAndFlush(member);
-
-            List<GetMemberChatroomResponse> result = chatroomMemberRepository.getChatroomListByMemberId(member);
-
-            assertThat(result).isEmpty();
-        }
-
-        @Test
-        void shouldReturnChatroomListWithUnreadCount() {
-            // given
-            Member currentMember = createMember("current@example.com", "currentUser");
-            Member otherMember = createMember("other@example.com", "otherUser");
-            Chatroom chatroom = createChatroom();
-            // 각 참여자의 상태와 마지막으로 읽은 채팅 ID를 명시적으로 설정
-            ChatroomMember currentCM = createChatroomMember(chatroom, currentMember, ChatroomMemberStatus.ACTIVE, 0L);
-            ChatroomMember otherCM = createChatroomMember(chatroom, otherMember, ChatroomMemberStatus.ACTIVE, 0L);
-            Chat unreadChat = createChat(chatroom, otherMember, "Unread message", ChatType.USER);
-            persistAndFlush(currentMember, otherMember, chatroom, currentCM, otherCM, unreadChat);
-
-            // when
-            List<GetMemberChatroomResponse> result = chatroomMemberRepository.getChatroomListByMemberId(currentMember);
-
-            // then
-            assertThat(result).hasSize(1);
-            GetMemberChatroomResponse response = result.get(0);
-            assertThat(response.getOtherMemberNickname()).isEqualTo(otherMember.getMemberNickname());
-            assertThat(response.getUnreadCount()).isEqualTo(1L);
-        }
-    }
-
     @Nested
     @DisplayName("상대방 상태 조회 (getOpponentStatusByChatroomId)")
     class GetOpponentStatusByChatroomIdTests {
@@ -198,6 +121,82 @@ class ChatroomMemberRepositoryImplTest {
 
             // then
             assertThat(isBlocked).isFalse();
+        }
+    }
+
+    private Member createMember(String email, String nickname) {
+        return Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberEmail(email)
+                .memberNickname(nickname)
+                .memberGender(MemberGender.UNKNOWN)
+                .memberBday(LocalDate.of(1990, 1, 1))
+                .build();
+    }
+
+    private Chatroom createChatroom() {
+        return Chatroom.builder().build();
+    }
+
+    private ChatroomMember createChatroomMember(Chatroom chatroom, Member member, ChatroomMemberStatus status, Long lastReadChatId) {
+        return ChatroomMember.builder()
+                .chatroom(chatroom)
+                .member(member)
+                .chatroomMemberStatus(status)
+                .lastReadChatId(lastReadChatId)
+                .build();
+    }
+
+    private Chat createChat(Chatroom chatroom, Member sender, String content, ChatType chatType) {
+        return Chat.builder()
+                .chatroom(chatroom)
+                .sender(sender)
+                .chatContent(content)
+                .chatType(chatType)
+                .build();
+    }
+
+    private MemberBlock createMemberBlock(Member blocker, Member blocked) {
+        return MemberBlock.builder()
+                .blocker(blocker)
+                .blocked(blocked)
+                .build();
+    }
+
+    @Nested
+    class GetChatroomListByMemberIdTests {
+
+        @Test
+        void shouldReturnEmptyListWhenNoChatrooms() {
+            Member member = createMember("test@example.com", "testUser");
+            persistAndFlush(member);
+
+            List<GetMemberChatroomResponse> result = chatroomMemberRepository.getChatroomListByMemberId(member);
+
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        void shouldReturnChatroomListWithUnreadCount() {
+            // given
+            Member currentMember = createMember("current@example.com", "currentUser");
+            Member otherMember = createMember("other@example.com", "otherUser");
+            Chatroom chatroom = createChatroom();
+            ChatroomMember currentCM = createChatroomMember(chatroom, currentMember, ChatroomMemberStatus.ACTIVE, 0L);
+            ChatroomMember otherCM = createChatroomMember(chatroom, otherMember, ChatroomMemberStatus.ACTIVE, 0L);
+            Chat unreadChat = createChat(chatroom, otherMember, "Unread message", ChatType.USER);
+            persistAndFlush(currentMember, otherMember, chatroom, currentCM, otherCM, unreadChat);
+
+            // when
+            List<GetMemberChatroomResponse> result = chatroomMemberRepository.getChatroomListByMemberId(currentMember);
+
+            // then
+            assertThat(result).hasSize(1);
+            GetMemberChatroomResponse response = result.get(0);
+            assertThat(response.getOtherMemberNickname()).isEqualTo(otherMember.getMemberNickname());
+            assertThat(response.getUnreadCount()).isEqualTo(1L);
+            // 추가 검증: 반환된 DTO의 memberId가 실제 상대 멤버의 memberId와 동일한지 확인
+            assertThat(response.getOtherMemberId()).isEqualTo(otherMember.getMemberId());
         }
     }
 }
