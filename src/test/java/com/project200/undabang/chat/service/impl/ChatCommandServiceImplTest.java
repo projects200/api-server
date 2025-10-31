@@ -438,7 +438,7 @@ class ChatCommandServiceImplTest {
                 given(memberRepository.findById(member.getMemberId())).willReturn(Optional.of(member));
                 given(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).willReturn(Optional.of(chatroomMember));
                 // [수정] 모든 검증이 통과하는 상황을 Mocking
-                given(chatroomMemberRepository.checkOtherMemberBlocked(chatroom, member)).willReturn(false); // 차단 안 함
+                given(chatroomMemberRepository.checkBlockExists(chatroom, member)).willReturn(false); // 차단 안 함
                 given(chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(chatroom, ChatroomMemberStatus.ACTIVE)).willReturn(2L);
                 given(chatRepository.save(any(Chat.class))).willReturn(savedChat);
 
@@ -469,12 +469,12 @@ class ChatCommandServiceImplTest {
                 given(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).willReturn(Optional.of(chatroomMember));
 
                 // [핵심] 차단 검증 로직이 true를 반환하도록 설정
-                given(chatroomMemberRepository.checkOtherMemberBlocked(chatroom, member)).willReturn(true);
+                given(chatroomMemberRepository.checkBlockExists(chatroom, member)).willReturn(true);
 
                 // when & then
                 assertThatThrownBy(() -> chatCommandService.createMessage(chatroomId, request))
                         .isInstanceOf(CustomException.class)
-                        .hasMessage(ErrorCode.MESSAGE_SEND_TO_BLOCKED_MEMBER.getMessage());
+                        .hasMessage(ErrorCode.MESSAGE_SEND_BLOCKED.getMessage());
 
                 // 예외 발생 시, 메시지 저장 로직은 호출되지 않아야 함
                 verify(chatRepository, never()).save(any());
@@ -516,7 +516,7 @@ class ChatCommandServiceImplTest {
                 given(memberRepository.findById(member.getMemberId())).willReturn(Optional.of(member));
                 given(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).willReturn(Optional.of(chatroomMember));
                 // [수정] 차단 검사는 통과했다고 가정
-                given(chatroomMemberRepository.checkOtherMemberBlocked(chatroom, member)).willReturn(false);
+                given(chatroomMemberRepository.checkBlockExists(chatroom, member)).willReturn(false);
                 // [핵심] 상대방이 나간 상황을 시뮬레이션
                 given(chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(chatroom, ChatroomMemberStatus.ACTIVE)).willReturn(1L);
 

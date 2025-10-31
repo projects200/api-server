@@ -204,17 +204,17 @@ public class ChatCommandServiceImpl implements ChatCommandService {
         Chatroom chatroom = chatroomMember.getChatroom();
 
         chatroomMember.validateCanSendMessage();
-        validateMemberBlockedOtherMember(chatroom, member);
+        validateMemberBlockExists(chatroom, member);
         validateOtherMemberStatus(chatroom, member); // 채팅방에 나간 회원이 있는지 검사하는 헬퍼 메소드
     }
 
     /**
-     * 특정 멤버가 채팅방 내에서 다른 멤버를 차단했는지 검증하는 메서드.
-     * 차단하였는데 메시지를 보내려고 시도하는 경우 403 에러를 반환하도록 처리
+     * 채팅방과 회원 정보를 기반으로 차단 여부를 확인하는 메서드.
+     * 차단된 회원과 차단한 회원이 메시지를 전송하려 할 경우 예외를 발생시킵니다.
      */
-    private void validateMemberBlockedOtherMember(Chatroom chatroom, Member member) {
-        if (chatroomMemberRepository.checkOtherMemberBlocked(chatroom, member)) {
-            throw new CustomException(ErrorCode.MESSAGE_SEND_TO_BLOCKED_MEMBER);
+    private void validateMemberBlockExists(Chatroom chatroom, Member member) {
+        if (chatroomMemberRepository.checkBlockExists(chatroom, member)) {
+            throw new CustomException(ErrorCode.MESSAGE_SEND_BLOCKED);
         }
     }
 

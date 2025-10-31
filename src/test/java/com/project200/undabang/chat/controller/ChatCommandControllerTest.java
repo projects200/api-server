@@ -259,7 +259,7 @@ class ChatCommandControllerTest extends AbstractRestDocSupport {
 
             // [핵심] 서비스 레이어가 '차단' 예외를 던지는 상황을 Mocking
             given(chatCommandService.createMessage(eq(chatroomId), any(CreateMessageRequest.class)))
-                    .willThrow(new CustomException(ErrorCode.MESSAGE_SEND_TO_BLOCKED_MEMBER));
+                    .willThrow(new CustomException(ErrorCode.MESSAGE_SEND_BLOCKED));
 
             // when & then
             mockMvc.perform(post("/api/v1/chat-rooms/{chatroomId}/messages", chatroomId)
@@ -270,8 +270,8 @@ class ChatCommandControllerTest extends AbstractRestDocSupport {
                     .andExpectAll(
                             status().isForbidden(), // 403 Forbidden 상태 코드 검증
                             jsonPath("$.succeed").value(false),
-                            jsonPath("$.code").value(ErrorCode.MESSAGE_SEND_TO_BLOCKED_MEMBER.getCode()),
-                            jsonPath("$.message").value(ErrorCode.MESSAGE_SEND_TO_BLOCKED_MEMBER.getMessage())
+                            jsonPath("$.code").value(ErrorCode.MESSAGE_SEND_BLOCKED.getCode()),
+                            jsonPath("$.message").value(ErrorCode.MESSAGE_SEND_BLOCKED.getMessage())
                     );
 
             then(chatCommandService).should(times(1)).createMessage(eq(chatroomId), any(CreateMessageRequest.class));

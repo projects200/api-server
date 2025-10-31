@@ -82,8 +82,8 @@ class ChatroomMemberRepositoryImplTest {
     }
 
     @Nested
-    @DisplayName("checkOtherMemberBlocked 메소드는")
-    class CheckOtherMemberBlockedTests {
+    @DisplayName("checkBlockExists 메소드는")
+    class CheckBlockExists {
 
         @Test
         @DisplayName("성공: 현재 사용자가 채팅방의 상대방을 차단했을 경우 true를 반환한다")
@@ -98,7 +98,7 @@ class ChatroomMemberRepositoryImplTest {
             persistAndFlush(currentUser, otherUser, chatroom, currentCM, otherCM, block);
 
             // when
-            boolean isBlocked = chatroomMemberRepository.checkOtherMemberBlocked(chatroom, currentUser);
+            boolean isBlocked = chatroomMemberRepository.checkBlockExists(chatroom, currentUser);
 
             // then
             assertThat(isBlocked).isTrue();
@@ -117,7 +117,7 @@ class ChatroomMemberRepositoryImplTest {
             persistAndFlush(currentUser, otherUser, chatroom, currentCM, otherCM, block);
 
             // when
-            boolean isBlocked = chatroomMemberRepository.checkOtherMemberBlocked(chatroom, currentUser);
+            boolean isBlocked = chatroomMemberRepository.checkBlockExists(chatroom, currentUser);
 
             // then
             assertThat(isBlocked).isTrue();
@@ -136,7 +136,7 @@ class ChatroomMemberRepositoryImplTest {
             persistAndFlush(currentUser, otherUser, chatroom, currentCM, otherCM);
 
             // when
-            boolean isBlocked = chatroomMemberRepository.checkOtherMemberBlocked(chatroom, currentUser);
+            boolean isBlocked = chatroomMemberRepository.checkBlockExists(chatroom, currentUser);
 
             // then
             assertThat(isBlocked).isFalse();
