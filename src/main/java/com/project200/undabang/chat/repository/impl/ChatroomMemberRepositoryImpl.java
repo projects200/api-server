@@ -24,10 +24,12 @@ public class ChatroomMemberRepositoryImpl implements ChatroomMemberRepositoryCus
     private final JPAQueryFactory queryFactory;
 
     /**
-     * 주어진 채팅방과 현재 회원 정보를 기반으로 다른 회원이 차단되었는지 확인합니다.
+     * 현재 채팅방에서 상대방과의 차단 관계가 존재하는지 확인합니다.
+     * 1:1 채팅 상황에서 사용되며, 현재 회원이 상대방을 차단했거나
+     * 상대방이 현재 회원을 차단한 경우 모두를 포함하여 차단 관계가 있는지 여부를 확인합니다.
      */
     @Override
-    public boolean checkOtherMemberBlocked(Chatroom currentChatroom, Member currentMember) {
+    public boolean checkBlockExists(Chatroom currentChatroom, Member currentMember) {
         QChatroomMember chatroomMember = QChatroomMember.chatroomMember;
         QMemberBlock memberBlock = QMemberBlock.memberBlock;
 

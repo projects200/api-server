@@ -387,7 +387,7 @@ class ChatQueryServiceImplTest {
                 when(chatroomMemberRepository.getOpponentStatusByChatroomId(chatroomId, member)).thenReturn(Optional.of(ChatroomMemberStatus.ACTIVE));
                 when(chatroomRepository.findById(chatroomId)).thenReturn(Optional.of(chatroom));
                 // [핵심] 상대방이 차단되었다고 가정
-                when(chatroomMemberRepository.checkOtherMemberBlocked(chatroom, member)).thenReturn(true);
+                when(chatroomMemberRepository.checkBlockExists(chatroom, member)).thenReturn(true);
 
                 // When
                 GetMemberChatResponse result = chatQueryService.getMemberChat(chatroomId, null, pageable);
@@ -395,7 +395,7 @@ class ChatQueryServiceImplTest {
                 // Then
                 assertThat(result.isBlockActive()).isTrue();
                 verify(chatroomRepository).findById(chatroomId);
-                verify(chatroomMemberRepository).checkOtherMemberBlocked(chatroom, member);
+                verify(chatroomMemberRepository).checkBlockExists(chatroom, member);
             }
         }
 
@@ -417,7 +417,7 @@ class ChatQueryServiceImplTest {
                 when(chatroomMemberRepository.getOpponentStatusByChatroomId(chatroomId, member)).thenReturn(Optional.of(ChatroomMemberStatus.ACTIVE));
                 when(chatroomRepository.findById(chatroomId)).thenReturn(Optional.of(chatroom));
                 // [핵심] 상대방이 차단되지 않았다고 가정
-                when(chatroomMemberRepository.checkOtherMemberBlocked(chatroom, member)).thenReturn(false);
+                when(chatroomMemberRepository.checkBlockExists(chatroom, member)).thenReturn(false);
 
                 // When
                 GetMemberChatResponse result = chatQueryService.getMemberChat(chatroomId, null, pageable);
@@ -425,7 +425,7 @@ class ChatQueryServiceImplTest {
                 // Then
                 assertThat(result.isBlockActive()).isFalse();
                 verify(chatroomRepository).findById(chatroomId);
-                verify(chatroomMemberRepository).checkOtherMemberBlocked(chatroom, member);
+                verify(chatroomMemberRepository).checkBlockExists(chatroom, member);
             }
         }
 
@@ -455,7 +455,7 @@ class ChatQueryServiceImplTest {
                 assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CHATROOM_NOT_FOUND);
 
                 verify(chatroomRepository).findById(chatroomId);
-                verify(chatroomMemberRepository, never()).checkOtherMemberBlocked(any(), any());
+                verify(chatroomMemberRepository, never()).checkBlockExists(any(), any());
             }
         }
     }
