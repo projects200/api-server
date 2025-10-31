@@ -14,14 +14,14 @@ public class GetMemberChatResponse {
     private List<ChatMessageDto> content;
     private boolean hasNext;
     private boolean opponentActive;
-    private boolean opponentBlocked;
+    private boolean blockActive;
 
     public static GetMemberChatResponse from(Slice<ChatMessageDto> content, boolean isOpponentActive, boolean opponentBlocked) {
         return GetMemberChatResponse.builder()
                 .content(content.getContent())
                 .hasNext(content.hasNext())
                 .opponentActive(isOpponentActive)
-                .opponentBlocked(opponentBlocked)
+                .blockActive(opponentBlocked)
                 .build();
     }
 }

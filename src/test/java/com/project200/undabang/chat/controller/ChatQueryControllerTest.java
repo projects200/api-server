@@ -97,7 +97,7 @@ class ChatQueryControllerTest extends AbstractRestDocSupport {
                     .andExpect(jsonPath("$.data.hasNext").value(false))
                     .andExpect(jsonPath("$.data.opponentActive").value(true))
                     // [추가] opponentBlocked 필드 검증
-                    .andExpect(jsonPath("$.data.opponentBlocked").value(false))
+                    .andExpect(jsonPath("$.data.blockActive").value(false))
                     .andDo(document.document(
                             requestHeaders(HEADER_ACCESS_TOKEN),
                             pathParameters(
@@ -120,7 +120,7 @@ class ChatQueryControllerTest extends AbstractRestDocSupport {
                                     fieldWithPath("data.content[].mine").type(JsonFieldType.BOOLEAN).description("내(기기 소유주)가 보낸 메시지가 맞는지 확인하는 컬럼입니다."),
                                     fieldWithPath("data.hasNext").type(JsonFieldType.BOOLEAN).description("다음에 조회할 페이지가 있는지 여부를 나타냅니다."),
                                     fieldWithPath("data.opponentActive").type(JsonFieldType.BOOLEAN).description("상대방이 현재 채팅방에 참여중(ACTIVE)인지 여부를 나타냅니다."),
-                                    fieldWithPath("data.opponentBlocked").type(JsonFieldType.BOOLEAN).description("내가 상대방을 차단했는지 여부를 나타냅니다.")
+                                    fieldWithPath("data.blockActive").type(JsonFieldType.BOOLEAN).description("상호간의 차단 여부를 나타냅니다. (내가 상대를 차단했거나, 상대가 나를 차단한지의 여부)")
                             ))
                     ));
         }
