@@ -32,14 +32,6 @@ class ChatroomMemberRepositoryImplTest {
     @Autowired
     private EntityManager em;
 
-    private void persistAndFlush(Object... entities) {
-        for (Object entity : entities) {
-            em.persist(entity);
-        }
-        em.flush();
-        em.clear();
-    }
-
     @Nested
     @DisplayName("상대방 상태 조회 (getOpponentStatusByChatroomId)")
     class GetOpponentStatusByChatroomIdTests {
@@ -81,6 +73,14 @@ class ChatroomMemberRepositoryImplTest {
         }
     }
 
+    private void persistAndFlush(Object... entities) {
+        for (Object entity : entities) {
+            em.persist(entity);
+        }
+        em.flush();
+        em.clear();
+    }
+
     @Nested
     @DisplayName("checkOtherMemberBlocked 메소드는")
     class CheckOtherMemberBlockedTests {
@@ -105,8 +105,8 @@ class ChatroomMemberRepositoryImplTest {
         }
 
         @Test
-        @DisplayName("성공: 상대방이 현재 사용자를 차단한 경우(역방향)는 false를 반환한다")
-        void shouldReturnFalseWhenOpponentBlocksCurrentUser() {
+        @DisplayName("성공: 상대방이 현재 사용자를 차단한 경우(역방향)도 true를 반환한다")
+        void shouldReturnTrueWhenOpponentBlocksCurrentUser() {
             // given
             Member currentUser = createMember("current@user.com", "currentUser");
             Member otherUser = createMember("other@user.com", "otherUser");
@@ -115,6 +115,25 @@ class ChatroomMemberRepositoryImplTest {
             ChatroomMember otherCM = createChatroomMember(chatroom, otherUser, ChatroomMemberStatus.ACTIVE, 0L);
             MemberBlock block = createMemberBlock(otherUser, currentUser); // 역방향 차단
             persistAndFlush(currentUser, otherUser, chatroom, currentCM, otherCM, block);
+
+            // when
+            boolean isBlocked = chatroomMemberRepository.checkOtherMemberBlocked(chatroom, currentUser);
+
+            // then
+            assertThat(isBlocked).isTrue();
+        }
+
+        @Test
+        @DisplayName("성공: 아무도 차단하지 않았을 경우 false를 반환한다")
+        void shouldReturnFalseWhenNoOneIsBlocked() {
+            // given
+            Member currentUser = createMember("current@user.com", "currentUser");
+            Member otherUser = createMember("other@user.com", "otherUser");
+            Chatroom chatroom = createChatroom();
+            ChatroomMember currentCM = createChatroomMember(chatroom, currentUser, ChatroomMemberStatus.ACTIVE, 0L);
+            ChatroomMember otherCM = createChatroomMember(chatroom, otherUser, ChatroomMemberStatus.ACTIVE, 0L);
+            // 차단 기록 없음
+            persistAndFlush(currentUser, otherUser, chatroom, currentCM, otherCM);
 
             // when
             boolean isBlocked = chatroomMemberRepository.checkOtherMemberBlocked(chatroom, currentUser);

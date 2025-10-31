@@ -35,9 +35,15 @@ public class ChatroomMemberRepositoryImpl implements ChatroomMemberRepositoryCus
                 .selectOne()
                 .from(chatroomMember)
                 .join(memberBlock).on(
-                        memberBlock.blocker.eq(currentMember) // 내가 차단자인 경우
-                                .and(memberBlock.blocked.eq(chatroomMember.member)) // 상대가 차단당한 경우
-                                .and(memberBlock.memberBlockDeletedAt.isNull()) // 차단 해제하지 않은 경우
+                        (
+                            memberBlock.blocker.eq(currentMember) // 내가 차단자인 경우
+                                .and(memberBlock.blocked.eq(chatroomMember.member))
+                            .or(
+                                memberBlock.blocker.eq(chatroomMember.member) // 상대가 차단자인 경우
+                                    .and(memberBlock.blocked.eq(currentMember))
+                            )
+                        )
+                        .and(memberBlock.memberBlockDeletedAt.isNull()) // 차단 해제하지 않은 경우
                 )
                 .where(
                         chatroomMember.chatroom.eq(currentChatroom), // 현재 채팅방에서

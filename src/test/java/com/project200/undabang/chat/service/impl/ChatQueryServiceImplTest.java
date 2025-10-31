@@ -393,7 +393,7 @@ class ChatQueryServiceImplTest {
                 GetMemberChatResponse result = chatQueryService.getMemberChat(chatroomId, null, pageable);
 
                 // Then
-                assertThat(result.isOpponentBlocked()).isTrue();
+                assertThat(result.isBlockActive()).isTrue();
                 verify(chatroomRepository).findById(chatroomId);
                 verify(chatroomMemberRepository).checkOtherMemberBlocked(chatroom, member);
             }
@@ -423,7 +423,7 @@ class ChatQueryServiceImplTest {
                 GetMemberChatResponse result = chatQueryService.getMemberChat(chatroomId, null, pageable);
 
                 // Then
-                assertThat(result.isOpponentBlocked()).isFalse();
+                assertThat(result.isBlockActive()).isFalse();
                 verify(chatroomRepository).findById(chatroomId);
                 verify(chatroomMemberRepository).checkOtherMemberBlocked(chatroom, member);
             }
