@@ -210,7 +210,7 @@ public class ChatCommandServiceImpl implements ChatCommandService {
 
     /**
      * 채팅방과 회원 정보를 기반으로 차단 여부를 확인하는 메서드.
-     * 차단된 회원과 차단한 회원이 메시지를 전송하려 할 경우 예외를 발생시킵니다.
+     * 차단 관계가 존재하는 회원이 메시지를 전송하려 할 경우 예외를 발생시킵니다.
      */
     private void validateMemberBlockExists(Chatroom chatroom, Member member) {
         if (chatroomMemberRepository.checkBlockExists(chatroom, member)) {

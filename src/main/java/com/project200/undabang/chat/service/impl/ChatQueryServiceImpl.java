@@ -127,7 +127,7 @@ public class ChatQueryServiceImpl implements ChatQueryService {
     }
 
     /**
-     * 주어진 채팅방 ID와 회원 정보를 기반으로 상대방이 차단되었는지 여부를 확인합니다.
+     * 주어진 채팅방 ID와 회원 정보를 기반으로 상대방과의 차단 관계가 존재하는지 여부를 확인합니다.
      */
     private boolean getOpponentBlocked(Long chatroomId, Member member) {
         Chatroom chatroom = chatroomRepository.findById(chatroomId).orElseThrow(() -> new CustomException(ErrorCode.CHATROOM_NOT_FOUND));
