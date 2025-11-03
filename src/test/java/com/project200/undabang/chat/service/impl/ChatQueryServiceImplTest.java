@@ -133,6 +133,7 @@ class ChatQueryServiceImplTest {
     class GetNewChatTests {
 
         private final Long chatroomId = 1L;
+        private final Chatroom chatroom = Chatroom.builder().id(chatroomId).build();
 
         @Test
         @DisplayName("성공: 조회된 새 메시지가 없을 경우, 읽음 상태 업데이트를 호출하지 않는다")
@@ -145,15 +146,17 @@ class ChatQueryServiceImplTest {
                 ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
                 when(memberRepository.findById(member.getMemberId())).thenReturn(Optional.of(member));
                 when(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).thenReturn(Optional.of(activeMember));
-                // [핵심] 메시지가 비어있는 리스트 반환
                 when(chatroomRepository.getNewMemberChat(member, chatroomId, 100L)).thenReturn(Collections.emptyList());
                 when(chatroomMemberRepository.getOpponentStatusByChatroomId(chatroomId, member)).thenReturn(Optional.of(ChatroomMemberStatus.ACTIVE));
+                when(chatroomRepository.findById(chatroomId)).thenReturn(Optional.of(chatroom));
+                when(chatroomMemberRepository.checkBlockExists(chatroom, member)).thenReturn(false);
 
                 // When
-                chatQueryService.getNewChat(chatroomId);
+                GetNewChatResponse result = chatQueryService.getNewChat(chatroomId);
 
-                // Then: if (!dtoList.isEmpty())의 false 경로 테스트
+                // Then
                 verify(chatUpdateService, never()).updateLastReadChatId(anyLong(), any(Member.class), anyLong());
+                assertThat(result.isBlockActive()).isFalse();
             }
         }
 
@@ -171,12 +174,38 @@ class ChatQueryServiceImplTest {
                 when(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).thenReturn(Optional.of(activeMember));
                 when(chatroomRepository.getNewMemberChat(member, chatroomId, 50L)).thenReturn(newMessages);
                 when(chatroomMemberRepository.getOpponentStatusByChatroomId(chatroomId, member)).thenReturn(Optional.of(ChatroomMemberStatus.ACTIVE));
-                // [핵심] 업데이트 시 예외 발생
+                when(chatroomRepository.findById(chatroomId)).thenReturn(Optional.of(chatroom));
+                when(chatroomMemberRepository.checkBlockExists(chatroom, member)).thenReturn(false);
                 doThrow(new RuntimeException("DB Error")).when(chatUpdateService).updateLastReadChatId(anyLong(), any(Member.class), anyLong());
 
-                // When & Then: catch (Exception e) 경로 테스트
+                // When & Then
                 GetNewChatResponse result = assertDoesNotThrow(() -> chatQueryService.getNewChat(chatroomId));
                 assertThat(result.getNewChats()).isEqualTo(newMessages);
+                assertThat(result.isBlockActive()).isFalse();
+            }
+        }
+
+        @Test
+        @DisplayName("성공: 차단된 상태일 경우 blockActive가 true로 반환된다")
+        void shouldReturnBlockActiveTrueWhenBlocked() {
+            // Given
+            Member member = createMember(UUID.randomUUID());
+            ChatroomMember activeMember = createChatroomMember(member, ChatroomMemberStatus.ACTIVE, 100L);
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
+                when(memberRepository.findById(member.getMemberId())).thenReturn(Optional.of(member));
+                when(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).thenReturn(Optional.of(activeMember));
+                when(chatroomRepository.getNewMemberChat(member, chatroomId, 100L)).thenReturn(Collections.emptyList());
+                when(chatroomMemberRepository.getOpponentStatusByChatroomId(chatroomId, member)).thenReturn(Optional.of(ChatroomMemberStatus.ACTIVE));
+                when(chatroomRepository.findById(chatroomId)).thenReturn(Optional.of(chatroom));
+                when(chatroomMemberRepository.checkBlockExists(chatroom, member)).thenReturn(true); // [핵심]
+
+                // When
+                GetNewChatResponse result = chatQueryService.getNewChat(chatroomId);
+
+                // Then
+                assertThat(result.isBlockActive()).isTrue(); // [핵심]
             }
         }
 
@@ -189,10 +218,9 @@ class ChatQueryServiceImplTest {
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
                 when(memberRepository.findById(member.getMemberId())).thenReturn(Optional.of(member));
-                // [핵심] 멤버십 정보 없음
                 when(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).thenReturn(Optional.empty());
 
-                // When & Then: .orElseThrow(...) 경로 테스트
+                // When & Then
                 CustomException exception = assertThrows(CustomException.class, () -> chatQueryService.getNewChat(chatroomId));
                 assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND);
             }
@@ -204,24 +232,18 @@ class ChatQueryServiceImplTest {
             // Given
             Long chatroomId = 1L;
             Member member = createMember(UUID.randomUUID());
-            // [핵심] 상태가 LEFT인 ChatroomMember 객체 생성
             ChatroomMember inactiveMember = createChatroomMember(member, ChatroomMemberStatus.LEFT);
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
                 when(memberRepository.findById(member.getMemberId())).thenReturn(Optional.of(member));
-
-                // validateActiveChatroomMember가 inactiveMember를 찾도록 설정
                 when(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member))
                         .thenReturn(Optional.of(inactiveMember));
 
                 // When & Then
-                // CHATROOM_MEMBER_INACTIVE 예외가 발생하는지 검증
                 CustomException exception = assertThrows(CustomException.class,
                         () -> chatQueryService.getNewChat(chatroomId));
                 assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CHATROOM_MEMBER_INACTIVE);
-
-                // 권한 검증 실패 후 다른 로직은 호출되지 않아야 함
                 verify(chatroomRepository, never()).getNewMemberChat(any(Member.class), anyLong(), anyLong());
             }
         }
@@ -231,7 +253,6 @@ class ChatQueryServiceImplTest {
         void shouldConvertNullLastReadChatIdToZero() {
             // Given
             Member member = createMember(UUID.randomUUID());
-            // lastReadChatId를 null로 설정
             ChatroomMember activeMember = createChatroomMember(member, ChatroomMemberStatus.ACTIVE, null);
             List<ChatMessageDto> messages = List.of(createChatMessageDto(1L, "Message"));
 
@@ -239,9 +260,10 @@ class ChatQueryServiceImplTest {
                 ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
                 when(memberRepository.findById(member.getMemberId())).thenReturn(Optional.of(member));
                 when(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).thenReturn(Optional.of(activeMember));
-                // -1L이 전달되는지 확인
                 when(chatroomRepository.getNewMemberChat(member, chatroomId, -1L)).thenReturn(messages);
                 when(chatroomMemberRepository.getOpponentStatusByChatroomId(chatroomId, member)).thenReturn(Optional.of(ChatroomMemberStatus.ACTIVE));
+                when(chatroomRepository.findById(chatroomId)).thenReturn(Optional.of(chatroom));
+                when(chatroomMemberRepository.checkBlockExists(chatroom, member)).thenReturn(false);
 
                 // When
                 GetNewChatResponse result = chatQueryService.getNewChat(chatroomId);
@@ -265,9 +287,10 @@ class ChatQueryServiceImplTest {
                 ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
                 when(memberRepository.findById(member.getMemberId())).thenReturn(Optional.of(member));
                 when(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).thenReturn(Optional.of(activeMember));
-                // lastReadId 그대로 전달되는지 확인
                 when(chatroomRepository.getNewMemberChat(member, chatroomId, lastReadId)).thenReturn(messages);
                 when(chatroomMemberRepository.getOpponentStatusByChatroomId(chatroomId, member)).thenReturn(Optional.of(ChatroomMemberStatus.ACTIVE));
+                when(chatroomRepository.findById(chatroomId)).thenReturn(Optional.of(chatroom));
+                when(chatroomMemberRepository.checkBlockExists(chatroom, member)).thenReturn(false);
 
                 // When
                 GetNewChatResponse result = chatQueryService.getNewChat(chatroomId);
@@ -278,6 +301,7 @@ class ChatQueryServiceImplTest {
             }
         }
     }
+
 
     @Nested
     @DisplayName("채팅방 메시지 조회 (getMemberChat)")

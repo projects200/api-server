@@ -63,14 +63,14 @@ public class ChatQueryServiceImpl implements ChatQueryService {
         }
 
         boolean isOpponentActive = getOpponentStatus(chatroomId, member);
-        boolean isOpponentBlocked = getOpponentBlocked(chatroomId, member);
+        boolean blockActive = getOpponentBlocked(chatroomId, member);
 
-        return GetMemberChatResponse.from(dtoList, isOpponentActive, isOpponentBlocked);
+        return GetMemberChatResponse.from(dtoList, isOpponentActive, blockActive);
     }
 
     /**
-     * 입력된 채팅방 ID를 기반으로 사용자가 읽지 않은 새 채팅 메시지 목록을 반환하며,
-     * 상대방의 현재 활성화 상태를 포함합니다.
+     * 지정된 채팅방 ID에 대해 새로운 채팅 메시지와 관련된 정보를 반환합니다.
+     * 사용자와 채팅방 간의 관계를 검증하며, 상대방의 활성 및 차단 상태를 포함한 정보를 제공합니다.
      */
     @Override
     public GetNewChatResponse getNewChat(Long chatroomId) {
@@ -86,9 +86,11 @@ public class ChatQueryServiceImpl implements ChatQueryService {
         List<ChatMessageDto> dtoList = chatroomRepository.getNewMemberChat(member, chatroomId, lastChatId);
 
         updateLastReadStatus(chatroomId, member, dtoList);
-        boolean isOpponentActive = getOpponentStatus(chatroomId, member);
 
-        return GetNewChatResponse.of(dtoList, isOpponentActive);
+        boolean isOpponentActive = getOpponentStatus(chatroomId, member);
+        boolean blockActive = getOpponentBlocked(chatroomId, member);
+
+        return GetNewChatResponse.of(dtoList, isOpponentActive, blockActive);
     }
 
 
