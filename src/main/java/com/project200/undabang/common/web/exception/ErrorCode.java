@@ -72,6 +72,7 @@ public enum ErrorCode {
 
     // 채팅방 관련 에러
     SELF_CHAT_NOT_ALLOWED(400, "SELF_CHAT_NOT_ALLOWED", "자기 자신과 채팅방을 개설할 수 없습니다."),
+    CHATROOM_CREATE_BLOCKED(403, "CHATROOM_CREATE_BLOCKED", "해당 회원님과는 채팅방을 생성할 수 없습니다."),
     MESSAGE_SEND_BLOCKED(403, "MESSAGE_SEND_BLOCKED", "해당 회원님과는 메시지를 주고받을 수 없습니다."),
     CHATROOM_MEMBERS_NOT_FOUND(404, "CHATROOM_MEMBERS_NOT_FOUND", "등록된 채팅방 참여자 정보를 확인할 수 없습니다."),
     CHATROOM_NOT_FOUND(404, "CHATROOM_NOT_FOUND", "존재하지 않는 채팅방 입니다."),
