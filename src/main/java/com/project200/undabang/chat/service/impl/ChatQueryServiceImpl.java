@@ -88,9 +88,9 @@ public class ChatQueryServiceImpl implements ChatQueryService {
         updateLastReadStatus(chatroomId, member, dtoList);
 
         boolean isOpponentActive = getOpponentStatus(chatroomId, member);
-        boolean isOpponentBlocked = getOpponentBlocked(chatroomId, member);
+        boolean blockActive = getOpponentBlocked(chatroomId, member);
 
-        return GetNewChatResponse.of(dtoList, isOpponentActive, isOpponentBlocked);
+        return GetNewChatResponse.of(dtoList, isOpponentActive, blockActive);
     }
 
 
