@@ -24,6 +24,29 @@ public class MemberBlockRepositoryImpl implements MemberBlockRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     /**
+     * 주어진 두 회원 간의 차단 기록이 존재하는지 확인합니다.
+     */
+    @Override
+    public boolean checkMemberBlockExists(Member currentMember, Member blockedMember) {
+        QMemberBlock memberBlock = QMemberBlock.memberBlock;
+
+        return queryFactory.selectOne()
+                .from(memberBlock)
+                .where(
+                        (
+                            memberBlock.blocker.eq(currentMember)
+                                .and(memberBlock.blocked.eq(blockedMember))
+                            .or(
+                                memberBlock.blocker.eq(blockedMember)
+                                    .and(memberBlock.blocked.eq(currentMember))
+                            )
+                        )
+                        .and(memberBlock.memberBlockDeletedAt.isNull()) // 차단 해제를 안한 경우
+                )
+                .fetchFirst() != null;
+    }
+
+    /**
      * 주어진 회원에 대한 모든 차단 기록(MemberBlockRecord)을 조회합니다.
      */
     @Override

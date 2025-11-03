@@ -13,6 +13,7 @@ import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.entity.Member;
+import com.project200.undabang.member.repository.MemberBlockRepository;
 import com.project200.undabang.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ public class ChatCommandServiceImpl implements ChatCommandService {
     private final ChatroomRepository chatroomRepository;
     private final ChatRepository chatRepository;
     private final ChatroomMemberRepository chatroomMemberRepository;
+    private final MemberBlockRepository memberBlockRepository;
 
     private final int DIRECT_CHAT_MAX_MEMBER_COUNT = 2;
 
@@ -69,6 +71,11 @@ public class ChatCommandServiceImpl implements ChatCommandService {
                 .filter(m -> m.getMemberId().equals(targetMemberId))
                 .findFirst()
                 .orElseThrow(() -> new CustomException(ErrorCode.INTERNAL_SERVER_ERROR));
+
+        // 차단 관계가 있는 경우 채팅방 생성 금지
+        if (memberBlockRepository.checkMemberBlockExists(currentMember, targetMember)) {
+            throw new CustomException(ErrorCode.CHATROOM_CREATE_BLOCKED);
+        }
 
         // Lock이 설정된 상태에서 채팅방을 찾고, 생성함
         Chatroom chatroom = findOrCreateChatroom(currentMember, targetMember);

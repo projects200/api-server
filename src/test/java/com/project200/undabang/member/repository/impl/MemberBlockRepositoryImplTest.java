@@ -113,35 +113,6 @@ class MemberBlockRepositoryImplTest {
         }
     }
 
-    private Member createMember(String nickname) {
-        return Member.builder()
-                .memberId(UUID.randomUUID())
-                .memberEmail(nickname + "@test.com")
-                .memberNickname(nickname)
-                .memberBday(LocalDate.of(2000, 1, 1))
-                .build();
-    }
-
-    private MemberPicture createMemberPicture(Member member, Picture picture) {
-        return MemberPicture.builder()
-                .member(member)
-                .picture(picture)
-                .memberPicturesUrl(picture.getPictureUrl())
-                .build();
-    }
-
-    private Picture createPicture(String url) {
-        return Picture.builder().pictureUrl(url).build();
-    }
-
-    private void saveAndFlush(Object... entities) {
-        for (Object entity : entities) {
-            em.persist(entity);
-        }
-        em.flush();
-        em.clear();
-    }
-
     @Nested
     @DisplayName("findAllBlockedMemberIdsByMember 메소드는")
     class Describe_findAllBlockedMemberIdsByMember {
@@ -228,6 +199,155 @@ class MemberBlockRepositoryImplTest {
             // 나를 차단했던 userWhoUnblockedMe는 제외되고, 나 자신만 포함되어야 함
             assertThat(exclusionIds).hasSize(1)
                     .containsExactly(currentUser.getMemberId());
+        }
+    }
+
+    private Member createMember(String nickname) {
+        return Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberEmail(nickname + "@test.com")
+                .memberNickname(nickname)
+                .memberBday(LocalDate.of(2000, 1, 1))
+                .build();
+    }
+
+    private MemberPicture createMemberPicture(Member member, Picture picture) {
+        return MemberPicture.builder()
+                .member(member)
+                .picture(picture)
+                .memberPicturesUrl(picture.getPictureUrl())
+                .build();
+    }
+
+    private Picture createPicture(String url) {
+        return Picture.builder().pictureUrl(url).build();
+    }
+
+    private void saveAndFlush(Object... entities) {
+        for (Object entity : entities) {
+            em.persist(entity);
+        }
+        em.flush();
+        em.clear();
+    }
+
+    @Nested
+    @DisplayName("checkMemberBlockExists 메소드는")
+    class Describe_checkMemberBlockExists {
+
+        @Test
+        @DisplayName("내가 상대방을 차단한 경우 true를 반환한다")
+        void it_returns_true_when_currentMember_blocked_target() {
+            // given
+            Member currentUser = createMember("currentUser");
+            Member targetMember = createMember("targetMember");
+            MemberBlock block = MemberBlock.of(currentUser, targetMember); // 내가 상대를 차단
+            saveAndFlush(currentUser, targetMember, block);
+
+            // when
+            boolean result = memberBlockRepository.checkMemberBlockExists(currentUser, targetMember);
+
+            // then
+            assertThat(result).isTrue();
+        }
+
+        @Test
+        @DisplayName("상대방이 나를 차단한 경우 true를 반환한다")
+        void it_returns_true_when_target_blocked_currentMember() {
+            // given
+            Member currentUser = createMember("currentUser");
+            Member targetMember = createMember("targetMember");
+            MemberBlock block = MemberBlock.of(targetMember, currentUser); // 상대가 나를 차단
+            saveAndFlush(currentUser, targetMember, block);
+
+            // when
+            boolean result = memberBlockRepository.checkMemberBlockExists(currentUser, targetMember);
+
+            // then
+            assertThat(result).isTrue();
+        }
+
+        @Test
+        @DisplayName("상호 차단한 경우 true를 반환한다")
+        void it_returns_true_when_mutual_block_exists() {
+            // given
+            Member currentUser = createMember("currentUser");
+            Member targetMember = createMember("targetMember");
+            MemberBlock block1 = MemberBlock.of(currentUser, targetMember); // 내가 상대를 차단
+            MemberBlock block2 = MemberBlock.of(targetMember, currentUser); // 상대가 나를 차단
+            saveAndFlush(currentUser, targetMember, block1, block2);
+
+            // when
+            boolean result = memberBlockRepository.checkMemberBlockExists(currentUser, targetMember);
+
+            // then
+            assertThat(result).isTrue();
+        }
+
+        @Test
+        @DisplayName("차단 관계가 전혀 없으면 false를 반환한다")
+        void it_returns_false_when_no_block_exists() {
+            // given
+            Member currentUser = createMember("currentUser");
+            Member targetMember = createMember("targetMember");
+            saveAndFlush(currentUser, targetMember);
+
+            // when
+            boolean result = memberBlockRepository.checkMemberBlockExists(currentUser, targetMember);
+
+            // then
+            assertThat(result).isFalse();
+        }
+
+        @Test
+        @DisplayName("내가 상대방을 차단했다가 해제한 경우 false를 반환한다")
+        void it_returns_false_when_currentMember_unblocked_target() {
+            // given
+            Member currentUser = createMember("currentUser");
+            Member targetMember = createMember("targetMember");
+            MemberBlock block = MemberBlock.of(currentUser, targetMember);
+            block.unBlock(); // 차단 해제 (soft-delete)
+            saveAndFlush(currentUser, targetMember, block);
+
+            // when
+            boolean result = memberBlockRepository.checkMemberBlockExists(currentUser, targetMember);
+
+            // then
+            assertThat(result).isFalse();
+        }
+
+        @Test
+        @DisplayName("상대방이 나를 차단했다가 해제한 경우 false를 반환한다")
+        void it_returns_false_when_target_unblocked_currentMember() {
+            // given
+            Member currentUser = createMember("currentUser");
+            Member targetMember = createMember("targetMember");
+            MemberBlock block = MemberBlock.of(targetMember, currentUser); // 상대가 나를 차단
+            block.unBlock(); // 차단 해제 (soft-delete)
+            saveAndFlush(currentUser, targetMember, block);
+
+            // when
+            boolean result = memberBlockRepository.checkMemberBlockExists(currentUser, targetMember);
+
+            // then
+            assertThat(result).isFalse();
+        }
+
+        @Test
+        @DisplayName("다른 사람과의 차단 관계는 false를 반환한다")
+        void it_returns_false_for_unrelated_blocks() {
+            // given
+            Member currentUser = createMember("currentUser");
+            Member targetMember = createMember("targetMember");
+            Member otherMember = createMember("otherMember");
+            MemberBlock block = MemberBlock.of(currentUser, otherMember); // 나는 다른 사람을 차단
+            saveAndFlush(currentUser, targetMember, otherMember, block);
+
+            // when
+            boolean result = memberBlockRepository.checkMemberBlockExists(currentUser, targetMember);
+
+            // then
+            assertThat(result).isFalse();
         }
     }
 }

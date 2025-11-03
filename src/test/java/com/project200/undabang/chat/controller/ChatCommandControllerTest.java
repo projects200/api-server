@@ -130,6 +130,33 @@ class ChatCommandControllerTest extends AbstractRestDocSupport {
             then(chatCommandService).shouldHaveNoInteractions();
         }
 
+        @Test
+        @DisplayName("차단 관계일 경우 403 Forbidden 에러를 반환한다")
+        void createChatRoom_Fail_Blocked() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            UUID targetMemberId = UUID.randomUUID();
+            CreateChatroomRequest request = createRequest(targetMemberId);
+
+            given(chatCommandService.createChatroom(any(CreateChatroomRequest.class)))
+                    .willThrow(new CustomException(ErrorCode.CHATROOM_CREATE_BLOCKED));
+
+            // when & then
+            mockMvc.perform(post("/api/v1/chat-rooms")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpectAll(
+                            status().isForbidden(), // 403 Forbidden
+                            jsonPath("$.succeed").value(false),
+                            jsonPath("$.code").value(ErrorCode.CHATROOM_CREATE_BLOCKED.getCode()),
+                            jsonPath("$.message").value(ErrorCode.CHATROOM_CREATE_BLOCKED.getMessage())
+                    );
+
+            then(chatCommandService).should(times(1)).createChatroom(any(CreateChatroomRequest.class));
+        }
+
         private CreateChatroomRequest createRequest(UUID targetMemberId) {
             return new CreateChatroomRequest(targetMemberId);
         }
