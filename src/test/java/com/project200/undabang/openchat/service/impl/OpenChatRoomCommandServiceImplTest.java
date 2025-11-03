@@ -465,6 +465,7 @@ class OpenChatRoomCommandServiceImplTest {
 
     private CreateOpenChatRoomRequest createRequest(String url) {
         return new CreateOpenChatRoomRequest() {
+            @Override
             public String getOpenChatroomUrl() {
                 return url;
             }
@@ -473,6 +474,7 @@ class OpenChatRoomCommandServiceImplTest {
 
     private UpdateOpenChatRoomRequest updateRequest(String url) {
         return new UpdateOpenChatRoomRequest() {
+            @Override
             public String getOpenChatroomUrl() {
                 return url;
             }

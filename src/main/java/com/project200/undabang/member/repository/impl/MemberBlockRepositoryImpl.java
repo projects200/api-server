@@ -33,11 +33,15 @@ public class MemberBlockRepositoryImpl implements MemberBlockRepositoryCustom {
         return queryFactory.selectOne()
                 .from(memberBlock)
                 .where(
-                        (memberBlock.blocker.eq(currentMember) // 내가 상대방을 차단했거나
+                        (
+                            memberBlock.blocker.eq(currentMember)
                                 .and(memberBlock.blocked.eq(blockedMember))
-                                .or(memberBlock.blocker.eq(blockedMember) // 상대방이 나를 차단한 경우
-                                        .and(memberBlock.blocked.eq(currentMember))))
-                                .and(memberBlock.memberBlockDeletedAt.isNull()) // 차단 해제를 안한 경우
+                            .or(
+                                memberBlock.blocker.eq(blockedMember)
+                                    .and(memberBlock.blocked.eq(currentMember))
+                            )
+                        )
+                        .and(memberBlock.memberBlockDeletedAt.isNull()) // 차단 해제를 안한 경우
                 )
                 .fetchFirst() != null;
     }
