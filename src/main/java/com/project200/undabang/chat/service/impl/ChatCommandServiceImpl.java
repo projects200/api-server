@@ -15,11 +15,13 @@ import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberBlockRepository;
 import com.project200.undabang.member.repository.MemberRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -35,6 +37,7 @@ public class ChatCommandServiceImpl implements ChatCommandService {
     private final ChatRepository chatRepository;
     private final ChatroomMemberRepository chatroomMemberRepository;
     private final MemberBlockRepository memberBlockRepository;
+    private final EntityManager em;
 
     private final int DIRECT_CHAT_MAX_MEMBER_COUNT = 2;
 
@@ -53,24 +56,8 @@ public class ChatCommandServiceImpl implements ChatCommandService {
             throw new CustomException(ErrorCode.SELF_CHAT_NOT_ALLOWED);
         }
 
-        // 혹시 두 회원이 동시에 채팅방을 생성할 가능성이 있기 때문에 비관적 락을 적용해서 채팅방이 동시에 생성되는 것을 방지함
-        List<UUID> sortedMemberIdList = Stream.of(currentMemberId, targetMemberId).sorted().toList();
-        List<Member> pessimisticLockedMemberList = memberRepository.findAllByIdWithPessimisticLock(sortedMemberIdList);
-
-        // 혹시 DB에서 락을 잘못 적용했을 경우 에러 반환
-        if (pessimisticLockedMemberList.size() != DIRECT_CHAT_MAX_MEMBER_COUNT) {
-            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
-        }
-
-        Member currentMember = pessimisticLockedMemberList.stream()
-                .filter(m -> m.getMemberId().equals(currentMemberId))
-                .findFirst()
-                .orElseThrow(() -> new CustomException(ErrorCode.INTERNAL_SERVER_ERROR));
-
-        Member targetMember = pessimisticLockedMemberList.stream()
-                .filter(m -> m.getMemberId().equals(targetMemberId))
-                .findFirst()
-                .orElseThrow(() -> new CustomException(ErrorCode.INTERNAL_SERVER_ERROR));
+        Member currentMember = getMember(currentMemberId);
+        Member targetMember = getMember(targetMemberId);
 
         // 차단 관계가 있는 경우 채팅방 생성 금지
         if (memberBlockRepository.checkMemberBlockExists(currentMember, targetMember)) {
@@ -143,10 +130,9 @@ public class ChatCommandServiceImpl implements ChatCommandService {
         Optional<Chatroom> existingChatroom = chatroomRepository.findChatroomBetweenMembers(currentMember, targetMember);
 
         if (existingChatroom.isPresent()) {
-            Chatroom chatroom = existingChatroom.get();
-            return findExistingChatroom(chatroom, currentMember, targetMember);
+            return findExistingChatroom(existingChatroom.get(), currentMember, targetMember);
         } else {
-            return createNewChatroom(currentMember, targetMember);
+            return createNewChatroomWithLock(currentMember, targetMember);
         }
     }
 
@@ -175,8 +161,16 @@ public class ChatCommandServiceImpl implements ChatCommandService {
 
         boolean hasReactivated = (currentChatroomMember.getChatroomMemberStatus() == ChatroomMemberStatus.LEFT);
 
-        currentChatroomMember.updateMemberStatus(ChatroomMemberStatus.ACTIVE);
-        targetChatroomMember.updateMemberStatus(ChatroomMemberStatus.ACTIVE);
+        // 데드락 방지를 위해 ID를 기준으로 정렬하여 업데이트 순서를 보장 (기존 변경감지 코드는 데드락 유발)
+        // 그 후, flush를 사용하여 DB에 즉시 반영
+        List<ChatroomMember> membersToUpdate = Stream.of(currentChatroomMember, targetChatroomMember)
+                .sorted(Comparator.comparing(ChatroomMember::getChatroomMemberId))
+                .toList();
+
+        for (ChatroomMember cm : membersToUpdate) {
+            cm.updateMemberStatus(ChatroomMemberStatus.ACTIVE);
+            em.flush();
+        }
 
         if (hasReactivated) {
             Chat systemChat = Chat.ofRoomCreation(SystemMessage.USER_CREATED_CHAT_ROOM.format(currentMember.getMemberNickname()), chatroom);
@@ -184,6 +178,31 @@ public class ChatCommandServiceImpl implements ChatCommandService {
         }
 
         return chatroom;
+    }
+
+    /**
+     * 현재 멤버와 대상 멤버 간의 새 채팅방을 생성합니다.
+     * 비관적 락(pessimistic lock)을 사용하여 멀티스레드 환경에서의 동시성을 제어하고,
+     * 안전하게 새로운 채팅방을 생성하도록 구현되었습니다.
+     */
+    private Chatroom createNewChatroomWithLock(Member currentMember, Member targetMember) {
+        // 3. 신규 생성이 필요할 때만 비관적 락을 건다.
+        List<UUID> sortedMemberIdList = Stream.of(currentMember.getMemberId(), targetMember.getMemberId()).sorted().toList();
+        List<Member> pessimisticLockedMemberList = memberRepository.findAllByIdWithPessimisticLock(sortedMemberIdList);
+
+        if (pessimisticLockedMemberList.size() != DIRECT_CHAT_MAX_MEMBER_COUNT) {
+            // 이 부분은 이제 거의 발생하지 않아야 하지만 안전장치로 둔다.
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+
+        // 4. Double-checked locking: 락을 획득한 후, 그 사이에 다른 스레드가 채팅방을 만들었는지 다시 한번 확인
+        Optional<Chatroom> recheckChatroom = chatroomRepository.findChatroomBetweenMembers(currentMember, targetMember);
+        if (recheckChatroom.isPresent()) {
+            return recheckChatroom.get(); // 이미 생성되었다면 그것을 반환
+        }
+
+        // 5. 이제서야 안전하게 새로운 채팅방을 생성
+        return createNewChatroom(currentMember, targetMember);
     }
 
     /**
