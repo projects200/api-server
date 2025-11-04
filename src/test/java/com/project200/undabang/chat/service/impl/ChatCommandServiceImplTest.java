@@ -17,6 +17,7 @@ import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberBlockRepository;
 import com.project200.undabang.member.repository.MemberRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -47,21 +48,21 @@ class ChatCommandServiceImplTest {
 
     @Mock
     private MemberRepository memberRepository;
+
     @Mock
     private ChatroomRepository chatroomRepository;
+
     @Mock
     private ChatRepository chatRepository;
+
     @Mock
     private ChatroomMemberRepository chatroomMemberRepository;
+
     @Mock
     private MemberBlockRepository memberBlockRepository;
 
-    private Member createMember() {
-        return Member.builder()
-                .memberId(UUID.randomUUID())
-                .memberNickname("user_" + UUID.randomUUID().toString().substring(0, 8))
-                .build();
-    }
+    @Mock
+    private EntityManager em;
 
     @Nested
     @DisplayName("deleteChatroom 메소드는")
@@ -327,6 +328,13 @@ class ChatCommandServiceImplTest {
         }
     }
 
+    private Member createMember() {
+        return Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberNickname("user_" + UUID.randomUUID().toString().substring(0, 8))
+                .build();
+    }
+
     private Chatroom createChatroom(Long id) {
         return Chatroom.builder()
                 .id(id)
@@ -343,11 +351,19 @@ class ChatCommandServiceImplTest {
 
     private void mockMemberLocking(Member member1, Member member2) {
         List<UUID> sortedIds = Stream.of(member1.getMemberId(), member2.getMemberId()).sorted().toList();
-        // 정렬된 ID 순서에 맞춰 Member 객체도 정렬하여 반환하도록 설정
         List<Member> sortedMembers = Stream.of(member1, member2)
                 .sorted((m1, m2) -> m1.getMemberId().compareTo(m2.getMemberId()))
                 .toList();
         given(memberRepository.findAllByIdWithPessimisticLock(sortedIds)).willReturn(sortedMembers);
+    }
+
+    private ChatroomMember createChatroomMemberWithId(Long id, Chatroom chatroom, Member member, ChatroomMemberStatus status) {
+        return ChatroomMember.builder()
+                .chatroomMemberId(id)
+                .chatroom(chatroom)
+                .member(member)
+                .chatroomMemberStatus(status)
+                .build();
     }
 
     @Nested
@@ -365,15 +381,20 @@ class ChatCommandServiceImplTest {
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(currentMember.getMemberId());
 
-                mockMemberLocking(currentMember, targetMember);
+                // [수정] findById Mocking 추가 (리팩토링으로 인해 항상 호출됨)
+                given(memberRepository.findById(currentMember.getMemberId())).willReturn(Optional.of(currentMember));
+                given(memberRepository.findById(targetMember.getMemberId())).willReturn(Optional.of(targetMember));
 
                 given(memberBlockRepository.checkMemberBlockExists(currentMember, targetMember)).willReturn(true);
 
+                // when & then
                 assertThatThrownBy(() -> chatCommandService.createChatroom(request))
                         .isInstanceOf(CustomException.class)
                         .hasMessage(ErrorCode.CHATROOM_CREATE_BLOCKED.getMessage());
 
+                // then
                 verify(chatroomRepository, never()).findChatroomBetweenMembers(any(), any());
+                verify(memberRepository, never()).findAllByIdWithPessimisticLock(anyList());
             }
         }
 
@@ -395,26 +416,6 @@ class ChatCommandServiceImplTest {
         }
 
         @Test
-        @DisplayName("비관적 락으로 조회된 멤버 수가 2가 아니면 예외를 발생시킨다")
-        void it_throws_exception_when_pessimistic_lock_fails() {
-            // given
-            UUID currentMemberId = UUID.randomUUID();
-            UUID targetMemberId = UUID.randomUUID();
-            CreateChatroomRequest request = new CreateChatroomRequest(targetMemberId);
-            List<UUID> sortedIds = Stream.of(currentMemberId, targetMemberId).sorted().toList();
-
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                ignored.when(UserContextHolder::getUserId).thenReturn(currentMemberId);
-                given(memberRepository.findAllByIdWithPessimisticLock(sortedIds)).willReturn(Collections.emptyList());
-
-                // when & then
-                assertThatThrownBy(() -> chatCommandService.createChatroom(request))
-                        .isInstanceOf(CustomException.class)
-                        .hasMessage(ErrorCode.INTERNAL_SERVER_ERROR.getMessage());
-            }
-        }
-
-        @Test
         @DisplayName("기존 채팅방이 없을 경우 새로운 채팅방을 생성한다")
         void it_creates_new_chatroom_if_not_exists() {
             // given
@@ -425,8 +426,18 @@ class ChatCommandServiceImplTest {
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(currentMember.getMemberId());
+
+                given(memberRepository.findById(currentMember.getMemberId())).willReturn(Optional.of(currentMember));
+                given(memberRepository.findById(targetMember.getMemberId())).willReturn(Optional.of(targetMember));
+                given(memberBlockRepository.checkMemberBlockExists(any(), any())).willReturn(false);
+
+                // [수정] Double-checked locking 시나리오를 위해 순차적으로 다른 값을 반환하도록 설정
+                // 1차 조회 (락 이전) -> 없음, 2차 조회 (락 이후) -> 없음
+                given(chatroomRepository.findChatroomBetweenMembers(currentMember, targetMember))
+                        .willReturn(Optional.empty())
+                        .willReturn(Optional.empty());
+
                 mockMemberLocking(currentMember, targetMember);
-                given(chatroomRepository.findChatroomBetweenMembers(currentMember, targetMember)).willReturn(Optional.empty());
                 given(chatroomRepository.save(any(Chatroom.class))).willReturn(newChatroom);
 
                 // when
@@ -434,7 +445,46 @@ class ChatCommandServiceImplTest {
 
                 // then
                 assertThat(response.getChatRoomId()).isEqualTo(newChatroom.getId());
-                verify(chatroomMemberRepository).saveAll(any());
+                then(memberRepository).should(times(1)).findAllByIdWithPessimisticLock(anyList());
+                then(chatroomRepository).should(times(1)).save(any(Chatroom.class));
+                then(chatroomMemberRepository).should(times(1)).saveAll(any());
+            }
+        }
+
+        // [추가] Double-checked locking 로직 검증을 위한 테스트 케이스
+        @Test
+        @DisplayName("신규 생성 시, 락을 잡은 후 다른 스레드가 생성한 채팅방을 발견하면 중복 생성하지 않는다")
+        void it_returns_existing_chatroom_when_found_after_lock() {
+            // given
+            Member currentMember = createMember();
+            Member targetMember = createMember();
+            CreateChatroomRequest request = new CreateChatroomRequest(targetMember.getMemberId());
+            Chatroom existingChatroom = createChatroom(1L);
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(currentMember.getMemberId());
+
+                given(memberRepository.findById(currentMember.getMemberId())).willReturn(Optional.of(currentMember));
+                given(memberRepository.findById(targetMember.getMemberId())).willReturn(Optional.of(targetMember));
+                given(memberBlockRepository.checkMemberBlockExists(any(), any())).willReturn(false);
+
+                // [핵심] 1차 조회 시에는 채팅방이 없다가, 2차 조회(락 획득 후) 시에는 채팅방이 있도록 설정
+                given(chatroomRepository.findChatroomBetweenMembers(currentMember, targetMember))
+                        .willReturn(Optional.empty()) // 락 이전 조회
+                        .willReturn(Optional.of(existingChatroom)); // 락 이후 조회
+
+                mockMemberLocking(currentMember, targetMember);
+
+                // when
+                CreateChatroomResponse response = chatCommandService.createChatroom(request);
+
+                // then
+                assertThat(response.getChatRoomId()).isEqualTo(existingChatroom.getId());
+                // 비관적 락은 실행되었어야 함
+                then(memberRepository).should(times(1)).findAllByIdWithPessimisticLock(anyList());
+                // 하지만 새로운 채팅방 생성(save) 로직은 실행되지 않았어야 함
+                then(chatroomRepository).should(never()).save(any(Chatroom.class));
+                then(chatroomMemberRepository).should(never()).saveAll(any());
             }
         }
 
@@ -449,7 +499,10 @@ class ChatCommandServiceImplTest {
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(currentMember.getMemberId());
-                mockMemberLocking(currentMember, targetMember);
+
+                given(memberRepository.findById(currentMember.getMemberId())).willReturn(Optional.of(currentMember));
+                given(memberRepository.findById(targetMember.getMemberId())).willReturn(Optional.of(targetMember));
+
                 given(chatroomRepository.findChatroomBetweenMembers(currentMember, targetMember)).willReturn(Optional.of(existingChatroom));
                 given(chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(existingChatroom, ChatroomMemberStatus.ACTIVE)).willReturn(2L);
 
@@ -458,55 +511,29 @@ class ChatCommandServiceImplTest {
 
                 // then
                 assertThat(response.getChatRoomId()).isEqualTo(existingChatroom.getId());
+                then(memberRepository).should(never()).findAllByIdWithPessimisticLock(anyList());
                 verify(chatroomMemberRepository, never()).saveAll(any());
                 verify(chatRepository, never()).save(any());
             }
         }
 
         @Test
-        @DisplayName("기존 채팅방에 나간 멤버가 있으면 멤버 상태를 활성으로 변경하고 채팅방을 반환한다")
-        void it_reactivates_and_returns_chatroom_when_member_left() {
-            // given
-            Member currentMember = createMember();
-            Member targetMember = createMember();
-            CreateChatroomRequest request = new CreateChatroomRequest(targetMember.getMemberId());
-            Chatroom existingChatroom = createChatroom(1L);
-            ChatroomMember currentChatroomMember = createChatroomMember(existingChatroom, currentMember, ChatroomMemberStatus.LEFT);
-            ChatroomMember targetChatroomMember = createChatroomMember(existingChatroom, targetMember, ChatroomMemberStatus.ACTIVE);
-
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                ignored.when(UserContextHolder::getUserId).thenReturn(currentMember.getMemberId());
-                mockMemberLocking(currentMember, targetMember);
-                given(chatroomRepository.findChatroomBetweenMembers(currentMember, targetMember)).willReturn(Optional.of(existingChatroom));
-                given(chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(existingChatroom, ChatroomMemberStatus.ACTIVE)).willReturn(1L);
-                given(chatroomMemberRepository.findByChatroomAndMember(existingChatroom, currentMember)).willReturn(Optional.of(currentChatroomMember));
-                given(chatroomMemberRepository.findByChatroomAndMember(existingChatroom, targetMember)).willReturn(Optional.of(targetChatroomMember));
-
-                // when
-                CreateChatroomResponse response = chatCommandService.createChatroom(request);
-
-                // then
-                assertThat(response.getChatRoomId()).isEqualTo(existingChatroom.getId());
-                assertThat(currentChatroomMember.getChatroomMemberStatus()).isEqualTo(ChatroomMemberStatus.ACTIVE);
-                assertThat(targetChatroomMember.getChatroomMemberStatus()).isEqualTo(ChatroomMemberStatus.ACTIVE);
-                verify(chatRepository).save(any(Chat.class));
-            }
-        }
-
-        @Test
-        @DisplayName("기존 채팅방에 상대방만 나간 상태일 경우 멤버 상태를 활성으로 변경하고 채팅방을 반환한다")
+        @DisplayName("기존 채팅방에 상대방만 나간 상태일 경우 재활성화하고 채팅방을 반환한다")
         void it_reactivates_and_returns_chatroom_when_target_member_left() {
             // given
             Member currentMember = createMember();
             Member targetMember = createMember();
             CreateChatroomRequest request = new CreateChatroomRequest(targetMember.getMemberId());
             Chatroom existingChatroom = createChatroom(1L);
-            ChatroomMember currentChatroomMember = createChatroomMember(existingChatroom, currentMember, ChatroomMemberStatus.ACTIVE);
-            ChatroomMember targetChatroomMember = createChatroomMember(existingChatroom, targetMember, ChatroomMemberStatus.LEFT);
+            ChatroomMember currentChatroomMember = spy(createChatroomMemberWithId(2L, existingChatroom, currentMember, ChatroomMemberStatus.ACTIVE));
+            ChatroomMember targetChatroomMember = spy(createChatroomMemberWithId(3L, existingChatroom, targetMember, ChatroomMemberStatus.LEFT));
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(currentMember.getMemberId());
-                mockMemberLocking(currentMember, targetMember);
+
+                given(memberRepository.findById(currentMember.getMemberId())).willReturn(Optional.of(currentMember));
+                given(memberRepository.findById(targetMember.getMemberId())).willReturn(Optional.of(targetMember));
+
                 given(chatroomRepository.findChatroomBetweenMembers(currentMember, targetMember)).willReturn(Optional.of(existingChatroom));
                 given(chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(existingChatroom, ChatroomMemberStatus.ACTIVE)).willReturn(1L);
                 given(chatroomMemberRepository.findByChatroomAndMember(existingChatroom, currentMember)).willReturn(Optional.of(currentChatroomMember));
@@ -517,28 +544,31 @@ class ChatCommandServiceImplTest {
 
                 // then
                 assertThat(response.getChatRoomId()).isEqualTo(existingChatroom.getId());
-                assertThat(currentChatroomMember.getChatroomMemberStatus()).isEqualTo(ChatroomMemberStatus.ACTIVE);
-                assertThat(targetChatroomMember.getChatroomMemberStatus()).isEqualTo(ChatroomMemberStatus.ACTIVE);
+                then(currentChatroomMember).should().updateMemberStatus(ChatroomMemberStatus.ACTIVE);
+                then(targetChatroomMember).should().updateMemberStatus(ChatroomMemberStatus.ACTIVE);
+                then(memberRepository).should(never()).findAllByIdWithPessimisticLock(anyList());
                 // hasReactivated가 false이므로 시스템 메시지는 생성되지 않아야 함
                 verify(chatRepository, never()).save(any(Chat.class));
             }
         }
 
         @Test
-        @DisplayName("비관적 락 이후 멤버를 찾지 못하면 예외를 발생시킨다")
-        void it_throws_exception_when_member_not_found_after_lock() {
+        @DisplayName("신규 생성 시, 비관적 락 이후 멤버 수가 2가 아니면 예외를 발생시킨다")
+        void it_throws_exception_when_pessimistic_lock_fails_on_creation() {
             // given
             Member currentMember = createMember();
             Member targetMember = createMember();
-            // DB 데이터와 불일치하는 상황을 가정하기 위해 다른 ID를 가진 멤버 생성
-            Member anotherMember = createMember();
             CreateChatroomRequest request = new CreateChatroomRequest(targetMember.getMemberId());
             List<UUID> sortedIds = Stream.of(currentMember.getMemberId(), targetMember.getMemberId()).sorted().toList();
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(currentMember.getMemberId());
-                // 락은 2개의 멤버를 반환했지만, 그 중 하나가 예상과 다른 멤버인 경우
-                given(memberRepository.findAllByIdWithPessimisticLock(sortedIds)).willReturn(List.of(currentMember, anotherMember));
+
+                given(memberRepository.findById(currentMember.getMemberId())).willReturn(Optional.of(currentMember));
+                given(memberRepository.findById(targetMember.getMemberId())).willReturn(Optional.of(targetMember));
+
+                given(chatroomRepository.findChatroomBetweenMembers(currentMember, targetMember)).willReturn(Optional.empty());
+                given(memberRepository.findAllByIdWithPessimisticLock(sortedIds)).willReturn(Collections.emptyList());
 
                 // when & then
                 assertThatThrownBy(() -> chatCommandService.createChatroom(request))
@@ -548,33 +578,9 @@ class ChatCommandServiceImplTest {
         }
 
         @Test
-        @DisplayName("비관적 락 이후 두 멤버 모두 찾지 못하면 예외를 발생시킨다")
-        void it_throws_exception_when_both_members_not_found_after_lock() {
-            // given
-            Member currentMember = createMember();
-            Member targetMember = createMember();
-            // DB 데이터와 불일치하는 상황을 가정하기 위해 다른 ID를 가진 멤버들 생성
-            Member anotherMember1 = createMember();
-            Member anotherMember2 = createMember();
-            CreateChatroomRequest request = new CreateChatroomRequest(targetMember.getMemberId());
-            List<UUID> sortedIds = Stream.of(currentMember.getMemberId(), targetMember.getMemberId()).sorted().toList();
-
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                ignored.when(UserContextHolder::getUserId).thenReturn(currentMember.getMemberId());
-                // 락은 2개의 멤버를 반환했지만, 둘 다 예상과 다른 멤버인 경우
-                given(memberRepository.findAllByIdWithPessimisticLock(sortedIds)).willReturn(List.of(anotherMember1, anotherMember2));
-
-                // when & then
-                assertThatThrownBy(() -> chatCommandService.createChatroom(request))
-                        .isInstanceOf(CustomException.class)
-                        .hasMessage(ErrorCode.INTERNAL_SERVER_ERROR.getMessage());
-            }
-        }
-
-        @Test
-        @DisplayName("재활성화 시 채팅방 멤버를 찾지 못하면 예외를 발생시킨다")
+        @DisplayName("재활성화 시, 채팅방 멤버 데이터를 찾지 못하면 예외를 발생시킨다")
         void it_throws_exception_when_chatroom_member_not_found_on_reactivation() {
-            // given
+            // given: 재활성화가 필요한 상황 설정
             Member currentMember = createMember();
             Member targetMember = createMember();
             CreateChatroomRequest request = new CreateChatroomRequest(targetMember.getMemberId());
@@ -582,13 +588,20 @@ class ChatCommandServiceImplTest {
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(currentMember.getMemberId());
-                mockMemberLocking(currentMember, targetMember);
+
+                // 공통 Mocking 설정
+                given(memberRepository.findById(currentMember.getMemberId())).willReturn(Optional.of(currentMember));
+                given(memberRepository.findById(targetMember.getMemberId())).willReturn(Optional.of(targetMember));
                 given(chatroomRepository.findChatroomBetweenMembers(currentMember, targetMember)).willReturn(Optional.of(existingChatroom));
+
+                // reActiveChatroom 진입 조건 설정
                 given(chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(existingChatroom, ChatroomMemberStatus.ACTIVE)).willReturn(1L);
-                // getChatroomMember 메소드에서 예외가 발생하도록 Optional.empty() 반환
+
+                // [핵심] getChatroomMember 메소드에서 예외가 발생하도록 Optional.empty() 반환 설정
+                // currentMember에 대한 ChatroomMember 정보가 DB에 없는 비정상적인 상황을 시뮬레이션
                 given(chatroomMemberRepository.findByChatroomAndMember(existingChatroom, currentMember)).willReturn(Optional.empty());
 
-                // when & then
+                // when & then: 예외 발생 검증
                 assertThatThrownBy(() -> chatCommandService.createChatroom(request))
                         .isInstanceOf(CustomException.class)
                         .hasMessage(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND.getMessage());
