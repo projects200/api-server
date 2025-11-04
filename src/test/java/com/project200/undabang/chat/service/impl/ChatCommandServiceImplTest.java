@@ -597,7 +597,7 @@ class ChatCommandServiceImplTest {
                 // reActiveChatroom 진입 조건 설정
                 given(chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(existingChatroom, ChatroomMemberStatus.ACTIVE)).willReturn(1L);
 
-                // [핵심] getChatroomMember 메서드에서 예외가 발생하도록 Optional.empty() 반환 설정
+                // [핵심] getChatroomMember 메소드에서 예외가 발생하도록 Optional.empty() 반환 설정
                 // currentMember에 대한 ChatroomMember 정보가 DB에 없는 비정상적인 상황을 시뮬레이션
                 given(chatroomMemberRepository.findByChatroomAndMember(existingChatroom, currentMember)).willReturn(Optional.empty());
 
