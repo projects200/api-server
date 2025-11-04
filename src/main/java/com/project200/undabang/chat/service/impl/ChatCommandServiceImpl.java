@@ -13,6 +13,7 @@ import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.entity.Member;
+import com.project200.undabang.member.repository.MemberBlockRepository;
 import com.project200.undabang.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ public class ChatCommandServiceImpl implements ChatCommandService {
     private final ChatroomRepository chatroomRepository;
     private final ChatRepository chatRepository;
     private final ChatroomMemberRepository chatroomMemberRepository;
+    private final MemberBlockRepository memberBlockRepository;
 
     private final int DIRECT_CHAT_MAX_MEMBER_COUNT = 2;
 
@@ -69,6 +71,11 @@ public class ChatCommandServiceImpl implements ChatCommandService {
                 .filter(m -> m.getMemberId().equals(targetMemberId))
                 .findFirst()
                 .orElseThrow(() -> new CustomException(ErrorCode.INTERNAL_SERVER_ERROR));
+
+        // 차단 관계가 있는 경우 채팅방 생성 금지
+        if (memberBlockRepository.checkMemberBlockExists(currentMember, targetMember)) {
+            throw new CustomException(ErrorCode.CHATROOM_CREATE_BLOCKED);
+        }
 
         // Lock이 설정된 상태에서 채팅방을 찾고, 생성함
         Chatroom chatroom = findOrCreateChatroom(currentMember, targetMember);
@@ -204,14 +211,22 @@ public class ChatCommandServiceImpl implements ChatCommandService {
         Chatroom chatroom = chatroomMember.getChatroom();
 
         chatroomMember.validateCanSendMessage();
+        validateMemberBlockExists(chatroom, member);
         validateOtherMemberStatus(chatroom, member); // 채팅방에 나간 회원이 있는지 검사하는 헬퍼 메소드
     }
 
     /**
+     * 채팅방과 회원 정보를 기반으로 차단 여부를 확인하는 메서드.
+     * 차단 관계가 존재하는 회원이 메시지를 전송하려 할 경우 예외를 발생시킵니다.
+     */
+    private void validateMemberBlockExists(Chatroom chatroom, Member member) {
+        if (chatroomMemberRepository.checkBlockExists(chatroom, member)) {
+            throw new CustomException(ErrorCode.MESSAGE_SEND_BLOCKED);
+        }
+    }
+
+    /**
      * 다른 멤버의 상태를 검증하여 활성 멤버가 1명일 경우(본인만 남은 경우) 예외를 발생시킵니다.
-     *
-     * @param chatroom 검증할 채팅방 객체
-     * @param member   검증 대상 멤버 객체
      */
     private void validateOtherMemberStatus(Chatroom chatroom, Member member) {
         if (chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(chatroom, ChatroomMemberStatus.ACTIVE) == 1L) {

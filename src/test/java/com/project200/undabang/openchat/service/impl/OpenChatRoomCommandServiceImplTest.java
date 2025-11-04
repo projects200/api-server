@@ -44,32 +44,6 @@ class OpenChatRoomCommandServiceImplTest {
     @InjectMocks
     private OpenChatRoomCommandServiceImpl openChatRoomCommandService;
 
-    private Member createMember(UUID memberId) {
-        return Member.builder()
-                .memberId(memberId)
-                .memberEmail(memberId + "@test.com")
-                .memberNickname("test-user-" + memberId)
-                .memberGender(MemberGender.UNKNOWN)
-                .memberBday(LocalDate.now().minusYears(20))
-                .build();
-    }
-
-    private CreateOpenChatRoomRequest createRequest(String url) {
-        return new CreateOpenChatRoomRequest() {
-            public String getOpenChatroomUrl() {
-                return url;
-            }
-        };
-    }
-
-    private UpdateOpenChatRoomRequest updateRequest(String url) {
-        return new UpdateOpenChatRoomRequest() {
-            public String getOpenChatroomUrl() {
-                return url;
-            }
-        };
-    }
-
     @Nested
     @DisplayName("createOpenChatRoom() 메소드는")
     class Describe_createOpenChatRoom {
@@ -477,5 +451,33 @@ class OpenChatRoomCommandServiceImplTest {
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.AUTHORIZATION_DENIED);
             }
         }
+    }
+
+    private Member createMember(UUID memberId) {
+        return Member.builder()
+                .memberId(memberId)
+                .memberEmail(memberId + "@test.com")
+                .memberNickname("test-user-" + memberId)
+                .memberGender(MemberGender.UNKNOWN)
+                .memberBday(LocalDate.now().minusYears(20))
+                .build();
+    }
+
+    private CreateOpenChatRoomRequest createRequest(String url) {
+        return new CreateOpenChatRoomRequest() {
+            @Override
+            public String getOpenChatroomUrl() {
+                return url;
+            }
+        };
+    }
+
+    private UpdateOpenChatRoomRequest updateRequest(String url) {
+        return new UpdateOpenChatRoomRequest() {
+            @Override
+            public String getOpenChatroomUrl() {
+                return url;
+            }
+        };
     }
 }

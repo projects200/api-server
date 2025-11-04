@@ -8,6 +8,7 @@ import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsRe
 import com.project200.undabang.member.entity.ExerciseLocation;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.ExerciseLocationRepository;
+import com.project200.undabang.member.repository.MemberBlockRepository;
 import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.member.service.ExerciseLocationQueryService;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -24,6 +26,7 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class ExerciseLocationQueryServiceImpl implements ExerciseLocationQueryService {
     private final ExerciseLocationRepository exerciseLocationRepository;
+    private final MemberBlockRepository memberBlockRepository;
     private final MemberRepository memberRepository;
 
     /**
@@ -36,7 +39,9 @@ public class ExerciseLocationQueryServiceImpl implements ExerciseLocationQuerySe
     public List<GetMembersExerciseLocationsResponse> getMembersExerciseLocations() {
         Member member = getMember(UserContextHolder.getUserId());
 
-        return exerciseLocationRepository.getMembersExerciseLocations(member.getMemberId());
+        Set<UUID> excludeMemberIdSet = memberBlockRepository.findAllBlockedMemberIdsByMember(member);
+
+        return exerciseLocationRepository.getMembersExerciseLocations(excludeMemberIdSet);
     }
 
     /**

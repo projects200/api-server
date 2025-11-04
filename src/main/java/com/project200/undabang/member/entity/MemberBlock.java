@@ -38,4 +38,19 @@ public class MemberBlock {
     @Column(name = "member_block_deleted_at")
     private LocalDateTime memberBlockDeletedAt;
 
+    public static MemberBlock of(Member blocker, Member blocked) {
+        return MemberBlock.builder()
+                .blocker(blocker)
+                .blocked(blocked)
+                .memberBlockCreatedAt(LocalDateTime.now())
+                .build();
+    }
+
+    public void reBlock() {
+        this.memberBlockDeletedAt = null;
+    }
+
+    public void unBlock() {
+        this.memberBlockDeletedAt = LocalDateTime.now();
+    }
 }

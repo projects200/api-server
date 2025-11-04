@@ -6,6 +6,7 @@ import com.project200.undabang.chat.repository.ChatroomMemberRepositoryCustom;
 import com.project200.undabang.common.entity.QPicture;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.QMember;
+import com.project200.undabang.member.entity.QMemberBlock;
 import com.project200.undabang.member.entity.QMemberPicture;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.JPQLQuery;
@@ -21,6 +22,39 @@ import java.util.Optional;
 public class ChatroomMemberRepositoryImpl implements ChatroomMemberRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
+
+    /**
+     * 현재 채팅방에서 상대방과의 차단 관계가 존재하는지 확인합니다.
+     * 1:1 채팅 상황에서 사용되며, 현재 회원이 상대방을 차단했거나
+     * 상대방이 현재 회원을 차단한 경우 모두를 포함하여 차단 관계가 있는지 여부를 확인합니다.
+     */
+    @Override
+    public boolean checkBlockExists(Chatroom currentChatroom, Member currentMember) {
+        QChatroomMember chatroomMember = QChatroomMember.chatroomMember;
+        QMemberBlock memberBlock = QMemberBlock.memberBlock;
+
+        Integer result = queryFactory
+                .selectOne()
+                .from(chatroomMember)
+                .join(memberBlock).on(
+                        (
+                            memberBlock.blocker.eq(currentMember) // 내가 차단자인 경우
+                                .and(memberBlock.blocked.eq(chatroomMember.member))
+                            .or(
+                                memberBlock.blocker.eq(chatroomMember.member) // 상대가 차단자인 경우
+                                    .and(memberBlock.blocked.eq(currentMember))
+                            )
+                        )
+                        .and(memberBlock.memberBlockDeletedAt.isNull()) // 차단 해제하지 않은 경우
+                )
+                .where(
+                        chatroomMember.chatroom.eq(currentChatroom), // 현재 채팅방에서
+                        chatroomMember.member.ne(currentMember) // 내가 아닌 사람을 가져옴
+                )
+                .fetchFirst(); // 1:1 채팅이니까 하나만 가져옴
+
+        return result != null; // 있으면 true 없으면 false
+    }
 
     /**
      * 주어진 채팅방 ID와 현재 회원 정보를 기반으로 상대방의 채팅방 상태를 조회합니다.
@@ -57,6 +91,7 @@ public class ChatroomMemberRepositoryImpl implements ChatroomMemberRepositoryCus
 
         return queryFactory
                 .select(Projections.constructor(GetMemberChatroomResponse.class,
+                        otherMember.memberId,
                         chatroom.id,
                         otherMember.memberNickname,
                         otherMemberPicture.memberPicturesUrl,

@@ -6,12 +6,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class GetMemberChatroomResponse {
+    private UUID otherMemberId;
     private Long chatRoomId;
     private String otherMemberNickname;
     private String otherMemberProfileImageUrl;

@@ -1,0 +1,35 @@
+== 회원 차단 해제 API
+
+=== 설명
+
+- #DELETE# `/api/v1/members/{memberId}/block`
+- 회원이 자신이 차단한 회원을 차단 해제하는 API 입니다.
+- 회원이 자기 자신을 차단 해제하려 하거나, 회원의 등록 정보가 없는 경우, 그리고 차단한 적이 없는 회원을 차단 해제하려는 경우 오류가 발생합니다.
+
+=== 개발 이력
+
+- Sprint 15 (2025-10-24): 기능 개발이 완료되었습니다.
+
+=== 개발 참고 사항
+
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+
+operation::unblock-member-api/unblock-member_-success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+
+operation::unblock-member-api/unblock-member_-success[snippets="request-headers,path-parameters,response-fields"]
+
+==== 응답 상태 코드
+
+|===
+|상태 코드|설명
+|200|리소스가 성공적으로 삭제되었습니다.
+|400|자기 자신에 대한 차단 해제를 요청할 수 없습니다.
+|401|인증되지 않은 요청입니다. Access Token이 없거나 유효하지 않습니다.
+|404|차단을 해제할 대상 회원이 존재하지 않거나, 두 회원 간의 유효한(활성화된) 차단 기록이 없습니다.
+|500|서버 내부 오류가 발생했습니다.
+|===
+
