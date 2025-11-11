@@ -7,6 +7,7 @@ import com.project200.undabang.notification.fcm.entity.NotificationType;
 import com.project200.undabang.notification.fcm.repository.DeviceNotificationSettingRepository;
 import com.project200.undabang.notification.fcm.repository.FcmTokenRepository;
 import com.project200.undabang.notification.fcm.service.FcmTokenCommandService;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ public class FcmTokenCommandServiceImpl implements FcmTokenCommandService {
 
     private final DeviceNotificationSettingRepository deviceNotificationSettingRepository;
     private final FcmTokenRepository fcmTokenRepository;
+    private final EntityManager em;
 
     @Override
     public void saveFcmToken(Member member, String fcmToken, String userAgent) {
@@ -31,16 +33,12 @@ public class FcmTokenCommandServiceImpl implements FcmTokenCommandService {
         Optional<FcmToken> optionalFcmToken = fcmTokenRepository.findByFcmTokenValue(fcmToken);
 
         if (optionalFcmToken.isEmpty()) {
-
             createNewFcmToken(member, fcmToken, userAgent); // 새로운 토큰 생성
         } else {
-
             FcmToken existToken = optionalFcmToken.get();
             if (existToken.getMember().getMemberId().equals(member.getMemberId())) {
-
                 existToken.activate(); // 재 로그인 하는 경우
             } else {
-
                 updateTokenOwner(existToken, member, userAgent);
             }
         }
@@ -80,25 +78,30 @@ public class FcmTokenCommandServiceImpl implements FcmTokenCommandService {
     private void createNewFcmToken(Member member, String fcmToken, String userAgent) {
         FcmToken newToken = FcmToken.from(member, fcmToken, userAgent);
 
-        // 채팅알림 및 배치알람 활성화
+        // 채팅알림 및 배치알림 활성화
         createDefaultSettingForFcmToken(newToken);
 
         fcmTokenRepository.save(newToken);
     }
 
     /**
-     * 기존 FCM 토큰의 소유자를 새로운 회원으로 업데이트합니다. 이 과정에서 이전 회원과 연관된 모든 알림 설정을 삭제하고,
-     * 새로운 회원을 기반으로 기본 알림 설정을 생성합니다.
+     * 기존 FCM 토큰 소유자를 업데이트하고,
+     * 새로운 회원 및 사용자 에이전트를 설정하는 메서드입니다.
+     * 관련된 기존 알림 설정을 삭제하고, 새로운 기본 알림 설정을 생성합니다.
      */
     private void updateTokenOwner(FcmToken prevFcmToken, Member member, String userAgent) {
-        deviceNotificationSettingRepository.deleteAll(prevFcmToken.getSettings());
-        prevFcmToken.getSettings().clear();
+        deviceNotificationSettingRepository.deleteAllByFcmToken(prevFcmToken);
+        prevFcmToken.getDeviceNotificationSettingList().clear();
 
-        deviceNotificationSettingRepository.flush(); // delete쿼리는 즉시 디비에 반영되어야 함
+        em.flush();
+        em.clear();
 
-        prevFcmToken.updateOwner(member, userAgent);
+        // clear()로 인해 prevFcmToken은 준영속 상태가 되었으므로, 다시 영속성 컨텍스트에 병합
+        // merge 후에는 반드시 반환된 'managedToken'을 사용해야 함
+        FcmToken managedToken = em.merge(prevFcmToken);
 
-        createDefaultSettingForFcmToken(prevFcmToken);
+        managedToken.updateOwner(member, userAgent);
+        createDefaultSettingForFcmToken(managedToken);
     }
 
     /**
@@ -109,7 +112,7 @@ public class FcmTokenCommandServiceImpl implements FcmTokenCommandService {
         DeviceNotificationSetting chatMessageSetting = DeviceNotificationSetting.of(fcmToken, NotificationType.CHAT_MESSAGE);
         DeviceNotificationSetting workoutReminderSetting = DeviceNotificationSetting.of(fcmToken, NotificationType.WORKOUT_REMINDER);
 
-        fcmToken.getSettings().add(chatMessageSetting);
-        fcmToken.getSettings().add(workoutReminderSetting);
+        fcmToken.getDeviceNotificationSettingList().add(chatMessageSetting);
+        fcmToken.getDeviceNotificationSettingList().add(workoutReminderSetting);
     }
 }

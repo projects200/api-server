@@ -657,6 +657,3 @@ CREATE TABLE IF NOT EXISTS device_notification_settings
     CONSTRAINT uq_token_and_type UNIQUE (fcm_token_id, notification_type),
     CONSTRAINT fk_settings_to_fcm_tokens FOREIGN KEY (fcm_token_id) REFERENCES fcm_tokens (fcm_token_id) ON DELETE CASCADE
 );
-
-ALTER TABLE fcm_tokens
-    add constraint uk_fcm_tokens_value UNIQUE (fcm_token_value);

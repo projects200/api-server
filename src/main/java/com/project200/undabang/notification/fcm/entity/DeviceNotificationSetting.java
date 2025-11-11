@@ -28,7 +28,7 @@ public class DeviceNotificationSetting {
     private Long id;
 
     @NotNull
-    @OnDelete(action = OnDeleteAction.CASCADE)
+    @OnDelete(action = OnDeleteAction.CASCADE) // JPA를 통하지 않는 DB 직접 삭제 등에서도 정합성을 보장하기 위한 DB 레벨의 이중 안전장치
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @Comment("설정의 주체가 되는 디바이스의 ID")
     @JoinColumn(name = "fcm_token_id", nullable = false)

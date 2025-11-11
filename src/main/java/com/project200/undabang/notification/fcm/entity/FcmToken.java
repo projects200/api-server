@@ -71,7 +71,7 @@ public class FcmToken {
 
     @Builder.Default
     @OneToMany(mappedBy = "fcmToken", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<DeviceNotificationSetting> settings = new ArrayList<>();
+    private List<DeviceNotificationSetting> deviceNotificationSettingList = new ArrayList<>();
 
     public static FcmToken from(Member member, String fcmTokenValue, String userAgent) {
         return FcmToken.builder()
