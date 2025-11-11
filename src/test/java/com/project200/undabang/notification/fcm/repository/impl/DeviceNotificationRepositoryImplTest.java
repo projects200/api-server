@@ -119,7 +119,6 @@ class DeviceNotificationRepositoryImplTest {
             // given: 테스트 데이터 준비
             Member member = createMember();
             FcmToken token = createFcmToken(member, "token-1");
-            createSetting(token, NotificationType.CHAT_MESSAGE);
             persistAndFlush(member, token, createSetting(token, NotificationType.CHAT_MESSAGE));
             em.clear();
 

@@ -78,7 +78,7 @@ public class FcmTokenCommandServiceImpl implements FcmTokenCommandService {
     private void createNewFcmToken(Member member, String fcmToken, String userAgent) {
         FcmToken newToken = FcmToken.from(member, fcmToken, userAgent);
 
-        // 채팅알림 및 배치알림 활성화
+        // 채팅알림 및 운동 격려 알림 활성화
         createDefaultSettingForFcmToken(newToken);
 
         fcmTokenRepository.save(newToken);
