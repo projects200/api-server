@@ -1,7 +1,10 @@
 package com.project200.undabang.notification.fcm.service.impl;
 
 import com.project200.undabang.member.entity.Member;
+import com.project200.undabang.notification.fcm.entity.DeviceNotificationSetting;
 import com.project200.undabang.notification.fcm.entity.FcmToken;
+import com.project200.undabang.notification.fcm.entity.NotificationType;
+import com.project200.undabang.notification.fcm.repository.DeviceNotificationSettingRepository;
 import com.project200.undabang.notification.fcm.repository.FcmTokenRepository;
 import com.project200.undabang.notification.fcm.service.FcmTokenCommandService;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -17,25 +21,29 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FcmTokenCommandServiceImpl implements FcmTokenCommandService {
 
+    private final DeviceNotificationSettingRepository deviceNotificationSettingRepository;
     private final FcmTokenRepository fcmTokenRepository;
 
     @Override
     public void saveFcmToken(Member member, String fcmToken, String userAgent) {
-        fcmTokenRepository.findByFcmTokenValueAndMember_MemberId(fcmToken, member.getMemberId())
-                .ifPresentOrElse(existingToken -> {
-                    log.debug("FCM 토큰이 이미 존재합니다. 회원 id: {}", member.getMemberId());
 
-                    existingToken.activate();
-                }, () -> {
-                    log.debug("새로운 FCM 토큰을 저장합니다. 회원 id: {}", member.getMemberId());
-                    FcmToken newToken = FcmToken.builder()
-                            .member(member)
-                            .fcmTokenValue(fcmToken)
-                            .fcmTokenUserAgent(userAgent)
-                            .build();
+        // 토큰이 사용중인지 조사
+        Optional<FcmToken> optionalFcmToken = fcmTokenRepository.findByFcmTokenValue(fcmToken);
 
-                    fcmTokenRepository.save(newToken);
-                });
+        if (optionalFcmToken.isEmpty()) {
+
+            createNewFcmToken(member, fcmToken, userAgent); // 새로운 토큰 생성
+        } else {
+
+            FcmToken existToken = optionalFcmToken.get();
+            if (existToken.getMember().getMemberId().equals(member.getMemberId())) {
+
+                existToken.activate(); // 재 로그인 하는 경우
+            } else {
+
+                updateTokenOwner(existToken, member, userAgent);
+            }
+        }
     }
 
     @Override
@@ -64,5 +72,44 @@ public class FcmTokenCommandServiceImpl implements FcmTokenCommandService {
         } catch (Exception e) {
             log.error("[토큰 정리 실패] 무효 토큰 삭제 중 DB 오류 발생", e);
         }
+    }
+
+    /**
+     * 새로운 FCM 토큰과 관련 알림 설정을 생성하고 저장합니다.
+     */
+    private void createNewFcmToken(Member member, String fcmToken, String userAgent) {
+        FcmToken newToken = FcmToken.from(member, fcmToken, userAgent);
+
+        // 채팅알림 및 배치알람 활성화
+        createDefaultSettingForFcmToken(newToken);
+
+        fcmTokenRepository.save(newToken);
+    }
+
+    /**
+     * 기존 FCM 토큰의 소유자를 새로운 회원으로 업데이트합니다. 이 과정에서 이전 회원과 연관된 모든 알림 설정을 삭제하고,
+     * 새로운 회원을 기반으로 기본 알림 설정을 생성합니다.
+     */
+    private void updateTokenOwner(FcmToken prevFcmToken, Member member, String userAgent) {
+        deviceNotificationSettingRepository.deleteAll(prevFcmToken.getSettings());
+        prevFcmToken.getSettings().clear();
+
+        deviceNotificationSettingRepository.flush(); // delete쿼리는 즉시 디비에 반영되어야 함
+
+        prevFcmToken.updateOwner(member, userAgent);
+
+        createDefaultSettingForFcmToken(prevFcmToken);
+    }
+
+    /**
+     * 주어진 FCM 토큰에 대한 기본 알림 설정을 생성합니다.
+     * 해당 설정은 채팅 메시지와 운동 리마인더 알림을 포함합니다.
+     */
+    private void createDefaultSettingForFcmToken(FcmToken fcmToken) {
+        DeviceNotificationSetting chatMessageSetting = DeviceNotificationSetting.of(fcmToken, NotificationType.CHAT_MESSAGE);
+        DeviceNotificationSetting workoutReminderSetting = DeviceNotificationSetting.of(fcmToken, NotificationType.WORKOUT_REMINDER);
+
+        fcmToken.getSettings().add(chatMessageSetting);
+        fcmToken.getSettings().add(workoutReminderSetting);
     }
 }
