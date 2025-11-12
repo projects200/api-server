@@ -229,4 +229,4 @@ include::overview/공통-개발-참고-사항.adoc[]
 
 === xref:알림-API.html[알림 API]
 
-- 특정 FCM 토큰의 푸쉬 알림 설정 목록 조회 `/api/v1/notification-settings/device`
+- 특정 FCM 토큰의 푸쉬 알림 설정 목록 조회 API #GET# `/api/v1/notification-settings/device`
