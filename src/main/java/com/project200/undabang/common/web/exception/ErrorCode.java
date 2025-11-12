@@ -81,7 +81,10 @@ public enum ErrorCode {
 
     // 차단 관련 에러
     MEMBER_BLOCK_NOT_FOUND(404, "MEMBER_BLOCK_NOT_FOUND", "해당 회원을 차단한 이력이 없습니다."),
-    MEMBER_BLOCK_DUPLICATED(409, "MEMBER_BLOCK_DUPLICATED", "이미 차단한 회원입니다.");
+    MEMBER_BLOCK_DUPLICATED(409, "MEMBER_BLOCK_DUPLICATED", "이미 차단한 회원입니다."),
+
+    // FCM 토큰 관련 에러
+    FCM_TOKEN_NOT_EXIST(404, "FCM_TOKEN_NOT_EXIST", "존재하지 않는 FCM 토큰입니다");
 
 
     private final HttpStatusCode status;
