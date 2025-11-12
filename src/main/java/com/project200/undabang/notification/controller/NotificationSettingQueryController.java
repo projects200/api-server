@@ -21,7 +21,7 @@ public class NotificationSettingQueryController {
     private final NotificationSettingQueryService notificationSettingQueryService;
 
     @GetMapping("/v1/notification-settings/device")
-    public ResponseEntity<CommonResponse<List<GetAllDeviceNotificationSettingsResponse>>> getAllDeviceNotificationSettings(@RequestHeader("X-Fcm-Token") @NotBlank(message = "FCM TOKEN 값은 공백일 수 없습니다.") String fcmToken) {
+    public ResponseEntity<CommonResponse<List<GetAllDeviceNotificationSettingsResponse>>> getAllDeviceNotificationSettings(@RequestHeader(value = "X-Fcm-Token", required = true) @NotBlank(message = "FCM TOKEN 값은 공백일 수 없습니다.") String fcmToken) {
 
         return ResponseEntity.ok(CommonResponse.success(notificationSettingQueryService.getAllDeviceNotificationSettings(fcmToken)));
     }
