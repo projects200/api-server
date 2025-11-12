@@ -44,10 +44,6 @@ class FcmTokenCommandServiceImplTest {
     @Mock
     private EntityManager em;
 
-    private Member createMember() {
-        return Member.builder().memberId(UUID.randomUUID()).build();
-    }
-
     @Nested
     @DisplayName("FCM 토큰 비활성화 기능 테스트")
     class DeactivateFcmToken {
@@ -134,15 +130,6 @@ class FcmTokenCommandServiceImplTest {
         }
     }
 
-    private FcmToken createSpyFcmToken(Member owner, String tokenValue) {
-        FcmToken token = FcmToken.builder()
-                .member(owner)
-                .fcmTokenValue(tokenValue)
-                .deviceNotificationSettingList(new ArrayList<>())
-                .build();
-        return BDDMockito.spy(token);
-    }
-
     @Nested
     @DisplayName("FCM 토큰 저장/갱신 기능 테스트")
     class SaveFcmToken {
@@ -224,5 +211,18 @@ class FcmTokenCommandServiceImplTest {
                     .extracting(DeviceNotificationSetting::getNotificationType)
                     .containsExactlyInAnyOrder(NotificationType.CHAT_MESSAGE, NotificationType.WORKOUT_REMINDER);
         }
+    }
+
+    private Member createMember() {
+        return Member.builder().memberId(UUID.randomUUID()).build();
+    }
+
+    private FcmToken createSpyFcmToken(Member owner, String tokenValue) {
+        FcmToken token = FcmToken.builder()
+                .member(owner)
+                .fcmTokenValue(tokenValue)
+                .deviceNotificationSettingList(new ArrayList<>())
+                .build();
+        return BDDMockito.spy(token);
     }
 }
