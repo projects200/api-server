@@ -1,0 +1,35 @@
+== 특정 토큰의 알림 설정 변경 API
+
+=== 설명
+
+- #PATCH# `/api/v1/notification-settings/device`
+- 입력받은 FCM 토큰과 요청값에 따라 현재 접속한 기기의 기기 알림 설정을 변경합니다.
+
+=== 개발 이력
+
+- Sprint 17 (2025-11-13): 기능 개발이 완료되었습니다.
+
+=== 개발 참고 사항
+
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+
+operation::update-device-notification-settings/update-device-notification-settings_-success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+
+operation::update-device-notification-settings/update-device-notification-settings_-success[snippets="request-headers,request-fields,response-fields"]
+
+==== 응답 상태 코드
+
+|===
+|상태 코드|설명
+|200|요청이 성공적으로 처리되었습니다.
+|400|입력값 검증에 실패했습니다. +
+올바른 입력값을 넣어주세요
+|403|접근 권한이 없습니다.
+|404|존재하지 않는 회원 입니다. +
+존재하지 않는 FCM 토큰입니다.
+|===
+

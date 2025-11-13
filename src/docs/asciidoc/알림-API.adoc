@@ -20,3 +20,5 @@
 include::overview/공통-개발-참고-사항.adoc[]
 
 include::alarm/특정-토큰의-알림-설정-목록-조회.adoc[]
+
+include::alarm/특정-토큰의-알림-설정-변경.adoc[]
