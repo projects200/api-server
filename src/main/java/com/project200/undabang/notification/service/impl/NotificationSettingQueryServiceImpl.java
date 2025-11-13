@@ -56,7 +56,7 @@ public class NotificationSettingQueryServiceImpl implements NotificationSettingQ
      */
     private FcmToken getFcmToken(UUID memberId, String fcmToken) {
         return fcmTokenRepository.findByFcmTokenValueAndMember_MemberId(fcmToken, memberId).orElseThrow(
-                () -> new CustomException(ErrorCode.FCM_TOKEN_NOT_EXIST)
+                () -> new CustomException(ErrorCode.FCM_TOKEN_NOT_FOUND)
         );
     }
 }
