@@ -86,7 +86,7 @@ public enum ErrorCode {
     // FCM 토큰 관련 에러
     FCM_TOKEN_NOT_FOUND(404, "FCM_TOKEN_NOT_FOUND", "존재하지 않는 FCM 토큰입니다."),
 
-    // 기기 푸시알림 관련 에러
+    // 기기 푸시 알림 관련 에러
     DEVICE_NOTIFICATION_SETTING_NOT_FOUND(404, "DEVICE_NOTIFICATION_SETTING_NOT_FOUND", "존재하지 않는 푸시 알림입니다.");
 
     private final HttpStatusCode status;

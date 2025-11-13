@@ -24,7 +24,6 @@ public class NotificationSettingCommandController {
     public ResponseEntity<CommonResponse<UpdateDeviceNotificationSettingResponse>> updateDeviceNotificationSettings(@RequestHeader(value = "X-Fcm-Token") @NotBlank(message = "FCM TOKEN 값은 공백일 수 없습니다.") String fcmToken,
                                                                                                                     @RequestBody @NotEmpty(message = "알림 타입을 입력해주세요") @Valid List<UpdateDeviceNotificationSettingRequest> requestList) {
 
-
         return ResponseEntity.ok(CommonResponse.update(notificationSettingCommandService.updateDeviceNotificationSetting(fcmToken, requestList)));
     }
 }
