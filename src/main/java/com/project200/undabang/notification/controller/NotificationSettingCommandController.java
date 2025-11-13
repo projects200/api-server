@@ -25,6 +25,6 @@ public class NotificationSettingCommandController {
                                                                                                                     @RequestBody @NotEmpty(message = "알림 타입을 입력해주세요") @Valid List<UpdateDeviceNotificationSettingRequest> requestList) {
 
 
-        return ResponseEntity.ok(CommonResponse.success(notificationSettingCommandService.updateDeviceNotificationSetting(fcmToken, requestList)));
+        return ResponseEntity.ok(CommonResponse.update(notificationSettingCommandService.updateDeviceNotificationSetting(fcmToken, requestList)));
     }
 }

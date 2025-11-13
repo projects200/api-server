@@ -25,7 +25,7 @@ operation::update-device-notification-settings/update-device-notification-settin
 
 |===
 |상태 코드|설명
-|200|요청이 성공적으로 처리되었습니다.
+|200|리소스가 성공적으로 수정되었습니다.
 |400|입력값 검증에 실패했습니다. +
 올바른 입력값을 넣어주세요
 |403|접근 권한이 없습니다.
