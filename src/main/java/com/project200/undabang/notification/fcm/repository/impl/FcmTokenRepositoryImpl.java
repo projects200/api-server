@@ -61,7 +61,7 @@ public class FcmTokenRepositoryImpl implements FcmTokenRepositoryCustom {
                         fcmToken.fcmTokenExpiredAt.goe(LocalDateTime.now()),
                         // 가입일이 패널티 기준 시점보다 이전인 회원만 조회합니다.
                         member.memberCreatedAt.loe(penaltyThresholdDateTime),
-                        // 운동 격려 알림을 받기로 설정한 회원한테만 알림 전송
+                        // 운동 격려 알림을 받기로 설정한 회원에게만 알림 전송
                         deviceNotificationSetting.notificationType.eq(NotificationType.WORKOUT_REMINDER),
                         deviceNotificationSetting.isEnabled.isTrue()
                 )

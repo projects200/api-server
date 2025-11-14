@@ -84,7 +84,7 @@ class FcmTokenRepositoryImplTest {
     class FindFcmTokensForInactiveMembersTest {
 
         @Test
-        @DisplayName("다양한 조건의 사용자가 있을 때 '운동 격려 알림'을 켠 비활성 대상만 정확히 필터링한다")
+        @DisplayName("다양한 조건의 사용자가 있을 때 운동 격려 알림을 활성화한 비활성 대상만 정확히 필터링한다")
         void shouldReturnTokensOfInactiveMembersOnly_whenSettingIsEnabled() {
             // given
             int penaltyThresholdDays = 7;
@@ -94,22 +94,22 @@ class FcmTokenRepositoryImplTest {
             Member inactiveMemberWithExercise = createAndPersistMember("inactiveWithExercise@test.com", "inactive1", now.minusDays(10));
             createAndPersistExercise(inactiveMemberWithExercise, now.minusDays(8));
             FcmToken expectedToken1 = createAndPersistFcmToken(inactiveMemberWithExercise, "expected-token-1", true, now.plusDays(30));
-            createAndPersistNotificationSetting(expectedToken1, NotificationType.WORKOUT_REMINDER, true); // 👇 설정 추가
+            createAndPersistNotificationSetting(expectedToken1, NotificationType.WORKOUT_REMINDER, true);
 
             // 시나리오 2: 비활성(운동기록X) + 알림 ON -> 조회 대상
             Member inactiveMemberWithoutExercise = createAndPersistMember("inactiveWithoutExercise@test.com", "inactive2", now.minusDays(8));
             FcmToken expectedToken2 = createAndPersistFcmToken(inactiveMemberWithoutExercise, "expected-token-2", true, now.plusDays(30));
-            createAndPersistNotificationSetting(expectedToken2, NotificationType.WORKOUT_REMINDER, true); // 👇 설정 추가
+            createAndPersistNotificationSetting(expectedToken2, NotificationType.WORKOUT_REMINDER, true);
 
             // 시나리오 3: 비활성 + '운동 격려 알림' OFF -> 조회 제외 (핵심 테스트)
             Member inactiveMemberWithSettingOff = createAndPersistMember("inactiveSettingOff@test.com", "inactive3", now.minusDays(9));
             FcmToken tokenWithSettingOff = createAndPersistFcmToken(inactiveMemberWithSettingOff, "setting-off-token", true, now.plusDays(30));
-            createAndPersistNotificationSetting(tokenWithSettingOff, NotificationType.WORKOUT_REMINDER, false); // 👇 설정 OFF
+            createAndPersistNotificationSetting(tokenWithSettingOff, NotificationType.WORKOUT_REMINDER, false);
 
             // 시나리오 4: 비활성 + '다른 알림(채팅)' ON -> 조회 제외 (핵심 테스트)
             Member inactiveMemberWithOtherSetting = createAndPersistMember("inactiveOtherSetting@test.com", "inactive4", now.minusDays(9));
             FcmToken tokenWithOtherSetting = createAndPersistFcmToken(inactiveMemberWithOtherSetting, "other-setting-token", true, now.plusDays(30));
-            createAndPersistNotificationSetting(tokenWithOtherSetting, NotificationType.CHAT_MESSAGE, true); // 👇 다른 알림 설정
+            createAndPersistNotificationSetting(tokenWithOtherSetting, NotificationType.CHAT_MESSAGE, true);
 
             // 시나리오 5: 활성 사용자 (알림 설정 ON) -> 조회 제외
             Member activeMember = createAndPersistMember("active@test.com", "active1", now.minusDays(15));
@@ -133,7 +133,7 @@ class FcmTokenRepositoryImplTest {
 
             // then
             assertThat(result).isNotNull();
-            assertThat(result.getTotalElements()).as("비활성이면서 알림을 켠 사용자 2명만 조회되어야 합니다.").isEqualTo(2);
+            assertThat(result.getTotalElements()).as("비활성이면서 알림을 활성화한 사용자 2명만 조회되어야 합니다.").isEqualTo(2);
             assertThat(result.getContent())
                     .containsExactlyInAnyOrder(expectedToken1.getFcmTokenValue(), expectedToken2.getFcmTokenValue());
         }
