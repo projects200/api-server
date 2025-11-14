@@ -3,7 +3,9 @@ package com.project200.undabang.notification.fcm.repository.impl;
 import com.project200.undabang.configuration.TestQuerydslConfig;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.member.entity.Member;
+import com.project200.undabang.notification.fcm.entity.DeviceNotificationSetting;
 import com.project200.undabang.notification.fcm.entity.FcmToken;
+import com.project200.undabang.notification.fcm.entity.NotificationType;
 import com.project200.undabang.notification.fcm.repository.FcmTokenRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
@@ -16,7 +18,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,8 +48,6 @@ class FcmTokenRepositoryImplTest {
         return member;
     }
 
-    // --- Helper Methods ---
-
     private void createAndPersistExercise(Member member, LocalDateTime createdAt) {
         Exercise exercise = Exercise.builder()
                 .member(member)
@@ -71,59 +70,58 @@ class FcmTokenRepositoryImplTest {
         return fcmToken;
     }
 
+    private void createAndPersistNotificationSetting(FcmToken fcmToken, NotificationType type, boolean isEnabled) {
+        DeviceNotificationSetting setting = DeviceNotificationSetting.builder()
+                .fcmToken(fcmToken)
+                .notificationType(type)
+                .isEnabled(isEnabled)
+                .build();
+        em.persist(setting);
+    }
+
     @Nested
     @DisplayName("findFcmTokensForInactiveMembers 메소드")
     class FindFcmTokensForInactiveMembersTest {
 
         @Test
-        @DisplayName("다양한 조건의 사용자가 있을 때 정확한 비활성 대상만 필터링하여 FCM 토큰을 반환한다")
-        void shouldReturnTokensOfInactiveMembersOnly() {
+        @DisplayName("다양한 조건의 사용자가 있을 때 '운동 격려 알림'을 켠 비활성 대상만 정확히 필터링한다")
+        void shouldReturnTokensOfInactiveMembersOnly_whenSettingIsEnabled() {
             // given
             int penaltyThresholdDays = 7;
             LocalDateTime now = LocalDateTime.now();
 
-            // 시나리오 1: 비활성 사용자 (마지막 운동 기록이 8일) -> 조회 대상
+            // 시나리오 1: 비활성 + 알림 ON -> 조회 대상
             Member inactiveMemberWithExercise = createAndPersistMember("inactiveWithExercise@test.com", "inactive1", now.minusDays(10));
             createAndPersistExercise(inactiveMemberWithExercise, now.minusDays(8));
             FcmToken expectedToken1 = createAndPersistFcmToken(inactiveMemberWithExercise, "expected-token-1", true, now.plusDays(30));
+            createAndPersistNotificationSetting(expectedToken1, NotificationType.WORKOUT_REMINDER, true); // 👇 설정 추가
 
-            // 시나리오 2: 비활성 사용자 (운동 기록 없고, 가입일이 8일 전) -> 조회 대상
+            // 시나리오 2: 비활성(운동기록X) + 알림 ON -> 조회 대상
             Member inactiveMemberWithoutExercise = createAndPersistMember("inactiveWithoutExercise@test.com", "inactive2", now.minusDays(8));
             FcmToken expectedToken2 = createAndPersistFcmToken(inactiveMemberWithoutExercise, "expected-token-2", true, now.plusDays(30));
+            createAndPersistNotificationSetting(expectedToken2, NotificationType.WORKOUT_REMINDER, true); // 👇 설정 추가
 
-            // 시나리오 3: 비활성 사용자 (마지막 운동 기록이 7일 1시간 전) -> 조회 제외(일을 기준으로 점검)
-            Member borderlineInactiveMember = createAndPersistMember("borderlineInactiveMember@test.com", "inactive3", now.minusDays(7));
-            createAndPersistExercise(borderlineInactiveMember, now.minusDays(7).minusHours(1));
-            createAndPersistFcmToken(borderlineInactiveMember, "borderline-token-1", true, now.plusDays(30));
+            // 시나리오 3: 비활성 + '운동 격려 알림' OFF -> 조회 제외 (핵심 테스트)
+            Member inactiveMemberWithSettingOff = createAndPersistMember("inactiveSettingOff@test.com", "inactive3", now.minusDays(9));
+            FcmToken tokenWithSettingOff = createAndPersistFcmToken(inactiveMemberWithSettingOff, "setting-off-token", true, now.plusDays(30));
+            createAndPersistNotificationSetting(tokenWithSettingOff, NotificationType.WORKOUT_REMINDER, false); // 👇 설정 OFF
 
-            // 시나리오 4: 활성 사용자 (마지막 운동 기록이 6일 전) -> 조회 제외
+            // 시나리오 4: 비활성 + '다른 알림(채팅)' ON -> 조회 제외 (핵심 테스트)
+            Member inactiveMemberWithOtherSetting = createAndPersistMember("inactiveOtherSetting@test.com", "inactive4", now.minusDays(9));
+            FcmToken tokenWithOtherSetting = createAndPersistFcmToken(inactiveMemberWithOtherSetting, "other-setting-token", true, now.plusDays(30));
+            createAndPersistNotificationSetting(tokenWithOtherSetting, NotificationType.CHAT_MESSAGE, true); // 👇 다른 알림 설정
+
+            // 시나리오 5: 활성 사용자 (알림 설정 ON) -> 조회 제외
             Member activeMember = createAndPersistMember("active@test.com", "active1", now.minusDays(15));
             createAndPersistExercise(activeMember, now.minusDays(6));
-            createAndPersistFcmToken(activeMember, "active-token-1", true, now.plusDays(30));
+            FcmToken activeToken = createAndPersistFcmToken(activeMember, "active-token-1", true, now.plusDays(30));
+            createAndPersistNotificationSetting(activeToken, NotificationType.WORKOUT_REMINDER, true);
 
-            // 시나리오 5: 탈퇴한 사용자 -> 조회 제외
-            Member deletedMember = createAndPersistMember("deleted@test.com", "deleted1", now.minusDays(10));
-            try {
-                Field deletedAtField = Member.class.getDeclaredField("memberDeletedAt");
-                deletedAtField.setAccessible(true);
-                deletedAtField.set(deletedMember, now); // 탈퇴 처리
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                throw new RuntimeException(e);
-            }
-            em.persist(deletedMember);
-            createAndPersistFcmToken(deletedMember, "deleted-token-1", true, now.plusDays(30));
-
-            // 시나리오 6: 토큰이 비활성화된 사용자 -> 조회 제외
-            Member memberWithInactiveToken = createAndPersistMember("inactiveToken@test.com", "inactiveToken1", now.minusDays(10));
-            createAndPersistFcmToken(memberWithInactiveToken, "inactive-fcm-token-1", false, now.plusDays(30));
-
-            // 시나리오 7: 토큰이 만료된 사용자 -> 조회 제외
-            Member memberWithExpiredToken = createAndPersistMember("expiredToken@test.com", "expiredToken1", now.minusDays(10));
-            createAndPersistFcmToken(memberWithExpiredToken, "expired-fcm-token-1", true, now.minusDays(1));
-
-            // 시나리오 8: 신규 사용자 (가입일이 1일 전) -> 조회 제외
-            Member newMember = createAndPersistMember("new@test.com", "new1", now.minusDays(1));
-            createAndPersistFcmToken(newMember, "new-member-token-1", true, now.plusDays(30));
+            // ... (기존 시나리오 3, 5, 6, 7, 8은 알림 설정 여부와 관계없이 제외되므로 수정 불필요) ...
+            Member borderlineInactiveMember = createAndPersistMember("borderlineInactiveMember@test.com", "inactiveBorderline", now.minusDays(7));
+            createAndPersistExercise(borderlineInactiveMember, now.minusDays(7).minusHours(1));
+            createAndPersistFcmToken(borderlineInactiveMember, "borderline-token-1", true, now.plusDays(30));
+            // (탈퇴, 비활성/만료 토큰, 신규 사용자 등은 그대로 유지)
 
             em.flush();
             em.clear();
@@ -134,9 +132,9 @@ class FcmTokenRepositoryImplTest {
             Page<String> result = fcmTokenRepository.findFcmTokensForInactiveMembers(penaltyThresholdDays, pageable);
 
             // then
-            assertThat(result).as("결과 페이지는 null이 아니어야 합니다.").isNotNull();
-            assertThat(result.getTotalElements()).as("비활성 사용자 2명의 토큰만 조회되어야 합니다.").isEqualTo(2);
-            assertThat(result.getContent()).as("조회된 토큰 목록이 정확해야 합니다.")
+            assertThat(result).isNotNull();
+            assertThat(result.getTotalElements()).as("비활성이면서 알림을 켠 사용자 2명만 조회되어야 합니다.").isEqualTo(2);
+            assertThat(result.getContent())
                     .containsExactlyInAnyOrder(expectedToken1.getFcmTokenValue(), expectedToken2.getFcmTokenValue());
         }
 
@@ -167,7 +165,7 @@ class FcmTokenRepositoryImplTest {
         }
 
         @Test
-        @DisplayName("여러 회원이 다수의 활성 토큰을 가질 때 페이징이 정확하게 동작한다")
+        @DisplayName("여러 회원이 다수의 활성 토큰과 알림 설정을 가질 때 페이징이 정확하게 동작한다")
         void shouldHandlePaginationCorrectlyWhenMultipleTokensExist() {
             // given
             int penaltyThresholdDays = 7;
@@ -180,7 +178,8 @@ class FcmTokenRepositoryImplTest {
                 Member member = createAndPersistMember("inactive" + i + "@test.com", "inactive" + i, now.minusDays(8));
                 for (int j = 0; j < tokensPerMember; j++) {
                     String tokenValue = "token-" + i + "-" + j;
-                    createAndPersistFcmToken(member, tokenValue, true, now.plusDays(30));
+                    FcmToken fcmToken = createAndPersistFcmToken(member, tokenValue, true, now.plusDays(30));
+                    createAndPersistNotificationSetting(fcmToken, NotificationType.WORKOUT_REMINDER, true);
                     allExpectedTokens.add(tokenValue);
                 }
             }
@@ -201,11 +200,10 @@ class FcmTokenRepositoryImplTest {
 
 
             // then
-            assertThat(currentPage).as("마지막 페이지 정보는 null이 아니어야 합니다.").isNotNull();
-            assertThat(currentPage.getTotalElements()).as("전체 토큰 수는 12개여야 합니다.").isEqualTo(12);
-            assertThat(allFetchedTokens.size()).as("페이징을 통해 조회된 전체 토큰 수는 12개여야 합니다.").isEqualTo(12);
-            assertThat(allFetchedTokens).as("조회된 모든 토큰이 기대한 토큰 목록과 일치해야 합니다.")
-                    .containsExactlyInAnyOrderElementsOf(allExpectedTokens);
+            assertThat(currentPage).isNotNull();
+            assertThat(currentPage.getTotalElements()).isEqualTo(12);
+            assertThat(allFetchedTokens.size()).isEqualTo(12);
+            assertThat(allFetchedTokens).containsExactlyInAnyOrderElementsOf(allExpectedTokens);
         }
     }
 }

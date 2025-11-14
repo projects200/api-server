@@ -2,6 +2,8 @@ package com.project200.undabang.notification.fcm.repository.impl;
 
 import com.project200.undabang.exercise.entity.QExercise;
 import com.project200.undabang.member.entity.QMember;
+import com.project200.undabang.notification.fcm.entity.NotificationType;
+import com.project200.undabang.notification.fcm.entity.QDeviceNotificationSetting;
 import com.project200.undabang.notification.fcm.entity.QFcmToken;
 import com.project200.undabang.notification.fcm.repository.FcmTokenRepositoryCustom;
 import com.querydsl.core.types.dsl.CaseBuilder;
@@ -31,6 +33,7 @@ public class FcmTokenRepositoryImpl implements FcmTokenRepositoryCustom {
         QMember member = QMember.member;
         QExercise exercise = QExercise.exercise;
         QFcmToken fcmToken = QFcmToken.fcmToken;
+        QDeviceNotificationSetting deviceNotificationSetting = QDeviceNotificationSetting.deviceNotificationSetting;
 
         // --- 1. 날짜 계산 로직 ---
         // '오늘' 날짜의 시작 시간(00:00:00)을 기준으로 패널티 기준 시점을 계산합니다.
@@ -50,13 +53,17 @@ public class FcmTokenRepositoryImpl implements FcmTokenRepositoryCustom {
                         exercise.member.eq(member)
                                 .and(exercise.exerciseDeletedAt.isNull()))
                 .join(fcmToken).on(fcmToken.member.eq(member))
+                .join(deviceNotificationSetting).on(deviceNotificationSetting.fcmToken.eq(fcmToken))
                 .where(
                         member.memberDeletedAt.isNull(),
                         fcmToken.fcmTokenIsActive.isTrue(),
                         // FCM 토큰이 만료되지 않은 회원만 조회합니다.
                         fcmToken.fcmTokenExpiredAt.goe(LocalDateTime.now()),
                         // 가입일이 패널티 기준 시점보다 이전인 회원만 조회합니다.
-                        member.memberCreatedAt.loe(penaltyThresholdDateTime)
+                        member.memberCreatedAt.loe(penaltyThresholdDateTime),
+                        // 운동 격려 알림을 받기로 설정한 회원한테만 알림 전송
+                        deviceNotificationSetting.notificationType.eq(NotificationType.WORKOUT_REMINDER),
+                        deviceNotificationSetting.isEnabled.isTrue()
                 )
                 .groupBy(member.memberId, fcmToken.fcmTokenValue, member.memberCreatedAt)
                 // 마지막 활동일이 패널티 기준 시점보다 이전(오래된)인 회원만 필터링합니다.

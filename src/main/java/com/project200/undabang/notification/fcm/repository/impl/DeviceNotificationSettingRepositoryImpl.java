@@ -5,11 +5,13 @@ import com.project200.undabang.notification.fcm.entity.QDeviceNotificationSettin
 import com.project200.undabang.notification.fcm.repository.DeviceNotificationSettingRepositoryCustom;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
+@Slf4j
 @Repository
 @RequiredArgsConstructor
-public class DeviceNotificationRepositoryImpl implements DeviceNotificationSettingRepositoryCustom {
+public class DeviceNotificationSettingRepositoryImpl implements DeviceNotificationSettingRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
 
@@ -20,8 +22,13 @@ public class DeviceNotificationRepositoryImpl implements DeviceNotificationSetti
     public void deleteAllByFcmToken(FcmToken fcmToken) {
         QDeviceNotificationSetting setting = QDeviceNotificationSetting.deviceNotificationSetting;
 
+        if (fcmToken == null) {
+            log.warn("FCM Token이 존재하지 않습니다.");
+            return;
+        }
+
         queryFactory.delete(setting)
-                .where(setting.fcmToken.eq(fcmToken))  // fcmToken이 null일 경우 'IS NULL' 조건이 생성되지만, 실제로는 해당 row가 존재하지 않음
+                .where(setting.fcmToken.eq(fcmToken))
                 .execute();
     }
 }
