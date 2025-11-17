@@ -64,4 +64,9 @@ public class DeviceNotificationSetting {
                 .createdAt(LocalDateTime.now())
                 .build();
     }
+
+    public void updateEnabledStatus(boolean isEnabled) {
+        this.isEnabled = isEnabled;
+        this.updatedAt = LocalDateTime.now();
+    }
 }

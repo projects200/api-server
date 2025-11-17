@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class GetAllDeviceNotificationSettingsResponse {
     private NotificationType type;
-    private Boolean enabled;
+    private boolean enabled;
 
     /**
      * 주어진 디바이스 알림 설정 객체를 기반으로 GetAllDeviceNotificationSettingsResponse 객체를 생성합니다.

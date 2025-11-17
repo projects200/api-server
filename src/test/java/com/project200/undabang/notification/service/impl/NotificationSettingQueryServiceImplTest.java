@@ -123,7 +123,7 @@ class NotificationSettingQueryServiceImplTest {
                 CustomException exception = assertThrows(CustomException.class, () -> {
                     notificationSettingQueryService.getAllDeviceNotificationSettings(fcmTokenValue);
                 });
-                assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FCM_TOKEN_NOT_EXIST);
+                assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FCM_TOKEN_NOT_FOUND);
             }
         }
 
