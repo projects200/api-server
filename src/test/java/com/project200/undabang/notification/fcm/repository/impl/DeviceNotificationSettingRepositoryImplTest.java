@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 @DataJpaTest
 @Import(TestQuerydslConfig.class)
-class DeviceNotificationRepositoryImplTest {
+class DeviceNotificationSettingRepositoryImplTest {
 
     @Autowired
     private DeviceNotificationSettingRepository deviceNotificationSettingRepository;
