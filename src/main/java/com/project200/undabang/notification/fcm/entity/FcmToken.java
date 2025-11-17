@@ -78,6 +78,7 @@ public class FcmToken {
                 .member(member)
                 .fcmTokenValue(fcmTokenValue)
                 .fcmTokenUserAgent(userAgent)
+                .deviceNotificationSettingList(new ArrayList<>())
                 .build();
     }
 

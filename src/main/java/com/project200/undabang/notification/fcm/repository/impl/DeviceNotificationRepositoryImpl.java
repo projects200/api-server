@@ -21,7 +21,7 @@ public class DeviceNotificationRepositoryImpl implements DeviceNotificationSetti
         QDeviceNotificationSetting setting = QDeviceNotificationSetting.deviceNotificationSetting;
 
         queryFactory.delete(setting)
-                .where(setting.fcmToken.eq(fcmToken)) // 만약 토큰값이 null 이면 'IS NULL' 조건이 됨
+                .where(setting.fcmToken.eq(fcmToken))  // fcmToken이 null일 경우 'IS NULL' 조건이 생성되지만, 실제로는 해당 row가 존재하지 않음
                 .execute();
     }
 }
