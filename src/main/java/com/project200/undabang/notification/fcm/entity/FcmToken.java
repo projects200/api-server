@@ -9,6 +9,8 @@ import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Comment;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -32,7 +34,7 @@ public class FcmToken {
     @Size(max = 255)
     @NotNull
     @Comment("FCM 토큰 값, unique")
-    @Column(name = "fcm_token_value", nullable = false)
+    @Column(name = "fcm_token_value", nullable = false, unique = true)
     private String fcmTokenValue;
 
     @Size(max = 255)
@@ -67,6 +69,18 @@ public class FcmToken {
     @Column(name = "fcm_token_created_at", nullable = false)
     private LocalDateTime fcmTokenCreatedAt = LocalDateTime.now();
 
+    @Builder.Default
+    @OneToMany(mappedBy = "fcmToken", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<DeviceNotificationSetting> deviceNotificationSettingList = new ArrayList<>();
+
+    public static FcmToken from(Member member, String fcmTokenValue, String userAgent) {
+        return FcmToken.builder()
+                .member(member)
+                .fcmTokenValue(fcmTokenValue)
+                .fcmTokenUserAgent(userAgent)
+                .build();
+    }
+
     public void activate() {
         this.fcmTokenIsActive = true;
         this.fcmTokenActivatedAt = LocalDateTime.now();
@@ -79,5 +93,11 @@ public class FcmToken {
 
     public boolean isActive() {
         return this.fcmTokenIsActive;
+    }
+
+    public void updateOwner(Member member, String userAgent) {
+        this.member = member;
+        this.fcmTokenUserAgent = userAgent;
+        this.activate();
     }
 }
