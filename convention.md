@@ -15,13 +15,14 @@
 
 ### 공통
 
-- 필요한 검사나 검증은 프론트, 백, DB 모두 하기
+- 필요한 검사나 검증은 모두 하기 (프론트 개발자가 실수할수 있으니)
 - 사용하지 않는 메소드 지우기
 
 ### GIT
 - git flow 따르기
     - 메인 브랜치: main, develop
-    - 서포팅 브랜치: feature/{{개발하는 기능 분야}}/{{개발하는 기능 이름}}  ex) feature/alarm/create-chat-push-alarm
+    - 개발 브랜치: feature/{{개발하는 기능 분야}}/{{개발하는 기능 이름}}
+        - ex) feature/alarm/create-chat-push-alarm
 - commit message 사용
     
     ```
@@ -32,6 +33,9 @@
     Resolves: #issueNo, ...(해결한 이슈 , 생략 가능)
     
     See also: #issueNo, ...(참고 이슈, 생략 가능)
+
+        ex) feat(타이머) : 심플 타이머 생성 기능 개발 (#123)
+    
     ```
     
     - 타입 종류
@@ -122,19 +126,26 @@
     config
     {{domain}}
     ┕ controller
+        ┕ QueryController
+        ┕ CommandController
     ┕ service
     	┕ impl
+            ┕ QueryServiceImpl
+            ┕ CommandServiceImpl
+        ┕ QueryService
+        ┕ CommandService
     ┕ repository
+        ┕ impl (QueryDSL 사용시)
     ┕ dto
     	┕ request (class MemoRegisterRequest.java)
     	┕ response (class MemoRegisterResponse.java)
-      ┕ record (class MemoRegisterRecord.java)
+        ┕ record (class MemoRegisterRecord.java)
     ┕ entity
     ```
 - properties의 DB 정보는 구글 드라이브에 정리함 (develop, main)
 - Java Doc 사용
   - 참고
-    ```
+    ```java
     /**
      * Enumeration of HTTP status codes.
      *
@@ -149,7 +160,6 @@
      * @see <a href="https://en.wikipedia.org/wiki/List_of_HTTP_status_codes">List of HTTP status codes - Wikipedia</a>
      */
    ```
-
 ### 테스트
 - 테스트는 h2 사용
 - 가능하면 커버리지 80퍼 이상 맞추기
