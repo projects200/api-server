@@ -10,7 +10,6 @@ import com.project200.undabang.notification.dto.request.UpdateDeviceNotification
 import com.project200.undabang.notification.dto.response.UpdateDeviceNotificationSettingResponse;
 import com.project200.undabang.notification.fcm.entity.DeviceNotificationSetting;
 import com.project200.undabang.notification.fcm.entity.FcmToken;
-import com.project200.undabang.notification.fcm.entity.NotificationType;
 import com.project200.undabang.notification.fcm.repository.DeviceNotificationSettingRepository;
 import com.project200.undabang.notification.fcm.repository.FcmTokenRepository;
 import com.project200.undabang.notification.service.NotificationSettingCommandService;
@@ -43,14 +42,18 @@ public class NotificationSettingCommandServiceImpl implements NotificationSettin
         FcmToken savedFcmToken = getFcmToken(member, fcmToken);
         List<DeviceNotificationSetting> deviceNotificationSettingList = deviceNotificationSettingRepository.findAllByFcmToken(savedFcmToken);
 
-        Map<NotificationType, DeviceNotificationSetting> deviceNotificationSettingMap = deviceNotificationSettingList.stream()
-                .collect(Collectors.toMap(DeviceNotificationSetting::getNotificationType, Function.identity()));
+        // NotificationType 엔티티의 Code로 조회하도록 설정
+        Map<String, DeviceNotificationSetting> deviceNotificationSettingMap = deviceNotificationSettingList.stream()
+                .collect(Collectors.toMap(
+                        setting -> setting.getNotificationType().getNotificationTypeCode(),
+                        Function.identity()
+                ));
 
         for (UpdateDeviceNotificationSettingRequest request : requestList) {
             DeviceNotificationSetting setting = deviceNotificationSettingMap.get(request.getType());
 
             if (setting == null) {
-                throw new CustomException(ErrorCode.DEVICE_NOTIFICATION_SETTING_NOT_FOUND);
+                throw new CustomException(ErrorCode.NOTIFICATION_TYPE_NOT_FOUND);
             }
 
             setting.updateEnabledStatus(request.getEnabled());
@@ -58,7 +61,7 @@ public class NotificationSettingCommandServiceImpl implements NotificationSettin
 
         List<NotificationSettingRecord> recordList = deviceNotificationSettingList.stream()
                 .map(setting -> new NotificationSettingRecord(
-                        setting.getNotificationType(),
+                        setting.getNotificationType().getNotificationTypeCode(),
                         setting.getIsEnabled()
                 )).toList();
 

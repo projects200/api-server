@@ -1,7 +1,6 @@
 package com.project200.undabang.notification.dto.response;
 
 import com.project200.undabang.notification.fcm.entity.DeviceNotificationSetting;
-import com.project200.undabang.notification.fcm.entity.NotificationType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,7 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GetAllDeviceNotificationSettingsResponse {
-    private NotificationType type;
+    private String type;
     private boolean enabled;
 
     /**
@@ -20,7 +19,7 @@ public class GetAllDeviceNotificationSettingsResponse {
      */
     public static GetAllDeviceNotificationSettingsResponse from(DeviceNotificationSetting setting) {
         return GetAllDeviceNotificationSettingsResponse.builder()
-                .type(setting.getNotificationType())
+                .type(setting.getNotificationType().getNotificationTypeCode())
                 .enabled(setting.getIsEnabled())
                 .build();
     }
