@@ -46,7 +46,8 @@ public class NotificationSettingCommandServiceImpl implements NotificationSettin
         Map<String, DeviceNotificationSetting> deviceNotificationSettingMap = deviceNotificationSettingList.stream()
                 .collect(Collectors.toMap(
                         setting -> setting.getNotificationType().getNotificationTypeCode(),
-                        Function.identity()
+                        Function.identity(),
+                        (existingValue, newValue) -> existingValue // 중복 키가 발생할 경우, 기존 값을 사용하고 새로운 값은 무시하도록 설정
                 ));
 
         for (UpdateDeviceNotificationSettingRequest request : requestList) {

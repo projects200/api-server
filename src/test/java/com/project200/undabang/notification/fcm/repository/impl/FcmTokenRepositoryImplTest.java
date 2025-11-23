@@ -43,7 +43,7 @@ class FcmTokenRepositoryImplTest {
     private Exercise exercise(Member member, LocalDateTime createdAt) {
         return Exercise.builder()
                 .member(member)
-                .exerciseTitle("Sample Test Exercise") // <--- 이 필드를 추가해야 합니다.
+                .exerciseTitle("Sample Test Exercise")
                 .exerciseCreatedAt(createdAt)
                 .build();
     }
