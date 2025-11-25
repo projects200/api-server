@@ -1,5 +1,6 @@
 package com.project200.undabang.chat.service.impl;
 
+import com.project200.undabang.chat.dto.event.ChatMessageCreatedEvent;
 import com.project200.undabang.chat.dto.request.CreateChatroomRequest;
 import com.project200.undabang.chat.dto.request.CreateMessageRequest;
 import com.project200.undabang.chat.dto.response.CreateChatroomResponse;
@@ -18,6 +19,7 @@ import com.project200.undabang.member.repository.MemberRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +39,7 @@ public class ChatCommandServiceImpl implements ChatCommandService {
     private final ChatRepository chatRepository;
     private final ChatroomMemberRepository chatroomMemberRepository;
     private final MemberBlockRepository memberBlockRepository;
+    private final ApplicationEventPublisher eventPublisher;
     private final EntityManager em;
 
     private final int DIRECT_CHAT_MAX_MEMBER_COUNT = 2;
@@ -88,6 +91,9 @@ public class ChatCommandServiceImpl implements ChatCommandService {
 
         chatroom.updateLastChatContent(savedChat.getChatContent());
         chatroomMember.updateLastReadChatId(savedChat.getId());
+
+        // 채팅 생성되었다는 이벤트 생성. 이 시점에서는 트랜잭션이 커밋되지 않았을 수 있음. 따라서 (AFTER_COMMIT) 사용해야 한다.
+        eventPublisher.publishEvent(ChatMessageCreatedEvent.from(savedChat));
 
         return CreateMessageResponse.of(savedChat.getId());
     }

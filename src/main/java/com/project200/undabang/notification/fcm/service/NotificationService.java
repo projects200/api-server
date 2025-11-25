@@ -1,5 +1,6 @@
 package com.project200.undabang.notification.fcm.service;
 
+import com.project200.undabang.notification.fcm.dto.ChatNotificationPayload;
 import com.project200.undabang.notification.fcm.dto.NotificationPayload;
 
 import java.util.List;
@@ -23,4 +24,5 @@ public interface NotificationService {
      */
     void sendNotification(List<NotificationPayload> requests);
 
+    void sendChatNotification(ChatNotificationPayload payload, List<String> fcmTokenList);
 }
