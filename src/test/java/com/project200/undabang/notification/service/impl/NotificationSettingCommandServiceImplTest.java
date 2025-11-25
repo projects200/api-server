@@ -65,6 +65,54 @@ class NotificationSettingCommandServiceImplTest {
     class Describe_updateDeviceNotificationSettings {
 
         @Test
+        @DisplayName("DB에 동일한 타입의 설정이 중복되어 있을 경우(데이터 이상), 첫 번째 설정을 기준으로 맵을 구성하고 예외를 발생시키지 않는다")
+        void it_handles_duplicate_settings_gracefully() {
+            // given
+            UUID memberId = UUID.randomUUID();
+            String fcmTokenValue = "duplicate-settings-token";
+            Member member = createMember(memberId);
+            FcmToken fcmToken = createFcmToken(member, fcmTokenValue);
+
+            NotificationType chatType = createNotificationType("CHAT_MESSAGE");
+
+            // [핵심] 동일한 타입("CHAT_MESSAGE")을 가진 설정 객체 2개 생성 (데이터 중복 시뮬레이션)
+            DeviceNotificationSetting setting1 = DeviceNotificationSetting.of(fcmToken, chatType); // 첫 번째 (기존 값)
+            DeviceNotificationSetting setting2 = DeviceNotificationSetting.of(fcmToken, chatType); // 두 번째 (무시될 값)
+
+            // 리스트에 중복 추가
+            List<DeviceNotificationSetting> duplicateSettings = List.of(setting1, setting2);
+
+            List<UpdateDeviceNotificationSettingRequest> requestList = List.of(
+                    new UpdateDeviceNotificationSettingRequest("CHAT_MESSAGE", false)
+            );
+
+            try (MockedStatic<UserContextHolder> mockedContext = mockStatic(UserContextHolder.class)) {
+                mockedContext.when(UserContextHolder::getUserId).thenReturn(memberId);
+                given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+                given(fcmTokenRepository.findByFcmTokenValue(fcmTokenValue)).willReturn(Optional.of(fcmToken));
+                given(deviceNotificationSettingRepository.findAllByFcmToken(fcmToken)).willReturn(duplicateSettings);
+
+                // when
+                // 중복 키 충돌 없이 정상 실행되어야 함
+                UpdateDeviceNotificationSettingResponse response = notificationSettingCommandService.updateDeviceNotificationSetting(fcmTokenValue, requestList);
+
+                // then
+                // 1. toMap의 mergeFunction에 의해 첫 번째 설정(setting1)만 맵에 담겨 업데이트됨
+                assertThat(setting1.getIsEnabled()).isFalse();
+
+                // 2. 두 번째 설정(setting2)은 맵에 들어가지 못해 업데이트되지 않음 (기본값 true 유지)
+                assertThat(setting2.getIsEnabled()).isTrue();
+
+                // 3. 응답값 검증
+                assertThat(response.getSettings())
+                        .extracting(NotificationSettingRecord::type, NotificationSettingRecord::enabled)
+                        .contains(tuple("CHAT_MESSAGE", false));
+                // 참고: response 로직은 findAll 결과 전체를 매핑하므로 결과 리스트에는 2개가 다 나올 수 있음
+                // (하지만 업데이트 로직 자체는 setting1에만 적용됨을 검증하는 것이 핵심)
+            }
+        }
+
+        @Test
         @DisplayName("성공적으로 모든 알림 설정을 업데이트한다")
         void it_updates_all_settings_successfully() {
             // given

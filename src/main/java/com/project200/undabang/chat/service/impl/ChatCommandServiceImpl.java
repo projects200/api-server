@@ -92,7 +92,7 @@ public class ChatCommandServiceImpl implements ChatCommandService {
         chatroom.updateLastChatContent(savedChat.getChatContent());
         chatroomMember.updateLastReadChatId(savedChat.getId());
 
-        // 채팅 생성되었다는 이벤트 생성. 이 시점에서는 트랜잭션이 커밋되지 않았을 수 있음. 따라서 (AFTER_COMMIT) 사용해야 한다.
+        // 채팅 생성되었다는 이벤트 생성. 이 시점에서는 트랜잭션이 커밋되지 않았을 수 있으므로 @TransactionalEventListener(phase = AFTER_COMMIT)을 사용해야 함
         eventPublisher.publishEvent(ChatMessageCreatedEvent.from(savedChat));
 
         return CreateMessageResponse.of(savedChat.getId());

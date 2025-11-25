@@ -28,7 +28,6 @@ public class ChatNotificationServiceImpl implements ChatNotificationService {
     private final NotificationService notificationService;
 
     /**
-     * notificationService
      * 채팅 메시지 생성 이벤트를 기반으로 상대방에게 채팅 알림을 전송합니다.
      */
     @Override
