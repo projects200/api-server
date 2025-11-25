@@ -13,6 +13,5 @@ public interface ChatroomMemberRepositoryCustom {
     List<GetMemberChatroomResponse> getChatroomListByMemberId(Member member);
     Optional<ChatroomMemberStatus> getOpponentStatusByChatroomId(Long chatroomId, Member member);
     boolean checkBlockExists(Chatroom currentChatroom, Member currentMember);
-
     Optional<Member> findOtherMemberInChatroom(Long chatroomId, UUID memberId);
 }
