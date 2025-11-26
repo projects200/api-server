@@ -76,6 +76,7 @@ public enum ErrorCode {
     MESSAGE_SEND_BLOCKED(403, "MESSAGE_SEND_BLOCKED", "해당 회원님과는 메시지를 주고받을 수 없습니다."),
     CHATROOM_MEMBERS_NOT_FOUND(404, "CHATROOM_MEMBERS_NOT_FOUND", "등록된 채팅방 참여자 정보를 확인할 수 없습니다."),
     CHATROOM_NOT_FOUND(404, "CHATROOM_NOT_FOUND", "존재하지 않는 채팅방 입니다."),
+    CHAT_NOT_FOUND(404, "CHAT_NOT_FOUND", "존재하지 않는 채팅 입니다."),
     CHATROOM_MEMBER_INACTIVE(409, "CHATROOM_MEMBER_INACTIVE", "회원님이 나간 채팅방 입니다."),
     CHATROOM_OTHER_MEMBER_INACTIVE(409, "CHATROOM_OTHER_MEMBER_INACTIVE", "다른 회원님이 나간 채팅방입니다."),
 

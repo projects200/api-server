@@ -4,6 +4,7 @@ import com.project200.undabang.configuration.TestQuerydslConfig;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.notification.entity.NotificationCategory;
+import com.project200.undabang.notification.entity.NotificationCode;
 import com.project200.undabang.notification.entity.NotificationType;
 import com.project200.undabang.notification.fcm.entity.DeviceNotificationSetting;
 import com.project200.undabang.notification.fcm.entity.FcmToken;
@@ -35,41 +36,6 @@ class FcmTokenRepositoryImplTest {
 
     @Autowired
     private TestEntityManager em;
-
-    private Member member(String email, String nickname, LocalDateTime createdAt) {
-        return Member.builder().memberId(UUID.randomUUID()).memberEmail(email).memberNickname(nickname).memberCreatedAt(createdAt).build();
-    }
-
-    private Exercise exercise(Member member, LocalDateTime createdAt) {
-        return Exercise.builder()
-                .member(member)
-                .exerciseTitle("Sample Test Exercise")
-                .exerciseCreatedAt(createdAt)
-                .build();
-    }
-
-    private FcmToken fcmToken(Member member, String tokenValue, boolean isActive, LocalDateTime expiredAt) {
-        return FcmToken.builder().member(member).fcmTokenValue(tokenValue).fcmTokenIsActive(isActive).fcmTokenExpiredAt(expiredAt).build();
-    }
-
-    private NotificationType notificationType(String code) {
-        return NotificationType.builder().notificationTypeCode(code).category(NotificationCategory.PERSONAL).build();
-    }
-
-    private DeviceNotificationSetting setting(FcmToken fcmToken, NotificationType type, boolean isEnabled) {
-        return DeviceNotificationSetting.builder().fcmToken(fcmToken).notificationType(type).isEnabled(isEnabled).build();
-    }
-
-    private void save(Object... entities) {
-        for (Object entity : entities) {
-            em.persist(entity);
-        }
-    }
-
-    private void flushAndClear() {
-        em.flush();
-        em.clear();
-    }
 
     @Nested
     @DisplayName("findFcmTokensForInactiveMembers 메소드는")
@@ -188,6 +154,135 @@ class FcmTokenRepositoryImplTest {
             assertThat(secondPage.getContent()).hasSize(5);
             assertThat(firstPage.hasNext()).isTrue();
             assertThat(secondPage.hasNext()).isTrue();
+        }
+    }
+
+    private Member member(String email, String nickname, LocalDateTime createdAt) {
+        return Member.builder().memberId(UUID.randomUUID()).memberEmail(email).memberNickname(nickname).memberCreatedAt(createdAt).build();
+    }
+
+    private Exercise exercise(Member member, LocalDateTime createdAt) {
+        return Exercise.builder()
+                .member(member)
+                .exerciseTitle("Sample Test Exercise")
+                .exerciseCreatedAt(createdAt)
+                .build();
+    }
+
+    private FcmToken fcmToken(Member member, String tokenValue, boolean isActive, LocalDateTime expiredAt) {
+        return FcmToken.builder().member(member).fcmTokenValue(tokenValue).fcmTokenIsActive(isActive).fcmTokenExpiredAt(expiredAt).build();
+    }
+
+    private NotificationType notificationType(String code) {
+        return NotificationType.builder().notificationTypeCode(code).category(NotificationCategory.PERSONAL).build();
+    }
+
+    private DeviceNotificationSetting setting(FcmToken fcmToken, NotificationType type, boolean isEnabled) {
+        return DeviceNotificationSetting.builder().fcmToken(fcmToken).notificationType(type).isEnabled(isEnabled).build();
+    }
+
+    private void save(Object... entities) {
+        for (Object entity : entities) {
+            em.persist(entity);
+        }
+    }
+
+    private void flushAndClear() {
+        em.flush();
+        em.clear();
+    }
+
+    @Nested
+    @DisplayName("findAllActivatedFcmTokensForChat 메소드는")
+    class Describe_findAllActivatedFcmTokensForChat {
+
+        @Test
+        @DisplayName("성공: 채팅 알림 설정이 켜져 있고 활성화된 토큰만 조회한다")
+        void it_returns_active_tokens_with_chat_notification_enabled() {
+            // given
+            NotificationType chatType = notificationType(NotificationCode.CHAT_MESSAGE.getCode());
+            NotificationType workoutType = notificationType(NotificationCode.WORKOUT_REMINDER.getCode());
+            save(chatType, workoutType);
+
+            Member member = member("test@test.com", "Tester", LocalDateTime.now());
+            save(member);
+
+            // 1. [조회 대상] 활성 토큰 + 채팅 알림 ON
+            FcmToken validToken = fcmToken(member, "valid_token", true, LocalDateTime.now().plusDays(30));
+            save(validToken, setting(validToken, chatType, true));
+
+            // 2. [제외 대상] 활성 토큰 + 채팅 알림 OFF
+            FcmToken chatDisabledToken = fcmToken(member, "chat_disabled_token", true, LocalDateTime.now().plusDays(30));
+            save(chatDisabledToken, setting(chatDisabledToken, chatType, false));
+
+            // 3. [제외 대상] 비활성 토큰 + 채팅 알림 ON
+            FcmToken inactiveToken = fcmToken(member, "inactive_token", false, LocalDateTime.now().plusDays(30));
+            save(inactiveToken, setting(inactiveToken, chatType, true));
+
+            // 4. [제외 대상] 활성 토큰 + 다른 알림(운동) ON (채팅 설정이 아예 없는 경우)
+            FcmToken workoutToken = fcmToken(member, "workout_token", true, LocalDateTime.now().plusDays(30));
+            save(workoutToken, setting(workoutToken, workoutType, true));
+
+            flushAndClear();
+
+            // when
+            List<String> result = fcmTokenRepository.findAllActivatedFcmTokensForChat(member.getMemberId());
+
+            // then
+            assertThat(result).hasSize(1);
+            assertThat(result).containsExactly("valid_token");
+        }
+
+        @Test
+        @DisplayName("성공: 해당 회원의 유효한 토큰이 없으면 빈 리스트를 반환한다")
+        void it_returns_empty_list_when_no_valid_tokens() {
+            // given
+            NotificationType chatType = notificationType(NotificationCode.CHAT_MESSAGE.getCode());
+            save(chatType);
+
+            Member member = member("test@test.com", "Tester", LocalDateTime.now());
+            save(member);
+
+            // 토큰이 아예 없거나 유효한 토큰이 없는 상황
+            FcmToken inactiveToken = fcmToken(member, "inactive_token", false, LocalDateTime.now().plusDays(30));
+            save(inactiveToken, setting(inactiveToken, chatType, true));
+
+            flushAndClear();
+
+            // when
+            List<String> result = fcmTokenRepository.findAllActivatedFcmTokensForChat(member.getMemberId());
+
+            // then
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("성공: 다른 회원의 토큰은 조회되지 않는다")
+        void it_does_not_return_other_members_token() {
+            // given
+            NotificationType chatType = notificationType(NotificationCode.CHAT_MESSAGE.getCode());
+            save(chatType);
+
+            Member me = member("me@test.com", "Me", LocalDateTime.now());
+            Member other = member("other@test.com", "Other", LocalDateTime.now());
+            save(me, other);
+
+            // 내 토큰 (조회 대상)
+            FcmToken myToken = fcmToken(me, "my_token", true, LocalDateTime.now().plusDays(30));
+            save(myToken, setting(myToken, chatType, true));
+
+            // 남의 토큰 (조건은 맞지만 회원이 다름)
+            FcmToken otherToken = fcmToken(other, "other_token", true, LocalDateTime.now().plusDays(30));
+            save(otherToken, setting(otherToken, chatType, true));
+
+            flushAndClear();
+
+            // when
+            List<String> result = fcmTokenRepository.findAllActivatedFcmTokensForChat(me.getMemberId());
+
+            // then
+            assertThat(result).hasSize(1);
+            assertThat(result).containsExactly("my_token");
         }
     }
 }

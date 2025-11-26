@@ -21,6 +21,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Repository
@@ -90,5 +91,27 @@ public class FcmTokenRepositoryImpl implements FcmTokenRepositoryCustom {
 
         // --- 6. Page 객체 생성 ---
         return new PageImpl<>(tokens, pageable, total);
+    }
+
+    /**
+     * 주어진 회원 ID에 해당하는 활성화된 FCM 토큰을 조회합니다.
+     */
+    @Override
+    public List<String> findAllActivatedFcmTokensForChat(UUID memberId) {
+        QFcmToken fcmToken = QFcmToken.fcmToken;
+        QNotificationType notificationType = QNotificationType.notificationType;
+        QDeviceNotificationSetting deviceNotificationSetting = QDeviceNotificationSetting.deviceNotificationSetting;
+
+        return queryFactory.select(fcmToken.fcmTokenValue)
+                .from(fcmToken)
+                .join(fcmToken.deviceNotificationSettingList, deviceNotificationSetting)
+                .join(deviceNotificationSetting.notificationType, notificationType)
+                .where(
+                        fcmToken.member.memberId.eq(memberId), // 상대방의 토큰중
+                        fcmToken.fcmTokenIsActive.isTrue(), // 활성화된 토큰
+                        deviceNotificationSetting.isEnabled.isTrue(), // 알림 받기 설정이 켜져있는 경우
+                        notificationType.notificationTypeCode.eq(NotificationCode.CHAT_MESSAGE.getCode()) // 채팅 알림 조회
+                )
+                .fetch();
     }
 }

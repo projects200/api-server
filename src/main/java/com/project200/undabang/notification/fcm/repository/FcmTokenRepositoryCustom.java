@@ -3,6 +3,9 @@ package com.project200.undabang.notification.fcm.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+import java.util.UUID;
+
 public interface FcmTokenRepositoryCustom {
 
     /**
@@ -13,4 +16,6 @@ public interface FcmTokenRepositoryCustom {
      * @return 페이징된 FCM 토큰 문자열 목록
      */
     Page<String> findFcmTokensForInactiveMembers(int penaltyThresholdDays, Pageable pageable);
+
+    List<String> findAllActivatedFcmTokensForChat(UUID memberId);
 }

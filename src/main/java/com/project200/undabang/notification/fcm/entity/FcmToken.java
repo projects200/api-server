@@ -37,6 +37,16 @@ public class FcmToken {
     @Column(name = "fcm_token_value", nullable = false, unique = true)
     private String fcmTokenValue;
 
+    @Enumerated(EnumType.STRING)
+    @Comment("클라이언트 OS 플랫폼 (예: IOS, ANDROID, WEB)")
+    @Column(name = "fcm_token_platform", length = 20)
+    private FcmPlatform platform;
+
+    @Enumerated(EnumType.STRING)
+    @Comment("접속 방식 (예 : APP, PWA, BROWSER)")
+    @Column(name = "fcm_token_access_mode", length = 20)
+    private FcmAccessMode accessMode;
+
     @Size(max = 255)
     @Comment("디바이스 정보 (User Agent)")
     @Column(name = "fcm_token_user_agent")
