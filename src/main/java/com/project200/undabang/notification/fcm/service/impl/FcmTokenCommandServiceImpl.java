@@ -1,12 +1,13 @@
 package com.project200.undabang.notification.fcm.service.impl;
 
 import com.project200.undabang.member.entity.Member;
+import com.project200.undabang.notification.entity.NotificationType;
 import com.project200.undabang.notification.fcm.entity.DeviceNotificationSetting;
 import com.project200.undabang.notification.fcm.entity.FcmToken;
-import com.project200.undabang.notification.fcm.entity.NotificationType;
 import com.project200.undabang.notification.fcm.repository.DeviceNotificationSettingRepository;
 import com.project200.undabang.notification.fcm.repository.FcmTokenRepository;
 import com.project200.undabang.notification.fcm.service.FcmTokenCommandService;
+import com.project200.undabang.notification.repository.NotificationTypeRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,7 @@ public class FcmTokenCommandServiceImpl implements FcmTokenCommandService {
 
     private final DeviceNotificationSettingRepository deviceNotificationSettingRepository;
     private final FcmTokenRepository fcmTokenRepository;
+    private final NotificationTypeRepository notificationTypeRepository;
     private final EntityManager em;
 
     @Override
@@ -105,14 +107,15 @@ public class FcmTokenCommandServiceImpl implements FcmTokenCommandService {
     }
 
     /**
-     * 주어진 FCM 토큰에 대한 기본 알림 설정을 생성합니다.
-     * 해당 설정은 채팅 메시지와 운동 리마인더 알림을 포함합니다.
+     * 주어진 FCM 토큰에 대해 기본 알림 설정을 생성합니다.
      */
     private void createDefaultSettingForFcmToken(FcmToken fcmToken) {
-        DeviceNotificationSetting chatMessageSetting = DeviceNotificationSetting.of(fcmToken, NotificationType.CHAT_MESSAGE);
-        DeviceNotificationSetting workoutReminderSetting = DeviceNotificationSetting.of(fcmToken, NotificationType.WORKOUT_REMINDER);
+        List<NotificationType> notificationTypeList = notificationTypeRepository.findAllByDefaultEnabledTrueAndIsActiveTrue();
 
-        fcmToken.getDeviceNotificationSettingList().add(chatMessageSetting);
-        fcmToken.getDeviceNotificationSettingList().add(workoutReminderSetting);
+        List<DeviceNotificationSetting> deviceNotificationSettingList = notificationTypeList.stream()
+                .map(notificationType -> DeviceNotificationSetting.of(fcmToken, notificationType))
+                .toList();
+
+        fcmToken.getDeviceNotificationSettingList().addAll(deviceNotificationSettingList);
     }
 }
