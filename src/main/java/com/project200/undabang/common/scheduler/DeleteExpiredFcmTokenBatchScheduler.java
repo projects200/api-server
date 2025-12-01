@@ -28,10 +28,10 @@ public class DeleteExpiredFcmTokenBatchScheduler {
     public void runDeleteExpiredFcmTokenJob() throws Exception {
         log.info("주간 만료 FCM 토큰 제거 작업 진행");
 
-        String runDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"));
+        LocalDateTime runDateTime = LocalDateTime.now();
 
         JobParameters jobParameters = new JobParametersBuilder()
-                .addLocalDateTime("executedAt", LocalDateTime.now())
+                .addLocalDateTime("executedAt", runDateTime)
                 .toJobParameters();
 
         jobLauncher.run(deleteExpiredFcmTokenJob, jobParameters);
