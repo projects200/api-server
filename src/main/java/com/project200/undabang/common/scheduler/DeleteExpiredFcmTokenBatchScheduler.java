@@ -12,7 +12,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 @Slf4j
 @Component
@@ -23,7 +22,7 @@ public class DeleteExpiredFcmTokenBatchScheduler {
     @Qualifier("deleteExpiredFcmTokenJob")
     private final Job deleteExpiredFcmTokenJob;
 
-    @Async("decreaseExerciseScoreBatchJobExecutor")
+    @Async("batchJobExecutor")
     @Scheduled(cron = "0 0 5 * * SUN")
     public void runDeleteExpiredFcmTokenJob() throws Exception {
         log.info("주간 만료 FCM 토큰 제거 작업 진행");

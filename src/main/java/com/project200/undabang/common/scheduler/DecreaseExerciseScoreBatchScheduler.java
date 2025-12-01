@@ -35,7 +35,7 @@ public class DecreaseExerciseScoreBatchScheduler {
      * 또한, 배치 작업이 매우 길어질 수 있으므로, @Async annotation을 사용하여 스케줄러 쓰레드를 너무 오래 점유하지 않도록 합니다.
      * (추후 슬랙 알림 등의 모니터링 기능 추가 예정)
      */
-    @Async("decreaseExerciseScoreBatchJobExecutor")
+    @Async("batchJobExecutor")
     @Scheduled(cron = "0 0 3 * * ?")
     public void runDecreaseExerciseScoreJob() throws Exception {
         log.info("운동 점수 감소 배치 Job Scheduler 진행");
