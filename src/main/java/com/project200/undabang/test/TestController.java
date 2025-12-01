@@ -87,7 +87,7 @@ public class TestController {
         String runDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));
 
         JobParameters jobParameters = new JobParametersBuilder()
-                .addString("runDate", runDate) // 실행 식별자 역할 (중복 방지)
+                .addString("executedAt", runDate) // 실행 식별자 역할 (중복 방지)
                 .toJobParameters();
 
         jobLauncher.run(deleteExpiredFcmTokenJob, jobParameters);

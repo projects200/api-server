@@ -5,10 +5,13 @@ import com.project200.undabang.member.enums.MemberGender;
 import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.notification.fcm.entity.FcmToken;
 import com.project200.undabang.notification.fcm.repository.FcmTokenRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.batch.core.*;
 import org.springframework.batch.test.JobLauncherTestUtils;
+import org.springframework.batch.test.JobRepositoryTestUtils;
 import org.springframework.batch.test.context.SpringBatchTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,6 +30,9 @@ public class DeleteExpiredFcmTokenJobTest {
     private JobLauncherTestUtils jobLauncherTestUtils;
 
     @Autowired
+    private JobRepositoryTestUtils jobRepositoryTestUtils;
+
+    @Autowired
     private FcmTokenRepository fcmTokenRepository;
 
     @Autowired
@@ -35,16 +41,20 @@ public class DeleteExpiredFcmTokenJobTest {
     @Autowired
     private Job deleteExpiredFcmTokenJob;
 
-    @Autowired
-    public void setJobToTest(Job deleteExpiredFcmTokenJob) {
+    @BeforeEach
+    void setUp() {
         this.jobLauncherTestUtils.setJob(deleteExpiredFcmTokenJob);
+        cleanUp(); // Clean before each test
+    }
+
+    @AfterEach
+    void tearDown() {
+        cleanUp(); // Clean after each test
     }
 
     @Test
     @DisplayName("만료된 토큰 삭제 Job 실행 시 만료된 토큰만 삭제되고 유효한 토큰은 남아야 한다")
     void deleteExpiredFcmTokenJob_Success() throws Exception {
-        cleanUp();
-
         // Given
         Member member = createMember();
 
@@ -78,9 +88,6 @@ public class DeleteExpiredFcmTokenJobTest {
         // 남은 토큰이 'valid_token_1'인지 확인
         FcmToken remainingToken = fcmTokenRepository.findAll().get(0);
         assertThat(remainingToken.getFcmTokenValue()).isEqualTo("valid_token_1");
-
-        // (선택) 테스트 종료 후 정리 (안 해도 다음 테스트가 cleanUp 호출함)
-        cleanUp();
     }
 
     private Member createMember() {

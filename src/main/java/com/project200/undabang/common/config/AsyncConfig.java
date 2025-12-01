@@ -32,10 +32,9 @@ public class AsyncConfig {
     private final GeneralAsyncProperties generalAsyncProperties;
 
     /**
-     * '운동 점수 감소' 배치 잡을 위한 전용 스레드 풀 Executor를 생성하여 빈으로 등록합니다.
-     * 이 Executor는 DecreaseExerciseScoreBatchScheduler 에서
-     * @Async("batchJobExecutor") 형태로 지정되어 사용됩니다.
-     * 이를 통해 해당 배치 잡이 다른 비동기 작업에 영향을 주지 않고 독립적인 스레드에서 실행되도록 보장합니다.
+     * 배치 작업을 위한 전용 스레드 풀 Executor를 생성하여 빈으로 등록합니다.
+     * 이 Executor는 배치 스케줄러에서 @Async("batchJobExecutor") 형태로 지정되어 사용됩니다.
+     * 이를 통해 배치 작업이 다른 비동기 작업에 영향을 주지 않고 독립적인 스레드에서 실행되도록 보장합니다.
      */
     @Bean(name = "batchJobExecutor")
     public Executor batchJobExecutor() {

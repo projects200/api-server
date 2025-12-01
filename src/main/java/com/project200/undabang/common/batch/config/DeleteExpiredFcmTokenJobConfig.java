@@ -51,12 +51,9 @@ public class DeleteExpiredFcmTokenJobConfig {
     }
 
     /**
-     * 이 메소드들은 StepScope 빈으로, 실제 작업(Step)이 시작될 때 마다 새로 생성해야 하는 빈임.
-     * 그런데 싱글톤 (@Configuration) 빈이 StepScope 빈을 요청하다 보니 Proxy 객체를 대신 주게 됨
-     * 이때, 프록시 객체를 제대로 전달해 주지 못해서 초기화가 실패해 JpaQueryFactory 대신에 Null이 Reader에 계속 주입되는 상황 발생
-     * 따라서 @Bean 메소드로 해당 Item 들을 관리하여, Step이 해당 빈들을 필요로 할때 생성하도록 변경함
-     * <p>
-     * 싱글톤 빈이 StepScope 빈을 주입받을 때는, 필드 주입이 아니라 @Bean 메서드 호출 방식을 사용해 "필요할때 만들도록" 해야 함
+     * Reader를 StepScope 빈으로 정의합니다.
+     * Step 실행 시마다 새로운 인스턴스를 생성하여 상태를 격리하고,
+     * Job Parameters 등의 Step 컨텍스트 정보를 주입받을 수 있도록 합니다.
      */
     @Bean
     @StepScope
