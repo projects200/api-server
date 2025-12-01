@@ -18,4 +18,6 @@ public interface FcmTokenRepositoryCustom {
     Page<String> findFcmTokensForInactiveMembers(int penaltyThresholdDays, Pageable pageable);
 
     List<String> findAllActivatedFcmTokensForChat(UUID memberId);
+
+    List<Long> findAllExpiredTokenIdList(int limit);
 }

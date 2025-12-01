@@ -1,4 +1,4 @@
-package com.project200.undabang.common.batch.items;
+package com.project200.undabang.common.batch.items.DecreaseExerciseScore;
 
 import com.project200.undabang.common.batch.provider.DecreaseExerciseScoreQuerydslProvider;
 import com.project200.undabang.member.entity.Member;
@@ -30,7 +30,7 @@ public class DecreaseExerciseScoreReader extends JpaPagingItemReader<Member> {
     public DecreaseExerciseScoreReader(PolicyService policyService,
                                        EntityManagerFactory entityManagerFactory,
                                        @Value("#{jobParameters['runDate']}") String runDate,
-                                       @Value("${batch.jobs.chunk-size}") int chunkSize){
+                                       @Value("${batch.jobs.chunk-size}") int chunkSize) {
 
         int THRESHOLD_DAYS = policyService.getPolicyValueAsInt(PolicyKey.PENALTY_INACTIVITY_THRESHOLD_DAYS);
 
@@ -53,16 +53,16 @@ public class DecreaseExerciseScoreReader extends JpaPagingItemReader<Member> {
      * 하지만 afterPropertiesSet 을 @Override해서 재정의 하였다.
      * 그러다 보니 EntityManager 는 read()가 처음 호출될 때 실행되는 doOpen() 메서드 안에서 QueryProvider에게 전달되는데, afterPropertiesSet()은 호출되지 않았으므로,
      * JpaQueryFactory 는 생성되지 못해서 Null 값이 계속 전달된 것이다.
-     *
+     * <p>
      * 따라서 super.doOpen()을 먼저 호출하여 의존관계를 주입한 후, afterPropertiesSet()을 호출하여 내부 동작 순서를 맞춰주어야 한다.
      */
     @Override
     protected void doOpen() throws Exception {
         super.doOpen();
 
-        if(this.querydslProvider != null){
+        if (this.querydslProvider != null) {
             this.querydslProvider.afterPropertiesSet();
-        }else{
+        } else {
             throw new IllegalStateException("querydslProvider is null!");
         }
     }

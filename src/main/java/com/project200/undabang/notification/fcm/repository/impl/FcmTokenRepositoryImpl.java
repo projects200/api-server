@@ -114,4 +114,19 @@ public class FcmTokenRepositoryImpl implements FcmTokenRepositoryCustom {
                 )
                 .fetch();
     }
+
+    /**
+     * 만료된 FCM 토큰 ID의 목록을 조회합니다.
+     */
+    @Override
+    public List<Long> findAllExpiredTokenIdList(int limit) {
+        QFcmToken fcmToken = QFcmToken.fcmToken;
+        LocalDateTime today = LocalDate.now().atStartOfDay();
+
+        return queryFactory.select(fcmToken.id)
+                .from(fcmToken)
+                .where(fcmToken.fcmTokenExpiredAt.lt(today)) // 오늘 이전 날짜의 만료일을 가진 모든 토큰을 조회
+                .limit(limit)
+                .fetch();
+    }
 }

@@ -34,6 +34,9 @@ public class TestController {
     @Qualifier("decreaseExerciseScoreJob")
     private final Job decreaseExerciseScoreJob;
 
+    @Qualifier("deleteExpiredFcmTokenJob")
+    private final Job deleteExpiredFcmTokenJob;
+
     @PostMapping(value = "/test1", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public CommonResponse<String> handleFormSubmit2(@ModelAttribute TestDto1 testDto1) {
         return CommonResponse.success("success");
@@ -77,6 +80,17 @@ public class TestController {
                 .toJobParameters();
 
         jobLauncher.run(decreaseExerciseScoreJob, jobParameters);
+    }
+
+    @PostMapping("/delete-fcm-batch")
+    public void deleteFcmBatch() throws Exception {
+        String runDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));
+
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addString("runDate", runDate) // 실행 식별자 역할 (중복 방지)
+                .toJobParameters();
+
+        jobLauncher.run(deleteExpiredFcmTokenJob, jobParameters);
     }
 
     /**

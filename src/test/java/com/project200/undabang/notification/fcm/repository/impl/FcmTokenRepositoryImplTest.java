@@ -19,7 +19,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.annotation.DirtiesContext;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +29,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 @DataJpaTest
 @Import(TestQuerydslConfig.class)
 class FcmTokenRepositoryImplTest {
@@ -157,41 +160,6 @@ class FcmTokenRepositoryImplTest {
         }
     }
 
-    private Member member(String email, String nickname, LocalDateTime createdAt) {
-        return Member.builder().memberId(UUID.randomUUID()).memberEmail(email).memberNickname(nickname).memberCreatedAt(createdAt).build();
-    }
-
-    private Exercise exercise(Member member, LocalDateTime createdAt) {
-        return Exercise.builder()
-                .member(member)
-                .exerciseTitle("Sample Test Exercise")
-                .exerciseCreatedAt(createdAt)
-                .build();
-    }
-
-    private FcmToken fcmToken(Member member, String tokenValue, boolean isActive, LocalDateTime expiredAt) {
-        return FcmToken.builder().member(member).fcmTokenValue(tokenValue).fcmTokenIsActive(isActive).fcmTokenExpiredAt(expiredAt).build();
-    }
-
-    private NotificationType notificationType(String code) {
-        return NotificationType.builder().notificationTypeCode(code).category(NotificationCategory.PERSONAL).build();
-    }
-
-    private DeviceNotificationSetting setting(FcmToken fcmToken, NotificationType type, boolean isEnabled) {
-        return DeviceNotificationSetting.builder().fcmToken(fcmToken).notificationType(type).isEnabled(isEnabled).build();
-    }
-
-    private void save(Object... entities) {
-        for (Object entity : entities) {
-            em.persist(entity);
-        }
-    }
-
-    private void flushAndClear() {
-        em.flush();
-        em.clear();
-    }
-
     @Nested
     @DisplayName("findAllActivatedFcmTokensForChat 메소드는")
     class Describe_findAllActivatedFcmTokensForChat {
@@ -283,6 +251,130 @@ class FcmTokenRepositoryImplTest {
             // then
             assertThat(result).hasSize(1);
             assertThat(result).containsExactly("my_token");
+        }
+    }
+
+    private Member member(String email, String nickname, LocalDateTime createdAt) {
+        return Member.builder().memberId(UUID.randomUUID()).memberEmail(email).memberNickname(nickname).memberCreatedAt(createdAt).build();
+    }
+
+    private Exercise exercise(Member member, LocalDateTime createdAt) {
+        return Exercise.builder()
+                .member(member)
+                .exerciseTitle("Sample Test Exercise")
+                .exerciseCreatedAt(createdAt)
+                .build();
+    }
+
+    private FcmToken fcmToken(Member member, String tokenValue, boolean isActive, LocalDateTime expiredAt) {
+        return FcmToken.builder().member(member).fcmTokenValue(tokenValue).fcmTokenIsActive(isActive).fcmTokenExpiredAt(expiredAt).build();
+    }
+
+    private NotificationType notificationType(String code) {
+        return NotificationType.builder().notificationTypeCode(code).category(NotificationCategory.PERSONAL).build();
+    }
+
+    private DeviceNotificationSetting setting(FcmToken fcmToken, NotificationType type, boolean isEnabled) {
+        return DeviceNotificationSetting.builder().fcmToken(fcmToken).notificationType(type).isEnabled(isEnabled).build();
+    }
+
+    private void save(Object... entities) {
+        for (Object entity : entities) {
+            em.persist(entity);
+        }
+    }
+
+    private void flushAndClear() {
+        em.flush();
+        em.clear();
+    }
+
+    @Nested
+    @DisplayName("findAllExpiredTokenIdList 메소드는")
+    class Describe_findAllExpiredTokenIdList {
+
+        @Test
+        @DisplayName("오늘 00:00 이전에 만료된 토큰의 ID만 정확히 조회한다")
+        void it_returns_only_ids_expired_before_today_midnight() {
+            // given
+            Member member = member("expire@test.com", "ExpireUser", LocalDateTime.now());
+            save(member);
+
+            LocalDateTime todayMidnight = LocalDate.now().atStartOfDay();
+
+            // 1. [조회 대상] 어제 만료된 토큰
+            FcmToken expiredYesterday = fcmToken(member, "expired_yesterday", true, todayMidnight.minusDays(1));
+            // 2. [조회 대상] 오늘 00:00:00 직전(1초 전)에 만료된 토큰
+            FcmToken expiredJustBefore = fcmToken(member, "expired_just_before", true, todayMidnight.minusSeconds(1));
+
+            // 3. [제외 대상] 오늘 00:00:00 정각에 만료되는 토큰 (lt 조건이므로 포함 안 됨)
+            FcmToken exactMidnight = fcmToken(member, "exact_midnight", true, todayMidnight);
+            // 4. [제외 대상] 내일 만료되는 토큰
+            FcmToken validTomorrow = fcmToken(member, "valid_tomorrow", true, todayMidnight.plusDays(1));
+
+            save(expiredYesterday, expiredJustBefore, exactMidnight, validTomorrow);
+            flushAndClear();
+
+            // when
+            List<Long> result = fcmTokenRepository.findAllExpiredTokenIdList(100);
+
+            // then
+            assertThat(result).hasSize(2);
+            // 만료된 토큰 ID만 포함되어야 함 (FcmToken 엔티티에 @Getter가 있다고 가정하여 getId() 호출)
+            assertThat(result).containsExactlyInAnyOrder(
+                    expiredYesterday.getId(),
+                    expiredJustBefore.getId()
+            );
+            // 유효한 토큰 ID는 없어야 함
+            assertThat(result).doesNotContain(
+                    exactMidnight.getId(),
+                    validTomorrow.getId()
+            );
+        }
+
+        @Test
+        @DisplayName("limit 파라미터로 지정한 개수만큼만 잘라서 반환한다")
+        void it_returns_ids_limited_by_parameter() {
+            // given
+            Member member = member("limit@test.com", "LimitUser", LocalDateTime.now());
+            save(member);
+
+            LocalDateTime yesterday = LocalDate.now().minusDays(1).atStartOfDay();
+
+            // 만료된 토큰 10개 생성
+            for (int i = 0; i < 10; i++) {
+                FcmToken token = fcmToken(member, "token_" + i, true, yesterday);
+                save(token);
+            }
+            flushAndClear();
+
+            // when
+            int limit = 3;
+            List<Long> result = fcmTokenRepository.findAllExpiredTokenIdList(limit);
+
+            // then
+            assertThat(result).hasSize(limit);
+        }
+
+        @Test
+        @DisplayName("만료된 토큰이 없으면 빈 리스트를 반환한다")
+        void it_returns_empty_list_when_no_expired_tokens() {
+            // given
+            Member member = member("valid@test.com", "ValidUser", LocalDateTime.now());
+            save(member);
+
+            // 유효한 토큰만 2개 생성
+            FcmToken valid1 = fcmToken(member, "valid_1", true, LocalDateTime.now().plusDays(1));
+            FcmToken valid2 = fcmToken(member, "valid_2", true, LocalDateTime.now().plusDays(30));
+            save(valid1, valid2);
+
+            flushAndClear();
+
+            // when
+            List<Long> result = fcmTokenRepository.findAllExpiredTokenIdList(10);
+
+            // then
+            assertThat(result).isEmpty();
         }
     }
 }
