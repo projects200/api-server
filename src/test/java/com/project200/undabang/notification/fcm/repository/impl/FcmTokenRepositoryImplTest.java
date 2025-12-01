@@ -19,7 +19,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -29,7 +28,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 @DataJpaTest
 @Import(TestQuerydslConfig.class)
 class FcmTokenRepositoryImplTest {
@@ -254,41 +252,6 @@ class FcmTokenRepositoryImplTest {
         }
     }
 
-    private Member member(String email, String nickname, LocalDateTime createdAt) {
-        return Member.builder().memberId(UUID.randomUUID()).memberEmail(email).memberNickname(nickname).memberCreatedAt(createdAt).build();
-    }
-
-    private Exercise exercise(Member member, LocalDateTime createdAt) {
-        return Exercise.builder()
-                .member(member)
-                .exerciseTitle("Sample Test Exercise")
-                .exerciseCreatedAt(createdAt)
-                .build();
-    }
-
-    private FcmToken fcmToken(Member member, String tokenValue, boolean isActive, LocalDateTime expiredAt) {
-        return FcmToken.builder().member(member).fcmTokenValue(tokenValue).fcmTokenIsActive(isActive).fcmTokenExpiredAt(expiredAt).build();
-    }
-
-    private NotificationType notificationType(String code) {
-        return NotificationType.builder().notificationTypeCode(code).category(NotificationCategory.PERSONAL).build();
-    }
-
-    private DeviceNotificationSetting setting(FcmToken fcmToken, NotificationType type, boolean isEnabled) {
-        return DeviceNotificationSetting.builder().fcmToken(fcmToken).notificationType(type).isEnabled(isEnabled).build();
-    }
-
-    private void save(Object... entities) {
-        for (Object entity : entities) {
-            em.persist(entity);
-        }
-    }
-
-    private void flushAndClear() {
-        em.flush();
-        em.clear();
-    }
-
     @Nested
     @DisplayName("findAllExpiredTokenIdList 메소드는")
     class Describe_findAllExpiredTokenIdList {
@@ -376,5 +339,40 @@ class FcmTokenRepositoryImplTest {
             // then
             assertThat(result).isEmpty();
         }
+    }
+
+    private Member member(String email, String nickname, LocalDateTime createdAt) {
+        return Member.builder().memberId(UUID.randomUUID()).memberEmail(email).memberNickname(nickname).memberCreatedAt(createdAt).build();
+    }
+
+    private Exercise exercise(Member member, LocalDateTime createdAt) {
+        return Exercise.builder()
+                .member(member)
+                .exerciseTitle("Sample Test Exercise")
+                .exerciseCreatedAt(createdAt)
+                .build();
+    }
+
+    private FcmToken fcmToken(Member member, String tokenValue, boolean isActive, LocalDateTime expiredAt) {
+        return FcmToken.builder().member(member).fcmTokenValue(tokenValue).fcmTokenIsActive(isActive).fcmTokenExpiredAt(expiredAt).build();
+    }
+
+    private NotificationType notificationType(String code) {
+        return NotificationType.builder().notificationTypeCode(code).category(NotificationCategory.PERSONAL).build();
+    }
+
+    private DeviceNotificationSetting setting(FcmToken fcmToken, NotificationType type, boolean isEnabled) {
+        return DeviceNotificationSetting.builder().fcmToken(fcmToken).notificationType(type).isEnabled(isEnabled).build();
+    }
+
+    private void save(Object... entities) {
+        for (Object entity : entities) {
+            em.persist(entity);
+        }
+    }
+
+    private void flushAndClear() {
+        em.flush();
+        em.clear();
     }
 }

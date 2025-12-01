@@ -7,8 +7,9 @@ import com.project200.undabang.notification.entity.QNotificationType;
 import com.project200.undabang.notification.fcm.entity.QDeviceNotificationSetting;
 import com.project200.undabang.notification.fcm.entity.QFcmToken;
 import com.project200.undabang.notification.fcm.repository.FcmTokenRepositoryCustom;
-import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Coalesce;
 import com.querydsl.core.types.dsl.DateTimeExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -44,10 +45,13 @@ public class FcmTokenRepositoryImpl implements FcmTokenRepositoryCustom {
 
         // --- 2. COALESCE 로직 구현 ---
         // 마지막 활동일을 계산합니다. (운동 기록이 없으면 가입일로 대체)
-        DateTimeExpression<LocalDateTime> lastActivityDate = new CaseBuilder()
-                .when(exercise.exerciseCreatedAt.max().isNull())
-                .then(member.memberCreatedAt)
-                .otherwise(exercise.exerciseCreatedAt.max());
+        // CaseBuilder 대신 Coalesce를 사용하여 HQL 파싱 복잡도를 낮춤 (OOM 방지)
+        DateTimeExpression<LocalDateTime> lastActivityDate = Expressions.asDateTime(
+                new Coalesce<>(LocalDateTime.class)
+                        .add(exercise.exerciseCreatedAt.max())
+                        .add(member.memberCreatedAt)
+        );
+
 
         // --- 3. 기본 쿼리 작성 ---
         JPAQuery<?> baseQuery = queryFactory
