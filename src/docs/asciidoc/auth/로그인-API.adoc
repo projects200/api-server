@@ -6,11 +6,13 @@
 - 사용자의 로그인을 처리하는 API입니다. +
 요청 시 FCM 토큰과 User-Agent 정보를 헤더에 담아 전송하면, 서버는 해당 토큰을 저장하여 푸시 알림에 사용합니다.
 - 요청 시 해당 기기의 푸쉬 알림은 알림 받기 상태로 생성됩니다.
+- 요청 본문에 기기 접속 정보를 입력해야 합니다.
 
 === 개발 이력
 
 - Sprint 9 (2025-08-13): 기능 개발이 완료되었습니다.
 - Spring 17 (2025-11-11): 로그인시 토큰 로직을 수정하였습니다.
+- Spring 19 (2025-12-02): 로그인시 기기 정보를 입력받도록 수정하였습니다.
 
 === 개발 참고 사항
 
@@ -22,7 +24,7 @@ operation::login/login-member_-success_-with-fcm-token[snippets="curl-request,ht
 
 === 매개 변수
 
-operation::login/login-member_-success_-with-fcm-token[snippets="request-headers,response-fields"]
+operation::login/login-member_-success_-with-fcm-token[snippets="request-headers,request-fields,response-fields"]
 
 ==== 응답 상태 코드
 
