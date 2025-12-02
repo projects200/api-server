@@ -1,15 +1,19 @@
 package com.project200.undabang.auth.controller;
 
+import com.project200.undabang.auth.dto.request.LoginRequestDto;
 import com.project200.undabang.auth.service.AuthService;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
 import com.project200.undabang.configuration.RestDocsUtils;
 import com.project200.undabang.member.entity.Member;
+import com.project200.undabang.notification.fcm.entity.FcmAccessMode;
+import com.project200.undabang.notification.fcm.entity.FcmPlatform;
 import com.project200.undabang.notification.fcm.service.FcmTokenCommandService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -24,7 +28,7 @@ import static com.project200.undabang.configuration.DocumentFormatGenerator.getT
 import static com.project200.undabang.configuration.HeadersGenerator.getCommonApiHeaders;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
-import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 
 @WebMvcTest(AuthController.class)
 @DisplayName("AuthController 테스트")
@@ -42,11 +46,15 @@ class AuthControllerTest extends AbstractRestDocSupport {
     class Login {
 
         @Test
-        @DisplayName("로그인 성공 - FCM 토큰 포함")
+        @DisplayName("로그인 성공 - FCM 토큰 및 정보 포함")
         void loginMember_Success_WithFcmToken() throws Exception {
             // given
             String fcmToken = "test-fcm-token";
             String userAgent = "Test-User-Agent";
+
+            // DTO 생성 (테스트를 위해 DTO에 @Builder나 @AllArgsConstructor가 필요합니다)
+            LoginRequestDto requestDto = new LoginRequestDto(FcmPlatform.IOS, FcmAccessMode.APP);
+
             BDDMockito.given(authService.login()).willReturn(member);
 
             // when & then
@@ -55,7 +63,8 @@ class AuthControllerTest extends AbstractRestDocSupport {
                             .accept(MediaType.APPLICATION_JSON)
                             .header("User-Agent", userAgent)
                             .header("X-Fcm-Token", fcmToken)
-                            .headers(getCommonApiHeaders(memberId)))
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(requestDto))) // Request Body 추가
                     .andExpect(MockMvcResultMatchers.status().isOk())
                     .andDo(document.document(
                             requestHeaders(
@@ -65,26 +74,36 @@ class AuthControllerTest extends AbstractRestDocSupport {
                                     headerWithName("X-Fcm-Token").attributes(getTypeFormat(JsonFieldType.STRING))
                                             .description("FCM 푸시 알림을 위한 토큰 (선택)").optional()
                             ),
+                            requestFields(
+                                    fieldWithPath("platform").type(JsonFieldType.STRING)
+                                            .description("플랫폼 정보를 의미합니다 [IOS, ANDROID, PC, ETC] 중 하나여야 합니다."),
+                                    fieldWithPath("accessMode").type(JsonFieldType.STRING)
+                                            .description("접속 모드를 의미합니다 [APP, PWA, BROWSER] 중 하나여야 합니다.")
+                            ),
                             responseFields(
                                     RestDocsUtils.commonResponseFieldsOnly()
                             )
                     ));
 
             BDDMockito.then(authService).should().login();
-            BDDMockito.then(fcmTokenCommandService).should().saveFcmToken(member, fcmToken, userAgent);
+            // 검증 시 requestDto 객체 비교를 위해 refEq 또는 any() 사용
+            BDDMockito.then(fcmTokenCommandService).should()
+                    .saveFcmToken(ArgumentMatchers.refEq(member), ArgumentMatchers.eq(fcmToken), ArgumentMatchers.eq(userAgent), ArgumentMatchers.refEq(requestDto));
         }
 
         @Test
-        @DisplayName("로그인 성공 - FCM 토큰 미포함")
+        @DisplayName("로그인 성공 - FCM 토큰 미포함 (Body는 필수)")
         void loginMember_Success_WithoutFcmToken() throws Exception {
             // given
+            LoginRequestDto requestDto = new LoginRequestDto(FcmPlatform.WEB, FcmAccessMode.BROWSER);
             BDDMockito.given(authService.login()).willReturn(member);
 
             // when & then
             mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/login")
                             .contentType(MediaType.APPLICATION_JSON)
                             .accept(MediaType.APPLICATION_JSON)
-                            .headers(getCommonApiHeaders(memberId)))
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(requestDto))) // 필수
                     .andExpect(MockMvcResultMatchers.status().isOk());
 
             BDDMockito.then(authService).should().login();
@@ -95,18 +114,23 @@ class AuthControllerTest extends AbstractRestDocSupport {
         @DisplayName("로그인 실패 - 존재하지 않는 회원")
         void loginMember_Fail_MemberNotFound() throws Exception {
             // given
+            LoginRequestDto requestDto = new LoginRequestDto(FcmPlatform.ANDROID, FcmAccessMode.APP);
             BDDMockito.given(authService.login()).willThrow(new CustomException(ErrorCode.LOGIN_FAILED));
-
 
             // when & then
             mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/login")
                             .contentType(MediaType.APPLICATION_JSON)
                             .accept(MediaType.APPLICATION_JSON)
-                            .headers(getCommonApiHeaders(UUID.randomUUID()))) // 존재하지 않는 UUID
+                            .headers(getCommonApiHeaders(UUID.randomUUID()))
+                            .content(objectMapper.writeValueAsString(requestDto))) // 필수
                     .andExpect(MockMvcResultMatchers.status().isUnauthorized())
                     .andDo(document.document(
                             requestHeaders(
                                     RestDocsUtils.HEADER_ACCESS_TOKEN
+                            ),
+                            requestFields( // 에러 상황에서도 Request Body는 보냈으므로 문서화 가능 (선택 사항)
+                                    fieldWithPath("platform").description("플랫폼 정보"),
+                                    fieldWithPath("accessMode").description("접속 모드")
                             ),
                             responseFields(
                                     RestDocsUtils.commonResponseFieldsOnly()

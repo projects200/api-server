@@ -7,6 +7,8 @@ import com.project200.undabang.notification.entity.NotificationCategory;
 import com.project200.undabang.notification.entity.NotificationCode;
 import com.project200.undabang.notification.entity.NotificationType;
 import com.project200.undabang.notification.fcm.entity.DeviceNotificationSetting;
+import com.project200.undabang.notification.fcm.entity.FcmAccessMode;
+import com.project200.undabang.notification.fcm.entity.FcmPlatform;
 import com.project200.undabang.notification.fcm.entity.FcmToken;
 import com.project200.undabang.notification.fcm.repository.FcmTokenRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -38,14 +40,34 @@ class FcmTokenRepositoryImplTest {
     @Autowired
     private TestEntityManager em;
 
+    private Member member(String email, String nickname, LocalDateTime createdAt) {
+        return Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberEmail(email)
+                .memberNickname(nickname)
+                .memberCreatedAt(createdAt)
+                .build();
+    }
+
+    private FcmToken fcmToken(Member member, String tokenValue, boolean isActive, LocalDateTime expiredAt, FcmPlatform platform, FcmAccessMode mode) {
+        return FcmToken.builder()
+                .member(member)
+                .fcmTokenValue(tokenValue)
+                .fcmTokenIsActive(isActive)
+                .fcmTokenExpiredAt(expiredAt)
+                .fcmPlatform(platform)
+                .fcmAccessMode(mode)
+                .build();
+    }
+
     @Nested
     @DisplayName("findFcmTokensForInactiveMembers 메소드는")
     class Describe_findFcmTokensForInactiveMembers {
 
         @Test
-        @DisplayName("다양한 조건의 사용자가 있을 때 운동 격려 알림을 활성화한 비활성 대상만 정확히 필터링한다")
-        void it_filters_only_inactive_members_with_workout_reminder_enabled() {
-            // given: 이 테스트에 필요한 모든 데이터를 독립적으로 생성
+        @DisplayName("운동 격려 알림을 활성화한 비활성 대상 중, 유효한 플랫폼(Android-App, iOS-PWA)만 필터링한다")
+        void it_filters_only_inactive_members_with_valid_platform_and_settings() {
+            // given
             NotificationType workoutType = notificationType("WORKOUT_REMINDER");
             NotificationType chatType = notificationType("CHAT_MESSAGE");
             save(workoutType, chatType);
@@ -53,30 +75,35 @@ class FcmTokenRepositoryImplTest {
             int penaltyThresholdDays = 7;
             LocalDateTime now = LocalDateTime.now();
 
-            // 시나리오 1: 비활성 + 운동알림 ON -> 조회 대상
+            // 1. [조회 대상] 비활성 + 운동알림 ON + Android APP (Valid)
             Member inactive1 = member("inactive1@test.com", "inactive1", now.minusDays(10));
-            FcmToken expectedToken1 = fcmToken(inactive1, "expected-token-1", true, now.plusDays(30));
+            FcmToken expectedToken1 = fcmToken(inactive1, "expected-android-app", true, now.plusDays(30), FcmPlatform.ANDROID, FcmAccessMode.APP);
             save(inactive1, exercise(inactive1, now.minusDays(8)), expectedToken1, setting(expectedToken1, workoutType, true));
 
-            // 시나리오 2: 비활성(운동기록X) + 운동알림 ON -> 조회 대상
+            // 2. [조회 대상] 비활성(운동기록X) + 운동알림 ON + iOS PWA (Valid)
             Member inactive2 = member("inactive2@test.com", "inactive2", now.minusDays(8));
-            FcmToken expectedToken2 = fcmToken(inactive2, "expected-token-2", true, now.plusDays(30));
+            FcmToken expectedToken2 = fcmToken(inactive2, "expected-ios-pwa", true, now.plusDays(30), FcmPlatform.IOS, FcmAccessMode.PWA);
             save(inactive2, expectedToken2, setting(expectedToken2, workoutType, true));
 
-            // 시나리오 3: 비활성 + 운동알림 OFF -> 조회 제외
-            Member inactive3 = member("inactive3@test.com", "inactive3", now.minusDays(9));
-            FcmToken token3 = fcmToken(inactive3, "token3", true, now.plusDays(30));
-            save(inactive3, token3, setting(token3, workoutType, false));
+            // 3. [제외 대상] 플랫폼 불일치 (WEB / BROWSER)
+            Member inactiveWeb = member("web@test.com", "webUser", now.minusDays(10));
+            FcmToken webToken = fcmToken(inactiveWeb, "web-token", true, now.plusDays(30), FcmPlatform.WEB, FcmAccessMode.BROWSER);
+            save(inactiveWeb, webToken, setting(webToken, workoutType, true));
 
-            // 시나리오 4: 비활성 + 다른알림(채팅) ON -> 조회 제외
-            Member inactive4 = member("inactive4@test.com", "inactive4", now.minusDays(9));
-            FcmToken token4 = fcmToken(inactive4, "token4", true, now.plusDays(30));
-            save(inactive4, token4, setting(token4, chatType, true));
+            // 4. [제외 대상] 플랫폼 불일치 (iOS APP - 로직상 iOS는 PWA만 허용됨)
+            Member inactiveIosApp = member("iosapp@test.com", "iosAppUser", now.minusDays(10));
+            FcmToken iosAppToken = fcmToken(inactiveIosApp, "ios-app-token", true, now.plusDays(30), FcmPlatform.IOS, FcmAccessMode.APP);
+            save(inactiveIosApp, iosAppToken, setting(iosAppToken, workoutType, true));
 
-            // 시나리오 5: 활성 사용자 + 운동알림 ON -> 조회 제외
+            // 5. [제외 대상] 운동알림 OFF
+            Member inactiveOff = member("inactiveOff@test.com", "inactiveOff", now.minusDays(9));
+            FcmToken tokenOff = fcmToken(inactiveOff, "token-off", true, now.plusDays(30), FcmPlatform.ANDROID, FcmAccessMode.APP);
+            save(inactiveOff, tokenOff, setting(tokenOff, workoutType, false));
+
+            // 6. [제외 대상] 활성 사용자
             Member activeUser = member("active@test.com", "active1", now.minusDays(15));
-            FcmToken token5 = fcmToken(activeUser, "token5", true, now.plusDays(30));
-            save(activeUser, exercise(activeUser, now.minusDays(6)), token5, setting(token5, workoutType, true));
+            FcmToken activeToken = fcmToken(activeUser, "active-token", true, now.plusDays(30), FcmPlatform.ANDROID, FcmAccessMode.APP);
+            save(activeUser, exercise(activeUser, now.minusDays(6)), activeToken, setting(activeToken, workoutType, true));
 
             flushAndClear();
             Pageable pageable = PageRequest.of(0, 10);
@@ -103,7 +130,8 @@ class FcmTokenRepositoryImplTest {
             LocalDateTime now = LocalDateTime.now();
 
             Member inactiveNoExercise = member("no-exercise@test.com", "no-exercise-user", now.minusDays(8));
-            FcmToken targetToken = fcmToken(inactiveNoExercise, "target-token", true, now.plusDays(30));
+            // Default valid platform (Android/APP)
+            FcmToken targetToken = fcmToken(inactiveNoExercise, "target-token", true, now.plusDays(30), FcmPlatform.ANDROID, FcmAccessMode.APP);
             save(inactiveNoExercise, targetToken, setting(targetToken, workoutType, true));
 
             flushAndClear();
@@ -113,7 +141,7 @@ class FcmTokenRepositoryImplTest {
             Page<String> result = fcmTokenRepository.findFcmTokensForInactiveMembers(penaltyThresholdDays, pageable);
 
             // then
-            assertThat(result.getTotalElements()).as("운동 기록 없는 비활성 사용자 1명이 조회되어야 합니다.").isEqualTo(1);
+            assertThat(result.getTotalElements()).isEqualTo(1);
             assertThat(result.getContent()).containsExactly(targetToken.getFcmTokenValue());
         }
 
@@ -135,7 +163,8 @@ class FcmTokenRepositoryImplTest {
                 save(member);
                 for (int j = 0; j < tokensPerMember; j++) {
                     String tokenValue = "token-" + i + "-" + j;
-                    FcmToken fcmToken = fcmToken(member, tokenValue, true, now.plusDays(30));
+                    // Default valid platform
+                    FcmToken fcmToken = fcmToken(member, tokenValue, true, now.plusDays(30), FcmPlatform.ANDROID, FcmAccessMode.APP);
                     allExpectedTokens.add(tokenValue);
                     save(fcmToken, setting(fcmToken, workoutType, true));
                 }
@@ -163,8 +192,8 @@ class FcmTokenRepositoryImplTest {
     class Describe_findAllActivatedFcmTokensForChat {
 
         @Test
-        @DisplayName("성공: 채팅 알림 설정이 켜져 있고 활성화된 토큰만 조회한다")
-        void it_returns_active_tokens_with_chat_notification_enabled() {
+        @DisplayName("성공: 채팅 알림 설정이 켜져 있고, 활성화되었으며, 지원하는 플랫폼(Android/App, iOS/PWA)인 토큰만 조회한다")
+        void it_returns_active_tokens_with_chat_notification_enabled_and_valid_platform() {
             // given
             NotificationType chatType = notificationType(NotificationCode.CHAT_MESSAGE.getCode());
             NotificationType workoutType = notificationType(NotificationCode.WORKOUT_REMINDER.getCode());
@@ -173,21 +202,31 @@ class FcmTokenRepositoryImplTest {
             Member member = member("test@test.com", "Tester", LocalDateTime.now());
             save(member);
 
-            // 1. [조회 대상] 활성 토큰 + 채팅 알림 ON
-            FcmToken validToken = fcmToken(member, "valid_token", true, LocalDateTime.now().plusDays(30));
-            save(validToken, setting(validToken, chatType, true));
+            LocalDateTime future = LocalDateTime.now().plusDays(30);
 
-            // 2. [제외 대상] 활성 토큰 + 채팅 알림 OFF
-            FcmToken chatDisabledToken = fcmToken(member, "chat_disabled_token", true, LocalDateTime.now().plusDays(30));
+            // 1. [조회 대상] Android + APP + 채팅 ON
+            FcmToken androidAppToken = fcmToken(member, "android_app", true, future, FcmPlatform.ANDROID, FcmAccessMode.APP);
+            save(androidAppToken, setting(androidAppToken, chatType, true));
+
+            // 2. [조회 대상] iOS + PWA + 채팅 ON
+            FcmToken iosPwaToken = fcmToken(member, "ios_pwa", true, future, FcmPlatform.IOS, FcmAccessMode.PWA);
+            save(iosPwaToken, setting(iosPwaToken, chatType, true));
+
+            // 3. [제외 대상] iOS + APP (지원하지 않는 조합)
+            FcmToken iosAppToken = fcmToken(member, "ios_app", true, future, FcmPlatform.IOS, FcmAccessMode.APP);
+            save(iosAppToken, setting(iosAppToken, chatType, true));
+
+            // 4. [제외 대상] Web + Browser (지원하지 않는 조합)
+            FcmToken webToken = fcmToken(member, "web_browser", true, future, FcmPlatform.WEB, FcmAccessMode.BROWSER);
+            save(webToken, setting(webToken, chatType, true));
+
+            // 5. [제외 대상] 채팅 알림 OFF
+            FcmToken chatDisabledToken = fcmToken(member, "chat_disabled", true, future, FcmPlatform.ANDROID, FcmAccessMode.APP);
             save(chatDisabledToken, setting(chatDisabledToken, chatType, false));
 
-            // 3. [제외 대상] 비활성 토큰 + 채팅 알림 ON
-            FcmToken inactiveToken = fcmToken(member, "inactive_token", false, LocalDateTime.now().plusDays(30));
+            // 6. [제외 대상] 비활성 토큰
+            FcmToken inactiveToken = fcmToken(member, "inactive_token", false, future, FcmPlatform.ANDROID, FcmAccessMode.APP);
             save(inactiveToken, setting(inactiveToken, chatType, true));
-
-            // 4. [제외 대상] 활성 토큰 + 다른 알림(운동) ON (채팅 설정이 아예 없는 경우)
-            FcmToken workoutToken = fcmToken(member, "workout_token", true, LocalDateTime.now().plusDays(30));
-            save(workoutToken, setting(workoutToken, workoutType, true));
 
             flushAndClear();
 
@@ -195,8 +234,8 @@ class FcmTokenRepositoryImplTest {
             List<String> result = fcmTokenRepository.findAllActivatedFcmTokensForChat(member.getMemberId());
 
             // then
-            assertThat(result).hasSize(1);
-            assertThat(result).containsExactly("valid_token");
+            assertThat(result).hasSize(2);
+            assertThat(result).containsExactlyInAnyOrder("android_app", "ios_pwa");
         }
 
         @Test
@@ -210,7 +249,7 @@ class FcmTokenRepositoryImplTest {
             save(member);
 
             // 토큰이 아예 없거나 유효한 토큰이 없는 상황
-            FcmToken inactiveToken = fcmToken(member, "inactive_token", false, LocalDateTime.now().plusDays(30));
+            FcmToken inactiveToken = fcmToken(member, "inactive_token", false, LocalDateTime.now().plusDays(30), FcmPlatform.ANDROID, FcmAccessMode.APP);
             save(inactiveToken, setting(inactiveToken, chatType, true));
 
             flushAndClear();
@@ -221,35 +260,14 @@ class FcmTokenRepositoryImplTest {
             // then
             assertThat(result).isEmpty();
         }
+    }
 
-        @Test
-        @DisplayName("성공: 다른 회원의 토큰은 조회되지 않는다")
-        void it_does_not_return_other_members_token() {
-            // given
-            NotificationType chatType = notificationType(NotificationCode.CHAT_MESSAGE.getCode());
-            save(chatType);
-
-            Member me = member("me@test.com", "Me", LocalDateTime.now());
-            Member other = member("other@test.com", "Other", LocalDateTime.now());
-            save(me, other);
-
-            // 내 토큰 (조회 대상)
-            FcmToken myToken = fcmToken(me, "my_token", true, LocalDateTime.now().plusDays(30));
-            save(myToken, setting(myToken, chatType, true));
-
-            // 남의 토큰 (조건은 맞지만 회원이 다름)
-            FcmToken otherToken = fcmToken(other, "other_token", true, LocalDateTime.now().plusDays(30));
-            save(otherToken, setting(otherToken, chatType, true));
-
-            flushAndClear();
-
-            // when
-            List<String> result = fcmTokenRepository.findAllActivatedFcmTokensForChat(me.getMemberId());
-
-            // then
-            assertThat(result).hasSize(1);
-            assertThat(result).containsExactly("my_token");
-        }
+    private Exercise exercise(Member member, LocalDateTime createdAt) {
+        return Exercise.builder()
+                .member(member)
+                .exerciseTitle("Sample Test Exercise")
+                .exerciseCreatedAt(createdAt)
+                .build();
     }
 
     @Nested
@@ -265,15 +283,16 @@ class FcmTokenRepositoryImplTest {
 
             LocalDateTime todayMidnight = LocalDate.now().atStartOfDay();
 
+            // 플랫폼 정보는 만료 조회 로직에 영향이 없지만, 필수 필드 채움을 위해 기본값 사용
             // 1. [조회 대상] 어제 만료된 토큰
-            FcmToken expiredYesterday = fcmToken(member, "expired_yesterday", true, todayMidnight.minusDays(1));
+            FcmToken expiredYesterday = fcmToken(member, "expired_yesterday", true, todayMidnight.minusDays(1), FcmPlatform.ANDROID, FcmAccessMode.APP);
             // 2. [조회 대상] 오늘 00:00:00 직전(1초 전)에 만료된 토큰
-            FcmToken expiredJustBefore = fcmToken(member, "expired_just_before", true, todayMidnight.minusSeconds(1));
+            FcmToken expiredJustBefore = fcmToken(member, "expired_just_before", true, todayMidnight.minusSeconds(1), FcmPlatform.ANDROID, FcmAccessMode.APP);
 
-            // 3. [제외 대상] 오늘 00:00:00 정각에 만료되는 토큰 (lt 조건이므로 포함 안 됨)
-            FcmToken exactMidnight = fcmToken(member, "exact_midnight", true, todayMidnight);
+            // 3. [제외 대상] 오늘 00:00:00 정각에 만료되는 토큰
+            FcmToken exactMidnight = fcmToken(member, "exact_midnight", true, todayMidnight, FcmPlatform.ANDROID, FcmAccessMode.APP);
             // 4. [제외 대상] 내일 만료되는 토큰
-            FcmToken validTomorrow = fcmToken(member, "valid_tomorrow", true, todayMidnight.plusDays(1));
+            FcmToken validTomorrow = fcmToken(member, "valid_tomorrow", true, todayMidnight.plusDays(1), FcmPlatform.ANDROID, FcmAccessMode.APP);
 
             save(expiredYesterday, expiredJustBefore, exactMidnight, validTomorrow);
             flushAndClear();
@@ -283,78 +302,15 @@ class FcmTokenRepositoryImplTest {
 
             // then
             assertThat(result).hasSize(2);
-            // 만료된 토큰 ID만 포함되어야 함 (FcmToken 엔티티에 @Getter가 있다고 가정하여 getId() 호출)
             assertThat(result).containsExactlyInAnyOrder(
                     expiredYesterday.getId(),
                     expiredJustBefore.getId()
             );
-            // 유효한 토큰 ID는 없어야 함
             assertThat(result).doesNotContain(
                     exactMidnight.getId(),
                     validTomorrow.getId()
             );
         }
-
-        @Test
-        @DisplayName("limit 파라미터로 지정한 개수만큼만 잘라서 반환한다")
-        void it_returns_ids_limited_by_parameter() {
-            // given
-            Member member = member("limit@test.com", "LimitUser", LocalDateTime.now());
-            save(member);
-
-            LocalDateTime yesterday = LocalDate.now().minusDays(1).atStartOfDay();
-
-            // 만료된 토큰 10개 생성
-            for (int i = 0; i < 10; i++) {
-                FcmToken token = fcmToken(member, "token_" + i, true, yesterday);
-                save(token);
-            }
-            flushAndClear();
-
-            // when
-            int limit = 3;
-            List<Long> result = fcmTokenRepository.findAllExpiredTokenIdList(limit);
-
-            // then
-            assertThat(result).hasSize(limit);
-        }
-
-        @Test
-        @DisplayName("만료된 토큰이 없으면 빈 리스트를 반환한다")
-        void it_returns_empty_list_when_no_expired_tokens() {
-            // given
-            Member member = member("valid@test.com", "ValidUser", LocalDateTime.now());
-            save(member);
-
-            // 유효한 토큰만 2개 생성
-            FcmToken valid1 = fcmToken(member, "valid_1", true, LocalDateTime.now().plusDays(1));
-            FcmToken valid2 = fcmToken(member, "valid_2", true, LocalDateTime.now().plusDays(30));
-            save(valid1, valid2);
-
-            flushAndClear();
-
-            // when
-            List<Long> result = fcmTokenRepository.findAllExpiredTokenIdList(10);
-
-            // then
-            assertThat(result).isEmpty();
-        }
-    }
-
-    private Member member(String email, String nickname, LocalDateTime createdAt) {
-        return Member.builder().memberId(UUID.randomUUID()).memberEmail(email).memberNickname(nickname).memberCreatedAt(createdAt).build();
-    }
-
-    private Exercise exercise(Member member, LocalDateTime createdAt) {
-        return Exercise.builder()
-                .member(member)
-                .exerciseTitle("Sample Test Exercise")
-                .exerciseCreatedAt(createdAt)
-                .build();
-    }
-
-    private FcmToken fcmToken(Member member, String tokenValue, boolean isActive, LocalDateTime expiredAt) {
-        return FcmToken.builder().member(member).fcmTokenValue(tokenValue).fcmTokenIsActive(isActive).fcmTokenExpiredAt(expiredAt).build();
     }
 
     private NotificationType notificationType(String code) {

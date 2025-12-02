@@ -1,7 +1,10 @@
 package com.project200.undabang.notification.fcm.service.impl;
 
+import com.project200.undabang.auth.dto.request.LoginRequestDto;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.notification.entity.NotificationType;
+import com.project200.undabang.notification.fcm.entity.FcmAccessMode;
+import com.project200.undabang.notification.fcm.entity.FcmPlatform;
 import com.project200.undabang.notification.fcm.entity.FcmToken;
 import com.project200.undabang.notification.fcm.repository.DeviceNotificationSettingRepository;
 import com.project200.undabang.notification.fcm.repository.FcmTokenRepository;
@@ -43,10 +46,6 @@ class FcmTokenCommandServiceImplTest {
 
     @Mock
     private EntityManager em;
-
-    private Member createMember(UUID id) {
-        return Member.builder().memberId(id).build();
-    }
 
     @Nested
     @DisplayName("FCM 토큰 비활성화 기능은")
@@ -135,6 +134,14 @@ class FcmTokenCommandServiceImplTest {
         }
     }
 
+    private Member createMember(UUID id) {
+        return Member.builder().memberId(id).build();
+    }
+
+    private LoginRequestDto createLoginRequestDto() {
+        return new LoginRequestDto(FcmPlatform.IOS, FcmAccessMode.APP);
+    }
+
     @Nested
     @DisplayName("FCM 토큰 저장/갱신 기능은")
     class Describe_saveFcmToken {
@@ -146,6 +153,7 @@ class FcmTokenCommandServiceImplTest {
             String fcmTokenValue = "new-fcm-token";
             String userAgent = "Test-User-Agent";
             Member member = createMember(UUID.randomUUID());
+            LoginRequestDto requestDto = createLoginRequestDto(); // DTO 추가
 
             NotificationType chatType = NotificationType.builder().id(1L).notificationTypeCode("CHAT_MESSAGE").build();
             NotificationType workoutType = NotificationType.builder().id(2L).notificationTypeCode("WORKOUT_REMINDER").build();
@@ -155,7 +163,8 @@ class FcmTokenCommandServiceImplTest {
             BDDMockito.given(notificationTypeRepository.findAllByDefaultEnabledTrueAndIsActiveTrue()).willReturn(defaultTypes);
 
             // when
-            fcmTokenCommandService.saveFcmToken(member, fcmTokenValue, userAgent);
+            // 메서드 호출 시 requestDto 전달
+            fcmTokenCommandService.saveFcmToken(member, fcmTokenValue, userAgent, requestDto);
 
             // then
             ArgumentCaptor<FcmToken> fcmTokenCaptor = ArgumentCaptor.forClass(FcmToken.class);
@@ -164,6 +173,10 @@ class FcmTokenCommandServiceImplTest {
             FcmToken savedToken = fcmTokenCaptor.getValue();
             assertThat(savedToken.getMember()).isEqualTo(member);
             assertThat(savedToken.getFcmTokenValue()).isEqualTo(fcmTokenValue);
+
+            // (필요 시) 저장된 토큰에 DTO의 정보(Platform, AccessMode)가 들어갔는지 검증 로직 추가 가능
+            // assertThat(savedToken.getPlatform()).isEqualTo(requestDto.getPlatform());
+
             assertThat(savedToken.getDeviceNotificationSettingList())
                     .extracting(setting -> setting.getNotificationType().getNotificationTypeCode())
                     .containsExactlyInAnyOrder("CHAT_MESSAGE", "WORKOUT_REMINDER");
@@ -176,15 +189,18 @@ class FcmTokenCommandServiceImplTest {
             String fcmTokenValue = "existing-fcm-token";
             String userAgent = "Test-User-Agent";
             Member member = createMember(UUID.randomUUID());
+            LoginRequestDto requestDto = createLoginRequestDto(); // DTO 추가
             FcmToken existingToken = createSpyFcmToken(member, fcmTokenValue);
 
             BDDMockito.given(fcmTokenRepository.findByFcmTokenValue(fcmTokenValue)).willReturn(Optional.of(existingToken));
 
             // when
-            fcmTokenCommandService.saveFcmToken(member, fcmTokenValue, userAgent);
+            fcmTokenCommandService.saveFcmToken(member, fcmTokenValue, userAgent, requestDto);
 
             // then
             then(existingToken).should().activate();
+
+            // saveFcmToken 로직상 소유자가 같으면 updateOwner 등을 호출하지 않으므로 DTO 사용 여부는 검증하지 않아도 됨 (혹은 activate 내부 로직에 따라 다름)
             then(fcmTokenRepository).should(BDDMockito.never()).save(any());
             then(notificationTypeRepository).should(BDDMockito.never()).findAllByDefaultEnabledTrueAndIsActiveTrue();
         }
@@ -197,6 +213,7 @@ class FcmTokenCommandServiceImplTest {
             String userAgent = "Test-User-Agent";
             Member newOwner = createMember(UUID.randomUUID());
             Member oldOwner = createMember(UUID.randomUUID());
+            LoginRequestDto requestDto = createLoginRequestDto(); // DTO 추가
             FcmToken existingToken = createSpyFcmToken(oldOwner, fcmTokenValue);
 
             NotificationType chatType = NotificationType.builder().id(1L).notificationTypeCode("CHAT_MESSAGE").build();
@@ -208,17 +225,20 @@ class FcmTokenCommandServiceImplTest {
             BDDMockito.given(notificationTypeRepository.findAllByDefaultEnabledTrueAndIsActiveTrue()).willReturn(defaultTypes);
 
             // when
-            fcmTokenCommandService.saveFcmToken(newOwner, fcmTokenValue, userAgent);
+            fcmTokenCommandService.saveFcmToken(newOwner, fcmTokenValue, userAgent, requestDto);
 
-            // then: 로직의 정확한 실행 순서를 검증
+            // then
             InOrder inOrder = inOrder(deviceNotificationSettingRepository, em, existingToken, notificationTypeRepository);
 
             inOrder.verify(deviceNotificationSettingRepository).deleteAllByFcmToken(existingToken);
-            inOrder.verify(existingToken).getDeviceNotificationSettingList();
+            inOrder.verify(existingToken).getDeviceNotificationSettingList(); // clear() 호출 검증을 위한 접근
             inOrder.verify(em).flush();
             inOrder.verify(em).clear();
             inOrder.verify(em).merge(existingToken);
-            inOrder.verify(existingToken).updateOwner(newOwner, userAgent);
+
+            // [중요] updateOwner 메서드 호출 시 requestDto가 전달되는지 검증
+            inOrder.verify(existingToken).updateOwner(newOwner, userAgent, requestDto);
+
             inOrder.verify(notificationTypeRepository).findAllByDefaultEnabledTrueAndIsActiveTrue();
 
             // then: 최종 상태를 검증

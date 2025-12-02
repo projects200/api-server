@@ -1,5 +1,6 @@
 package com.project200.undabang.notification.service.impl;
 
+import com.project200.undabang.auth.dto.request.LoginRequestDto;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
@@ -11,6 +12,8 @@ import com.project200.undabang.notification.dto.response.UpdateDeviceNotificatio
 import com.project200.undabang.notification.entity.NotificationCategory;
 import com.project200.undabang.notification.entity.NotificationType;
 import com.project200.undabang.notification.fcm.entity.DeviceNotificationSetting;
+import com.project200.undabang.notification.fcm.entity.FcmAccessMode;
+import com.project200.undabang.notification.fcm.entity.FcmPlatform;
 import com.project200.undabang.notification.fcm.entity.FcmToken;
 import com.project200.undabang.notification.fcm.repository.DeviceNotificationSettingRepository;
 import com.project200.undabang.notification.fcm.repository.FcmTokenRepository;
@@ -53,7 +56,8 @@ class NotificationSettingCommandServiceImplTest {
     }
 
     private FcmToken createFcmToken(Member member, String tokenValue) {
-        return FcmToken.from(member, tokenValue, "test-ua");
+        LoginRequestDto requestDto = new LoginRequestDto(FcmPlatform.ANDROID, FcmAccessMode.APP);
+        return FcmToken.from(member, tokenValue, "test-ua", requestDto);
     }
 
     private NotificationType createNotificationType(String code) {

@@ -1,10 +1,12 @@
 package com.project200.undabang.auth.controller;
 
+import com.project200.undabang.auth.dto.request.LoginRequestDto;
 import com.project200.undabang.auth.service.AuthService;
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.common.web.response.SuccessDetails;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.notification.fcm.service.FcmTokenCommandService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -23,12 +25,13 @@ public class AuthController {
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/login")
     public CommonResponse<Void> loginMember(@RequestHeader(value = "User-Agent", required = false) String userAgent,
-                                            @RequestHeader(value = "X-Fcm-Token", required = false) String fcmToken) {
+                                            @RequestHeader(value = "X-Fcm-Token", required = false) String fcmToken,
+                                            @Valid @RequestBody LoginRequestDto requestDto) {
 
         Member member = authService.login();
 
         if (Objects.nonNull(fcmToken) && !fcmToken.isBlank()) {
-            fcmTokenCommandService.saveFcmToken(member, fcmToken, userAgent);
+            fcmTokenCommandService.saveFcmToken(member, fcmToken, userAgent, requestDto);
         }
 
         return CommonResponse.success(new SuccessDetails("LOGIN_SUCCESS", "로그인 성공"));
