@@ -1,6 +1,6 @@
 package com.project200.undabang.batch.items;
 
-import com.project200.undabang.common.batch.items.DecreaseExerciseScoreWriter;
+import com.project200.undabang.common.batch.items.DecreaseExerciseScore.DecreaseExerciseScoreWriter;
 import com.project200.undabang.configuration.TestQuerydslConfig;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;

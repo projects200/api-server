@@ -1,6 +1,6 @@
 package com.project200.undabang.batch.items;
 
-import com.project200.undabang.common.batch.items.DecreaseExerciseScoreProcessor;
+import com.project200.undabang.common.batch.items.DecreaseExerciseScore.DecreaseExerciseScoreProcessor;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.service.PolicyService;
