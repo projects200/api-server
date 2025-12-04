@@ -33,9 +33,8 @@ public class AuthController {
         Member member = authService.login();
 
         if (Objects.nonNull(fcmToken) && !fcmToken.isBlank()) { // fcm 토큰이 있는경우
-
-            if (requestDto == null) { // 기기 정보가 없으면 에러 반환
-                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+            if (requestDto == null || requestDto.getPlatform() == null || requestDto.getAccessMode() == null) { // 기기 정보가 없으면 에러 반환
+                throw new CustomException(ErrorCode.FCM_DEVICE_INFO_REQUIRED);
             }
 
             fcmTokenCommandService.saveFcmToken(member, fcmToken, userAgent, requestDto);

@@ -39,7 +39,7 @@ public class FcmToken {
     private String fcmTokenValue;
 
     @Enumerated(EnumType.STRING)
-    @Comment("클라이언트 OS 플랫폼 (예: IOS, ANDROID, WEB)")
+    @Comment("클라이언트 OS 플랫폼 (예: IOS, ANDROID, PC, ETC)")
     @Column(name = "fcm_token_platform", length = 20)
     private FcmPlatform fcmPlatform;
 
@@ -113,6 +113,12 @@ public class FcmToken {
         this.member = member;
         this.fcmTokenUserAgent = userAgent;
         this.activate();
+        this.fcmPlatform = requestDto.getPlatform();
+        this.fcmAccessMode = requestDto.getAccessMode();
+    }
+
+    public void updateDeviceInfo(String userAgent, LoginRequestDto requestDto) {
+        this.fcmTokenUserAgent = userAgent;
         this.fcmPlatform = requestDto.getPlatform();
         this.fcmAccessMode = requestDto.getAccessMode();
     }

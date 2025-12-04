@@ -51,7 +51,7 @@ class AuthControllerTest extends AbstractRestDocSupport {
             // given
             String fcmToken = "test-fcm-token";
             String userAgent = "Test-User-Agent";
-            LoginRequestDto requestDto = new LoginRequestDto(FcmPlatform.IOS, FcmAccessMode.APP);
+            LoginRequestDto requestDto = new LoginRequestDto(FcmPlatform.IOS, FcmAccessMode.PWA);
 
             BDDMockito.given(authService.login()).willReturn(member);
 
@@ -68,15 +68,15 @@ class AuthControllerTest extends AbstractRestDocSupport {
                             requestHeaders(
                                     RestDocsUtils.HEADER_ACCESS_TOKEN,
                                     headerWithName("User-Agent").attributes(getTypeFormat(JsonFieldType.STRING))
-                                            .description("사용자 디바이스 정보 (선택)").optional(),
+                                            .description("사용자 디바이스 정보를 의미합니다.").optional(),
                                     headerWithName("X-Fcm-Token").attributes(getTypeFormat(JsonFieldType.STRING))
-                                            .description("FCM 푸시 알림을 위한 토큰 (선택)").optional()
+                                            .description("FCM 푸시 알림을 위한 토큰을 의미합니다.").optional()
                             ),
                             requestFields(
                                     fieldWithPath("platform").type(JsonFieldType.STRING)
-                                            .description("플랫폼 정보 [IOS, ANDROID, WEB] (FCM 토큰 전송 시 필수)"),
+                                            .description("플랫폼 정보를 의미합니다. IOS, ANDROID, PC, ETC 중 하나를 선택해야 합니다."),
                                     fieldWithPath("accessMode").type(JsonFieldType.STRING)
-                                            .description("접속 모드 [APP, PWA, BROWSER] (FCM 토큰 전송 시 필수)")
+                                            .description("접속 모드를 의미합니다. APP, PWA, BROWSER 중 하나를 선택해야 합니다.")
                             ),
                             responseFields(
                                     RestDocsUtils.commonResponseFieldsOnly()
@@ -146,8 +146,6 @@ class AuthControllerTest extends AbstractRestDocSupport {
                             .accept(MediaType.APPLICATION_JSON)
                             .header("X-Fcm-Token", fcmToken)
                             .headers(getCommonApiHeaders(memberId))) // Body 없음
-                    // Controller에서 throw new CustomException(...)을 던지므로 에러 응답 예상
-                    // ErrorCode.FCM_TOKEN_NOT_FOUND의 HttpStatus에 맞춰 수정 (여기선 4xx로 가정)
                     .andExpect(MockMvcResultMatchers.status().is4xxClientError());
 
             BDDMockito.then(authService).should().login();

@@ -153,7 +153,7 @@ class FcmTokenCommandServiceImplTest {
             String fcmTokenValue = "new-fcm-token";
             String userAgent = "Test-User-Agent";
             Member member = createMember(UUID.randomUUID());
-            LoginRequestDto requestDto = createLoginRequestDto(); // DTO 추가
+            LoginRequestDto requestDto = createLoginRequestDto();
 
             NotificationType chatType = NotificationType.builder().id(1L).notificationTypeCode("CHAT_MESSAGE").build();
             NotificationType workoutType = NotificationType.builder().id(2L).notificationTypeCode("WORKOUT_REMINDER").build();
@@ -163,7 +163,6 @@ class FcmTokenCommandServiceImplTest {
             BDDMockito.given(notificationTypeRepository.findAllByDefaultEnabledTrueAndIsActiveTrue()).willReturn(defaultTypes);
 
             // when
-            // 메서드 호출 시 requestDto 전달
             fcmTokenCommandService.saveFcmToken(member, fcmTokenValue, userAgent, requestDto);
 
             // then
@@ -173,23 +172,19 @@ class FcmTokenCommandServiceImplTest {
             FcmToken savedToken = fcmTokenCaptor.getValue();
             assertThat(savedToken.getMember()).isEqualTo(member);
             assertThat(savedToken.getFcmTokenValue()).isEqualTo(fcmTokenValue);
-
-            // (필요 시) 저장된 토큰에 DTO의 정보(Platform, AccessMode)가 들어갔는지 검증 로직 추가 가능
-            // assertThat(savedToken.getPlatform()).isEqualTo(requestDto.getPlatform());
-
             assertThat(savedToken.getDeviceNotificationSettingList())
                     .extracting(setting -> setting.getNotificationType().getNotificationTypeCode())
                     .containsExactlyInAnyOrder("CHAT_MESSAGE", "WORKOUT_REMINDER");
         }
 
         @Test
-        @DisplayName("기존 토큰이면서 소유자가 같을 경우, 토큰을 재활성화만 한다")
+        @DisplayName("기존 토큰이면서 소유자가 같을 경우, 토큰을 재활성화하고 기기 정보를 갱신한다")
         void it_reactivates_token_if_owner_is_same() {
             // given
             String fcmTokenValue = "existing-fcm-token";
             String userAgent = "Test-User-Agent";
             Member member = createMember(UUID.randomUUID());
-            LoginRequestDto requestDto = createLoginRequestDto(); // DTO 추가
+            LoginRequestDto requestDto = createLoginRequestDto();
             FcmToken existingToken = createSpyFcmToken(member, fcmTokenValue);
 
             BDDMockito.given(fcmTokenRepository.findByFcmTokenValue(fcmTokenValue)).willReturn(Optional.of(existingToken));
@@ -198,9 +193,12 @@ class FcmTokenCommandServiceImplTest {
             fcmTokenCommandService.saveFcmToken(member, fcmTokenValue, userAgent, requestDto);
 
             // then
+            // 1. activate 호출 검증
             then(existingToken).should().activate();
 
-            // saveFcmToken 로직상 소유자가 같으면 updateOwner 등을 호출하지 않으므로 DTO 사용 여부는 검증하지 않아도 됨 (혹은 activate 내부 로직에 따라 다름)
+            // 2. [추가됨] updateDeviceInfo 호출 검증
+            then(existingToken).should().updateDeviceInfo(userAgent, requestDto);
+
             then(fcmTokenRepository).should(BDDMockito.never()).save(any());
             then(notificationTypeRepository).should(BDDMockito.never()).findAllByDefaultEnabledTrueAndIsActiveTrue();
         }
@@ -213,7 +211,7 @@ class FcmTokenCommandServiceImplTest {
             String userAgent = "Test-User-Agent";
             Member newOwner = createMember(UUID.randomUUID());
             Member oldOwner = createMember(UUID.randomUUID());
-            LoginRequestDto requestDto = createLoginRequestDto(); // DTO 추가
+            LoginRequestDto requestDto = createLoginRequestDto();
             FcmToken existingToken = createSpyFcmToken(oldOwner, fcmTokenValue);
 
             NotificationType chatType = NotificationType.builder().id(1L).notificationTypeCode("CHAT_MESSAGE").build();
@@ -231,17 +229,13 @@ class FcmTokenCommandServiceImplTest {
             InOrder inOrder = inOrder(deviceNotificationSettingRepository, em, existingToken, notificationTypeRepository);
 
             inOrder.verify(deviceNotificationSettingRepository).deleteAllByFcmToken(existingToken);
-            inOrder.verify(existingToken).getDeviceNotificationSettingList(); // clear() 호출 검증을 위한 접근
+            inOrder.verify(existingToken).getDeviceNotificationSettingList();
             inOrder.verify(em).flush();
             inOrder.verify(em).clear();
             inOrder.verify(em).merge(existingToken);
-
-            // [중요] updateOwner 메서드 호출 시 requestDto가 전달되는지 검증
             inOrder.verify(existingToken).updateOwner(newOwner, userAgent, requestDto);
-
             inOrder.verify(notificationTypeRepository).findAllByDefaultEnabledTrueAndIsActiveTrue();
 
-            // then: 최종 상태를 검증
             assertThat(existingToken.getMember()).isEqualTo(newOwner);
             assertThat(existingToken.getDeviceNotificationSettingList())
                     .extracting(setting -> setting.getNotificationType().getNotificationTypeCode())

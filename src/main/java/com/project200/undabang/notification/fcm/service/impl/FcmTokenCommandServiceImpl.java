@@ -41,6 +41,7 @@ public class FcmTokenCommandServiceImpl implements FcmTokenCommandService {
             FcmToken existToken = optionalFcmToken.get();
             if (existToken.getMember().getMemberId().equals(member.getMemberId())) {
                 existToken.activate(); // 재 로그인 하는 경우
+                existToken.updateDeviceInfo(userAgent, requestDto); // 기기 정보 새롭게 반영
             } else {
                 updateTokenOwner(existToken, member, userAgent, requestDto);
             }
