@@ -19,6 +19,7 @@ public enum ErrorCode {
     USER_ID_HEADER_MISSING(401, "USER_ID_HEADER_MISSING", "X-USER-ID 헤더가 누락되었습니다."),
     USER_EMAIL_HEADER_MISSING(401, "USER_EMAIL_HEADER_MISSING", "X-USER-EMAIL 헤더가 누락되었습니다."),
     INVALID_USER_ID_FORMAT(400, "INVALID_USER_ID_FORMAT", "X-USER-ID 헤더는 유효한 UUID 형식이어야 합니다."),
+    FCM_DEVICE_INFO_REQUIRED(400, "FCM_DEVICE_INFO_REQUIRED", "FCM 기기 정보가 필요합니다"),
     LOGIN_FAILED(401, "LOGIN_FAILED", "로그인에 실패했습니다. 일치하는 회원을 찾을 수 없습니다."),
     LOGOUT_FAILED(401, "LOGOUT_FAILED", "로그아웃에 실패했습니다. 일치하는 회원을 찾을 수 없습니다."),
 

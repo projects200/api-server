@@ -4,9 +4,12 @@ import com.project200.undabang.exercise.entity.QExercise;
 import com.project200.undabang.member.entity.QMember;
 import com.project200.undabang.notification.entity.NotificationCode;
 import com.project200.undabang.notification.entity.QNotificationType;
+import com.project200.undabang.notification.fcm.entity.FcmAccessMode;
+import com.project200.undabang.notification.fcm.entity.FcmPlatform;
 import com.project200.undabang.notification.fcm.entity.QDeviceNotificationSetting;
 import com.project200.undabang.notification.fcm.entity.QFcmToken;
 import com.project200.undabang.notification.fcm.repository.FcmTokenRepositoryCustom;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Coalesce;
 import com.querydsl.core.types.dsl.DateTimeExpression;
 import com.querydsl.core.types.dsl.Expressions;
@@ -52,6 +55,9 @@ public class FcmTokenRepositoryImpl implements FcmTokenRepositoryCustom {
                         .add(member.memberCreatedAt)
         );
 
+        // iOS PWA 환경과 ANDROID APP 환경에만 알림을 보내도록 Boolean Expression 사용
+        BooleanExpression androidAppCondition = fcmToken.fcmAccessMode.eq(FcmAccessMode.APP).and(fcmToken.fcmPlatform.eq(FcmPlatform.ANDROID));
+        BooleanExpression iosPwaCondition = fcmToken.fcmAccessMode.eq(FcmAccessMode.PWA).and(fcmToken.fcmPlatform.eq(FcmPlatform.IOS));
 
         // --- 3. 기본 쿼리 작성 ---
         JPAQuery<?> baseQuery = queryFactory
@@ -69,6 +75,8 @@ public class FcmTokenRepositoryImpl implements FcmTokenRepositoryCustom {
                         fcmToken.fcmTokenExpiredAt.goe(LocalDateTime.now()),
                         // 가입일이 패널티 기준 시점보다 이전인 회원만 조회합니다.
                         member.memberCreatedAt.loe(penaltyThresholdDateTime),
+                        // 개인 모바일 환경에만 알림 전송
+                        androidAppCondition.or(iosPwaCondition),
                         // 운동 격려 알림을 받기로 설정한 회원에게만 알림 전송
                         deviceNotificationSetting.notificationType.notificationTypeCode.eq(NotificationCode.WORKOUT_REMINDER.getCode()),
                         deviceNotificationSetting.isEnabled.isTrue()
@@ -106,6 +114,10 @@ public class FcmTokenRepositoryImpl implements FcmTokenRepositoryCustom {
         QNotificationType notificationType = QNotificationType.notificationType;
         QDeviceNotificationSetting deviceNotificationSetting = QDeviceNotificationSetting.deviceNotificationSetting;
 
+        // 모바일 환경에만 개인 푸시 알림이 전송되도록 설정
+        BooleanExpression androidAppCondition = fcmToken.fcmAccessMode.eq(FcmAccessMode.APP).and(fcmToken.fcmPlatform.eq(FcmPlatform.ANDROID));
+        BooleanExpression iosPwaCondition = fcmToken.fcmAccessMode.eq(FcmAccessMode.PWA).and(fcmToken.fcmPlatform.eq(FcmPlatform.IOS));
+
         return queryFactory.select(fcmToken.fcmTokenValue)
                 .from(fcmToken)
                 .join(fcmToken.deviceNotificationSettingList, deviceNotificationSetting)
@@ -113,6 +125,7 @@ public class FcmTokenRepositoryImpl implements FcmTokenRepositoryCustom {
                 .where(
                         fcmToken.member.memberId.eq(memberId), // 상대방의 토큰중
                         fcmToken.fcmTokenIsActive.isTrue(), // 활성화된 토큰
+                        androidAppCondition.or(iosPwaCondition), // 모바일 환경에만 알림 전송
                         deviceNotificationSetting.isEnabled.isTrue(), // 알림 받기 설정이 켜져있는 경우
                         notificationType.notificationTypeCode.eq(NotificationCode.CHAT_MESSAGE.getCode()) // 채팅 알림 조회
                 )

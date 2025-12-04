@@ -1,5 +1,6 @@
 package com.project200.undabang.notification.fcm.service.impl;
 
+import com.project200.undabang.auth.dto.request.LoginRequestDto;
 import com.project200.undabang.chat.dto.request.CreateMessageRequest;
 import com.project200.undabang.chat.entity.Chatroom;
 import com.project200.undabang.chat.entity.ChatroomMember;
@@ -13,6 +14,8 @@ import com.project200.undabang.notification.entity.NotificationCategory;
 import com.project200.undabang.notification.entity.NotificationCode;
 import com.project200.undabang.notification.entity.NotificationType;
 import com.project200.undabang.notification.fcm.dto.ChatNotificationPayload;
+import com.project200.undabang.notification.fcm.entity.FcmAccessMode;
+import com.project200.undabang.notification.fcm.entity.FcmPlatform;
 import com.project200.undabang.notification.fcm.repository.FcmTokenRepository;
 import com.project200.undabang.notification.fcm.service.FcmTokenCommandService;
 import com.project200.undabang.notification.fcm.service.NotificationService;
@@ -77,8 +80,10 @@ public class ChatNotificationIntegrationTest {
         persistChatroomMember(chatroom, sender);
         persistChatroomMember(chatroom, receiver);
 
+        LoginRequestDto requestDto = new LoginRequestDto(FcmPlatform.ANDROID, FcmAccessMode.APP);
+
         // 2. 수신자 FCM 토큰 등록 (이제 NotificationType이 있으므로 설정도 같이 생김)
-        fcmTokenCommandService.saveFcmToken(receiver, "token_receiver_123", "ios");
+        fcmTokenCommandService.saveFcmToken(receiver, "token_receiver_123", "Test-User-Agent", requestDto);
 
         CreateMessageRequest request = new CreateMessageRequest("통합 테스트 메시지");
 
@@ -101,6 +106,8 @@ public class ChatNotificationIntegrationTest {
             assertThat(tokensCaptor.getValue())
                     .hasSize(1)
                     .contains("token_receiver_123");
+
+            assertThat(payloadCaptor.getValue().getContent()).isEqualTo("통합 테스트 메시지");
         });
     }
 

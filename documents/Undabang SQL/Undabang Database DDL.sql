@@ -506,7 +506,7 @@ CREATE TABLE IF NOT EXISTS fcm_tokens
     fcm_token_id           BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'AUTO_INCREMENT',
     member_id              CHAR(36)     NOT NULL COMMENT 'UUID_SELF',
     fcm_token_value       VARCHAR(255) NOT NULL COMMENT 'FCM 토큰 값 (UNIQUE)',
-    fcm_token_platform    VARCHAR(20)  NULL COMMENT 'IOS, ANDROID, WEB',
+    fcm_token_platform VARCHAR(20) NULL COMMENT 'IOS, ANDROID, PC, ETC',
     fcm_token_access_mode VARCHAR(20)  NULL COMMENT 'PWA, BROWSER, APP',
     fcm_token_user_agent   VARCHAR(255) NULL COMMENT '디바이스 정보 (User Agent)',
     fcm_token_is_active   BOOLEAN      NOT NULL DEFAULT TRUE COMMENT '토큰 활성화 여부',
@@ -515,7 +515,9 @@ CREATE TABLE IF NOT EXISTS fcm_tokens
     fcm_token_created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
 
     CONSTRAINT fk_fcm_tokens_to_members FOREIGN KEY (member_id) REFERENCES members (member_id),
-    CONSTRAINT uk_fcm_tokens_value UNIQUE (fcm_token_value)
+    CONSTRAINT uk_fcm_tokens_value UNIQUE (fcm_token_value),
+    CONSTRAINT chk_fcm_token_platform CHECK (fcm_token_platform IN ('IOS', 'ANDROID', 'PC', 'ETC')),
+    CONSTRAINT chk_fcm_token_access_mode CHECK (fcm_token_access_mode IN ('APP', 'PWA', 'BROWSER'))
 );
 
 CREATE TABLE IF NOT EXISTS notification_messages

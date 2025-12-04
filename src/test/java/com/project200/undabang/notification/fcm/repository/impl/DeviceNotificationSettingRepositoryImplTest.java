@@ -1,10 +1,13 @@
 package com.project200.undabang.notification.fcm.repository.impl;
 
+import com.project200.undabang.auth.dto.request.LoginRequestDto;
 import com.project200.undabang.configuration.TestQuerydslConfig;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.notification.entity.NotificationCategory;
 import com.project200.undabang.notification.entity.NotificationType;
 import com.project200.undabang.notification.fcm.entity.DeviceNotificationSetting;
+import com.project200.undabang.notification.fcm.entity.FcmAccessMode;
+import com.project200.undabang.notification.fcm.entity.FcmPlatform;
 import com.project200.undabang.notification.fcm.entity.FcmToken;
 import com.project200.undabang.notification.fcm.repository.DeviceNotificationSettingRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -50,7 +53,9 @@ class DeviceNotificationSettingRepositoryImplTest {
     }
 
     private FcmToken fcmToken(Member member, String tokenValue) {
-        return FcmToken.from(member, tokenValue, "test-ua");
+        // 테스트에서 플랫폼 정보가 중요하지 않다면 임의의 값(예: ANDROID/APP)을 사용합니다.
+        LoginRequestDto requestDto = new LoginRequestDto(FcmPlatform.ANDROID, FcmAccessMode.APP);
+        return FcmToken.from(member, tokenValue, "test-ua", requestDto);
     }
 
     private DeviceNotificationSetting setting(FcmToken token, NotificationType type) {

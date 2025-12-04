@@ -1,7 +1,10 @@
 package com.project200.undabang.notification.fcm.service.impl;
 
+import com.project200.undabang.auth.dto.request.LoginRequestDto;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.notification.entity.NotificationType;
+import com.project200.undabang.notification.fcm.entity.FcmAccessMode;
+import com.project200.undabang.notification.fcm.entity.FcmPlatform;
 import com.project200.undabang.notification.fcm.entity.FcmToken;
 import com.project200.undabang.notification.fcm.repository.DeviceNotificationSettingRepository;
 import com.project200.undabang.notification.fcm.repository.FcmTokenRepository;
@@ -43,10 +46,6 @@ class FcmTokenCommandServiceImplTest {
 
     @Mock
     private EntityManager em;
-
-    private Member createMember(UUID id) {
-        return Member.builder().memberId(id).build();
-    }
 
     @Nested
     @DisplayName("FCM 토큰 비활성화 기능은")
@@ -135,6 +134,14 @@ class FcmTokenCommandServiceImplTest {
         }
     }
 
+    private Member createMember(UUID id) {
+        return Member.builder().memberId(id).build();
+    }
+
+    private LoginRequestDto createLoginRequestDto() {
+        return new LoginRequestDto(FcmPlatform.IOS, FcmAccessMode.APP);
+    }
+
     @Nested
     @DisplayName("FCM 토큰 저장/갱신 기능은")
     class Describe_saveFcmToken {
@@ -146,6 +153,7 @@ class FcmTokenCommandServiceImplTest {
             String fcmTokenValue = "new-fcm-token";
             String userAgent = "Test-User-Agent";
             Member member = createMember(UUID.randomUUID());
+            LoginRequestDto requestDto = createLoginRequestDto();
 
             NotificationType chatType = NotificationType.builder().id(1L).notificationTypeCode("CHAT_MESSAGE").build();
             NotificationType workoutType = NotificationType.builder().id(2L).notificationTypeCode("WORKOUT_REMINDER").build();
@@ -155,7 +163,7 @@ class FcmTokenCommandServiceImplTest {
             BDDMockito.given(notificationTypeRepository.findAllByDefaultEnabledTrueAndIsActiveTrue()).willReturn(defaultTypes);
 
             // when
-            fcmTokenCommandService.saveFcmToken(member, fcmTokenValue, userAgent);
+            fcmTokenCommandService.saveFcmToken(member, fcmTokenValue, userAgent, requestDto);
 
             // then
             ArgumentCaptor<FcmToken> fcmTokenCaptor = ArgumentCaptor.forClass(FcmToken.class);
@@ -170,21 +178,27 @@ class FcmTokenCommandServiceImplTest {
         }
 
         @Test
-        @DisplayName("기존 토큰이면서 소유자가 같을 경우, 토큰을 재활성화만 한다")
+        @DisplayName("기존 토큰이면서 소유자가 같을 경우, 토큰을 재활성화하고 기기 정보를 갱신한다")
         void it_reactivates_token_if_owner_is_same() {
             // given
             String fcmTokenValue = "existing-fcm-token";
             String userAgent = "Test-User-Agent";
             Member member = createMember(UUID.randomUUID());
+            LoginRequestDto requestDto = createLoginRequestDto();
             FcmToken existingToken = createSpyFcmToken(member, fcmTokenValue);
 
             BDDMockito.given(fcmTokenRepository.findByFcmTokenValue(fcmTokenValue)).willReturn(Optional.of(existingToken));
 
             // when
-            fcmTokenCommandService.saveFcmToken(member, fcmTokenValue, userAgent);
+            fcmTokenCommandService.saveFcmToken(member, fcmTokenValue, userAgent, requestDto);
 
             // then
+            // 1. activate 호출 검증
             then(existingToken).should().activate();
+
+            // 2. [추가됨] updateDeviceInfo 호출 검증
+            then(existingToken).should().updateDeviceInfo(userAgent, requestDto);
+
             then(fcmTokenRepository).should(BDDMockito.never()).save(any());
             then(notificationTypeRepository).should(BDDMockito.never()).findAllByDefaultEnabledTrueAndIsActiveTrue();
         }
@@ -197,6 +211,7 @@ class FcmTokenCommandServiceImplTest {
             String userAgent = "Test-User-Agent";
             Member newOwner = createMember(UUID.randomUUID());
             Member oldOwner = createMember(UUID.randomUUID());
+            LoginRequestDto requestDto = createLoginRequestDto();
             FcmToken existingToken = createSpyFcmToken(oldOwner, fcmTokenValue);
 
             NotificationType chatType = NotificationType.builder().id(1L).notificationTypeCode("CHAT_MESSAGE").build();
@@ -208,9 +223,9 @@ class FcmTokenCommandServiceImplTest {
             BDDMockito.given(notificationTypeRepository.findAllByDefaultEnabledTrueAndIsActiveTrue()).willReturn(defaultTypes);
 
             // when
-            fcmTokenCommandService.saveFcmToken(newOwner, fcmTokenValue, userAgent);
+            fcmTokenCommandService.saveFcmToken(newOwner, fcmTokenValue, userAgent, requestDto);
 
-            // then: 로직의 정확한 실행 순서를 검증
+            // then
             InOrder inOrder = inOrder(deviceNotificationSettingRepository, em, existingToken, notificationTypeRepository);
 
             inOrder.verify(deviceNotificationSettingRepository).deleteAllByFcmToken(existingToken);
@@ -218,10 +233,9 @@ class FcmTokenCommandServiceImplTest {
             inOrder.verify(em).flush();
             inOrder.verify(em).clear();
             inOrder.verify(em).merge(existingToken);
-            inOrder.verify(existingToken).updateOwner(newOwner, userAgent);
+            inOrder.verify(existingToken).updateOwner(newOwner, userAgent, requestDto);
             inOrder.verify(notificationTypeRepository).findAllByDefaultEnabledTrueAndIsActiveTrue();
 
-            // then: 최종 상태를 검증
             assertThat(existingToken.getMember()).isEqualTo(newOwner);
             assertThat(existingToken.getDeviceNotificationSettingList())
                     .extracting(setting -> setting.getNotificationType().getNotificationTypeCode())
