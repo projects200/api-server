@@ -87,7 +87,7 @@ class FcmTokenRepositoryImplTest {
 
             // 3. [제외 대상] 플랫폼 불일치 (WEB / BROWSER)
             Member inactiveWeb = member("web@test.com", "webUser", now.minusDays(10));
-            FcmToken webToken = fcmToken(inactiveWeb, "web-token", true, now.plusDays(30), FcmPlatform.WEB, FcmAccessMode.BROWSER);
+            FcmToken webToken = fcmToken(inactiveWeb, "web-token", true, now.plusDays(30), FcmPlatform.PC, FcmAccessMode.BROWSER);
             save(inactiveWeb, webToken, setting(webToken, workoutType, true));
 
             // 4. [제외 대상] 플랫폼 불일치 (iOS APP - 로직상 iOS는 PWA만 허용됨)
@@ -217,7 +217,7 @@ class FcmTokenRepositoryImplTest {
             save(iosAppToken, setting(iosAppToken, chatType, true));
 
             // 4. [제외 대상] Web + Browser (지원하지 않는 조합)
-            FcmToken webToken = fcmToken(member, "web_browser", true, future, FcmPlatform.WEB, FcmAccessMode.BROWSER);
+            FcmToken webToken = fcmToken(member, "web_browser", true, future, FcmPlatform.PC, FcmAccessMode.BROWSER);
             save(webToken, setting(webToken, chatType, true));
 
             // 5. [제외 대상] 채팅 알림 OFF

@@ -55,7 +55,7 @@ public class FcmTokenRepositoryImpl implements FcmTokenRepositoryCustom {
                         .add(member.memberCreatedAt)
         );
 
-        // iOS PWA 환경과 ANDROID APP 환경에만 알림을 보내도록 Boolean Expresssion 사용
+        // iOS PWA 환경과 ANDROID APP 환경에만 알림을 보내도록 Boolean Expression 사용
         BooleanExpression androidAppCondition = fcmToken.fcmAccessMode.eq(FcmAccessMode.APP).and(fcmToken.fcmPlatform.eq(FcmPlatform.ANDROID));
         BooleanExpression iosPwaCondition = fcmToken.fcmAccessMode.eq(FcmAccessMode.PWA).and(fcmToken.fcmPlatform.eq(FcmPlatform.IOS));
 

@@ -2,6 +2,8 @@ package com.project200.undabang.auth.controller;
 
 import com.project200.undabang.auth.dto.request.LoginRequestDto;
 import com.project200.undabang.auth.service.AuthService;
+import com.project200.undabang.common.web.exception.CustomException;
+import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.common.web.response.SuccessDetails;
 import com.project200.undabang.member.entity.Member;
@@ -26,11 +28,16 @@ public class AuthController {
     @PostMapping("/login")
     public CommonResponse<Void> loginMember(@RequestHeader(value = "User-Agent", required = false) String userAgent,
                                             @RequestHeader(value = "X-Fcm-Token", required = false) String fcmToken,
-                                            @Valid @RequestBody LoginRequestDto requestDto) {
+                                            @Valid @RequestBody(required = false) LoginRequestDto requestDto) {
 
         Member member = authService.login();
 
-        if (Objects.nonNull(fcmToken) && !fcmToken.isBlank()) {
+        if (Objects.nonNull(fcmToken) && !fcmToken.isBlank()) { // fcm 토큰이 있는경우
+
+            if (requestDto == null) { // 기기 정보가 없으면 에러 반환
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+            }
+
             fcmTokenCommandService.saveFcmToken(member, fcmToken, userAgent, requestDto);
         }
 
