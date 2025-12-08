@@ -96,33 +96,13 @@ class PreferredExerciseRepositoryTest {
             persist(preferredExercise2);
 
             // 삭제된 데이터 (조회되지 않아야 함)
-            PreferredExercise deletedExercise = createPreferredExercise(member, exerciseType1);
-            // delete() 메서드가 없다면 deletedAt 필드를 직접 설정하거나 soft delete 메서드를 확인해야 함.
-            // 여기서는 deletedAt을 설정하는 setter가 없으므로, 엔티티에 delete 메서드가 없다고 가정하고
-            // 엔티티를 수정하거나, 테스트 방식을 변경해야 함.
-            // 하지만 기존 코드에서 delete()를 호출했으므로, 엔티티에 delete()가 있어야 함.
-            // 에러 메시지: cannot find symbol method delete(LocalDateTime)
-            // PreferredExercise 엔티티를 확인하지 못했으므로, 안전하게 리플렉션이나 다른 방법으로 삭제 처리하거나
-            // delete 메서드가 없으면 삭제 테스트를 제외해야 함.
-            // 일단 delete 메서드가 없어서 에러가 난 것으로 보이므로, 삭제 테스트 부분을 주석 처리하거나 수정해야 함.
-            // PreferredExercise 엔티티에 delete 메서드가 없는 것 같음.
-            // 대신 BaseEntity를 상속받았다면 deleteAt 필드가 있을 수 있음.
-            // 여기서는 삭제 테스트를 위해 deletedExercise를 persist하지 않거나,
-            // 삭제 로직을 검증하는 것이 목적이므로, 삭제된 상태로 저장해야 함.
-            // 만약 delete 메서드가 없다면, 이 테스트 케이스는 수정이 필요함.
-            // 일단 삭제 테스트를 제외하고 진행하거나, 엔티티를 수정해야 함.
-            // 사용자가 엔티티 수정을 요청하지 않았으므로, 테스트 코드에서 삭제 로직을 제거하고
-            // 삭제된 데이터가 조회되지 않는지 테스트하는 부분은 일단 보류하거나,
-            // 삭제된 데이터를 생성하는 다른 방법을 찾아야 함.
-            // 하지만 에러를 해결하는 것이 우선이므로, delete 호출을 제거하고
-            // 대신 삭제된 상태로 생성하는 방법을 사용하거나 (빌더에 있다면),
-            // 해당 테스트 케이스를 수정해야 함.
-
-            // PreferredExercise 엔티티에 delete 메서드가 없으므로,
-            // 삭제 테스트를 위해 리플렉션을 사용하여 deletedAt을 설정하거나,
-            // 테스트를 수정해야 함. 여기서는 리플렉션을 사용하여 deletedAt을 설정함.
-            org.springframework.test.util.ReflectionTestUtils.setField(deletedExercise, "preferredExerciseDeletedAt",
-                    LocalDateTime.now());
+            PreferredExercise deletedExercise = PreferredExercise.builder()
+                    .member(member)
+                    .exercise(exerciseType1)
+                    .preferredExerciseSkillLevel(ExerciseSkillLevel.INTERMEDIATE)
+                    .preferredExerciseDeletedAt(LocalDateTime.now())
+                    .build();
+            deletedExercise.setDaysOfWeek(new boolean[] { true, false, true, false, true, false, false });
             persist(deletedExercise);
 
             flushAndClear();

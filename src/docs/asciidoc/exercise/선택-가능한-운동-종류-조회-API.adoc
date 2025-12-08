@@ -1,0 +1,5 @@
+[[선택-가능한-운동-종류-조회-API]]
+=== 선택 가능한 운동 종류 조회
+사용자가 선택할 수 있는 모든 운동 종류(종목) 목록을 조회합니다.
+
+operation::get-available-exercise-types[snippets='http-request,http-response,response-fields']
