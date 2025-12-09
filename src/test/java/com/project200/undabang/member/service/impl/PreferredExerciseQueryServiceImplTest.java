@@ -87,7 +87,7 @@ class PreferredExerciseQueryServiceImplTest {
             ExerciseType exerciseType1 = createExerciseType(1L, "헬스");
             ExerciseType exerciseType2 = createExerciseType(2L, "러닝");
 
-            given(exerciseTypeRepository.findAllByExerciseTypeDeletedAtNull())
+            given(exerciseTypeRepository.findAllByExerciseTypeDeletedAtNullOrderBySelectionCountDesc())
                     .willReturn(List.of(exerciseType1, exerciseType2));
 
             // when
@@ -97,7 +97,7 @@ class PreferredExerciseQueryServiceImplTest {
             assertThat(result).hasSize(2);
             assertThat(result).extracting("exerciseName").containsExactly("헬스", "러닝");
 
-            then(exerciseTypeRepository).should(times(1)).findAllByExerciseTypeDeletedAtNull();
+            then(exerciseTypeRepository).should(times(1)).findAllByExerciseTypeDeletedAtNullOrderBySelectionCountDesc();
         }
     }
 

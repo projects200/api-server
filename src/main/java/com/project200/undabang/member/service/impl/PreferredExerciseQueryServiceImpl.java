@@ -26,36 +26,35 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PreferredExerciseQueryServiceImpl implements PreferredExerciseQueryService {
-    
+
     private final ExerciseTypeRepository exerciseTypeRepository;
     private final PreferredExerciseRepository preferredExerciseRepository;
     private final MemberRepository memberRepository;
-    
+
     @Override
     public List<AvailableExerciseTypeResponse> getAvailableExerciseTypes() {
-        List<ExerciseType> exerciseTypes = exerciseTypeRepository.findAllByExerciseTypeDeletedAtNull();
-        
+        List<ExerciseType> exerciseTypes = exerciseTypeRepository
+                .findAllByExerciseTypeDeletedAtNullOrderBySelectionCountDesc();
+
         return exerciseTypes.stream()
                 .map(AvailableExerciseTypeResponse::from)
                 .toList();
     }
-    
+
     @Override
     public List<MyPreferredExerciseResponse> getMyPreferredExercises() {
         Member member = getMember(UserContextHolder.getUserId());
-        
-        List<PreferredExercise> preferredExercises = 
-                preferredExerciseRepository.findAllByMemberAndPreferredExerciseDeletedAtNull(member);
-        
+
+        List<PreferredExercise> preferredExercises = preferredExerciseRepository
+                .findAllByMemberAndPreferredExerciseDeletedAtNull(member);
+
         return preferredExercises.stream()
                 .map(MyPreferredExerciseResponse::from)
                 .toList();
     }
-    
+
     private Member getMember(UUID memberId) {
         return memberRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
     }
 }
-
-
