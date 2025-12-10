@@ -1,5 +1,6 @@
 package com.project200.undabang.notification.fcm.entity;
 
+import com.project200.undabang.auth.dto.request.LoginRequestDto;
 import com.project200.undabang.member.entity.Member;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -37,6 +38,16 @@ public class FcmToken {
     @Column(name = "fcm_token_value", nullable = false, unique = true)
     private String fcmTokenValue;
 
+    @Enumerated(EnumType.STRING)
+    @Comment("클라이언트 OS 플랫폼 (예: IOS, ANDROID, PC, ETC)")
+    @Column(name = "fcm_token_platform", length = 20)
+    private FcmPlatform fcmPlatform;
+
+    @Enumerated(EnumType.STRING)
+    @Comment("접속 방식 (예 : APP, PWA, BROWSER)")
+    @Column(name = "fcm_token_access_mode", length = 20)
+    private FcmAccessMode fcmAccessMode;
+
     @Size(max = 255)
     @Comment("디바이스 정보 (User Agent)")
     @Column(name = "fcm_token_user_agent")
@@ -73,11 +84,13 @@ public class FcmToken {
     @OneToMany(mappedBy = "fcmToken", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<DeviceNotificationSetting> deviceNotificationSettingList = new ArrayList<>();
 
-    public static FcmToken from(Member member, String fcmTokenValue, String userAgent) {
+    public static FcmToken from(Member member, String fcmTokenValue, String userAgent, LoginRequestDto requestDto) {
         return FcmToken.builder()
                 .member(member)
                 .fcmTokenValue(fcmTokenValue)
                 .fcmTokenUserAgent(userAgent)
+                .fcmPlatform(requestDto.getPlatform())
+                .fcmAccessMode(requestDto.getAccessMode())
                 .deviceNotificationSettingList(new ArrayList<>())
                 .build();
     }
@@ -96,9 +109,17 @@ public class FcmToken {
         return this.fcmTokenIsActive;
     }
 
-    public void updateOwner(Member member, String userAgent) {
+    public void updateOwner(Member member, String userAgent, LoginRequestDto requestDto) {
         this.member = member;
         this.fcmTokenUserAgent = userAgent;
         this.activate();
+        this.fcmPlatform = requestDto.getPlatform();
+        this.fcmAccessMode = requestDto.getAccessMode();
+    }
+
+    public void updateDeviceInfo(String userAgent, LoginRequestDto requestDto) {
+        this.fcmTokenUserAgent = userAgent;
+        this.fcmPlatform = requestDto.getPlatform();
+        this.fcmAccessMode = requestDto.getAccessMode();
     }
 }

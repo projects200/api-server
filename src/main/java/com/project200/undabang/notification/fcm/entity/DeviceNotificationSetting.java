@@ -1,5 +1,6 @@
 package com.project200.undabang.notification.fcm.entity;
 
+import com.project200.undabang.notification.entity.NotificationType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -17,7 +18,7 @@ import java.time.LocalDateTime;
 @Table(name = "device_notification_settings", uniqueConstraints = {
         @UniqueConstraint(
                 name = "uq_token_and_type",
-                columnNames = {"fcm_token_id", "notification_type"}
+                columnNames = {"fcm_token_id", "notification_type_id"}
         )
 })
 public class DeviceNotificationSetting {
@@ -35,9 +36,8 @@ public class DeviceNotificationSetting {
     private FcmToken fcmToken;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Comment("알림 종류를 나타내는 코드 (예: CHAT_MESSAGE, WORKOUT_REMINDER)")
-    @Column(name = "notification_type", nullable = false, length = 50)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "notification_type_id", nullable = false)
     private NotificationType notificationType;
 
     @Builder.Default

@@ -6,7 +6,6 @@ import com.project200.undabang.configuration.AbstractRestDocSupport;
 import com.project200.undabang.notification.dto.record.NotificationSettingRecord;
 import com.project200.undabang.notification.dto.request.UpdateDeviceNotificationSettingRequest;
 import com.project200.undabang.notification.dto.response.UpdateDeviceNotificationSettingResponse;
-import com.project200.undabang.notification.fcm.entity.NotificationType;
 import com.project200.undabang.notification.service.NotificationSettingCommandService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -53,15 +52,15 @@ class NotificationSettingCommandControllerTest extends AbstractRestDocSupport {
             String fcmToken = "test-fcm-token";
 
             List<UpdateDeviceNotificationSettingRequest> requestList = List.of(
-                    new UpdateDeviceNotificationSettingRequest(NotificationType.CHAT_MESSAGE, true),
-                    new UpdateDeviceNotificationSettingRequest(NotificationType.WORKOUT_REMINDER, false)
+                    new UpdateDeviceNotificationSettingRequest("CHAT_MESSAGE", true),
+                    new UpdateDeviceNotificationSettingRequest("WORKOUT_REMINDER", false)
             );
 
             UpdateDeviceNotificationSettingResponse serviceResponse = UpdateDeviceNotificationSettingResponse.builder()
                     .fcmToken(fcmToken)
                     .settings(List.of(
-                            new NotificationSettingRecord(NotificationType.CHAT_MESSAGE, true),
-                            new NotificationSettingRecord(NotificationType.WORKOUT_REMINDER, false)
+                            new NotificationSettingRecord("CHAT_MESSAGE", true),
+                            new NotificationSettingRecord("WORKOUT_REMINDER", false)
                     ))
                     .build();
 
@@ -112,7 +111,7 @@ class NotificationSettingCommandControllerTest extends AbstractRestDocSupport {
             UUID memberId = UUID.randomUUID();
             String fcmToken = "invalid-fcm-token";
             List<UpdateDeviceNotificationSettingRequest> requestList = List.of(
-                    new UpdateDeviceNotificationSettingRequest(NotificationType.CHAT_MESSAGE, true)
+                    new UpdateDeviceNotificationSettingRequest("CHAT_MESSAGE", true)
             );
 
             // 서비스가 CustomException을 던지도록 설정합니다.

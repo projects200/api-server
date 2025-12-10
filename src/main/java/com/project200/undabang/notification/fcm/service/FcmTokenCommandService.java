@@ -1,12 +1,13 @@
 package com.project200.undabang.notification.fcm.service;
 
+import com.project200.undabang.auth.dto.request.LoginRequestDto;
 import com.project200.undabang.member.entity.Member;
 
 import java.util.List;
 
 public interface FcmTokenCommandService {
 
-    void saveFcmToken(Member member, String fcmToken, String userAgent);
+    void saveFcmToken(Member member, String fcmToken, String userAgent, LoginRequestDto requestDto);
 
     void deactivateFcmToken(Member member, String fcmToken);
 

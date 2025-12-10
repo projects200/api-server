@@ -4,7 +4,6 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
 import com.project200.undabang.notification.dto.response.GetAllDeviceNotificationSettingsResponse;
-import com.project200.undabang.notification.fcm.entity.NotificationType;
 import com.project200.undabang.notification.service.NotificationSettingQueryService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -49,9 +48,9 @@ class NotificationSettingQueryControllerTest extends AbstractRestDocSupport {
             String fcmToken = "test-fcm-token";
 
             GetAllDeviceNotificationSettingsResponse resp1 =
-                    new GetAllDeviceNotificationSettingsResponse(NotificationType.CHAT_MESSAGE, true);
+                    new GetAllDeviceNotificationSettingsResponse("CHAT_MESSAGE", true);
             GetAllDeviceNotificationSettingsResponse resp2 =
-                    new GetAllDeviceNotificationSettingsResponse(NotificationType.WORKOUT_REMINDER, false);
+                    new GetAllDeviceNotificationSettingsResponse("WORKOUT_REMINDER", false);
 
             BDDMockito.given(notificationSettingQueryService.getAllDeviceNotificationSettings(fcmToken))
                     .willReturn(List.of(resp1, resp2));

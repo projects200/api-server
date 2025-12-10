@@ -1,10 +1,14 @@
 package com.project200.undabang.notification.fcm.repository.impl;
 
+import com.project200.undabang.auth.dto.request.LoginRequestDto;
 import com.project200.undabang.configuration.TestQuerydslConfig;
 import com.project200.undabang.member.entity.Member;
+import com.project200.undabang.notification.entity.NotificationCategory;
+import com.project200.undabang.notification.entity.NotificationType;
 import com.project200.undabang.notification.fcm.entity.DeviceNotificationSetting;
+import com.project200.undabang.notification.fcm.entity.FcmAccessMode;
+import com.project200.undabang.notification.fcm.entity.FcmPlatform;
 import com.project200.undabang.notification.fcm.entity.FcmToken;
-import com.project200.undabang.notification.fcm.entity.NotificationType;
 import com.project200.undabang.notification.fcm.repository.DeviceNotificationSettingRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -13,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,6 +25,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @DataJpaTest
 @Import(TestQuerydslConfig.class)
 class DeviceNotificationSettingRepositoryImplTest {
@@ -30,14 +36,7 @@ class DeviceNotificationSettingRepositoryImplTest {
     @Autowired
     private TestEntityManager em;
 
-    private void persistAndFlush(Object... entities) {
-        for (Object entity : entities) {
-            em.persist(entity);
-        }
-        em.flush();
-    }
-
-    private Member createMember() {
+    private Member member() {
         String randomValue = UUID.randomUUID().toString().substring(0, 8);
         return Member.builder()
                 .memberId(UUID.randomUUID())
@@ -46,95 +45,118 @@ class DeviceNotificationSettingRepositoryImplTest {
                 .build();
     }
 
-    private FcmToken createFcmToken(Member member, String tokenValue) {
-        return FcmToken.from(member, tokenValue, "test-ua");
+    private NotificationType notificationType(String code) {
+        return NotificationType.builder()
+                .notificationTypeCode(code)
+                .category(NotificationCategory.PERSONAL)
+                .build();
     }
 
-    private DeviceNotificationSetting createSetting(FcmToken token, NotificationType type) {
+    private FcmToken fcmToken(Member member, String tokenValue) {
+        // 테스트에서 플랫폼 정보가 중요하지 않다면 임의의 값(예: ANDROID/APP)을 사용합니다.
+        LoginRequestDto requestDto = new LoginRequestDto(FcmPlatform.ANDROID, FcmAccessMode.APP);
+        return FcmToken.from(member, tokenValue, "test-ua", requestDto);
+    }
+
+    private DeviceNotificationSetting setting(FcmToken token, NotificationType type) {
         return DeviceNotificationSetting.of(token, type);
     }
 
+    private void saveAndFlush(Object... entities) {
+        for (Object entity : entities) {
+            em.persist(entity);
+        }
+        em.flush();
+    }
+
+    private void flushAndClear() {
+        em.flush();
+        em.clear();
+    }
+
     @Nested
-    @DisplayName("deleteAllByFcmToken 메소드 테스트")
-    class DeleteAllByFcmTokenTest {
+    @DisplayName("deleteAllByFcmToken 메소드는")
+    class Describe_deleteAllByFcmToken {
 
         @Test
-        @DisplayName("특정 FcmToken에 연결된 모든 설정들을 성공적으로 삭제하고 다른 토큰의 설정은 유지한다")
-        void shouldDeleteOnlyAssociatedSettings() {
-            // given: 엔티티 객체들을 생성 (아직 영속화되지 않음)
-            Member member1 = createMember();
-            Member member2 = createMember();
+        @DisplayName("특정 FcmToken에 연결된 모든 설정들을 성공적으로 삭제하고, 다른 토큰의 설정은 유지한다")
+        void it_deletes_only_associated_settings_and_keeps_others() {
+            // given: 테스트에 필요한 객체들을 생성합니다. (메모리상에만 존재)
+            NotificationType chatType = notificationType("CHAT_MESSAGE");
+            NotificationType workoutType = notificationType("WORKOUT_REMINDER");
 
-            FcmToken tokenToDeleteFor = createFcmToken(member1, "token-to-delete");
-            DeviceNotificationSetting setting1 = createSetting(tokenToDeleteFor, NotificationType.CHAT_MESSAGE);
-            DeviceNotificationSetting setting2 = createSetting(tokenToDeleteFor, NotificationType.WORKOUT_REMINDER);
+            Member member1 = member();
+            Member member2 = member();
 
-            FcmToken tokenToKeepFor = createFcmToken(member2, "token-to-keep");
-            DeviceNotificationSetting setting3 = createSetting(tokenToKeepFor, NotificationType.CHAT_MESSAGE);
+            FcmToken tokenToDeleteFor = fcmToken(member1, "token-to-delete");
+            FcmToken tokenToKeepFor = fcmToken(member2, "token-to-keep");
 
-            // given: 생성한 모든 엔티티를 한번에 영속화하고 DB에 반영
-            persistAndFlush(member1, member2, tokenToDeleteFor, setting1, setting2, tokenToKeepFor, setting3);
-            em.clear(); // 영속성 컨텍스트를 비워 깨끗한 상태에서 시작
+            DeviceNotificationSetting setting1 = setting(tokenToDeleteFor, chatType);
+            DeviceNotificationSetting setting2 = setting(tokenToDeleteFor, workoutType);
+            DeviceNotificationSetting setting3 = setting(tokenToKeepFor, chatType);
 
-            // given (검증): DB에 총 3개의 설정이 있는지 확인
-            assertThat(deviceNotificationSettingRepository.count()).isEqualTo(3);
+            // given: 생성된 모든 객체들을 DB에 저장합니다.
+            saveAndFlush(chatType, workoutType, member1, member2, tokenToDeleteFor, tokenToKeepFor, setting1, setting2, setting3);
+            flushAndClear();
 
-            // when: 삭제 메소드 실행
-            deviceNotificationSettingRepository.deleteAllByFcmToken(tokenToDeleteFor);
-            em.flush();
-            em.clear();
+            // when: 삭제 메소드를 실행합니다.
+            FcmToken managedTokenToDelete = em.find(FcmToken.class, tokenToDeleteFor.getId());
+            deviceNotificationSettingRepository.deleteAllByFcmToken(managedTokenToDelete);
+            flushAndClear();
 
-            // then: 결과 검증
+            // then: 결과를 검증합니다.
             List<DeviceNotificationSetting> remainingSettings = deviceNotificationSettingRepository.findAll();
             assertThat(remainingSettings).hasSize(1);
             assertThat(remainingSettings.get(0).getFcmToken().getId()).isEqualTo(tokenToKeepFor.getId());
         }
 
         @Test
-        @DisplayName("삭제할 설정이 없는 FcmToken을 전달해도 오류 없이 정상적으로 완료된다")
-        void shouldCompleteWithoutError_whenTokenHasNoSettings() {
+        @DisplayName("설정이 없는 FcmToken을 전달해도 오류 없이 정상적으로 완료된다")
+        void it_completes_without_error_when_token_has_no_settings() {
             // given
-            Member member1 = createMember();
-            Member member2 = createMember();
-            FcmToken tokenWithNoSettings = createFcmToken(member1, "token-no-settings");
-            FcmToken tokenWithSettings = createFcmToken(member2, "token-with-settings");
-            DeviceNotificationSetting setting = createSetting(tokenWithSettings, NotificationType.CHAT_MESSAGE);
+            NotificationType chatType = notificationType("CHAT_MESSAGE");
+            Member member1 = member();
+            Member member2 = member();
+            FcmToken tokenWithNoSettings = fcmToken(member1, "token-no-settings");
+            FcmToken tokenWithSettings = fcmToken(member2, "token-with-settings");
+            DeviceNotificationSetting setting = setting(tokenWithSettings, chatType);
 
-            persistAndFlush(member1, member2, tokenWithNoSettings, tokenWithSettings, setting);
-            em.clear();
-            assertThat(deviceNotificationSettingRepository.count()).isEqualTo(1);
+            saveAndFlush(chatType, member1, member2, tokenWithNoSettings, tokenWithSettings, setting);
+            flushAndClear();
+
+            long countBefore = deviceNotificationSettingRepository.count();
 
             // when
-            deviceNotificationSettingRepository.deleteAllByFcmToken(tokenWithNoSettings);
-            em.flush();
-            em.clear();
+            FcmToken managedToken = em.find(FcmToken.class, tokenWithNoSettings.getId());
+            deviceNotificationSettingRepository.deleteAllByFcmToken(managedToken);
+            flushAndClear();
 
             // then
-            assertThat(deviceNotificationSettingRepository.count()).isEqualTo(1);
+            assertThat(deviceNotificationSettingRepository.count()).isEqualTo(countBefore);
         }
 
         @Test
-        @DisplayName("null 값을 인자로 전달하면 예외 없이 완료되고, DB는 변경되지 않는다")
-        void shouldDoNothingWithoutException_whenArgumentIsNull() {
-            // given: 테스트 데이터 준비
-            Member member = createMember();
-            FcmToken token = createFcmToken(member, "token-1");
-            persistAndFlush(member, token, createSetting(token, NotificationType.CHAT_MESSAGE));
-            em.clear();
+        @DisplayName("null 값을 인자로 전달하면 예외 없이 완료되고 DB는 변경되지 않는다")
+        void it_does_nothing_without_exception_when_argument_is_null() {
+            // given
+            NotificationType chatType = notificationType("CHAT_MESSAGE");
+            Member member = member();
+            FcmToken token = fcmToken(member, "token-1");
+            DeviceNotificationSetting setting = setting(token, chatType);
+
+            saveAndFlush(chatType, member, token, setting);
+            flushAndClear();
 
             long countBefore = deviceNotificationSettingRepository.count();
-            assertThat(countBefore).isEqualTo(1);
 
-            // when & then: 예외가 발생하지 않는지 확인
+            // when & then
             assertDoesNotThrow(() -> {
                 deviceNotificationSettingRepository.deleteAllByFcmToken(null);
-                em.flush();
-                em.clear();
+                flushAndClear();
             });
 
-            // then: DB 상태가 그대로인지 확인
-            long countAfter = deviceNotificationSettingRepository.count();
-            assertThat(countAfter).isEqualTo(countBefore);
+            // then
+            assertThat(deviceNotificationSettingRepository.count()).isEqualTo(countBefore);
         }
     }
 }

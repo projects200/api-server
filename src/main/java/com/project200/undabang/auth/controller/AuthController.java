@@ -1,10 +1,14 @@
 package com.project200.undabang.auth.controller;
 
+import com.project200.undabang.auth.dto.request.LoginRequestDto;
 import com.project200.undabang.auth.service.AuthService;
+import com.project200.undabang.common.web.exception.CustomException;
+import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.common.web.response.SuccessDetails;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.notification.fcm.service.FcmTokenCommandService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -23,12 +27,17 @@ public class AuthController {
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/login")
     public CommonResponse<Void> loginMember(@RequestHeader(value = "User-Agent", required = false) String userAgent,
-                                            @RequestHeader(value = "X-Fcm-Token", required = false) String fcmToken) {
+                                            @RequestHeader(value = "X-Fcm-Token", required = false) String fcmToken,
+                                            @Valid @RequestBody(required = false) LoginRequestDto requestDto) {
 
         Member member = authService.login();
 
-        if (Objects.nonNull(fcmToken) && !fcmToken.isBlank()) {
-            fcmTokenCommandService.saveFcmToken(member, fcmToken, userAgent);
+        if (Objects.nonNull(fcmToken) && !fcmToken.isBlank()) { // fcm 토큰이 있는경우
+            if (requestDto == null || requestDto.getPlatform() == null || requestDto.getAccessMode() == null) { // 기기 정보가 없으면 에러 반환
+                throw new CustomException(ErrorCode.FCM_DEVICE_INFO_REQUIRED);
+            }
+
+            fcmTokenCommandService.saveFcmToken(member, fcmToken, userAgent, requestDto);
         }
 
         return CommonResponse.success(new SuccessDetails("LOGIN_SUCCESS", "로그인 성공"));
