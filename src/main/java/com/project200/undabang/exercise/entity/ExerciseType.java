@@ -41,7 +41,7 @@ public class ExerciseType {
 
     @NotNull
     @ColumnDefault("0")
-    @Column(name = "selection_count", nullable = false)
+    @Column(name = "exercise_selection_count", nullable = false)
     @Builder.Default
     private Long selectionCount = 0L;
 
