@@ -166,7 +166,8 @@ create table if not exists exercise_types
     exercise_name            varchar(50)                        not null,
     exercise_type_created_at datetime default CURRENT_TIMESTAMP not null,
     exercise_type_deleted_at datetime                           null,
-    exercise_type_image_url varchar(255) null
+    exercise_type_image_url varchar(255)                        null,
+    selection_count          bigint default 0                   not null
 );
 
 create table if not exists member_report_subjects
