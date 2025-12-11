@@ -19,8 +19,7 @@ operation::get-my-preferred-exercises/get-my-preferred-exercises_-success[snippe
 ==== 응답 상태 코드
 |===
 |상태 코드|설명
-|200|운동 기록이 성공적으로 생성되었습니다.
-|403|운동 기록에 접근 권한이 없습니다. 다른 회원의 운동 기록을 조회한 경우입니다.
-|404|운동 기록이 존재하지 않습니다.
+|200|선호 운동 목록을 성공적으로 조회했습니다.
+|404|해당 회원을 찾을 수 없습니다. (USER_NOT_FOUND)
 |===
 
