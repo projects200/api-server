@@ -27,6 +27,7 @@ public class MyPreferredExerciseResponse {
     public static MyPreferredExerciseResponse from(PreferredExercise preferredExercise) {
         return MyPreferredExerciseResponse.builder()
                 .preferredExerciseId(preferredExercise.getId())
+                .exerciseTypeId(preferredExercise.getExercise().getId())
                 .exerciseName(preferredExercise.getExercise().getExerciseName())
                 .skillLevel(preferredExercise.getPreferredExerciseSkillLevel())
                 .daysOfWeek(preferredExercise.getDaysOfWeek())
