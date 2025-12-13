@@ -80,7 +80,8 @@ class PreferredExerciseCommandControllerTest extends AbstractRestDocSupport {
                     .preferredExercises(List.of(response1, response2))
                     .build();
 
-            given(preferredExerciseCommandService.createPreferredExercises(anyList())).willReturn(listResponse);
+            given(preferredExerciseCommandService.createPreferredExercises(anyList()))
+                    .willReturn(listResponse);
 
             // when
             mockMvc.perform(post("/api/v1/preferred-exercises")
@@ -88,42 +89,45 @@ class PreferredExerciseCommandControllerTest extends AbstractRestDocSupport {
                             .accept(MediaType.APPLICATION_JSON)
                             .headers(getCommonApiHeaders(memberId))
                             .content(objectMapper.writeValueAsString(requests)))
-                    .andExpect(status().isOk()) // CommonResponse.create returns 200 OK with "CREATED" code in body
-                    // usually, or 201?
-                    // Let's check CommonResponse.create usage.
-                    // In previous file Controller code: return
-                    // ResponseEntity.ok(CommonResponse.create(...));
-                    // So status is 200 OK.
+                    .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("CREATED"))
-                    .andDo(document.document(
+                    .andDo(org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document(
+                            "post-my-preferred-exercises/post-my-preferred-exercises_-success",
                             requestHeaders(
                                     RestDocsUtils.HEADER_ACCESS_TOKEN),
                             requestFields(
-                                    fieldWithPath("[].exerciseTypeId").type(JsonFieldType.NUMBER)
-                                            .description("운동 종류 ID입니다."),
-                                    fieldWithPath("[].skillLevel").type(JsonFieldType.STRING)
+                                    fieldWithPath("[].exerciseTypeId")
+                                            .type(JsonFieldType.NUMBER)
+                                            .description("현재 사용자가 추가할 선호 운동 종류 ID입니다."),
+                                    fieldWithPath("[].skillLevel")
+                                            .type(JsonFieldType.STRING)
                                             .description(
-                                                    "운동 실력 (BEGINNER, ROOKIE, INTERMEDIATE, ADVANCED, SKILLED, PRO)"),
-                                    fieldWithPath("[].daysOfWeek").type(JsonFieldType.ARRAY)
-                                            .description("선호 요일 (월~일, boolean array)")),
+                                                    "현재 사용자가 추가할 선호 운동 실력 (BEGINNER, ROOKIE, INTERMEDIATE, ADVANCED, SKILLED, PRO)"),
+                                    fieldWithPath("[].daysOfWeek")
+                                            .type(JsonFieldType.ARRAY)
+                                            .description("현재 사용자가 추가할 선호 운동 요일 (월~일, boolean array)")),
                             responseFields(RestDocsUtils.commonResponseFields(
-                                    fieldWithPath("data.preferredExercises").type(JsonFieldType.ARRAY)
+                                    fieldWithPath("data.preferredExercises")
+                                            .type(JsonFieldType.ARRAY)
                                             .description("생성된 선호 운동 목록"),
                                     fieldWithPath("data.preferredExercises[].preferredExerciseId")
                                             .type(JsonFieldType.NUMBER)
-                                            .description("선호 운동 ID"),
-                                    fieldWithPath("data.preferredExercises[].exerciseTypeId").type(JsonFieldType.NUMBER)
-                                            .description("운동 종류 ID"),
-                                    fieldWithPath("data.preferredExercises[].exerciseName").type(JsonFieldType.STRING)
-                                            .description("운동 이름"),
-                                    fieldWithPath("data.preferredExercises[].skillLevel").type(JsonFieldType.STRING)
-                                            .description("운동 실력"),
-                                    fieldWithPath("data.preferredExercises[].daysOfWeek").type(JsonFieldType.ARRAY)
-                                            .description("요일별 선호 여부"),
-                                    fieldWithPath("data.preferredExercises[].imageUrl").type(JsonFieldType.STRING)
-                                            .description("운동 이미지 URL")))));
-
-            then(preferredExerciseCommandService).should(times(1)).createPreferredExercises(anyList());
+                                            .description("생성된 선호 운동 ID"),
+                                    fieldWithPath("data.preferredExercises[].exerciseTypeId")
+                                            .type(JsonFieldType.NUMBER)
+                                            .description("생성된 선호 운동 종류 ID"),
+                                    fieldWithPath("data.preferredExercises[].exerciseName")
+                                            .type(JsonFieldType.STRING)
+                                            .description("생성된 선호 운동 이름"),
+                                    fieldWithPath("data.preferredExercises[].skillLevel")
+                                            .type(JsonFieldType.STRING)
+                                            .description("생성된 선호 운동 실력"),
+                                    fieldWithPath("data.preferredExercises[].daysOfWeek")
+                                            .type(JsonFieldType.ARRAY)
+                                            .description("생성된 선호 운동 요일별 선호 여부"),
+                                    fieldWithPath("data.preferredExercises[].imageUrl")
+                                            .type(JsonFieldType.STRING)
+                                            .description("생성된 선호 운동 이미지 URL")))));
         }
 
         @Test
@@ -131,10 +135,12 @@ class PreferredExerciseCommandControllerTest extends AbstractRestDocSupport {
         void it_returns_error_when_limit_exceeded() throws Exception {
             // given
             UUID memberId = UUID.randomUUID();
-            List<CreatePreferredExerciseRequest> requests = List.of(createRequest(1L, ExerciseSkillLevel.BEGINNER));
+            List<CreatePreferredExerciseRequest> requests = List
+                    .of(createRequest(1L, ExerciseSkillLevel.BEGINNER));
 
             given(preferredExerciseCommandService.createPreferredExercises(anyList()))
-                    .willThrow(new CustomException(ErrorCode.PREFERRED_EXERCISE_MAX_COUNT_VIOLATION));
+                    .willThrow(new CustomException(
+                            ErrorCode.PREFERRED_EXERCISE_MAX_COUNT_VIOLATION));
 
             // when
             mockMvc.perform(post("/api/v1/preferred-exercises")
@@ -142,7 +148,9 @@ class PreferredExerciseCommandControllerTest extends AbstractRestDocSupport {
                             .headers(getCommonApiHeaders(memberId))
                             .content(objectMapper.writeValueAsString(requests)))
                     .andExpect(status().isConflict()) // 409
-                    .andExpect(jsonPath("$.code").value("PREFERRED_EXERCISE_MAX_COUNT_VIOLATION"));
+                    .andExpect(jsonPath("$.code").value("PREFERRED_EXERCISE_MAX_COUNT_VIOLATION"))
+                    .andDo(org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document(
+                            "post-my-preferred-exercises/limit-exceeded"));
         }
     }
 
@@ -151,7 +159,7 @@ class PreferredExerciseCommandControllerTest extends AbstractRestDocSupport {
         ReflectionTestUtils.setField(request, "exerciseTypeId", exerciseTypeId);
         ReflectionTestUtils.setField(request, "skillLevel", level);
         ReflectionTestUtils.setField(request, "daysOfWeek",
-                new boolean[] { true, false, true, false, true, false, false });
+                new boolean[]{true, false, true, false, true, false, false});
         return request;
     }
 }
