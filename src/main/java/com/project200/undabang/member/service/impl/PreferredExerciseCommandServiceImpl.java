@@ -73,7 +73,7 @@ public class PreferredExerciseCommandServiceImpl implements PreferredExerciseCom
         // ExerciseType 조회
         List<ExerciseType> exerciseTypes = exerciseTypeRepository.findAllById(requestExerciseIds);
         if (exerciseTypes.size() != requestExerciseIds.size()) {
-            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE); // 존재하지 않는 운동 종류 포함
+            throw new CustomException(ErrorCode.PREFERRED_EXERCISE_NOT_FOUND); // 존재하지 않는 운동 종류 포함
         }
 
         Map<Long, ExerciseType> exerciseTypeMap = exerciseTypes.stream()
