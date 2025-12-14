@@ -47,11 +47,6 @@ public class PreferredExerciseCommandServiceImpl implements PreferredExerciseCom
         List<PreferredExercise> existingExercises = preferredExerciseRepository
                 .findAllByMemberAndPreferredExerciseDeletedAtNull(member);
 
-        // 현재 갯수 + 요청 갯수 검증 (일단 추가하는 로직이므로 합산 검증)
-        // 만약 전체 리스트 교체(Set) 로직이라면 다르게 짜야하지만, "추가(Post)" 이므로 합산 체크
-        // 하지만 기획서상 목록(1~5개) 필수라고 되어있고, 보통 "내 선호 운동 설정"은 전체 덮어쓰기일 가능성도 있음.
-        // 여기서는 안전하게 기존 + 신규 <= 5로 가고, 중복 체크 수행.
-
         if (existingExercises.size() + requests.size() > 5) {
             throw new CustomException(ErrorCode.PREFERRED_EXERCISE_MAX_COUNT_VIOLATION);
         }
