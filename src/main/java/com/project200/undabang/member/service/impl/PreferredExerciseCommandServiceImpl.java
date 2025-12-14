@@ -36,9 +36,6 @@ public class PreferredExerciseCommandServiceImpl implements PreferredExerciseCom
 
     @Override
     public PreferredExerciseListResponse createPreferredExercises(List<CreatePreferredExerciseRequest> requests) {
-        if (requests == null || requests.isEmpty()) {
-            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
-        }
         if (requests.size() > 5) {
             throw new CustomException(ErrorCode.PREFERRED_EXERCISE_MAX_COUNT_VIOLATION);
         }
