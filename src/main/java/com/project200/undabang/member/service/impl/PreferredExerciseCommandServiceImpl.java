@@ -13,6 +13,8 @@ import com.project200.undabang.member.entity.PreferredExercise;
 import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.member.repository.PreferredExerciseRepository;
 import com.project200.undabang.member.service.PreferredExerciseCommandService;
+import com.project200.undabang.policy.entity.PolicyKey;
+import com.project200.undabang.policy.service.PolicyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,10 +35,13 @@ public class PreferredExerciseCommandServiceImpl implements PreferredExerciseCom
     private final MemberRepository memberRepository;
     private final PreferredExerciseRepository preferredExerciseRepository;
     private final ExerciseTypeRepository exerciseTypeRepository;
+    private final PolicyService policyService; // 의존성 주입 추가
 
     @Override
     public PreferredExerciseListResponse createPreferredExercises(List<CreatePreferredExerciseRequest> requests) {
-        if (requests.size() > 5) {
+        int maxCount = policyService.getPolicyValueAsInt(PolicyKey.PREFERRED_EXERCISE_MAX_COUNT);
+
+        if (requests.size() > maxCount) {
             throw new CustomException(ErrorCode.PREFERRED_EXERCISE_MAX_COUNT_VIOLATION);
         }
 
@@ -44,7 +49,7 @@ public class PreferredExerciseCommandServiceImpl implements PreferredExerciseCom
         List<PreferredExercise> existingExercises = preferredExerciseRepository
                 .findAllByMemberAndPreferredExerciseDeletedAtNull(member);
 
-        if (existingExercises.size() + requests.size() > 5) {
+        if (existingExercises.size() + requests.size() > maxCount) {
             throw new CustomException(ErrorCode.PREFERRED_EXERCISE_MAX_COUNT_VIOLATION);
         }
 

@@ -220,3 +220,6 @@ VALUES ('wrestling', 'https://undabang-public-assets.s3.ap-northeast-2.amazonaws
        ('badminton', 'https://undabang-public-assets.s3.ap-northeast-2.amazonaws.com/images/exercises/badminton.png'),
        ('American_football',
         'https://undabang-public-assets.s3.ap-northeast-2.amazonaws.com/images/exercises/American_football.png');
+
+INSERT INTO policies (policy_key, policy_value, policy_unit, policy_description, policy_created_at, policy_updated_at)
+VALUES ('PREFERRED_EXERCISE_MAX_COUNT', '5', 'COUNT', '선호 운동 최대 보유 갯수', NOW(), NOW());
