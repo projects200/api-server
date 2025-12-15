@@ -32,9 +32,63 @@ class ChatroomMemberRepositoryImplTest {
     @Autowired
     private EntityManager em;
 
+    private void persistAndFlush(Object... entities) {
+        for (Object entity : entities) {
+            em.persist(entity);
+        }
+        em.flush();
+        em.clear();
+    }
+
     @Nested
-    @DisplayName("상대방 상태 조회 (getOpponentStatusByChatroomId)")
-    class GetOpponentStatusByChatroomIdTests {
+    @DisplayName("findOtherMemberInChatroom 메소드는")
+    class Describe_findOtherMemberInChatroom {
+
+        @Test
+        @DisplayName("성공: 채팅방의 다른 활성 멤버(Active)를 반환한다")
+        void it_returns_other_active_member() {
+            // given
+            Member me = createMember("me@test.com", "Me");
+            Member other = createMember("other@test.com", "Other");
+            Chatroom chatroom = createChatroom();
+
+            ChatroomMember myCm = createChatroomMember(chatroom, me, ChatroomMemberStatus.ACTIVE, 0L);
+            ChatroomMember otherCm = createChatroomMember(chatroom, other, ChatroomMemberStatus.ACTIVE, 0L);
+
+            persistAndFlush(me, other, chatroom, myCm, otherCm);
+
+            // when
+            Optional<Member> result = chatroomMemberRepository.findOtherMemberInChatroom(chatroom.getId(), me.getMemberId());
+
+            // then
+            assertThat(result).isPresent();
+            assertThat(result.get().getMemberId()).isEqualTo(other.getMemberId());
+        }
+
+        @Test
+        @DisplayName("성공: 상대방이 나간(Left) 상태라면 반환하지 않는다 (Optional.empty)")
+        void it_returns_empty_when_other_member_left() {
+            // given
+            Member me = createMember("me@test.com", "Me");
+            Member other = createMember("other@test.com", "Other");
+            Chatroom chatroom = createChatroom();
+
+            ChatroomMember myCm = createChatroomMember(chatroom, me, ChatroomMemberStatus.ACTIVE, 0L);
+            ChatroomMember otherCm = createChatroomMember(chatroom, other, ChatroomMemberStatus.LEFT, 0L); // LEFT 상태
+
+            persistAndFlush(me, other, chatroom, myCm, otherCm);
+
+            // when
+            Optional<Member> result = chatroomMemberRepository.findOtherMemberInChatroom(chatroom.getId(), me.getMemberId());
+
+            // then
+            assertThat(result).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("getOpponentStatusByChatroomId 메소드는")
+    class Describe_getOpponentStatusByChatroomId {
 
         @Test
         @DisplayName("성공: 상대방이 ACTIVE 상태일 경우 Optional<ACTIVE>를 반환한다")
@@ -45,6 +99,7 @@ class ChatroomMemberRepositoryImplTest {
             Chatroom chatroom = createChatroom();
             ChatroomMember currentCM = createChatroomMember(chatroom, currentUser, ChatroomMemberStatus.ACTIVE, 0L);
             ChatroomMember otherCM = createChatroomMember(chatroom, otherUser, ChatroomMemberStatus.ACTIVE, 0L);
+
             persistAndFlush(currentUser, otherUser, chatroom, currentCM, otherCM);
 
             // when
@@ -62,7 +117,8 @@ class ChatroomMemberRepositoryImplTest {
             Member otherUser = createMember("other@example.com", "otherUser");
             Chatroom chatroom = createChatroom();
             ChatroomMember currentCM = createChatroomMember(chatroom, currentUser, ChatroomMemberStatus.ACTIVE, 0L);
-            ChatroomMember otherCM = createChatroomMember(chatroom, otherUser, ChatroomMemberStatus.LEFT, 0L); // 상대방은 나간 상태
+            ChatroomMember otherCM = createChatroomMember(chatroom, otherUser, ChatroomMemberStatus.LEFT, 0L);
+
             persistAndFlush(currentUser, otherUser, chatroom, currentCM, otherCM);
 
             // when
@@ -73,17 +129,9 @@ class ChatroomMemberRepositoryImplTest {
         }
     }
 
-    private void persistAndFlush(Object... entities) {
-        for (Object entity : entities) {
-            em.persist(entity);
-        }
-        em.flush();
-        em.clear();
-    }
-
     @Nested
     @DisplayName("checkBlockExists 메소드는")
-    class CheckBlockExists {
+    class Describe_checkBlockExists {
 
         @Test
         @DisplayName("성공: 현재 사용자가 채팅방의 상대방을 차단했을 경우 true를 반환한다")
@@ -95,6 +143,7 @@ class ChatroomMemberRepositoryImplTest {
             ChatroomMember currentCM = createChatroomMember(chatroom, currentUser, ChatroomMemberStatus.ACTIVE, 0L);
             ChatroomMember otherCM = createChatroomMember(chatroom, otherUser, ChatroomMemberStatus.ACTIVE, 0L);
             MemberBlock block = createMemberBlock(currentUser, otherUser);
+
             persistAndFlush(currentUser, otherUser, chatroom, currentCM, otherCM, block);
 
             // when
@@ -114,6 +163,7 @@ class ChatroomMemberRepositoryImplTest {
             ChatroomMember currentCM = createChatroomMember(chatroom, currentUser, ChatroomMemberStatus.ACTIVE, 0L);
             ChatroomMember otherCM = createChatroomMember(chatroom, otherUser, ChatroomMemberStatus.ACTIVE, 0L);
             MemberBlock block = createMemberBlock(otherUser, currentUser); // 역방향 차단
+
             persistAndFlush(currentUser, otherUser, chatroom, currentCM, otherCM, block);
 
             // when
@@ -132,7 +182,7 @@ class ChatroomMemberRepositoryImplTest {
             Chatroom chatroom = createChatroom();
             ChatroomMember currentCM = createChatroomMember(chatroom, currentUser, ChatroomMemberStatus.ACTIVE, 0L);
             ChatroomMember otherCM = createChatroomMember(chatroom, otherUser, ChatroomMemberStatus.ACTIVE, 0L);
-            // 차단 기록 없음
+
             persistAndFlush(currentUser, otherUser, chatroom, currentCM, otherCM);
 
             // when
@@ -140,6 +190,46 @@ class ChatroomMemberRepositoryImplTest {
 
             // then
             assertThat(isBlocked).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("getChatroomListByMemberId 메소드는")
+    class Describe_getChatroomListByMemberId {
+
+        @Test
+        @DisplayName("성공: 채팅방이 없을 경우 빈 리스트를 반환한다")
+        void shouldReturnEmptyListWhenNoChatrooms() {
+            Member member = createMember("test@example.com", "testUser");
+            persistAndFlush(member);
+
+            List<GetMemberChatroomResponse> result = chatroomMemberRepository.getChatroomListByMemberId(member);
+
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("성공: 읽지 않은 메시지 개수와 상대방 정보를 포함한 채팅방 목록을 반환한다")
+        void shouldReturnChatroomListWithUnreadCount() {
+            // given
+            Member currentMember = createMember("current@example.com", "currentUser");
+            Member otherMember = createMember("other@example.com", "otherUser");
+            Chatroom chatroom = createChatroom();
+            ChatroomMember currentCM = createChatroomMember(chatroom, currentMember, ChatroomMemberStatus.ACTIVE, 0L);
+            ChatroomMember otherCM = createChatroomMember(chatroom, otherMember, ChatroomMemberStatus.ACTIVE, 0L);
+            Chat unreadChat = createChat(chatroom, otherMember, "Unread message", ChatType.USER);
+
+            persistAndFlush(currentMember, otherMember, chatroom, currentCM, otherCM, unreadChat);
+
+            // when
+            List<GetMemberChatroomResponse> result = chatroomMemberRepository.getChatroomListByMemberId(currentMember);
+
+            // then
+            assertThat(result).hasSize(1);
+            GetMemberChatroomResponse response = result.get(0);
+            assertThat(response.getOtherMemberNickname()).isEqualTo(otherMember.getMemberNickname());
+            assertThat(response.getUnreadCount()).isEqualTo(1L);
+            assertThat(response.getOtherMemberId()).isEqualTo(otherMember.getMemberId());
         }
     }
 
@@ -180,42 +270,5 @@ class ChatroomMemberRepositoryImplTest {
                 .blocker(blocker)
                 .blocked(blocked)
                 .build();
-    }
-
-    @Nested
-    class GetChatroomListByMemberIdTests {
-
-        @Test
-        void shouldReturnEmptyListWhenNoChatrooms() {
-            Member member = createMember("test@example.com", "testUser");
-            persistAndFlush(member);
-
-            List<GetMemberChatroomResponse> result = chatroomMemberRepository.getChatroomListByMemberId(member);
-
-            assertThat(result).isEmpty();
-        }
-
-        @Test
-        void shouldReturnChatroomListWithUnreadCount() {
-            // given
-            Member currentMember = createMember("current@example.com", "currentUser");
-            Member otherMember = createMember("other@example.com", "otherUser");
-            Chatroom chatroom = createChatroom();
-            ChatroomMember currentCM = createChatroomMember(chatroom, currentMember, ChatroomMemberStatus.ACTIVE, 0L);
-            ChatroomMember otherCM = createChatroomMember(chatroom, otherMember, ChatroomMemberStatus.ACTIVE, 0L);
-            Chat unreadChat = createChat(chatroom, otherMember, "Unread message", ChatType.USER);
-            persistAndFlush(currentMember, otherMember, chatroom, currentCM, otherCM, unreadChat);
-
-            // when
-            List<GetMemberChatroomResponse> result = chatroomMemberRepository.getChatroomListByMemberId(currentMember);
-
-            // then
-            assertThat(result).hasSize(1);
-            GetMemberChatroomResponse response = result.get(0);
-            assertThat(response.getOtherMemberNickname()).isEqualTo(otherMember.getMemberNickname());
-            assertThat(response.getUnreadCount()).isEqualTo(1L);
-            // 추가 검증: 반환된 DTO의 memberId가 실제 상대 멤버의 memberId와 동일한지 확인
-            assertThat(response.getOtherMemberId()).isEqualTo(otherMember.getMemberId());
-        }
     }
 }

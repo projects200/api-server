@@ -1,15 +1,19 @@
 package com.project200.undabang.auth.controller;
 
+import com.project200.undabang.auth.dto.request.LoginRequestDto;
 import com.project200.undabang.auth.service.AuthService;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
 import com.project200.undabang.configuration.RestDocsUtils;
 import com.project200.undabang.member.entity.Member;
+import com.project200.undabang.notification.fcm.entity.FcmAccessMode;
+import com.project200.undabang.notification.fcm.entity.FcmPlatform;
 import com.project200.undabang.notification.fcm.service.FcmTokenCommandService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -24,7 +28,7 @@ import static com.project200.undabang.configuration.DocumentFormatGenerator.getT
 import static com.project200.undabang.configuration.HeadersGenerator.getCommonApiHeaders;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
-import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 
 @WebMvcTest(AuthController.class)
 @DisplayName("AuthController 테스트")
@@ -42,11 +46,13 @@ class AuthControllerTest extends AbstractRestDocSupport {
     class Login {
 
         @Test
-        @DisplayName("로그인 성공 - FCM 토큰 포함")
+        @DisplayName("로그인 성공 - FCM 토큰 및 정보 포함")
         void loginMember_Success_WithFcmToken() throws Exception {
             // given
             String fcmToken = "test-fcm-token";
             String userAgent = "Test-User-Agent";
+            LoginRequestDto requestDto = new LoginRequestDto(FcmPlatform.IOS, FcmAccessMode.PWA);
+
             BDDMockito.given(authService.login()).willReturn(member);
 
             // when & then
@@ -55,15 +61,22 @@ class AuthControllerTest extends AbstractRestDocSupport {
                             .accept(MediaType.APPLICATION_JSON)
                             .header("User-Agent", userAgent)
                             .header("X-Fcm-Token", fcmToken)
-                            .headers(getCommonApiHeaders(memberId)))
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(requestDto)))
                     .andExpect(MockMvcResultMatchers.status().isOk())
                     .andDo(document.document(
                             requestHeaders(
                                     RestDocsUtils.HEADER_ACCESS_TOKEN,
                                     headerWithName("User-Agent").attributes(getTypeFormat(JsonFieldType.STRING))
-                                            .description("사용자 디바이스 정보 (선택)").optional(),
+                                            .description("사용자 디바이스 정보를 의미합니다.").optional(),
                                     headerWithName("X-Fcm-Token").attributes(getTypeFormat(JsonFieldType.STRING))
-                                            .description("FCM 푸시 알림을 위한 토큰 (선택)").optional()
+                                            .description("FCM 푸시 알림을 위한 토큰을 의미합니다.").optional()
+                            ),
+                            requestFields(
+                                    fieldWithPath("platform").type(JsonFieldType.STRING)
+                                            .description("플랫폼 정보를 의미합니다. IOS, ANDROID, PC, ETC 중 하나를 선택해야 합니다."),
+                                    fieldWithPath("accessMode").type(JsonFieldType.STRING)
+                                            .description("접속 모드를 의미합니다. APP, PWA, BROWSER 중 하나를 선택해야 합니다.")
                             ),
                             responseFields(
                                     RestDocsUtils.commonResponseFieldsOnly()
@@ -71,12 +84,33 @@ class AuthControllerTest extends AbstractRestDocSupport {
                     ));
 
             BDDMockito.then(authService).should().login();
-            BDDMockito.then(fcmTokenCommandService).should().saveFcmToken(member, fcmToken, userAgent);
+            BDDMockito.then(fcmTokenCommandService).should()
+                    .saveFcmToken(ArgumentMatchers.refEq(member), ArgumentMatchers.eq(fcmToken), ArgumentMatchers.eq(userAgent), ArgumentMatchers.refEq(requestDto));
         }
 
         @Test
-        @DisplayName("로그인 성공 - FCM 토큰 미포함")
+        @DisplayName("로그인 성공 - FCM 토큰 미포함 (Body 포함)")
         void loginMember_Success_WithoutFcmToken() throws Exception {
+            // given
+            LoginRequestDto requestDto = new LoginRequestDto(FcmPlatform.PC, FcmAccessMode.BROWSER);
+            BDDMockito.given(authService.login()).willReturn(member);
+
+            // when & then
+            mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(requestDto)))
+                    .andExpect(MockMvcResultMatchers.status().isOk());
+
+            BDDMockito.then(authService).should().login();
+            // 토큰이 없으므로 saveFcmToken은 호출되지 않아야 함
+            BDDMockito.then(fcmTokenCommandService).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("로그인 성공 - FCM 토큰 및 Body 미포함 (순수 로그인)")
+        void loginMember_Success_PureLogin() throws Exception {
             // given
             BDDMockito.given(authService.login()).willReturn(member);
 
@@ -84,10 +118,38 @@ class AuthControllerTest extends AbstractRestDocSupport {
             mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/login")
                             .contentType(MediaType.APPLICATION_JSON)
                             .accept(MediaType.APPLICATION_JSON)
-                            .headers(getCommonApiHeaders(memberId)))
-                    .andExpect(MockMvcResultMatchers.status().isOk());
+                            .headers(getCommonApiHeaders(memberId))) // Content 없이 요청
+                    .andExpect(MockMvcResultMatchers.status().isOk())
+                    .andDo(document.document(
+                            requestHeaders(
+                                    RestDocsUtils.HEADER_ACCESS_TOKEN
+                            ),
+                            responseFields(
+                                    RestDocsUtils.commonResponseFieldsOnly()
+                            )
+                    ));
 
             BDDMockito.then(authService).should().login();
+            BDDMockito.then(fcmTokenCommandService).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("로그인 실패 - FCM 토큰은 있으나 플랫폼 정보(Body)가 없음")
+        void loginMember_Fail_TokenProvided_But_BodyMissing() throws Exception {
+            // given
+            String fcmToken = "test-token";
+            BDDMockito.given(authService.login()).willReturn(member);
+
+            // when & then
+            mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .header("X-Fcm-Token", fcmToken)
+                            .headers(getCommonApiHeaders(memberId))) // Body 없음
+                    .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+
+            BDDMockito.then(authService).should().login();
+            // 예외가 발생하여 저장 로직까지 도달하지 않아야 함
             BDDMockito.then(fcmTokenCommandService).shouldHaveNoInteractions();
         }
 
@@ -95,14 +157,15 @@ class AuthControllerTest extends AbstractRestDocSupport {
         @DisplayName("로그인 실패 - 존재하지 않는 회원")
         void loginMember_Fail_MemberNotFound() throws Exception {
             // given
+            LoginRequestDto requestDto = new LoginRequestDto(FcmPlatform.ANDROID, FcmAccessMode.APP);
             BDDMockito.given(authService.login()).willThrow(new CustomException(ErrorCode.LOGIN_FAILED));
-
 
             // when & then
             mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/login")
                             .contentType(MediaType.APPLICATION_JSON)
                             .accept(MediaType.APPLICATION_JSON)
-                            .headers(getCommonApiHeaders(UUID.randomUUID()))) // 존재하지 않는 UUID
+                            .headers(getCommonApiHeaders(UUID.randomUUID()))
+                            .content(objectMapper.writeValueAsString(requestDto)))
                     .andExpect(MockMvcResultMatchers.status().isUnauthorized())
                     .andDo(document.document(
                             requestHeaders(
@@ -117,6 +180,7 @@ class AuthControllerTest extends AbstractRestDocSupport {
             BDDMockito.then(fcmTokenCommandService).shouldHaveNoInteractions();
         }
     }
+
 
     @Nested
     @DisplayName("로그아웃 API 테스트")

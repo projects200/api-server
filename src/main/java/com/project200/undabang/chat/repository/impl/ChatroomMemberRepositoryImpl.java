@@ -16,12 +16,35 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 @RequiredArgsConstructor
 public class ChatroomMemberRepositoryImpl implements ChatroomMemberRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
+
+    /**
+     * 주어진 채팅방 ID와 회원 ID를 기준으로 해당 채팅방에 속한 다른 회원 정보를 반환합니다.
+     */
+    @Override
+    public Optional<Member> findOtherMemberInChatroom(Long chatroomId, UUID memberId) {
+        QChatroomMember cm = QChatroomMember.chatroomMember;
+        QMember member = QMember.member;
+
+        return Optional.ofNullable(
+                queryFactory
+                        .select(cm.member)
+                        .from(cm)
+                        .join(cm.member, member)
+                        .where(
+                                cm.chatroom.id.eq(chatroomId),
+                                cm.member.memberId.ne(memberId),
+                                cm.chatroomMemberStatus.eq(ChatroomMemberStatus.ACTIVE)
+                        )
+                        .fetchOne()
+        );
+    }
 
     /**
      * 현재 채팅방에서 상대방과의 차단 관계가 존재하는지 확인합니다.
@@ -38,14 +61,14 @@ public class ChatroomMemberRepositoryImpl implements ChatroomMemberRepositoryCus
                 .from(chatroomMember)
                 .join(memberBlock).on(
                         (
-                            memberBlock.blocker.eq(currentMember) // 내가 차단자인 경우
-                                .and(memberBlock.blocked.eq(chatroomMember.member))
-                            .or(
-                                memberBlock.blocker.eq(chatroomMember.member) // 상대가 차단자인 경우
-                                    .and(memberBlock.blocked.eq(currentMember))
-                            )
+                                memberBlock.blocker.eq(currentMember) // 내가 차단자인 경우
+                                        .and(memberBlock.blocked.eq(chatroomMember.member))
+                                        .or(
+                                                memberBlock.blocker.eq(chatroomMember.member) // 상대가 차단자인 경우
+                                                        .and(memberBlock.blocked.eq(currentMember))
+                                        )
                         )
-                        .and(memberBlock.memberBlockDeletedAt.isNull()) // 차단 해제하지 않은 경우
+                                .and(memberBlock.memberBlockDeletedAt.isNull()) // 차단 해제하지 않은 경우
                 )
                 .where(
                         chatroomMember.chatroom.eq(currentChatroom), // 현재 채팅방에서

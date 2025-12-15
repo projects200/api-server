@@ -1,5 +1,6 @@
 package com.project200.undabang.notification.fcm.service.impl;
 
+import com.project200.undabang.notification.fcm.dto.ChatNotificationPayload;
 import com.project200.undabang.notification.fcm.dto.NotificationPayload;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -11,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
@@ -131,6 +133,66 @@ class LogNotificationServiceTest {
             // when & then
             assertDoesNotThrow(() -> logNotificationService.sendNotification(payloads),
                     "리스트의 일부 요소가 null이더라도 첫 번째 요소만 접근하므로 예외가 발생해서는 안 됩니다.");
+        }
+    }
+
+    @Nested
+    @DisplayName("sendChatNotification (채팅 알림) 메소드는")
+    class SendChatNotificationTest {
+
+        @Test
+        @DisplayName("정상적인 입력값(Payload와 토큰 리스트)에 대해 예외 없이 성공한다")
+        void givenValidPayloadAndTokens_whenSendChatNotification_thenSucceeds() {
+            // given
+            ChatNotificationPayload payload = ChatNotificationPayload.builder()
+                    .type("CHAT_MESSAGE")
+                    .chatroomId(1L)
+                    .memberId(UUID.randomUUID())
+                    .nickname("Tester")
+                    .content("Hello")
+                    .build();
+
+            List<String> tokens = List.of("token1", "token2");
+
+            // when & then
+            assertDoesNotThrow(() -> logNotificationService.sendChatNotification(payload, tokens),
+                    "정상적인 입력값에 대해 예외가 발생해서는 안 됩니다.");
+        }
+
+        @Test
+        @DisplayName("토큰 리스트가 비어 있어도 예외 없이 성공한다")
+        void givenEmptyTokenList_whenSendChatNotification_thenSucceeds() {
+            // given
+            ChatNotificationPayload payload = ChatNotificationPayload.builder()
+                    .type("CHAT_MESSAGE")
+                    .chatroomId(1L)
+                    .memberId(UUID.randomUUID())
+                    .nickname("Tester")
+                    .content("Hello")
+                    .build();
+
+            List<String> emptyTokens = Collections.emptyList();
+
+            // when & then
+            assertDoesNotThrow(() -> logNotificationService.sendChatNotification(payload, emptyTokens),
+                    "토큰 리스트가 비어 있어도 예외가 발생해서는 안 됩니다.");
+        }
+
+        @Test
+        @DisplayName("토큰 리스트가 null이어도 예외 없이 성공한다")
+        void givenNullTokenList_whenSendChatNotification_thenSucceeds() {
+            // given
+            ChatNotificationPayload payload = ChatNotificationPayload.builder()
+                    .type("CHAT_MESSAGE")
+                    .chatroomId(1L)
+                    .memberId(UUID.randomUUID())
+                    .nickname("Tester")
+                    .content("Hello")
+                    .build();
+
+            // when & then
+            assertDoesNotThrow(() -> logNotificationService.sendChatNotification(payload, null),
+                    "토큰 리스트가 null이어도 예외가 발생해서는 안 됩니다.");
         }
     }
 }

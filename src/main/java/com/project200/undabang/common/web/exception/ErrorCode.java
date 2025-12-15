@@ -19,6 +19,7 @@ public enum ErrorCode {
     USER_ID_HEADER_MISSING(401, "USER_ID_HEADER_MISSING", "X-USER-ID 헤더가 누락되었습니다."),
     USER_EMAIL_HEADER_MISSING(401, "USER_EMAIL_HEADER_MISSING", "X-USER-EMAIL 헤더가 누락되었습니다."),
     INVALID_USER_ID_FORMAT(400, "INVALID_USER_ID_FORMAT", "X-USER-ID 헤더는 유효한 UUID 형식이어야 합니다."),
+    FCM_DEVICE_INFO_REQUIRED(400, "FCM_DEVICE_INFO_REQUIRED", "FCM 기기 정보가 필요합니다"),
     LOGIN_FAILED(401, "LOGIN_FAILED", "로그인에 실패했습니다. 일치하는 회원을 찾을 수 없습니다."),
     LOGOUT_FAILED(401, "LOGOUT_FAILED", "로그아웃에 실패했습니다. 일치하는 회원을 찾을 수 없습니다."),
 
@@ -76,13 +77,19 @@ public enum ErrorCode {
     MESSAGE_SEND_BLOCKED(403, "MESSAGE_SEND_BLOCKED", "해당 회원님과는 메시지를 주고받을 수 없습니다."),
     CHATROOM_MEMBERS_NOT_FOUND(404, "CHATROOM_MEMBERS_NOT_FOUND", "등록된 채팅방 참여자 정보를 확인할 수 없습니다."),
     CHATROOM_NOT_FOUND(404, "CHATROOM_NOT_FOUND", "존재하지 않는 채팅방 입니다."),
+    CHAT_NOT_FOUND(404, "CHAT_NOT_FOUND", "존재하지 않는 채팅 입니다."),
     CHATROOM_MEMBER_INACTIVE(409, "CHATROOM_MEMBER_INACTIVE", "회원님이 나간 채팅방 입니다."),
     CHATROOM_OTHER_MEMBER_INACTIVE(409, "CHATROOM_OTHER_MEMBER_INACTIVE", "다른 회원님이 나간 채팅방입니다."),
 
     // 차단 관련 에러
     MEMBER_BLOCK_NOT_FOUND(404, "MEMBER_BLOCK_NOT_FOUND", "해당 회원을 차단한 이력이 없습니다."),
-    MEMBER_BLOCK_DUPLICATED(409, "MEMBER_BLOCK_DUPLICATED", "이미 차단한 회원입니다.");
+    MEMBER_BLOCK_DUPLICATED(409, "MEMBER_BLOCK_DUPLICATED", "이미 차단한 회원입니다."),
 
+    // FCM 토큰 관련 에러
+    FCM_TOKEN_NOT_FOUND(404, "FCM_TOKEN_NOT_FOUND", "존재하지 않는 FCM 토큰입니다."),
+
+    // 기기 푸시 알림 관련 에러
+    NOTIFICATION_TYPE_NOT_FOUND(404, "NOTIFICATION_TYPE_NOT_FOUND", "존재하지 않는 알림 타입입니다.");
 
     private final HttpStatusCode status;
     private final String code;

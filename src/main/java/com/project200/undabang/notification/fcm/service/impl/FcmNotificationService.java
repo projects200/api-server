@@ -4,6 +4,7 @@ import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;
 import com.google.firebase.messaging.*;
+import com.project200.undabang.notification.fcm.dto.ChatNotificationPayload;
 import com.project200.undabang.notification.fcm.dto.NotificationPayload;
 import com.project200.undabang.notification.fcm.service.FcmTokenCommandService;
 import com.project200.undabang.notification.fcm.service.NotificationService;
@@ -133,6 +134,57 @@ public class FcmNotificationService implements NotificationService {
             @Override
             public void onFailure(Throwable t) {
                 log.error("[알림 발송 실패] FCM 다중 발송 비동기 작업 중 심각한 오류 발생", t);
+            }
+        }, taskExecutor);
+    }
+
+    /**
+     * 주어진 채팅 알림 내용을 FCM 토큰 목록에 따라 푸시 알림으로 발송합니다.
+     */
+    @Override
+    public void sendChatNotification(ChatNotificationPayload payload, List<String> fcmTokenList) {
+
+        if (fcmTokenList == null || fcmTokenList.isEmpty()) {
+            return;
+        }
+
+        MulticastMessage message = MulticastMessage.builder()
+                .addAllTokens(fcmTokenList)
+                .putAllData(payload.toChatData())
+                .build();
+
+        ApiFuture<BatchResponse> response = firebaseMessaging.sendEachForMulticastAsync(message);
+
+        ApiFutures.addCallback(response, new ApiFutureCallback<>() {
+            @Override
+            public void onSuccess(BatchResponse batchResponse) {
+                log.info("[알림 발송 완료] 총 {}건 성공, {}건 실패",
+                        batchResponse.getSuccessCount(),
+                        batchResponse.getFailureCount());
+
+                if (batchResponse.getFailureCount() > 0) {
+                    List<String> failedTokens = new ArrayList<>();
+                    List<SendResponse> responses = batchResponse.getResponses();
+
+                    IntStream.range(0, responses.size())
+                            .filter(i -> !responses.get(i).isSuccessful())
+                            .forEach(i -> {
+                                String failedToken = fcmTokenList.get(i);
+                                failedTokens.add(failedToken);
+                                FirebaseMessagingException e = responses.get(i).getException();
+                                log.warn("[알림 발송 실패] 토큰: {}, 원인: {}, 코드: {}",
+                                        failedToken, e.getMessage(), e.getMessagingErrorCode());
+                            });
+
+                    if (!failedTokens.isEmpty()) {
+                        fcmTokenCommandService.deleteInvalidTokens(failedTokens);
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                log.error("[채팅 알림 발송 실패] FCM 다중 발송 비동기 작업 중 심각한 오류 발생", t);
             }
         }, taskExecutor);
     }

@@ -19,4 +19,5 @@ public interface FcmTokenRepository extends JpaRepository<FcmToken, Long>, FcmTo
      */
     long deleteByFcmTokenValueIn(@NonNull Collection<String> fcmTokenValues);
 
+    Optional<FcmToken> findByFcmTokenValue(String fcmTokenValue);
 }

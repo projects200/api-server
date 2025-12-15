@@ -1,4 +1,4 @@
-package com.project200.undabang.common.batch.items;
+package com.project200.undabang.common.batch.items.DecreaseExerciseScore;
 
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.policy.entity.PolicyKey;
@@ -18,14 +18,14 @@ import org.springframework.batch.item.ItemProcessor;
 public class DecreaseExerciseScoreProcessor implements ItemProcessor<Member, Member> {
     private final int decreasePoints;
 
-    public DecreaseExerciseScoreProcessor(PolicyService policyService){
+    public DecreaseExerciseScoreProcessor(PolicyService policyService) {
         this.decreasePoints = policyService.getPolicyValueAsInt(PolicyKey.PENALTY_SCORE_DECREMENT_POINTS);
     }
 
     @Override
     public Member process(Member item) throws Exception {
         byte currentMemberScore = item.getMemberScore();
-        if(currentMemberScore > 0){
+        if (currentMemberScore > 0) {
             log.info(">>>>>>> 회원 점수 감소 대상 : memberId = {}, memberNickName = {}, prevMemberScore = {}",
                     item.getMemberId(), item.getMemberNickname(), currentMemberScore);
 

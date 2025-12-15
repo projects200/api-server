@@ -24,7 +24,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
-@SpringBootTest
+@SpringBootTest(properties = { // 빌드시 테스트코드 환경 충돌 문제로 해당 코드 추가
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "spring.datasource.url=jdbc:h2:mem:test-db-for-tx-test",
+        "spring.datasource.driver-class-name=org.h2.Driver"
+})
 @DisplayName("트랜잭션 분리 테스트")
 class TransactionSeparationTest {
 

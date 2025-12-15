@@ -1,5 +1,6 @@
 package com.project200.undabang.notification.fcm.service.impl;
 
+import com.project200.undabang.notification.fcm.dto.ChatNotificationPayload;
 import com.project200.undabang.notification.fcm.dto.NotificationPayload;
 import com.project200.undabang.notification.fcm.service.NotificationService;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +43,30 @@ public class LogNotificationService implements NotificationService {
             logMessage.append(", Body: ").append(first.body());
             if (first.imageUrl() != null) logMessage.append(", Image URL: ").append(first.imageUrl());
         }
+        log.info(logMessage.toString());
+    }
+
+    // 채팅 메시지 생성시 FCM 토큰 내용과 전송될 토큰의 수를 출력하는 로그 작성
+    @Override
+    public void sendChatNotification(ChatNotificationPayload payload, List<String> fcmTokenList) {
+        StringBuilder logMessage = new StringBuilder();
+
+        logMessage.append("\n[채팅 알림 발송 - Mock] FCM 기능이 비활성화 상태입니다.");
+        logMessage.append("\n==================================================");
+        logMessage.append("\n 1. 수신 대상 정보");
+        logMessage.append("\n   - 대상 토큰 수 : ").append(fcmTokenList != null ? fcmTokenList.size() : 0).append("개");
+        if (fcmTokenList != null && !fcmTokenList.isEmpty()) {
+            logMessage.append("\n   - 첫 번째 토큰 : ").append(fcmTokenList.get(0)).append("...");
+        }
+
+        logMessage.append("\n 2. 전송 데이터 (Payload)");
+        logMessage.append("\n   - Type       : ").append(payload.getType());
+        logMessage.append("\n   - ChatroomID : ").append(payload.getChatroomId());
+        logMessage.append("\n   - MemberID   : ").append(payload.getMemberId());
+        logMessage.append("\n   - Nickname   : ").append(payload.getNickname());
+        logMessage.append("\n   - Content    : ").append(payload.getContent());
+        logMessage.append("\n==================================================");
+
         log.info(logMessage.toString());
     }
 }
