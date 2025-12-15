@@ -60,7 +60,7 @@ public class PreferredExerciseCommandServiceImpl implements PreferredExerciseCom
 
         // 중복 요청 방지 (요청 내 중복)
         if (requestExerciseIds.stream().distinct().count() != requests.size()) {
-            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE); // 요청 내 중복 존재
+            throw new CustomException(ErrorCode.PREFERRED_EXERCISE_DUPLICATED_IN_REQUEST); // 요청 내 중복 존재
         }
 
         // 기존과 중복 방지
