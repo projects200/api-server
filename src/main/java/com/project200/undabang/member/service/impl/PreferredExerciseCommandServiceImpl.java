@@ -89,13 +89,12 @@ public class PreferredExerciseCommandServiceImpl implements PreferredExerciseCom
         for (CreatePreferredExerciseRequest request : requests) {
             ExerciseType exerciseType = exerciseTypeMap.get(request.getExerciseTypeId());
 
-            PreferredExercise preferredExercise = PreferredExercise.builder()
-                    .member(member)
-                    .exercise(exerciseType)
-                    .preferredExerciseSkillLevel(request.getSkillLevel())
-                    .build();
-
-            preferredExercise.setDaysOfWeek(request.getDaysOfWeek());
+            PreferredExercise preferredExercise = PreferredExercise.createPreferredExercise(
+                    member,
+                    exerciseType,
+                    request.getSkillLevel(),
+                    request.getDaysOfWeek()
+            );
             newExercises.add(preferredExercise);
         }
 
