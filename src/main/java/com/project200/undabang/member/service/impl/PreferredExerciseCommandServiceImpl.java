@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,22 +58,13 @@ public class PreferredExerciseCommandServiceImpl implements PreferredExerciseCom
                 .map(pe -> pe.getExercise().getId())
                 .collect(Collectors.toSet());
 
+        // 중복 검증
+        validateDuplicates(requests, existingExerciseTypeIds);
+
         // 요청된 ExerciseTypeId 수집
         List<Long> requestExerciseIds = requests.stream()
                 .map(CreatePreferredExerciseRequest::getExerciseTypeId)
                 .toList();
-
-        // 중복 요청 방지 (요청 내 중복)
-        if (requestExerciseIds.stream().distinct().count() != requests.size()) {
-            throw new CustomException(ErrorCode.PREFERRED_EXERCISE_DUPLICATED_IN_REQUEST); // 요청 내 중복 존재
-        }
-
-        // 기존과 중복 방지
-        for (Long id : requestExerciseIds) {
-            if (existingExerciseTypeIds.contains(id)) {
-                throw new CustomException(ErrorCode.PREFERRED_EXERCISE_DUPLICATED);
-            }
-        }
 
         // ExerciseType 조회
         List<ExerciseType> exerciseTypes = exerciseTypeRepository.findAllById(requestExerciseIds);
@@ -99,10 +91,6 @@ public class PreferredExerciseCommandServiceImpl implements PreferredExerciseCom
 
         List<PreferredExercise> savedExercises = preferredExerciseRepository.saveAll(newExercises);
 
-        List<MyPreferredExerciseResponse> responseList = savedExercises.stream()
-                .map(MyPreferredExerciseResponse::from)
-                .toList();
-
         return savedExercises.stream()
                 .map(MyPreferredExerciseResponse::from)
                 .toList();
@@ -111,5 +99,26 @@ public class PreferredExerciseCommandServiceImpl implements PreferredExerciseCom
     private Member getMember(UUID memberId) {
         return memberRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+    }
+
+    /**
+     * 운동 중복 여부를 검증합니다.
+     * 1. 요청 목록 내에서의 중복
+     * 2. 이미 등록된 운동과의 중복
+     */
+    private void validateDuplicates(List<CreatePreferredExerciseRequest> requests, Set<Long> existingExerciseTypeIds) {
+        Set<Long> requestIds = new HashSet<>();
+        for (CreatePreferredExerciseRequest request : requests) {
+            Long id = request.getExerciseTypeId();
+            // 1. 요청 내 중복 검증
+            // Set.add()는 이미 존재하면 false를 반환합니다.
+            if (!requestIds.add(id)) {
+                throw new CustomException(ErrorCode.PREFERRED_EXERCISE_DUPLICATED_IN_REQUEST);
+            }
+            // 2. 기존 운동과 중복 검증
+            if (existingExerciseTypeIds.contains(id)) {
+                throw new CustomException(ErrorCode.PREFERRED_EXERCISE_DUPLICATED);
+            }
+        }
     }
 }
