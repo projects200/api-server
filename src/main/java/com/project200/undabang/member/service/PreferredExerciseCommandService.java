@@ -1,7 +1,7 @@
 package com.project200.undabang.member.service;
 
 import com.project200.undabang.member.dto.request.CreatePreferredExerciseRequest;
-import com.project200.undabang.member.dto.response.PreferredExerciseListResponse;
+import com.project200.undabang.member.dto.response.MyPreferredExerciseResponse;
 
 import java.util.List;
 
@@ -12,5 +12,5 @@ public interface PreferredExerciseCommandService {
      * @param requests 추가할 선호 운동 요청 목록
      * @return 추가된 선호 운동 목록
      */
-    PreferredExerciseListResponse createPreferredExercises(List<CreatePreferredExerciseRequest> requests);
+    List<MyPreferredExerciseResponse> createPreferredExercises(List<CreatePreferredExerciseRequest> requests);
 }

@@ -2,7 +2,7 @@ package com.project200.undabang.member.controller;
 
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.member.dto.request.CreatePreferredExerciseRequest;
-import com.project200.undabang.member.dto.response.PreferredExerciseListResponse;
+import com.project200.undabang.member.dto.response.MyPreferredExerciseResponse;
 import com.project200.undabang.member.service.PreferredExerciseCommandService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +28,7 @@ public class PreferredExerciseCommandController {
      * @return 추가된 선호 운동 목록
      */
     @PostMapping("/v1/preferred-exercises")
-    public ResponseEntity<CommonResponse<PreferredExerciseListResponse>> createPreferredExercises(
+    public ResponseEntity<CommonResponse<List<MyPreferredExerciseResponse>>> createPreferredExercises(
             @RequestBody @Valid List<CreatePreferredExerciseRequest> requests) {
         return ResponseEntity.ok(CommonResponse.create(
                 preferredExerciseCommandService.createPreferredExercises(requests)));

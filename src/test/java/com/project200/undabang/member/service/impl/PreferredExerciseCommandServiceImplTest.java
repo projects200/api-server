@@ -6,7 +6,6 @@ import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.exercise.entity.ExerciseType;
 import com.project200.undabang.exercise.repository.ExerciseTypeRepository;
 import com.project200.undabang.member.dto.request.CreatePreferredExerciseRequest;
-import com.project200.undabang.member.dto.response.PreferredExerciseListResponse;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.PreferredExercise;
 import com.project200.undabang.member.enums.ExerciseSkillLevel;

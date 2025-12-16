@@ -7,7 +7,6 @@ import com.project200.undabang.exercise.entity.ExerciseType;
 import com.project200.undabang.exercise.repository.ExerciseTypeRepository;
 import com.project200.undabang.member.dto.request.CreatePreferredExerciseRequest;
 import com.project200.undabang.member.dto.response.MyPreferredExerciseResponse;
-import com.project200.undabang.member.dto.response.PreferredExerciseListResponse;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.PreferredExercise;
 import com.project200.undabang.member.repository.MemberRepository;
@@ -38,7 +37,7 @@ public class PreferredExerciseCommandServiceImpl implements PreferredExerciseCom
     private final PolicyService policyService; // 의존성 주입 추가
 
     @Override
-    public PreferredExerciseListResponse createPreferredExercises(List<CreatePreferredExerciseRequest> requests) {
+    public List<MyPreferredExerciseResponse> createPreferredExercises(List<CreatePreferredExerciseRequest> requests) {
         int maxCount = policyService.getPolicyValueAsInt(PolicyKey.PREFERRED_EXERCISE_MAX_COUNT);
 
         if (requests.size() > maxCount) {
@@ -104,7 +103,9 @@ public class PreferredExerciseCommandServiceImpl implements PreferredExerciseCom
                 .map(MyPreferredExerciseResponse::from)
                 .toList();
 
-        return PreferredExerciseListResponse.from(responseList);
+        return savedExercises.stream()
+                .map(MyPreferredExerciseResponse::from)
+                .toList();
     }
 
     private Member getMember(UUID memberId) {
