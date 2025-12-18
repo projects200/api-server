@@ -22,7 +22,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.List;
 import java.util.UUID;
 
-import static com.project200.undabang.configuration.DocumentFormatGenerator.getTypeFormat;
 import static com.project200.undabang.configuration.HeadersGenerator.getCommonApiHeaders;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
@@ -72,13 +71,8 @@ class PreferredExerciseCommandControllerTest extends AbstractRestDocSupport {
                     .imageUrl("url2")
                     .build();
 
-            PreferredExerciseListResponse listResponse = PreferredExerciseListResponse.builder()
-                    .preferredExercises(List.of(response1, response2))
-                    .build();
-
-            given(preferredExerciseCommandService.createPreferredExercises(anyList()))
-                    .willReturn(listResponse);
-
+                        given(preferredExerciseCommandService.createPreferredExercises(anyList()))
+                                        .willReturn(List.of(response1, response2));
             // when
             mockMvc.perform(post("/api/v1/preferred-exercises")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -102,26 +96,23 @@ class PreferredExerciseCommandControllerTest extends AbstractRestDocSupport {
                                     fieldWithPath("[].daysOfWeek")
                                             .type(JsonFieldType.ARRAY)
                                             .description("현재 사용자가 추가할 선호 운동 요일 (월~일, boolean array)")),
-                            responseFields(RestDocsUtils.commonResponseFields(
-                                    fieldWithPath("data.preferredExercises")
-                                            .type(JsonFieldType.ARRAY)
-                                            .description("생성된 선호 운동 목록"),
-                                    fieldWithPath("data.preferredExercises[].preferredExerciseId")
+                            responseFields(RestDocsUtils.commonResponseFieldsForList(
+                                    fieldWithPath("data[].preferredExerciseId")
                                             .type(JsonFieldType.NUMBER)
                                             .description("생성된 선호 운동 ID"),
-                                    fieldWithPath("data.preferredExercises[].exerciseTypeId")
+                                    fieldWithPath("data[].exerciseTypeId")
                                             .type(JsonFieldType.NUMBER)
                                             .description("생성된 선호 운동 종류 ID"),
-                                    fieldWithPath("data.preferredExercises[].exerciseName")
+                                    fieldWithPath("data[].exerciseName")
                                             .type(JsonFieldType.STRING)
                                             .description("생성된 선호 운동 이름"),
-                                    fieldWithPath("data.preferredExercises[].skillLevel")
+                                    fieldWithPath("data[].skillLevel")
                                             .type(JsonFieldType.STRING)
                                             .description("생성된 선호 운동 실력"),
-                                    fieldWithPath("data.preferredExercises[].daysOfWeek")
+                                    fieldWithPath("data[].daysOfWeek")
                                             .type(JsonFieldType.ARRAY)
                                             .description("생성된 선호 운동 요일별 선호 여부"),
-                                    fieldWithPath("data.preferredExercises[].imageUrl")
+                                    fieldWithPath("data[].imageUrl")
                                             .type(JsonFieldType.STRING)
                                             .description("생성된 선호 운동 이미지 URL")))));
         }

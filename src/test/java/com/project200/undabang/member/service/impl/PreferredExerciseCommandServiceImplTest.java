@@ -11,7 +11,10 @@ import com.project200.undabang.member.entity.PreferredExercise;
 import com.project200.undabang.member.enums.ExerciseSkillLevel;
 import com.project200.undabang.member.enums.MemberGender;
 import com.project200.undabang.member.repository.MemberRepository;
+import com.project200.undabang.member.dto.response.MyPreferredExerciseResponse;
 import com.project200.undabang.member.repository.PreferredExerciseRepository;
+import com.project200.undabang.policy.entity.PolicyKey;
+import com.project200.undabang.policy.service.PolicyService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -30,7 +33,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
+
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mockStatic;
@@ -53,6 +56,9 @@ class PreferredExerciseCommandServiceImplTest {
     @Mock
     private ExerciseTypeRepository exerciseTypeRepository;
 
+    @Mock
+    private PolicyService policyService;
+
     @Nested
     @DisplayName("createPreferredExercises 메서드는")
     class Describe_createPreferredExercises {
@@ -74,6 +80,8 @@ class PreferredExerciseCommandServiceImplTest {
             try (MockedStatic<UserContextHolder> mockedUserContextHolder = mockStatic(UserContextHolder.class)) {
                 mockedUserContextHolder.when(UserContextHolder::getUserId).thenReturn(memberId);
 
+                given(policyService.getPolicyValueAsInt(PolicyKey.PREFERRED_EXERCISE_MAX_COUNT)).willReturn(5);
+
                 given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
                 given(preferredExerciseRepository.findAllByMemberAndPreferredExerciseDeletedAtNull(member))
                         .willReturn(new ArrayList<>()); // 기존 데이터 없음
@@ -91,29 +99,44 @@ class PreferredExerciseCommandServiceImplTest {
                 });
 
                 // when
-                PreferredExerciseListResponse response = preferredExerciseCommandService
+                List<MyPreferredExerciseResponse> response = preferredExerciseCommandService
                         .createPreferredExercises(requests);
 
                 // then
                 assertThat(response).isNotNull();
-                assertThat(response.getPreferredExercises()).hasSize(2);
-                assertThat(response.getPreferredExercises().get(0).getExerciseName()).isEqualTo("축구");
-                assertThat(response.getPreferredExercises().get(1).getExerciseName()).isEqualTo("농구");
+                assertThat(response).hasSize(2);
+                assertThat(response.get(0).getExerciseName()).isEqualTo("축구");
+                assertThat(response.get(1).getExerciseName()).isEqualTo("농구");
 
                 verify(preferredExerciseRepository, times(1)).saveAll(anyList());
             }
         }
 
         @Test
-        @DisplayName("요청 목록이 비어있으면 예외를 던진다")
-        void it_throws_exception_when_request_is_empty() {
+        @DisplayName("요청 목록이 비어있으면 빈 목록을 반환한다")
+        void it_returns_empty_list_when_request_is_empty() {
             // given
             List<CreatePreferredExerciseRequest> emptyRequests = List.of();
 
-            // when & then
-            assertThatThrownBy(() -> preferredExerciseCommandService.createPreferredExercises(emptyRequests))
-                    .isInstanceOf(CustomException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT_VALUE);
+            given(policyService.getPolicyValueAsInt(PolicyKey.PREFERRED_EXERCISE_MAX_COUNT)).willReturn(5);
+
+            try (MockedStatic<UserContextHolder> mockedUserContextHolder = mockStatic(UserContextHolder.class)) {
+                mockedUserContextHolder.when(UserContextHolder::getUserId).thenReturn(UUID.randomUUID()); // Dummy ID as
+                UUID memberId = UUID.randomUUID();
+                Member member = createMember(memberId);
+
+                mockedUserContextHolder.when(UserContextHolder::getUserId).thenReturn(memberId);
+                given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+                given(preferredExerciseRepository.findAllByMemberAndPreferredExerciseDeletedAtNull(member))
+                        .willReturn(new ArrayList<>());
+
+                // when
+                List<MyPreferredExerciseResponse> response = preferredExerciseCommandService
+                        .createPreferredExercises(emptyRequests);
+
+                // then
+                assertThat(response).isEmpty();
+            }
         }
 
         @Test
@@ -134,6 +157,8 @@ class PreferredExerciseCommandServiceImplTest {
                     createRequest(4L, ExerciseSkillLevel.BEGINNER),
                     createRequest(5L, ExerciseSkillLevel.BEGINNER),
                     createRequest(6L, ExerciseSkillLevel.BEGINNER));
+
+            given(policyService.getPolicyValueAsInt(PolicyKey.PREFERRED_EXERCISE_MAX_COUNT)).willReturn(5);
 
             try (MockedStatic<UserContextHolder> mockedUserContextHolder = mockStatic(UserContextHolder.class)) {
                 mockedUserContextHolder.when(UserContextHolder::getUserId).thenReturn(memberId);
@@ -162,6 +187,8 @@ class PreferredExerciseCommandServiceImplTest {
             // '축구' 추가 요청
             List<CreatePreferredExerciseRequest> requests = List.of(createRequest(10L, ExerciseSkillLevel.PRO));
 
+            given(policyService.getPolicyValueAsInt(PolicyKey.PREFERRED_EXERCISE_MAX_COUNT)).willReturn(5);
+
             try (MockedStatic<UserContextHolder> mockedUserContextHolder = mockStatic(UserContextHolder.class)) {
                 mockedUserContextHolder.when(UserContextHolder::getUserId).thenReturn(memberId);
                 given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
@@ -187,6 +214,8 @@ class PreferredExerciseCommandServiceImplTest {
                     createRequest(10L, ExerciseSkillLevel.PRO),
                     createRequest(10L, ExerciseSkillLevel.BEGINNER));
 
+            given(policyService.getPolicyValueAsInt(PolicyKey.PREFERRED_EXERCISE_MAX_COUNT)).willReturn(5);
+
             try (MockedStatic<UserContextHolder> mockedUserContextHolder = mockStatic(UserContextHolder.class)) {
                 mockedUserContextHolder.when(UserContextHolder::getUserId).thenReturn(memberId);
                 given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
@@ -196,7 +225,7 @@ class PreferredExerciseCommandServiceImplTest {
                 // when & then
                 assertThatThrownBy(() -> preferredExerciseCommandService.createPreferredExercises(requests))
                         .isInstanceOf(CustomException.class)
-                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT_VALUE);
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PREFERRED_EXERCISE_DUPLICATED_IN_REQUEST);
             }
         }
 
@@ -208,6 +237,8 @@ class PreferredExerciseCommandServiceImplTest {
             Member member = createMember(memberId);
 
             List<CreatePreferredExerciseRequest> requests = List.of(createRequest(999L, ExerciseSkillLevel.BEGINNER));
+
+            given(policyService.getPolicyValueAsInt(PolicyKey.PREFERRED_EXERCISE_MAX_COUNT)).willReturn(5);
 
             try (MockedStatic<UserContextHolder> mockedUserContextHolder = mockStatic(UserContextHolder.class)) {
                 mockedUserContextHolder.when(UserContextHolder::getUserId).thenReturn(memberId);
@@ -221,7 +252,7 @@ class PreferredExerciseCommandServiceImplTest {
                 // when & then
                 assertThatThrownBy(() -> preferredExerciseCommandService.createPreferredExercises(requests))
                         .isInstanceOf(CustomException.class)
-                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT_VALUE);
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PREFERRED_EXERCISE_NOT_FOUND);
             }
         }
     }
