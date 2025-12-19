@@ -13,4 +13,12 @@ public interface PreferredExerciseCommandService {
      * @return 추가된 선호 운동 목록
      */
     List<MyPreferredExerciseResponse> createPreferredExercises(List<CreatePreferredExerciseRequest> requests);
+
+    /**
+     * 선호 운동 목록을 삭제합니다.
+     *
+     * @param preferredExerciseIds 삭제할 선호 운동 ID 목록
+     * @return 삭제된 선호 운동 ID 목록
+     */
+    void deletePreferredExercises(List<Long> preferredExerciseIds);
 }

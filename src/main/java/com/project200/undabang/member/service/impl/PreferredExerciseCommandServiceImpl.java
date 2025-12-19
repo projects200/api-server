@@ -121,4 +121,15 @@ public class PreferredExerciseCommandServiceImpl implements PreferredExerciseCom
             }
         }
     }
+
+    @Override
+    public void deletePreferredExercises(List<Long> preferredExerciseIds) {
+        Member member = getMember(UserContextHolder.getUserId());
+        List<PreferredExercise> exercises = preferredExerciseRepository
+                .findAllByIdInAndMemberAndPreferredExerciseDeletedAtNull(preferredExerciseIds, member);
+
+        for (PreferredExercise exercise : exercises) {
+            exercise.delete();
+        }
+    }
 }
