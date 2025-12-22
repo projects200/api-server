@@ -149,6 +149,8 @@ include::overview/공통-개발-참고-사항.adoc[]
 
 - 현재 사용자의 선호 운동 종류 목록 생성 API #POST# `api/v1/preferred-exercises`
 
+- 현재 사용자의 선호 운동 종류 목록 삭제 API #DELETE# `api/v1/preferred-exercises`
+
 === xref:점수-API.html[점수 API]
 
 - 예상 획득 점수 정보 조회 API #GET# `/api/v1/scores/expected-points-info`

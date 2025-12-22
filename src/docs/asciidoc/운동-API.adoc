@@ -39,3 +39,5 @@ include::exercise/선택-가능한-운동-종류-조회-API.adoc[]
 include::exercise/내-선호-운동-조회-API.adoc[]
 
 include::exercise/내-선호-운동-생성-API.adoc[]
+
+include::exercise/내-선호-운동-삭제.API.adoc[]

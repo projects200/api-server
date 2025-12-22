@@ -163,7 +163,7 @@ class PreferredExerciseCommandControllerTest extends AbstractRestDocSupport {
                                         .content(objectMapper.writeValueAsString(request)))
                                         .andExpect(status().isOk())
                                         .andDo(org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document(
-                                                        "delete-my-preferred-exercises",
+                                                        "delete-my-preferred-exercises/delete-my-preferred-exercises_-success",
                                                         requestHeaders(
                                                                         RestDocsUtils.HEADER_ACCESS_TOKEN),
                                                         requestFields(
