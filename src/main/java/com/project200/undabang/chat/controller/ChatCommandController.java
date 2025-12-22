@@ -4,7 +4,9 @@ import com.project200.undabang.chat.dto.request.CreateChatroomRequest;
 import com.project200.undabang.chat.dto.request.CreateMessageRequest;
 import com.project200.undabang.chat.dto.response.CreateChatroomResponse;
 import com.project200.undabang.chat.dto.response.CreateMessageResponse;
+import com.project200.undabang.chat.dto.response.TicketResponse;
 import com.project200.undabang.chat.service.ChatCommandService;
+import com.project200.undabang.chat.service.ChatTicketService;
 import com.project200.undabang.common.web.response.CommonResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class ChatCommandController {
 
     private final ChatCommandService chatCommandService;
+    private final ChatTicketService ChatTicketService;
 
     /**
      * 새로운 채팅방을 생성합니다.
@@ -36,6 +39,18 @@ public class ChatCommandController {
                                                                                @Valid @RequestBody CreateMessageRequest request) {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(chatCommandService.createMessage(chatroomId, request)));
+    }
+
+    /**
+     * 주어진 채팅방 ID에 기반하여 티켓을 생성합니다.
+     *
+     * @param chatroomId 티켓을 생성할 대상 채팅방의 ID
+     * @return 생성된 티켓 정보가 포함된 HTTP 상태 코드 201(CREATED) 응답
+     */
+    @PostMapping("/v1/chat-rooms/{chatroomId}/ticket")
+    public ResponseEntity<CommonResponse<TicketResponse>> createTicket(@PathVariable Long chatroomId) {
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(ChatTicketService.issueTicket(chatroomId)));
     }
 
     /**
