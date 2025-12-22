@@ -1,6 +1,5 @@
 package com.project200.undabang.member.dto.response;
 
-import com.project200.undabang.exercise.entity.ExerciseType;
 import com.project200.undabang.member.entity.PreferredExercise;
 import com.project200.undabang.member.enums.ExerciseSkillLevel;
 import lombok.AllArgsConstructor;
@@ -27,6 +26,7 @@ public class MyPreferredExerciseResponse {
     public static MyPreferredExerciseResponse from(PreferredExercise preferredExercise) {
         return MyPreferredExerciseResponse.builder()
                 .preferredExerciseId(preferredExercise.getId())
+                .exerciseTypeId(preferredExercise.getExercise().getId())
                 .exerciseName(preferredExercise.getExercise().getExerciseName())
                 .skillLevel(preferredExercise.getPreferredExerciseSkillLevel())
                 .daysOfWeek(preferredExercise.getDaysOfWeek())

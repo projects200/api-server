@@ -90,4 +90,16 @@ public class PreferredExercise {
         }
         this.preferredExerciseDate = date;
     }
+
+    public static PreferredExercise createPreferredExercise(Member member, ExerciseType exercise, ExerciseSkillLevel skillLevel, boolean[] daysOfWeek) {
+        PreferredExercise preferredExercise = PreferredExercise.builder()
+                .member(member)
+                .exercise(exercise)
+                .preferredExerciseSkillLevel(skillLevel)
+                .build();
+
+        preferredExercise.setDaysOfWeek(daysOfWeek);
+
+        return preferredExercise;
+    }
 }
