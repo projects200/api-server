@@ -44,10 +44,11 @@ class PreferredExerciseRepositoryTest {
     }
 
     private Member createMember() {
+        String uniqueId = UUID.randomUUID().toString().substring(0, 8);
         return Member.builder()
                 .memberId(UUID.randomUUID())
-                .memberEmail("test@email.com")
-                .memberNickname("테스트유저")
+                .memberEmail("test" + uniqueId + "@email.com")
+                .memberNickname("user" + uniqueId)
                 .memberGender(MemberGender.MALE)
                 .memberScore((byte) 35)
                 .memberBday(LocalDate.of(1990, 1, 1))
@@ -135,6 +136,51 @@ class PreferredExerciseRepositoryTest {
 
             // then
             assertThat(result).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("findAllByIdInAndMemberAndPreferredExerciseDeletedAtNull 메소드는")
+    class FindAllByIdInAndMemberAndPreferredExerciseDeletedAtNull {
+
+        @Test
+        @DisplayName("주어진 ID 목록과 회원에 해당하는 삭제되지 않은 선호 운동 목록을 조회한다")
+        void findAllByIdInAndMemberAndPreferredExerciseDeletedAtNull_Success() {
+            // given
+            Member member = createMember();
+            persist(member);
+
+            ExerciseType exerciseType1 = createExerciseType("헬스");
+            persist(exerciseType1);
+            ExerciseType exerciseType2 = createExerciseType("러닝");
+            persist(exerciseType2);
+            ExerciseType exerciseType3 = createExerciseType("수영");
+            persist(exerciseType3);
+
+            PreferredExercise preferredExercise1 = createPreferredExercise(member, exerciseType1);
+            persist(preferredExercise1);
+            PreferredExercise preferredExercise2 = createPreferredExercise(member, exerciseType2);
+            persist(preferredExercise2);
+            PreferredExercise preferredExercise3 = createPreferredExercise(member, exerciseType3);
+            persist(preferredExercise3);
+
+            // 다른 회원의 데이터
+            Member anotherMember = createMember();
+            persist(anotherMember);
+            PreferredExercise anotherMemberExercise = createPreferredExercise(anotherMember, exerciseType1);
+            persist(anotherMemberExercise);
+
+            flushAndClear();
+
+            // when
+            List<Long> targetIds = List.of(preferredExercise1.getId(), preferredExercise2.getId());
+            List<PreferredExercise> result = preferredExerciseRepository
+                    .findAllByIdInAndMemberAndPreferredExerciseDeletedAtNull(targetIds, member);
+
+            // then
+            assertThat(result).hasSize(2);
+            assertThat(result).extracting("id").containsExactlyInAnyOrder(preferredExercise1.getId(),
+                    preferredExercise2.getId());
         }
     }
 }

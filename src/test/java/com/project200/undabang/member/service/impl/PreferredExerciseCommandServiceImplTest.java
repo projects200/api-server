@@ -257,6 +257,46 @@ class PreferredExerciseCommandServiceImplTest {
         }
     }
 
+    @Nested
+    @DisplayName("deletePreferredExercises 메서드는")
+    class Describe_deletePreferredExercises {
+
+        @Test
+        @DisplayName("유효한 ID 목록이 주어지면 선호 운동을 삭제한다")
+        void it_deletes_preferred_exercises_successfully() {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Member member = createMember(memberId);
+
+            ExerciseType type1 = createExerciseType(1L, "축구");
+            ExerciseType type2 = createExerciseType(2L, "농구");
+
+            PreferredExercise exercise1 = createPreferredExercise(member, type1);
+            PreferredExercise exercise2 = createPreferredExercise(member, type2);
+            ReflectionTestUtils.setField(exercise1, "id", 100L);
+            ReflectionTestUtils.setField(exercise2, "id", 101L);
+
+            List<Long> deleteIds = List.of(100L, 101L);
+
+            try (MockedStatic<UserContextHolder> mockedUserContextHolder = mockStatic(UserContextHolder.class)) {
+                mockedUserContextHolder.when(UserContextHolder::getUserId).thenReturn(memberId);
+
+                given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+                given(preferredExerciseRepository.findAllByIdInAndMemberAndPreferredExerciseDeletedAtNull(deleteIds,
+                        member))
+                        .willReturn(List.of(exercise1, exercise2));
+
+                // when
+                preferredExerciseCommandService.deletePreferredExercises(deleteIds);
+
+                // then
+                // soft delete 확인 (deletedAt 필드가 설정되었는지)
+                assertThat(exercise1.getPreferredExerciseDeletedAt()).isNotNull();
+                assertThat(exercise2.getPreferredExerciseDeletedAt()).isNotNull();
+            }
+        }
+    }
+
     private Member createMember(UUID memberId) {
         return Member.builder()
                 .memberId(memberId)
