@@ -5,6 +5,7 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
 import com.project200.undabang.configuration.RestDocsUtils;
+import com.project200.undabang.member.controller.preferredExercise.PreferredExerciseCommandController;
 import com.project200.undabang.member.dto.request.CreatePreferredExerciseRequest;
 import com.project200.undabang.member.dto.response.MyPreferredExerciseResponse;
 import com.project200.undabang.member.enums.ExerciseSkillLevel;
