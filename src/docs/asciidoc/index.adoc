@@ -227,6 +227,8 @@ include::overview/공통-개발-참고-사항.adoc[]
 
 - 채팅방 나가기 API #DELETE# `/api/v1/chat-rooms/{chatroomId}`
 
+- 웹소켓 전환 티켓 발급 API #POST# `/api/v1/chat-rooms/{chatroomId}/ticket`
+
 === xref:차단-API.html[차단 API]
 
 - 회원 차단 API #POST# `/api/v1/members/{memberId}/block`
