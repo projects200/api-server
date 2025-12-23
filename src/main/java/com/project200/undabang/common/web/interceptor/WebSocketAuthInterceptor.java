@@ -47,7 +47,7 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
                     return true;
                 }
             } catch (IllegalArgumentException e) {
-                log.warn("[WebSocket] 잘못된 티켓 형식입니다.", chatTicket);
+                log.warn("[WebSocket] 잘못된 티켓 형식입니다.", e);
             }
 
             return false;

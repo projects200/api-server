@@ -44,7 +44,7 @@ public class ChatTicketServiceImpl implements ChatTicketService {
 
         // 회원이 입력한 채팅방이 본인의 것이 아니거나, 채팅방을 나간 경우
         if (!chatroomMemberRepository.existsByChatroom_IdAndMemberAndChatroomMemberStatus(roomId, member, ChatroomMemberStatus.ACTIVE)) {
-            throw new CustomException(ErrorCode.CHATROOM_NOT_FOUND);
+            throw new CustomException(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND);
         }
 
         UUID ticketId = UUID.randomUUID();
