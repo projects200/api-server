@@ -14,14 +14,14 @@ import java.util.UUID;
 @Builder
 @AllArgsConstructor
 public class SaveMessageResponse {
-    Long chatId;
-    UUID senderId;
-    String senderNickname;
-    String senderProfileUrl;
-    String senderThumbnailUrl;
-    String chatContent;
-    ChatType chatType;
-    LocalDateTime sentAt;
+    private Long chatId;
+    private UUID senderId;
+    private String senderNickname;
+    private String senderProfileUrl;
+    private String senderThumbnailUrl;
+    private String chatContent;
+    private ChatType chatType;
+    private LocalDateTime sentAt;
 
     public static SaveMessageResponse from(Member member, Chat chat) {
         String thumbnailUrl = null;

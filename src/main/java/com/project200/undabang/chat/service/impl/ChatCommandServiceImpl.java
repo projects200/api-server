@@ -130,7 +130,7 @@ public class ChatCommandServiceImpl implements ChatCommandService {
     }
 
     /**
-     * 메서드는 요청 정보를 기반으로 채팅 메시지를 저장하고 관련 업데이트를 처리합니다.
+     * 요청 정보를 기반으로 채팅 메시지를 저장하고 채팅방 및 회원 정보의 관련 업데이트를 처리합니다.
      */
     @Override
     @Transactional

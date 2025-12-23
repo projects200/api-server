@@ -64,7 +64,6 @@ public class ChatTicketServiceImpl implements ChatTicketService {
      * @return 유효한 경우 티켓 정보(TicketInfoRecord 객체), 유효하지 않은 경우 null
      */
     @Override
-    @Transactional(readOnly = true)
     public TicketInfoRecord validateTicket(UUID ticketId) {
         TicketInfoRecord record = chatTicketCache.getIfPresent(ticketId);
 

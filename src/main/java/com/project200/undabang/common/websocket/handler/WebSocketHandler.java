@@ -10,6 +10,7 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.response.WebSocketResponse;
 import com.project200.undabang.common.web.response.WebSocketType;
+import com.project200.undabang.common.websocket.manager.WebSocketSessionManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -26,7 +27,6 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -36,9 +36,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
     private final ObjectMapper objectMapper;
     private final ChatCommandService chatCommandService;
     private final Validator validator;
-
-    // <방 번호, 세션 집합>의 Key Value로 저장
-    private final Map<Long, Map<String, WebSocketSession>> roomSessions = new ConcurrentHashMap<>();
+    private final WebSocketSessionManager sessionManager;
 
     /**
      * WebSocket 연결이 성공적으로 설정된 후 호출되는 메서드입니다.
@@ -58,7 +56,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
         }
 
         // 세션이 없는 경우는 새로 생성해서 Map에 추가 (세션 ID, 세션 장식자)
-        roomSessions.computeIfAbsent(roomId, k -> new ConcurrentHashMap<>()).put(decoratedSession.getId(), decoratedSession);
+        sessionManager.registerSession(roomId, decoratedSession);
 
         log.info("채팅방 {} 에 세션ID {} 입장", roomId, decoratedSession.getId());
     }
@@ -71,7 +69,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
         Long roomId = (Long) session.getAttributes().get("roomId");
 
         if (roomId != null) {
-            removeSession(session, roomId);
+            sessionManager.removeSession(roomId, session.getId());
         }
 
         log.info("채팅방 {} 에 세션ID {} 퇴장", roomId, session.getId());
@@ -119,9 +117,11 @@ public class WebSocketHandler extends TextWebSocketHandler {
             }
         } catch (CustomException ce) {
             sendError(session, ce.getErrorCode().getMessage());
+        } catch (JsonProcessingException je) {
+            sendError(session, je.getMessage());
         } catch (Exception e) {
-            log.error("웹소켓 통신중 오류 발생.", e);
             sendError(session, "시스템 오류가 발생했습니다.");
+            log.error("웹소켓 통신중 오류 발생.", e);
         }
     }
 
@@ -130,7 +130,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
      * 주어진 응답 객체를 JSON으로 변환하여 모든 세션에 전송합니다.
      */
     private void broadCastToAllChatroom(Long roomId, WebSocketResponse<?> response) {
-        Map<String, WebSocketSession> sessions = roomSessions.get(roomId);
+        Map<String, WebSocketSession> sessions = sessionManager.getSessions(roomId);
 
         if (sessions == null || sessions.isEmpty()) {
             return;
@@ -170,23 +170,6 @@ public class WebSocketHandler extends TextWebSocketHandler {
     }
 
     /**
-     * 주어진 WebSocketSession을 특정 채팅방에서 제거하는 메서드입니다.
-     * 채팅방에 남아 있는 세션이 없을 경우, 해당 채팅방 정보를 메모리에서 삭제합니다.
-     */
-    private void removeSession(WebSocketSession session, Long roomId) {
-        Map<String, WebSocketSession> sessions = roomSessions.get(roomId);
-
-        if (sessions != null) {
-            sessions.remove(session.getId()); // ID가 같은 세션 삭제
-
-            if (sessions.isEmpty()) {
-                roomSessions.remove(roomId); // value에 남은 세션값이 없으면 메모리에서 채팅방 제거
-                log.info("[채팅방 삭제] 채팅방ID: {}", roomId);
-            }
-        }
-    }
-
-    /**
      * WebSocketSession을 특정 제한 조건과 함께 데코레이트한 ConcurrentWebSocketSessionDecorator 객체를 생성합니다.
      * 전송 제한시간 : 5초
      * 버퍼사이즈 : 20KB (한글 500자 채운 메시지가 8~10개 밀리면 연결 종료)
@@ -196,8 +179,10 @@ public class WebSocketHandler extends TextWebSocketHandler {
     }
 
     /**
-     * 채팅 메시지의 콘텐츠 크기를 검증하는 메서드입니다.
-     * 요청된 메시지 내용이 허용된 최대 크기를 초과하는지 확인합니다.
+     * 채팅 메시지 WebSocket 요청을 검증하는 메서드입니다.
+     * WebSocketType 값의 존재 및 유효성을 확인하고, PING 타입은 콘텐츠 검증 없이 통과시킵니다.
+     * 그 외의 경우에는 Bean Validation(Validator)을 통해 요청 메시지(예: content 필드)의 유효성을 검증하고,
+     * 유효하지 않은 경우 클라이언트에게 오류 메시지를 전송한 뒤 {@code false} 를 반환합니다.
      */
     private boolean validateRequest(ChatMessageRequest request, WebSocketSession session) {
 
