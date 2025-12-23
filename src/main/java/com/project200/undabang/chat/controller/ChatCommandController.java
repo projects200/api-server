@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class ChatCommandController {
 
     private final ChatCommandService chatCommandService;
-    private final ChatTicketService ChatTicketService;
+    private final ChatTicketService chatTicketService;
 
     /**
      * 새로운 채팅방을 생성합니다.
@@ -50,7 +50,7 @@ public class ChatCommandController {
     @PostMapping("/v1/chat-rooms/{chatroomId}/ticket")
     public ResponseEntity<CommonResponse<TicketResponse>> createTicket(@PathVariable Long chatroomId) {
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(ChatTicketService.issueTicket(chatroomId)));
+        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(chatTicketService.issueTicket(chatroomId)));
     }
 
     /**

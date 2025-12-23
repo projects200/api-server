@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
+import org.springframework.validation.FieldError;
 import org.springframework.validation.Validator;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -23,10 +24,9 @@ import org.springframework.web.socket.handler.ConcurrentWebSocketSessionDecorato
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
-import java.util.Set;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -38,7 +38,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
     private final Validator validator;
 
     // <방 번호, 세션 집합>의 Key Value로 저장
-    private final ConcurrentHashMap<Long, Set<WebSocketSession>> roomSessions = new ConcurrentHashMap<>();
+    private final Map<Long, Map<String, WebSocketSession>> roomSessions = new ConcurrentHashMap<>();
 
     /**
      * WebSocket 연결이 성공적으로 설정된 후 호출되는 메서드입니다.
@@ -57,8 +57,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
-        // 세션이 없는 경우는 새로 생성해서 Set에 추가해주고, 있는 경우는 바로 추가함
-        roomSessions.computeIfAbsent(roomId, k -> new CopyOnWriteArraySet<>()).add(decoratedSession);
+        // 세션이 없는 경우는 새로 생성해서 Map에 추가 (세션 ID, 세션 장식자)
+        roomSessions.computeIfAbsent(roomId, k -> new ConcurrentHashMap<>()).put(decoratedSession.getId(), decoratedSession);
 
         log.info("채팅방 {} 에 세션ID {} 입장", roomId, decoratedSession.getId());
     }
@@ -85,11 +85,10 @@ public class WebSocketHandler extends TextWebSocketHandler {
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         try {
             String payload = message.getPayload();
-
             ChatMessageRequest request = objectMapper.readValue(payload, ChatMessageRequest.class);
 
-            // 메시지 크기 검증
-            if (!validateChatContentSize(request, session)) {
+            // 메시지 크기 및 요청 검증
+            if (!validateRequest(request, session)) {
                 return;
             }
 
@@ -100,7 +99,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 return;
             }
 
-            // 실제 TALK 기능
+            // 실제 채팅 기능 처리
             if (request.getWebSocketType() == WebSocketType.TALK) {
                 Long chatroomId = (Long) session.getAttributes().get("roomId");
                 UUID memberId = (UUID) session.getAttributes().get("memberId");
@@ -113,8 +112,9 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
                 // 전송받은 데이터 DB에 저장 및 fcm 알림 전송
                 SaveMessageResponse response = chatCommandService.saveMessage(record);
-                WebSocketResponse<SaveMessageResponse> webSocketResponse = WebSocketResponse.success(response);
 
+                // 응답 객체 생성 및 같은 채팅방의 모든 인원에게 전송
+                WebSocketResponse<SaveMessageResponse> webSocketResponse = WebSocketResponse.success(response);
                 broadCastToAllChatroom(chatroomId, webSocketResponse);
             }
         } catch (CustomException ce) {
@@ -130,7 +130,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
      * 주어진 응답 객체를 JSON으로 변환하여 모든 세션에 전송합니다.
      */
     private void broadCastToAllChatroom(Long roomId, WebSocketResponse<?> response) {
-        Set<WebSocketSession> sessions = roomSessions.get(roomId);
+        Map<String, WebSocketSession> sessions = roomSessions.get(roomId);
 
         if (sessions == null || sessions.isEmpty()) {
             return;
@@ -140,18 +140,18 @@ public class WebSocketHandler extends TextWebSocketHandler {
             String json = objectMapper.writeValueAsString(response);
             TextMessage message = new TextMessage(json);
 
-            for (WebSocketSession session : sessions) {
+            for (WebSocketSession session : sessions.values()) {
                 if (session.isOpen()) {
                     try {
                         session.sendMessage(message);
                     } catch (IOException e) {
-                        log.warn("각 기기별로 메시지 전송중 오류 발생", e);
+                        log.warn("메시지 전송 실패 (세션ID: {}): {}", session.getId(), e.getMessage());
                     }
                 }
             }
 
         } catch (JsonProcessingException e) {
-            log.error("JSON 파싱중 에러 발생");
+            log.error("JSON 파싱중 에러 발생", e);
         }
     }
 
@@ -164,8 +164,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
             String json = objectMapper.writeValueAsString(errorResponse);
             session.sendMessage(new TextMessage(json));
-        } catch (IOException ignored) {
-
+        } catch (IOException e) {
+            log.warn("웹소켓 오류 메시지 전송 실패 {}: {}", session.getId(), e.getMessage(), e);
         }
     }
 
@@ -174,15 +174,14 @@ public class WebSocketHandler extends TextWebSocketHandler {
      * 채팅방에 남아 있는 세션이 없을 경우, 해당 채팅방 정보를 메모리에서 삭제합니다.
      */
     private void removeSession(WebSocketSession session, Long roomId) {
-        Set<WebSocketSession> sessions = roomSessions.get(roomId);
+        Map<String, WebSocketSession> sessions = roomSessions.get(roomId);
 
         if (sessions != null) {
-            sessions.removeIf(s -> s.getId().equals(session.getId())); // ID가 같은 세션을 지워줌
-
-            log.info("[채팅방 퇴장] 채팅방 : {}, Session Id : {}", roomId, session.getId());
+            sessions.remove(session.getId()); // ID가 같은 세션 삭제
 
             if (sessions.isEmpty()) {
                 roomSessions.remove(roomId); // value에 남은 세션값이 없으면 메모리에서 채팅방 제거
+                log.info("[채팅방 삭제] 채팅방ID: {}", roomId);
             }
         }
     }
@@ -190,7 +189,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
     /**
      * WebSocketSession을 특정 제한 조건과 함께 데코레이트한 ConcurrentWebSocketSessionDecorator 객체를 생성합니다.
      * 전송 제한시간 : 5초
-     * 버퍼사이즈 : 16KB (한글 500자 채운 메시지가 8~10개 밀리면 연결 종료)
+     * 버퍼사이즈 : 20KB (한글 500자 채운 메시지가 8~10개 밀리면 연결 종료)
      */
     private ConcurrentWebSocketSessionDecorator createWebSocketDecorator(WebSocketSession session) {
         return new ConcurrentWebSocketSessionDecorator(session, 5000, 20 * 1024);
@@ -200,17 +199,35 @@ public class WebSocketHandler extends TextWebSocketHandler {
      * 채팅 메시지의 콘텐츠 크기를 검증하는 메서드입니다.
      * 요청된 메시지 내용이 허용된 최대 크기를 초과하는지 확인합니다.
      */
-    private boolean validateChatContentSize(ChatMessageRequest request, WebSocketSession session) {
+    private boolean validateRequest(ChatMessageRequest request, WebSocketSession session) {
+
+        // WebSocketType null 체크
+        if (request.getWebSocketType() == null) {
+            sendError(session, "WebSocketType이 지정되지 않았습니다.");
+            return false;
+        }
+
+        // PING 을 확인하는 경우는 CONTENT 내용 검증할 필요 없이 통과하도록 설정
+        if (request.getWebSocketType() == WebSocketType.PING) {
+            return true;
+        }
+
+        // Bean Validation 수행
         Errors errors = new BeanPropertyBindingResult(request, "chatMessageRequest");
         validator.validate(request, errors);
 
         // 에러 있으면 예외 발생
         if (errors.hasErrors()) {
-            String errorMsg = errors.getFieldError("content").getDefaultMessage();
-            sendError(session, errorMsg);
-            return false;
+            FieldError contentError = errors.getFieldError("content");
+
+            if (contentError != null) {
+                String errorMsg = contentError.getDefaultMessage();
+                sendError(session, errorMsg);
+                return false;
+            }
         }
 
+        // 에러가 없거나, content 관련 에러가 아니면 통과
         return true;
     }
 }
