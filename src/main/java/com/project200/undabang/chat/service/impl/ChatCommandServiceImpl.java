@@ -1,10 +1,12 @@
 package com.project200.undabang.chat.service.impl;
 
 import com.project200.undabang.chat.dto.event.ChatMessageCreatedEvent;
+import com.project200.undabang.chat.dto.record.SaveMessageRecord;
 import com.project200.undabang.chat.dto.request.CreateChatroomRequest;
 import com.project200.undabang.chat.dto.request.CreateMessageRequest;
 import com.project200.undabang.chat.dto.response.CreateChatroomResponse;
 import com.project200.undabang.chat.dto.response.CreateMessageResponse;
+import com.project200.undabang.chat.dto.response.SaveMessageResponse;
 import com.project200.undabang.chat.entity.*;
 import com.project200.undabang.chat.repository.ChatRepository;
 import com.project200.undabang.chat.repository.ChatroomMemberRepository;
@@ -125,6 +127,32 @@ public class ChatCommandServiceImpl implements ChatCommandService {
 
         Chat systemChat = Chat.ofRoomCreation(SystemMessage.USER_LEFT_CHAT_ROOM.format(member.getMemberNickname()), chatroom);
         chatRepository.save(systemChat);
+    }
+
+    /**
+     * 요청 정보를 기반으로 채팅 메시지를 저장하고 채팅방 및 회원 정보의 관련 업데이트를 처리합니다.
+     */
+    @Override
+    @Transactional
+    public SaveMessageResponse saveMessage(SaveMessageRecord record) {
+        Member member = memberRepository.findMemberWithProfileImage(record.memberId())
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        ChatroomMember chatroomMember = chatroomMemberRepository.findByChatroom_IdAndMember(record.chatroomId(), member)
+                .orElseThrow(() -> new CustomException(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND));
+
+        validateChatroomMembersStatus(chatroomMember, member); // 채팅방에 참여한 회원들의 활성상태 체크
+
+        Chatroom chatroom = chatroomMember.getChatroom();
+        Chat savedChat = chatRepository.save(Chat.of(record.chatContent(), chatroom, member)); // 채팅 엔티티 생성해서 DB에 저장
+
+        chatroom.updateLastChatContent(savedChat.getChatContent());
+        chatroomMember.updateLastReadChatId(savedChat.getId());
+
+        // 채팅 생성되었다는 이벤트 생성. 이 시점에서는 트랜잭션이 커밋되지 않았을 수 있으므로 @TransactionalEventListener(phase = AFTER_COMMIT)을 사용해야 함
+        eventPublisher.publishEvent(ChatMessageCreatedEvent.from(savedChat));
+
+        return SaveMessageResponse.from(member, savedChat);
     }
 
     /**

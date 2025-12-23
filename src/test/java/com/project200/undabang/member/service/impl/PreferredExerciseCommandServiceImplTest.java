@@ -6,12 +6,12 @@ import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.exercise.entity.ExerciseType;
 import com.project200.undabang.exercise.repository.ExerciseTypeRepository;
 import com.project200.undabang.member.dto.request.CreatePreferredExerciseRequest;
+import com.project200.undabang.member.dto.response.MyPreferredExerciseResponse;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.PreferredExercise;
 import com.project200.undabang.member.enums.ExerciseSkillLevel;
 import com.project200.undabang.member.enums.MemberGender;
 import com.project200.undabang.member.repository.MemberRepository;
-import com.project200.undabang.member.dto.response.MyPreferredExerciseResponse;
 import com.project200.undabang.member.repository.PreferredExerciseRepository;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.service.PolicyService;
@@ -33,7 +33,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mockStatic;
@@ -58,6 +57,41 @@ class PreferredExerciseCommandServiceImplTest {
 
     @Mock
     private PolicyService policyService;
+
+    private Member createMember(UUID memberId) {
+        return Member.builder()
+                .memberId(memberId)
+                .memberEmail("test@test.com")
+                .memberNickname("test")
+                .memberGender(MemberGender.FEMALE)
+                .memberBday(LocalDate.of(2000, 1, 1))
+                .build();
+    }
+
+    private ExerciseType createExerciseType(Long id, String name) {
+        ExerciseType type = ExerciseType.builder()
+                .exerciseName(name)
+                .exerciseTypeImageUrl("url")
+                .build();
+        ReflectionTestUtils.setField(type, "id", id);
+        return type;
+    }
+
+    private PreferredExercise createPreferredExercise(Member member, ExerciseType type) {
+        return PreferredExercise.builder()
+                .member(member)
+                .exercise(type)
+                .preferredExerciseSkillLevel(ExerciseSkillLevel.BEGINNER)
+                .build();
+    }
+
+    private CreatePreferredExerciseRequest createRequest(Long exerciseTypeId, ExerciseSkillLevel level) {
+        CreatePreferredExerciseRequest request = new CreatePreferredExerciseRequest();
+        ReflectionTestUtils.setField(request, "exerciseTypeId", exerciseTypeId);
+        ReflectionTestUtils.setField(request, "skillLevel", level);
+        ReflectionTestUtils.setField(request, "daysOfWeek", new boolean[7]);
+        return request;
+    }
 
     @Nested
     @DisplayName("createPreferredExercises 메서드는")
@@ -255,40 +289,5 @@ class PreferredExerciseCommandServiceImplTest {
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PREFERRED_EXERCISE_NOT_FOUND);
             }
         }
-    }
-
-    private Member createMember(UUID memberId) {
-        return Member.builder()
-                .memberId(memberId)
-                .memberEmail("test@test.com")
-                .memberNickname("test")
-                .memberGender(MemberGender.FEMALE)
-                .memberBday(LocalDate.of(2000, 1, 1))
-                .build();
-    }
-
-    private ExerciseType createExerciseType(Long id, String name) {
-        ExerciseType type = ExerciseType.builder()
-                .exerciseName(name)
-                .exerciseTypeImageUrl("url")
-                .build();
-        ReflectionTestUtils.setField(type, "id", id);
-        return type;
-    }
-
-    private PreferredExercise createPreferredExercise(Member member, ExerciseType type) {
-        return PreferredExercise.builder()
-                .member(member)
-                .exercise(type)
-                .preferredExerciseSkillLevel(ExerciseSkillLevel.BEGINNER)
-                .build();
-    }
-
-    private CreatePreferredExerciseRequest createRequest(Long exerciseTypeId, ExerciseSkillLevel level) {
-        CreatePreferredExerciseRequest request = new CreatePreferredExerciseRequest();
-        ReflectionTestUtils.setField(request, "exerciseTypeId", exerciseTypeId);
-        ReflectionTestUtils.setField(request, "skillLevel", level);
-        ReflectionTestUtils.setField(request, "daysOfWeek", new boolean[7]);
-        return request;
     }
 }

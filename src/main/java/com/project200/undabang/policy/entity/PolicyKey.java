@@ -37,5 +37,5 @@ public enum PolicyKey {
     EXERCISE_LOCATION_MAX_COUNT, // 운동 기록 최대 보유 갯수
 
     // 선호 운동
-    PREFERRED_EXERCISE_MAX_COUNT; // 선호 운동 최대 보유 갯수
+    PREFERRED_EXERCISE_MAX_COUNT // 선호 운동 최대 보유 갯수
 }

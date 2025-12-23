@@ -1,6 +1,5 @@
 package com.project200.undabang.member.dto.response;
 
-import com.project200.undabang.exercise.entity.ExerciseType;
 import com.project200.undabang.member.entity.PreferredExercise;
 import com.project200.undabang.member.enums.ExerciseSkillLevel;
 import lombok.AllArgsConstructor;

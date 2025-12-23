@@ -40,6 +40,15 @@ class PreferredExerciseCommandControllerTest extends AbstractRestDocSupport {
     @Autowired
     private ObjectMapper objectMapper;
 
+    private CreatePreferredExerciseRequest createRequest(Long exerciseTypeId, ExerciseSkillLevel level) {
+        CreatePreferredExerciseRequest request = new CreatePreferredExerciseRequest();
+        ReflectionTestUtils.setField(request, "exerciseTypeId", exerciseTypeId);
+        ReflectionTestUtils.setField(request, "skillLevel", level);
+        ReflectionTestUtils.setField(request, "daysOfWeek",
+                new boolean[]{true, false, true, false, true, false, false});
+        return request;
+    }
+
     @Nested
     @DisplayName("createPreferredExercises 메서드는")
     class Describe_createPreferredExercises {
@@ -71,8 +80,8 @@ class PreferredExerciseCommandControllerTest extends AbstractRestDocSupport {
                     .imageUrl("url2")
                     .build();
 
-                        given(preferredExerciseCommandService.createPreferredExercises(anyList()))
-                                        .willReturn(List.of(response1, response2));
+            given(preferredExerciseCommandService.createPreferredExercises(anyList()))
+                    .willReturn(List.of(response1, response2));
             // when
             mockMvc.perform(post("/api/v1/preferred-exercises")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -139,14 +148,5 @@ class PreferredExerciseCommandControllerTest extends AbstractRestDocSupport {
                     .andDo(org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document(
                             "post-my-preferred-exercises/limit-exceeded"));
         }
-    }
-
-    private CreatePreferredExerciseRequest createRequest(Long exerciseTypeId, ExerciseSkillLevel level) {
-        CreatePreferredExerciseRequest request = new CreatePreferredExerciseRequest();
-        ReflectionTestUtils.setField(request, "exerciseTypeId", exerciseTypeId);
-        ReflectionTestUtils.setField(request, "skillLevel", level);
-        ReflectionTestUtils.setField(request, "daysOfWeek",
-                new boolean[]{true, false, true, false, true, false, false});
-        return request;
     }
 }
