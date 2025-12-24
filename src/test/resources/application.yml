@@ -44,6 +44,11 @@ spring:
 
   cloud:
     aws:
+      region:
+        static: ap-northeast-2
+      credentials:
+        access-key: test
+        secret-key: test
       s3:
         path-style-access-enabled: true
 

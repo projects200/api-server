@@ -91,7 +91,8 @@ public class PreferredExercise {
         this.preferredExerciseDate = date;
     }
 
-    public static PreferredExercise createPreferredExercise(Member member, ExerciseType exercise, ExerciseSkillLevel skillLevel, boolean[] daysOfWeek) {
+    public static PreferredExercise createPreferredExercise(Member member, ExerciseType exercise,
+            ExerciseSkillLevel skillLevel, boolean[] daysOfWeek) {
         PreferredExercise preferredExercise = PreferredExercise.builder()
                 .member(member)
                 .exercise(exercise)
@@ -101,5 +102,9 @@ public class PreferredExercise {
         preferredExercise.setDaysOfWeek(daysOfWeek);
 
         return preferredExercise;
+    }
+
+    public void delete() {
+        this.preferredExerciseDeletedAt = LocalDateTime.now();
     }
 }

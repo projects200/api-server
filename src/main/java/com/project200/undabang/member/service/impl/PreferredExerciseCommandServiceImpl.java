@@ -116,4 +116,18 @@ public class PreferredExerciseCommandServiceImpl implements PreferredExerciseCom
             }
         }
     }
+
+    @Override
+    public void deletePreferredExercises(List<Long> preferredExerciseIds) {
+        Member member = getMember(UserContextHolder.getUserId());
+        List<PreferredExercise> exercises = preferredExerciseRepository
+                .findAllByIdInAndMemberAndPreferredExerciseDeletedAtNull(preferredExerciseIds, member);
+        // 요청한 것 중 사용자의 선호 운동이 아니거나 남의 운동이 섞여 있으면 예외 발생
+        if (exercises.size() != preferredExerciseIds.size()) {
+            throw new CustomException(ErrorCode.PREFERRED_EXERCISE_NOT_FOUND);
+        }
+        for (PreferredExercise exercise : exercises) {
+            exercise.delete();
+        }
+    }
 }

@@ -2,6 +2,7 @@ package com.project200.undabang.member.controller;
 
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
+import com.project200.undabang.member.controller.preferredExercise.PreferredExerciseQueryController;
 import com.project200.undabang.member.dto.response.AvailableExerciseTypeResponse;
 import com.project200.undabang.member.dto.response.MyPreferredExerciseResponse;
 import com.project200.undabang.member.enums.ExerciseSkillLevel;

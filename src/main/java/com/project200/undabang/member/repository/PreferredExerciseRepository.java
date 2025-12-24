@@ -10,6 +10,6 @@ import java.util.Optional;
 
 public interface PreferredExerciseRepository extends JpaRepository<PreferredExercise, Long> {
     List<PreferredExercise> findAllByMemberAndPreferredExerciseDeletedAtNull(Member member);
+
+    List<PreferredExercise> findAllByIdInAndMemberAndPreferredExerciseDeletedAtNull(List<Long> ids, Member member);
 }
-
-
