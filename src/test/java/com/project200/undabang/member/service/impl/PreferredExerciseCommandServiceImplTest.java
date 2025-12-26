@@ -377,7 +377,7 @@ class PreferredExerciseCommandServiceImplTest {
                 // when & then
                 assertThatThrownBy(() -> preferredExerciseCommandService.updatePreferredExercises(requests))
                         .isInstanceOf(CustomException.class)
-                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PREFERRED_EXERCISE_NOT_FOUND);
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PREFERRED_EXERCISE_NOT_OWNED);
             }
         }
     }
