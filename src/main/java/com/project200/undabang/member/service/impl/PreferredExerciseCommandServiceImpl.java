@@ -147,11 +147,13 @@ public class PreferredExerciseCommandServiceImpl implements PreferredExerciseCom
             PreferredExercise exercise = exerciseMap.get(request.getExerciseTypeId());
             if (exercise == null) {
                 // 사용자가 보유하지 않은 운동을 수정하려고 하면 예외 발생
-                throw new CustomException(ErrorCode.PREFERRED_EXERCISE_NOT_FOUND);
+                throw new CustomException(ErrorCode.PREFERRED_EXERCISE_NOT_OWNED);
             }
             exercise.update(request.getSkillLevel(), request.getDaysOfWeek());
             updatedExercises.add(exercise);
         }
-        return List.of();
+        return updatedExercises.stream()
+            .map(MyPreferredExerciseResponse::from)
+            .toList();
     }
 }
