@@ -6,6 +6,7 @@ import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.exercise.entity.ExerciseType;
 import com.project200.undabang.exercise.repository.ExerciseTypeRepository;
 import com.project200.undabang.member.dto.request.CreatePreferredExerciseRequest;
+import com.project200.undabang.member.dto.request.UpdatePreferredExerciseRequest;
 import com.project200.undabang.member.dto.response.MyPreferredExerciseResponse;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.PreferredExercise;
@@ -129,5 +130,28 @@ public class PreferredExerciseCommandServiceImpl implements PreferredExerciseCom
         for (PreferredExercise exercise : exercises) {
             exercise.delete();
         }
+    }
+
+    @Override
+    public List<MyPreferredExerciseResponse> updatePreferredExercises(List<UpdatePreferredExerciseRequest> requests) {
+        Member member = getMember(UserContextHolder.getUserId());
+        List<PreferredExercise> exercises = preferredExerciseRepository
+            .findAllByMemberAndPreferredExerciseDeletedAtNull(member);
+
+        Map<Long, PreferredExercise> exerciseMap = exercises.stream()
+            .collect(Collectors.toMap(e -> e.getExercise().getId(), Function.identity()));
+
+        List<PreferredExercise> updatedExercises = new ArrayList<>();
+
+        for (UpdatePreferredExerciseRequest request : requests) {
+            PreferredExercise exercise = exerciseMap.get(request.getExerciseTypeId());
+            if (exercise == null) {
+                // 사용자가 보유하지 않은 운동을 수정하려고 하면 예외 발생
+                throw new CustomException(ErrorCode.PREFERRED_EXERCISE_NOT_FOUND);
+            }
+            exercise.update(request.getSkillLevel(), request.getDaysOfWeek());
+            updatedExercises.add(exercise);
+        }
+        return List.of();
     }
 }

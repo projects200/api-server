@@ -3,16 +3,13 @@ package com.project200.undabang.member.controller.preferredExercise;
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.member.dto.request.CreatePreferredExerciseRequest;
 import com.project200.undabang.member.dto.request.DeletePreferredExerciseRequest;
+import com.project200.undabang.member.dto.request.UpdatePreferredExerciseRequest;
 import com.project200.undabang.member.dto.response.MyPreferredExerciseResponse;
 import com.project200.undabang.member.service.PreferredExerciseCommandService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -48,4 +45,18 @@ public class PreferredExerciseCommandController {
         preferredExerciseCommandService.deletePreferredExercises(request.getPreferredExerciseIds());
         return ResponseEntity.ok(CommonResponse.delete(null));
     }
+
+    /**
+     * 선호 운동 목록을 수정합니다.
+     *
+     * @param requests 수정할 선호 운동 정보 (ID, 숙련도, 요일)목록이 담긴 요청
+     * @return 성공 응답
+     */
+    @PatchMapping("/v1/preferred-exercises")
+    public ResponseEntity<CommonResponse<List<MyPreferredExerciseResponse>>> updatePreferredExercises(
+            @RequestBody @Valid List<UpdatePreferredExerciseRequest> requests) {
+        return ResponseEntity.ok(CommonResponse.update(
+            preferredExerciseCommandService.updatePreferredExercises(requests)));
+    }
+
 }

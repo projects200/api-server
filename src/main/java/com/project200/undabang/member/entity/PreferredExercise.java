@@ -104,6 +104,12 @@ public class PreferredExercise {
         return preferredExercise;
     }
 
+    public void update(ExerciseSkillLevel skillLevel, boolean[] daysOfWeek) {
+        this.preferredExerciseSkillLevel = skillLevel;
+        setDaysOfWeek(daysOfWeek);
+        this.preferredExerciseUpdatedAt = LocalDateTime.now();
+    }
+
     public void delete() {
         this.preferredExerciseDeletedAt = LocalDateTime.now();
     }
