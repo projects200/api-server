@@ -30,5 +30,5 @@ public interface PreferredExerciseCommandService {
      * @param requests 수정할 선호 운동 ID 목록
      * @return 수정할 선호 운동 ID 목록
      */
-    List<MyPreferredExerciseResponse> updatePreferredExercises(@Valid List<UpdatePreferredExerciseRequest> requests);
+    List<MyPreferredExerciseResponse> updatePreferredExercises(List<UpdatePreferredExerciseRequest> requests);
 }
