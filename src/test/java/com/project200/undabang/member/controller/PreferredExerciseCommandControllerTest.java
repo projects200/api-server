@@ -10,6 +10,7 @@ import com.project200.undabang.member.dto.request.CreatePreferredExerciseRequest
 import com.project200.undabang.member.dto.response.MyPreferredExerciseResponse;
 import com.project200.undabang.member.enums.ExerciseSkillLevel;
 import com.project200.undabang.member.service.PreferredExerciseCommandService;
+import com.project200.undabang.member.dto.request.UpdatePreferredExerciseRequest;
 import com.project200.undabang.member.dto.request.DeletePreferredExerciseRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -172,6 +173,101 @@ class PreferredExerciseCommandControllerTest extends AbstractRestDocSupport {
                                                                                         .description("삭제할 선호 운동 ID 목록")),
                                                         responseFields(RestDocsUtils.commonResponseFieldsOnly())));
                 }
+
+            @Nested
+            @DisplayName("updatePreferredExercises 메서드는")
+            class Describe_updatePreferredExercises {
+
+                @Test
+                @DisplayName("유효한 요청이 오면 200 OK를 반환한다")
+                void it_updates_preferred_exercises_and_returns_200() throws Exception {
+                    // given
+                    UUID memberId = UUID.randomUUID();
+
+                    UpdatePreferredExerciseRequest request1 = updateRequest(1L, ExerciseSkillLevel.PRO);
+                    UpdatePreferredExerciseRequest request2 = updateRequest(2L,
+                        ExerciseSkillLevel.INTERMEDIATE);
+                    List<UpdatePreferredExerciseRequest> requests = List.of(request1, request2);
+
+                    MyPreferredExerciseResponse response1 = MyPreferredExerciseResponse.builder()
+                        .preferredExerciseId(100L)
+                        .exerciseTypeId(1L)
+                        .exerciseName("축구")
+                        .skillLevel(ExerciseSkillLevel.PRO)
+                        .daysOfWeek(new boolean[]{true, false, true, false, true, false,
+                            false})
+                        .imageUrl("url1")
+                        .build();
+
+                    MyPreferredExerciseResponse response2 = MyPreferredExerciseResponse.builder()
+                        .preferredExerciseId(101L)
+                        .exerciseTypeId(2L)
+                        .exerciseName("농구")
+                        .skillLevel(ExerciseSkillLevel.INTERMEDIATE)
+                        .daysOfWeek(new boolean[]{true, false, true, false, true, false,
+                            false})
+                        .imageUrl("url2")
+                        .build();
+
+                    given(preferredExerciseCommandService.updatePreferredExercises(anyList()))
+                        .willReturn(List.of(response1, response2));
+
+                    // when
+                    mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                            .patch("/api/v1/preferred-exercises")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId))
+                            .content(objectMapper.writeValueAsString(requests)))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.code").value("UPDATED"))
+                        .andDo(org.springframework.restdocs.mockmvc.MockMvcRestDocumentation
+                            .document(
+                                "patch-my-preferred-exercises/patch-my-preferred-exercises-success",
+                                requestHeaders(
+                                    RestDocsUtils.HEADER_ACCESS_TOKEN),
+                                requestFields(
+                                    fieldWithPath("[].exerciseTypeId")
+                                        .type(JsonFieldType.NUMBER)
+                                        .description("수정할 선호 운동 종류 ID"),
+                                    fieldWithPath("[].skillLevel")
+                                        .type(JsonFieldType.STRING)
+                                        .description(
+                                            "수정할 선호 운동 실력 (BEGINNER, ROOKIE, INTERMEDIATE, ADVANCED, SKILLED, PRO)"),
+                                    fieldWithPath("[].daysOfWeek")
+                                        .type(JsonFieldType.ARRAY)
+                                        .description("수정할 선호 운동 요일 (월~일, boolean array)")),
+                                responseFields(RestDocsUtils
+                                    .commonResponseFieldsForList(
+                                        fieldWithPath("data[].preferredExerciseId")
+                                            .type(JsonFieldType.NUMBER)
+                                            .description("수정된 선호 운동 ID"),
+                                        fieldWithPath("data[].exerciseTypeId")
+                                            .type(JsonFieldType.NUMBER)
+                                            .description("수정된 선호 운동 종류 ID"),
+                                        fieldWithPath("data[].exerciseName")
+                                            .type(JsonFieldType.STRING)
+                                            .description("수정된 선호 운동 이름"),
+                                        fieldWithPath("data[].skillLevel")
+                                            .type(JsonFieldType.STRING)
+                                            .description("수정된 선호 운동 실력"),
+                                        fieldWithPath("data[].daysOfWeek")
+                                            .type(JsonFieldType.ARRAY)
+                                            .description("수정된 선호 운동 요일별 선호 여부"),
+                                        fieldWithPath("data[].imageUrl")
+                                            .type(JsonFieldType.STRING)
+                                            .description("수정된 선호 운동 이미지 URL")))));
+                }
+            }
+        }
+
+        private UpdatePreferredExerciseRequest updateRequest(Long exerciseTypeId, ExerciseSkillLevel level) {
+                UpdatePreferredExerciseRequest request = new UpdatePreferredExerciseRequest();
+                ReflectionTestUtils.setField(request, "exerciseTypeId", exerciseTypeId);
+                ReflectionTestUtils.setField(request, "skillLevel", level);
+                ReflectionTestUtils.setField(request, "daysOfWeek",
+                                new boolean[] { true, false, true, false, true, false, false });
+                return request;
         }
 
         private CreatePreferredExerciseRequest createRequest(Long exerciseTypeId, ExerciseSkillLevel level) {

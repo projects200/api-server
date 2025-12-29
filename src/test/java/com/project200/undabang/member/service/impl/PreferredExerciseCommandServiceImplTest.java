@@ -6,6 +6,7 @@ import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.exercise.entity.ExerciseType;
 import com.project200.undabang.exercise.repository.ExerciseTypeRepository;
 import com.project200.undabang.member.dto.request.CreatePreferredExerciseRequest;
+import com.project200.undabang.member.dto.request.UpdatePreferredExerciseRequest;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.PreferredExercise;
 import com.project200.undabang.member.enums.ExerciseSkillLevel;
@@ -297,6 +298,90 @@ class PreferredExerciseCommandServiceImplTest {
         }
     }
 
+    @Nested
+    @DisplayName("updatePreferredExercises 메서드는")
+    class Describe_updatePreferredExercises {
+
+        @Test
+        @DisplayName("유효한 요청이 주어지면 선호 운동 정보를 수정하고 결과 목록을 반환한다")
+        void it_updates_preferred_exercises_successfully() {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Member member = createMember(memberId);
+
+            // 기존: 축구(BEGINNER), 농구(BEGINNER)
+            ExerciseType type1 = createExerciseType(10L, "축구");
+            ExerciseType type2 = createExerciseType(11L, "농구");
+            PreferredExercise exercise1 = createPreferredExercise(member, type1);
+            PreferredExercise exercise2 = createPreferredExercise(member, type2);
+
+            List<PreferredExercise> existing = List.of(exercise1, exercise2);
+
+            // 요청: 축구(PRO), 농구(INTERMEDIATE)로 변경
+            UpdatePreferredExerciseRequest req1 = createUpdateRequest(10L, ExerciseSkillLevel.PRO);
+            UpdatePreferredExerciseRequest req2 = createUpdateRequest(11L, ExerciseSkillLevel.INTERMEDIATE);
+            List<UpdatePreferredExerciseRequest> requests = List.of(req1, req2);
+
+            try (MockedStatic<UserContextHolder> mockedUserContextHolder = mockStatic(UserContextHolder.class)) {
+                mockedUserContextHolder.when(UserContextHolder::getUserId).thenReturn(memberId);
+
+                given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+                given(preferredExerciseRepository.findAllByMemberAndPreferredExerciseDeletedAtNull(member))
+                        .willReturn(existing);
+
+                // when
+                List<MyPreferredExerciseResponse> response = preferredExerciseCommandService
+                        .updatePreferredExercises(requests);
+
+                // then
+                assertThat(response).hasSize(2);
+
+                // 순서는 보장되지 않을 수 있으므로, ID나 이름 등으로 매칭하여 검증
+                MyPreferredExerciseResponse res1 = response.stream()
+                        .filter(r -> r.getExerciseTypeId().equals(10L)).findFirst().orElseThrow();
+                assertThat(res1.getSkillLevel()).isEqualTo(ExerciseSkillLevel.PRO);
+
+                MyPreferredExerciseResponse res2 = response.stream()
+                        .filter(r -> r.getExerciseTypeId().equals(11L)).findFirst().orElseThrow();
+                assertThat(res2.getSkillLevel()).isEqualTo(ExerciseSkillLevel.INTERMEDIATE);
+
+                // entity 상태 변화 검증
+                assertThat(exercise1.getPreferredExerciseSkillLevel()).isEqualTo(ExerciseSkillLevel.PRO);
+                assertThat(exercise2.getPreferredExerciseSkillLevel()).isEqualTo(ExerciseSkillLevel.INTERMEDIATE);
+            }
+        }
+
+        @Test
+        @DisplayName("보유하지 않은 운동을 수정하려 하면 예외를 던진다")
+        void it_throws_exception_when_updating_not_owned_exercise() {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Member member = createMember(memberId);
+
+            // 기존: 축구(10L)만 보유
+            ExerciseType type1 = createExerciseType(10L, "축구");
+            PreferredExercise exercise1 = createPreferredExercise(member, type1);
+            List<PreferredExercise> existing = List.of(exercise1);
+
+            // 요청: 농구(20L) 수정 시도
+            UpdatePreferredExerciseRequest req = createUpdateRequest(20L, ExerciseSkillLevel.PRO);
+            List<UpdatePreferredExerciseRequest> requests = List.of(req);
+
+            try (MockedStatic<UserContextHolder> mockedUserContextHolder = mockStatic(UserContextHolder.class)) {
+                mockedUserContextHolder.when(UserContextHolder::getUserId).thenReturn(memberId);
+
+                given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+                given(preferredExerciseRepository.findAllByMemberAndPreferredExerciseDeletedAtNull(member))
+                        .willReturn(existing);
+
+                // when & then
+                assertThatThrownBy(() -> preferredExerciseCommandService.updatePreferredExercises(requests))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PREFERRED_EXERCISE_NOT_FOUND);
+            }
+        }
+    }
+
     private Member createMember(UUID memberId) {
         return Member.builder()
                 .memberId(memberId)
@@ -329,6 +414,15 @@ class PreferredExerciseCommandServiceImplTest {
         ReflectionTestUtils.setField(request, "exerciseTypeId", exerciseTypeId);
         ReflectionTestUtils.setField(request, "skillLevel", level);
         ReflectionTestUtils.setField(request, "daysOfWeek", new boolean[7]);
+        return request;
+    }
+
+    private UpdatePreferredExerciseRequest createUpdateRequest(Long exerciseTypeId, ExerciseSkillLevel level) {
+        UpdatePreferredExerciseRequest request = new UpdatePreferredExerciseRequest();
+        ReflectionTestUtils.setField(request, "exerciseTypeId", exerciseTypeId);
+        ReflectionTestUtils.setField(request, "skillLevel", level);
+        ReflectionTestUtils.setField(request, "daysOfWeek",
+                new boolean[] { true, false, true, false, true, false, false });
         return request;
     }
 }
