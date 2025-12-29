@@ -18,8 +18,23 @@ request body
 
 response body
 {
-    "webSocketType" : "TALK, ERROR, PONG",
-    "content" : "내용을 입력해주세요" (PONG 의 경우 null)
+    "webSocketType": "TALK",
+    "data": {
+        "chatId": 6,
+        "senderId": "9882ee23-24ff-4a9a-ae10-b1eab3e2daa0",
+        "senderNickname": "테스트회원0",
+        "senderProfileUrl": null,
+        "senderThumbnailUrl": null,
+        "chatContent": "gg",
+        "chatType": "USER",
+        "sentAt": "2025-12-29T11:08:56.847273"
+    }
+}
+
+response body
+{
+    "webSocketType": "PONG",
+    "data": null
 }
 ```
 
