@@ -4,11 +4,11 @@ import lombok.Getter;
 
 @Getter
 public class WebSocketResponse<T> {
-    private final WebSocketType type;
+    private final WebSocketType webSocketType;
     private final T data;
 
-    private WebSocketResponse(WebSocketType type, T data) {
-        this.type = type;
+    private WebSocketResponse(WebSocketType webSocketType, T data) {
+        this.webSocketType = webSocketType;
         this.data = data;
     }
 
