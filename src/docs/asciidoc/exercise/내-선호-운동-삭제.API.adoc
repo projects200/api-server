@@ -11,10 +11,10 @@
 - <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
 
 === 코드 샘플
-operation::delete-my-preferred-exercises/delete-my-preferred-exercises_-success[snippets="curl-request,http-request,http-response"]
+operation::delete-my-preferred-exercises[snippets="curl-request,http-request,http-response"]
 
 === 매개 변수
-operation::delete-my-preferred-exercises/delete-my-preferred-exercises_-success[snippets="request-headers,request-fields"]
+operation::delete-my-preferred-exercises[snippets="request-headers,request-fields"]
 
 ==== 응답 상태 코드
 |===
