@@ -15,4 +15,6 @@ public interface MemberRepositoryCustom {
     List<Member> findAllByIdWithPessimisticLock(List<UUID> sortedMemberIdList);
 
     Optional<Member> findMemberWithProfileImage(UUID memberId);
+
+    Optional<Member> findMemberProfileByMemberIdAndMemberDeletedAtNull(UUID memberId);
 }

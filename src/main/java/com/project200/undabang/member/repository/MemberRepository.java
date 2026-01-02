@@ -17,6 +17,6 @@ public interface MemberRepository extends JpaRepository<Member, UUID>, MemberRep
 
     Optional<Member> findByMemberIdAndMemberDeletedAtNull(UUID memberId);
 
-    @EntityGraph(attributePaths = {"memberPicture", "memberPicture.picture", "preferredExercises", "preferredExercises.exercise"})
-    Optional<Member> findMemberProfileByMemberIdAndMemberDeletedAtNull(UUID memberId);
+//    @EntityGraph(attributePaths = {"memberPicture", "memberPicture.picture", "preferredExercises", "preferredExercises.exercise"})
+//    Optional<Member> findMemberProfileByMemberIdAndMemberDeletedAtNull(UUID memberId);
 }

@@ -2,9 +2,11 @@ package com.project200.undabang.member.repository.impl;
 
 import com.project200.undabang.common.entity.QPicture;
 import com.project200.undabang.exercise.entity.QExercise;
+import com.project200.undabang.exercise.entity.QExerciseType;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.QMember;
 import com.project200.undabang.member.entity.QMemberPicture;
+import com.project200.undabang.member.entity.QPreferredExercise;
 import com.project200.undabang.member.repository.MemberRepositoryCustom;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.LockModeType;
@@ -30,7 +32,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
      *
      * @param memberId 조회할 회원의 고유 식별자 (UUID 형식)
      * @return 주어진 회원 ID와 일치하는 회원 정보를 포함한 Optional 객체
-     * 반환된 객체가 비어있을 경우 해당 ID에 해당하는 회원 정보가 존재하지 않음을 나타냅니다.
+     *         반환된 객체가 비어있을 경우 해당 ID에 해당하는 회원 정보가 존재하지 않음을 나타냅니다.
      */
     @Override
     public Optional<Member> findMemberWithProfileImage(UUID memberId) {
@@ -44,6 +46,31 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                 .where(member.memberId.eq(memberId))
                 .fetchOne();
 
+        return Optional.ofNullable(result);
+    }
+
+    /**
+     * 회원의 프로필 정보(사진, 선호 운동 등)를 포함하여 조회합니다.
+     * preferredExerciseDeletedAt이 null인(삭제되지 않은) 선호 운동만 필터링하여 가져옵니다.
+     */
+    @Override
+    public Optional<Member> findMemberProfileByMemberIdAndMemberDeletedAtNull(UUID memberId) {
+        QMember member = QMember.member;
+        QMemberPicture memberPicture = QMemberPicture.memberPicture;
+        QPicture picture = QPicture.picture;
+        QPreferredExercise preferredExercise = QPreferredExercise.preferredExercise;
+        QExerciseType exerciseType = QExerciseType.exerciseType;
+        Member result = queryFactory.selectFrom(member)
+                .leftJoin(member.memberPicture, memberPicture).fetchJoin()
+                .leftJoin(memberPicture.picture, picture).fetchJoin()
+                .leftJoin(member.preferredExercises, preferredExercise).fetchJoin()
+                .leftJoin(preferredExercise.exercise, exerciseType).fetchJoin()
+                .where(
+                        member.memberId.eq(memberId),
+                        member.memberDeletedAt.isNull(),
+                        preferredExercise.preferredExerciseDeletedAt.isNull().or(preferredExercise.isNull()))
+                .distinct()
+                .fetchOne();
         return Optional.ofNullable(result);
     }
 
