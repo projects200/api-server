@@ -133,7 +133,7 @@ class PreferredExerciseQueryControllerTest extends AbstractRestDocSupport {
                                             .description("현재 사용자가 보유하고 있는 운동 이미지 URL"),
                                     fieldWithPath("data[].skillLevel")
                                             .type(JsonFieldType.STRING)
-                                            .description("현재 사용자가 보유하고 있는 운동 숙련도 (NOVICE, BEGINNER, INTERMEDIATE, ADVANCED, EXPERT, PROFESSIONAL)"),
+                                            .description("현재 사용자가 보유하고 있는 운동 숙련도 (BEGINNER, ROOKIE, INTERMEDIATE, ADVANCED, SKILLED, PRO)"),
                                     fieldWithPath("data[].daysOfWeek")
                                             .type(JsonFieldType.ARRAY)
                                             .description("현재 사용자가 보유하고 있는 운동 요일 (월~일)")))))

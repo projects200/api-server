@@ -220,7 +220,7 @@ class MemberQueryControllerTest extends AbstractRestDocSupport {
                                     fieldWithPath("data.preferredExercises[]").type(JsonFieldType.ARRAY).description("사용자가 선호하는 운동 목록"),
                                     fieldWithPath("data.preferredExercises[].preferredExerciseId").type(JsonFieldType.NUMBER).description("선호 운동 ID").optional(),
                                     fieldWithPath("data.preferredExercises[].name").type(JsonFieldType.STRING).description("선호 운동 이름"),
-                                    fieldWithPath("data.preferredExercises[].skillLevel").type(JsonFieldType.STRING).description("운동 수준: NOVICE, BEGINNER, INTERMEDIATE, ADVANCED, EXPERT, PROFESSIONAL(입문자, 초급자, 중급자, 고급자, 숙련자, 선출)"),
+                                    fieldWithPath("data.preferredExercises[].skillLevel").type(JsonFieldType.STRING).description("운동 수준: BEGINNER, ROOKIE, INTERMEDIATE, ADVANCED, SKILLED, PRO(입문자, 초급자, 중급자, 고급자, 숙련자, 선출)"),
                                     fieldWithPath("data.preferredExercises[].daysOfWeek").type(JsonFieldType.ARRAY).description("운동 요일(월 ~ 일 순)").optional(),
                                     fieldWithPath("data.preferredExercises[].imageUrl").type(JsonFieldType.STRING).description("운동 이미지(최대 255자)").optional()
                             ))
@@ -351,7 +351,7 @@ class MemberQueryControllerTest extends AbstractRestDocSupport {
                                     fieldWithPath("data.preferredExercises[]").type(JsonFieldType.ARRAY).description("다른 회원이 선호하는 운동 목록"),
                                     fieldWithPath("data.preferredExercises[].preferredExerciseId").type(JsonFieldType.NUMBER).description("다른 회원의 선호 운동 ID").optional(),
                                     fieldWithPath("data.preferredExercises[].name").type(JsonFieldType.STRING).description("다른 회원의 선호 운동 이름"),
-                                    fieldWithPath("data.preferredExercises[].skillLevel").type(JsonFieldType.STRING).description("다른 회원의 운동 수준: NOVICE, BEGINNER, INTERMEDIATE, ADVANCED, EXPERT, PROFESSIONAL(입문자, 초급자, 중급자, 고급자, 숙련자, 선출)"),
+                                    fieldWithPath("data.preferredExercises[].skillLevel").type(JsonFieldType.STRING).description("다른 회원의 운동 수준: BEGINNER, ROOKIE, INTERMEDIATE, ADVANCED, SKILLED, PRO(입문자, 초급자, 중급자, 고급자, 숙련자, 선출)"),
                                     fieldWithPath("data.preferredExercises[].daysOfWeek").type(JsonFieldType.ARRAY).description("다른 회원의 운동 요일(월 ~ 일 순)").optional(),
                                     fieldWithPath("data.preferredExercises[].imageUrl").type(JsonFieldType.STRING).description("운동 이미지(최대 255자)").optional()
                             ))
