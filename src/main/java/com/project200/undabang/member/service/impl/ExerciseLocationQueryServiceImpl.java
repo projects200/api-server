@@ -36,12 +36,17 @@ public class ExerciseLocationQueryServiceImpl implements ExerciseLocationQuerySe
      * @return 다른 회원들의 운동 위치 정보를 포함하는 GetMembersExerciseLocationsResponse 객체 리스트
      */
     @Override
-    public List<GetMembersExerciseLocationsResponse> getMembersExerciseLocations() {
+    public List<GetMembersExerciseLocationsResponse> getMembersExerciseLocations(
+            Double leftTopLatitude, Double leftTopLongitude,
+            Double rightBottomLatitude, Double rightBottomLongitude) {
         Member member = getMember(UserContextHolder.getUserId());
 
         Set<UUID> excludeMemberIdSet = memberBlockRepository.findAllBlockedMemberIdsByMember(member);
 
-        return exerciseLocationRepository.getMembersExerciseLocations(excludeMemberIdSet);
+        return exerciseLocationRepository.getMembersExerciseLocations(
+                excludeMemberIdSet,
+                leftTopLatitude, leftTopLongitude,
+                rightBottomLatitude, rightBottomLongitude);
     }
 
     /**
@@ -55,13 +60,13 @@ public class ExerciseLocationQueryServiceImpl implements ExerciseLocationQuerySe
     public List<GetExerciseLocationsResponse> getExerciseLocations() {
         Member member = getMember(UserContextHolder.getUserId());
 
-        List<ExerciseLocation> exerciseLocationList = exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member);
+        List<ExerciseLocation> exerciseLocationList = exerciseLocationRepository
+                .findAllByMemberAndExerciseLocationDeletedAtNull(member);
 
         return exerciseLocationList.stream()
                 .map(GetExerciseLocationsResponse::from)
                 .toList();
     }
-
 
     /**
      * 주어진 회원 ID에 해당하는 회원 정보를 가져옵니다.

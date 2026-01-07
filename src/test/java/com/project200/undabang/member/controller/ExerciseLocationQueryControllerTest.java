@@ -61,66 +61,99 @@ class ExerciseLocationQueryControllerTest extends AbstractRestDocSupport {
                             .build()
             );
 
-            BDDMockito.given(exerciseLocationQueryService.getMembersExerciseLocations()).willReturn(responseList);
+                        BDDMockito.given(exerciseLocationQueryService.getMembersExerciseLocations(
+                                        BDDMockito.anyDouble(), BDDMockito.anyDouble(),
+                                        BDDMockito.anyDouble(), BDDMockito.anyDouble())).willReturn(responseList);
 
-            // when & then
-            mockMvc.perform(get("/api/v1/members")
-                            .headers(getCommonApiHeaders(memberId1))
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .accept(MediaType.APPLICATION_JSON))
-                    .andExpectAll(
-                            status().isOk(),
-                            jsonPath("$.succeed").value(true),
-                            jsonPath("$.code").value("SUCCESS"),
-                            jsonPath("$.data").isArray(),
-                            jsonPath("$.data[0].memberId").value(memberId1.toString()),
-                            jsonPath("$.data[0].nickname").value("운동맨"),
-                            jsonPath("$.data[0].profileThumbnailUrl").value("http://example.com/thumbnail1.jpg"),
-                            jsonPath("$.data[0].profileImageUrl").value("http://example.com/profile1.jpg"),
-                            jsonPath("$.data[0].locations[0].exerciseLocationName").value("헬스장 A")
-                    )
-                    .andDo(document.document(
-                            requestHeaders(HEADER_ACCESS_TOKEN),
-                            responseFields(commonResponseFieldsForList(
-                                    fieldWithPath("data[].memberId").type(STRING).description("다른 회원의 식별자(UUID)를 나타냅니다."),
-                                    fieldWithPath("data[].profileThumbnailUrl").type(STRING).description("다른 회원의 썸네일 이미지 URL 정보입니다."),
-                                    fieldWithPath("data[].profileImageUrl").type(STRING).description("다른 회원의 프로필 이미지 URL 정보입니다."),
-                                    fieldWithPath("data[].nickname").type(STRING).description("다른 회원의 닉네임을 나타냅니다."),
-                                    fieldWithPath("data[].gender").type(STRING).description("다른 회원의 성별 (MALE, FEMALE, UNKNOWN) 정보를 나타냅니다."),
-                                    fieldWithPath("data[].birthDate").type(STRING).description("다른 회원의 생년월일 정보를 나타냅니다."),
-                                    fieldWithPath("data[].locations[]").type(ARRAY).description("다른 회원이 저장한 운동 위치 목록 입니다."),
-                                    fieldWithPath("data[].locations[].exerciseLocationName").type(STRING).description("카카오맵 API 에서 반환한 상호명이나 본인이 저장한 운동 장소 이름 입니다."),
-                                    fieldWithPath("data[].locations[].latitude").type(NUMBER).description("운동 장소의 위도 정보 입니다."),
-                                    fieldWithPath("data[].locations[].longitude").type(NUMBER).description("운동 장소의 경도 정보 입니다.")
-                            ))
-                    ));
+                        // when & then
+                        mockMvc.perform(get("/api/v1/members")
+                                        .queryParam("leftTopLatitude", "37.5")
+                                        .queryParam("leftTopLongitude", "127.0")
+                                        .queryParam("rightBottomLatitude", "37.4")
+                                        .queryParam("rightBottomLongitude", "127.1")
+                                        .headers(getCommonApiHeaders(memberId1))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .accept(MediaType.APPLICATION_JSON))
+                                        .andExpectAll(
+                                                        status().isOk(),
+                                                        jsonPath("$.succeed").value(true),
+                                                        jsonPath("$.code").value("SUCCESS"),
+                                                        jsonPath("$.data").isArray(),
+                                                        jsonPath("$.data[0].memberId").value(memberId1.toString()),
+                                                        jsonPath("$.data[0].nickname").value("운동맨"),
+                                                        jsonPath("$.data[0].profileThumbnailUrl")
+                                                                        .value("http://example.com/thumbnail1.jpg"),
+                                                        jsonPath("$.data[0].profileImageUrl")
+                                                                        .value("http://example.com/profile1.jpg"),
+                                                        jsonPath("$.data[0].locations[0].exerciseLocationName")
+                                                                        .value("헬스장 A"))
+                                        .andDo(document.document(
+                                                        requestHeaders(HEADER_ACCESS_TOKEN),
+                                                        responseFields(commonResponseFieldsForList(
+                                                                        fieldWithPath("data[].memberId").type(STRING)
+                                                                                        .description("다른 회원의 식별자(UUID)를 나타냅니다."),
+                                                                        fieldWithPath("data[].profileThumbnailUrl")
+                                                                                        .type(STRING)
+                                                                                        .description("다른 회원의 썸네일 이미지 URL 정보입니다."),
+                                                                        fieldWithPath("data[].profileImageUrl")
+                                                                                        .type(STRING)
+                                                                                        .description("다른 회원의 프로필 이미지 URL 정보입니다."),
+                                                                        fieldWithPath("data[].nickname").type(STRING)
+                                                                                        .description("다른 회원의 닉네임을 나타냅니다."),
+                                                                        fieldWithPath("data[].gender").type(STRING)
+                                                                                        .description("다른 회원의 성별 (MALE, FEMALE, UNKNOWN) 정보를 나타냅니다."),
+                                                                        fieldWithPath("data[].birthDate").type(STRING)
+                                                                                        .description("다른 회원의 생년월일 정보를 나타냅니다."),
+                                                                        fieldWithPath("data[].locations[]").type(ARRAY)
+                                                                                        .description("다른 회원이 저장한 운동 위치 목록 입니다."),
+                                                                        fieldWithPath("data[].locations[].exerciseLocationName")
+                                                                                        .type(STRING)
+                                                                                        .description("카카오맵 API 에서 반환한 상호명이나 본인이 저장한 운동 장소 이름 입니다."),
+                                                                        fieldWithPath("data[].locations[].latitude")
+                                                                                        .type(NUMBER)
+                                                                                        .description("운동 장소의 위도 정보 입니다."),
+                                                                        fieldWithPath("data[].locations[].longitude")
+                                                                                        .type(NUMBER)
+                                                                                        .description("운동 장소의 경도 정보 입니다.")))));
 
-            BDDMockito.then(exerciseLocationQueryService).should(BDDMockito.times(1)).getMembersExerciseLocations();
+                        BDDMockito.then(exerciseLocationQueryService).should(BDDMockito.times(1))
+                                        .getMembersExerciseLocations(
+                                                        BDDMockito.anyDouble(), BDDMockito.anyDouble(),
+                                                        BDDMockito.anyDouble(), BDDMockito.anyDouble());
+                }
+
+                @Test
+                @DisplayName("조회된 데이터가 없으면 빈 리스트를 반환한다")
+                void getMembersExerciseLocations_Success_EmptyList() throws Exception {
+                        // given
+                        UUID memberId = UUID.randomUUID();
+                        BDDMockito.given(exerciseLocationQueryService.getMembersExerciseLocations(
+                                        BDDMockito.anyDouble(), BDDMockito.anyDouble(),
+                                        BDDMockito.anyDouble(), BDDMockito.anyDouble()))
+                                        .willReturn(Collections.emptyList());
+
+                        // when & then
+                        mockMvc.perform(get("/api/v1/members")
+                                        .queryParam("leftTopLatitude", "37.5")
+                                        .queryParam("leftTopLongitude", "127.0")
+                                        .queryParam("rightBottomLatitude", "37.4")
+                                        .queryParam("rightBottomLongitude", "127.1")
+                                        .headers(getCommonApiHeaders(memberId))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .accept(MediaType.APPLICATION_JSON))
+                                        .andExpectAll(
+                                                        status().isOk(),
+                                                        jsonPath("$.succeed").value(true),
+                                                        jsonPath("$.code").value("SUCCESS"),
+                                                        jsonPath("$.data").isArray(),
+                                                        jsonPath("$.data").isEmpty());
+
+                        BDDMockito.then(exerciseLocationQueryService).should(BDDMockito.times(1))
+                                        .getMembersExerciseLocations(
+                                                        BDDMockito.anyDouble(), BDDMockito.anyDouble(),
+                                                        BDDMockito.anyDouble(), BDDMockito.anyDouble());
+                }
         }
-
-        @Test
-        @DisplayName("조회된 데이터가 없으면 빈 리스트를 반환한다")
-        void getMembersExerciseLocations_Success_EmptyList() throws Exception {
-            // given
-            UUID memberId = UUID.randomUUID();
-            BDDMockito.given(exerciseLocationQueryService.getMembersExerciseLocations()).willReturn(Collections.emptyList());
-
-            // when & then
-            mockMvc.perform(get("/api/v1/members")
-                            .headers(getCommonApiHeaders(memberId))
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .accept(MediaType.APPLICATION_JSON))
-                    .andExpectAll(
-                            status().isOk(),
-                            jsonPath("$.succeed").value(true),
-                            jsonPath("$.code").value("SUCCESS"),
-                            jsonPath("$.data").isArray(),
-                            jsonPath("$.data").isEmpty()
-                    );
-
-            BDDMockito.then(exerciseLocationQueryService).should(BDDMockito.times(1)).getMembersExerciseLocations();
-        }
-    }
 
     @Nested
     @DisplayName("GET /api/v1/exercise-locations API는")

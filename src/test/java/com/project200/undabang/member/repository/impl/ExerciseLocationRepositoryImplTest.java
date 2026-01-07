@@ -2,6 +2,7 @@ package com.project200.undabang.member.repository.impl;
 
 import com.project200.undabang.common.entity.Picture;
 import com.project200.undabang.configuration.TestQuerydslConfig;
+import com.project200.undabang.member.dto.record.ExerciseLocationRecord;
 import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
 import com.project200.undabang.member.entity.ExerciseLocation;
 import com.project200.undabang.member.entity.Member;
@@ -121,7 +122,8 @@ class ExerciseLocationRepositoryImplTest {
 
             flushAndClear();
 
-            List<ExerciseLocation> results = exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member1);
+            List<ExerciseLocation> results = exerciseLocationRepository
+                    .findAllByMemberAndExerciseLocationDeletedAtNull(member1);
 
             assertThat(results).hasSize(2)
                     .extracting(ExerciseLocation::getExerciseLocationName)
@@ -196,7 +198,12 @@ class ExerciseLocationRepositoryImplTest {
     }
 
     private ExerciseLocation createAndSaveExerciseLocation(Member member, String name, boolean deleted) {
-        Point point = geometryFactory.createPoint(new Coordinate(127.0, 37.5));
+        return createAndSaveExerciseLocation(member, name, 127.0, 37.5, deleted);
+    }
+
+    private ExerciseLocation createAndSaveExerciseLocation(Member member, String name, double lon, double lat,
+            boolean deleted) {
+        Point point = geometryFactory.createPoint(new Coordinate(lon, lat));
         point.setSRID(4326);
 
         ExerciseLocation location = ExerciseLocation.builder()
@@ -370,7 +377,10 @@ class ExerciseLocationRepositoryImplTest {
             flushAndClear();
 
             // when
-            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(exclusionIds);
+            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
+                    exclusionIds,
+                    38.0, 126.0,
+                    37.0, 128.0);
 
             // then
             assertThat(results).hasSize(2)
@@ -396,7 +406,10 @@ class ExerciseLocationRepositoryImplTest {
             flushAndClear();
 
             // when
-            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(exclusionIds);
+            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
+                    exclusionIds,
+                    38.0, 126.0,
+                    37.0, 128.0);
 
             // then
             // otherUser1만 조회되어야 함
@@ -416,7 +429,10 @@ class ExerciseLocationRepositoryImplTest {
             flushAndClear();
 
             // when
-            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(exclusionIds);
+            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
+                    exclusionIds,
+                    38.0, 126.0,
+                    37.0, 128.0);
 
             // then
             // otherUser1, otherUser2, otherUser3 모두 조회되어야 함
@@ -437,7 +453,10 @@ class ExerciseLocationRepositoryImplTest {
             flushAndClear();
 
             // when
-            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(exclusionIds);
+            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
+                    exclusionIds,
+                    38.0, 126.0,
+                    37.0, 128.0);
 
             // then
             assertThat(results).hasSize(4)
@@ -446,8 +465,39 @@ class ExerciseLocationRepositoryImplTest {
                             currentUser.getMemberId(),
                             otherUser1.getMemberId(),
                             otherUser2.getMemberId(),
-                            otherUser3.getMemberId()
-                    );
+                            otherUser3.getMemberId());
+        }
+    }
+
+    @Nested
+    @DisplayName("getMembersExerciseLocations(Set<UUID> excludeMemberIdSet, bounds...) 데이터 필터링은")
+    class Describe_getMembersExerciseLocations_filtering {
+
+        @Test
+        @DisplayName("주어진 경계 내에 있는 운동 장소만 반환한다")
+        void it_returns_locations_within_bounds_only() {
+            // given
+            Member insideMember = createAndSaveMember("insideUser", false);
+            createAndSaveExerciseLocation(insideMember, "Inside Gym", 127.0, 37.5, false);
+
+            Member outsideMember = createAndSaveMember("outsideUser", false);
+            createAndSaveExerciseLocation(outsideMember, "Outside Gym", 129.0, 39.0, false);
+
+            flushAndClear();
+
+            // when
+            // Box: LeftTop(38.0, 126.0) ~ RightBottom(37.0, 128.0)
+            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
+                    Collections.emptySet(),
+                    38.0, 126.0, // LeftTop
+                    37.0, 128.0 // RightBottom
+            );
+
+            // then
+            assertThat(results).hasSize(1);
+            assertThat(results.get(0).getLocations())
+                    .extracting(ExerciseLocationRecord::exerciseLocationName)
+                    .containsExactly("Inside Gym");
         }
     }
 }

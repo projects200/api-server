@@ -168,10 +168,14 @@ class ExerciseLocationQueryServiceImplTest {
                 List<ExerciseLocationRecord> locations = List.of(createExerciseLocationRecord("헬스장A", 37.5, 127.0));
                 GetMembersExerciseLocationsResponse response1 = createGetMembersExerciseLocationsResponse(otherUser1Id, "user1", locations);
                 List<GetMembersExerciseLocationsResponse> finalResponse = List.of(response1);
-                given(exerciseLocationRepository.getMembersExerciseLocations(exclusionIds)).willReturn(finalResponse);
+                given(exerciseLocationRepository.getMembersExerciseLocations(
+                        eq(exclusionIds), anyDouble(), anyDouble(), anyDouble(), anyDouble()))
+                        .willReturn(finalResponse);
 
                 // when
-                List<GetMembersExerciseLocationsResponse> results = exerciseLocationQueryService.getMembersExerciseLocations();
+                List<GetMembersExerciseLocationsResponse> results = exerciseLocationQueryService
+                        .getMembersExerciseLocations(
+                                37.0, 127.0, 36.0, 128.0);
 
                 // then
                 assertThat(results).hasSize(1);
@@ -180,7 +184,8 @@ class ExerciseLocationQueryServiceImplTest {
                 // verify: 각 Mock 객체가 올바른 순서와 파라미터로 호출되었는지 검증
                 verify(memberRepository, times(1)).findById(currentUserId);
                 verify(memberBlockRepository, times(1)).findAllBlockedMemberIdsByMember(currentUser);
-                verify(exerciseLocationRepository, times(1)).getMembersExerciseLocations(exclusionIds);
+                verify(exerciseLocationRepository, times(1)).getMembersExerciseLocations(
+                        eq(exclusionIds), anyDouble(), anyDouble(), anyDouble(), anyDouble());
             }
         }
 
@@ -194,13 +199,15 @@ class ExerciseLocationQueryServiceImplTest {
                 given(memberRepository.findById(currentUserId)).willReturn(Optional.empty());
 
                 // when & then
-                assertThatThrownBy(() -> exerciseLocationQueryService.getMembersExerciseLocations())
+                assertThatThrownBy(() -> exerciseLocationQueryService.getMembersExerciseLocations(
+                        37.0, 127.0, 36.0, 128.0))
                         .isInstanceOf(CustomException.class)
                         .hasMessageContaining(ErrorCode.MEMBER_NOT_FOUND.getMessage());
 
                 // verify: 예외 발생 시 다른 리포지토리들은 호출되지 않아야 함
                 verify(memberBlockRepository, never()).findAllBlockedMemberIdsByMember(any());
-                verify(exerciseLocationRepository, never()).getMembersExerciseLocations(any());
+                verify(exerciseLocationRepository, never()).getMembersExerciseLocations(
+                        any(), anyDouble(), anyDouble(), anyDouble(), anyDouble());
             }
         }
     }

@@ -7,5 +7,8 @@ import java.util.Set;
 import java.util.UUID;
 
 public interface ExerciseLocationRepositoryCustom {
-    List<GetMembersExerciseLocationsResponse> getMembersExerciseLocations(Set<UUID> excludeMemberIdSet);
+    List<GetMembersExerciseLocationsResponse> getMembersExerciseLocations(
+            Set<UUID> excludeMemberIdSet,
+            Double leftTopLatitude, Double leftTopLongitude,
+            Double rightBottomLatitude, Double rightBottomLongitude);
 }

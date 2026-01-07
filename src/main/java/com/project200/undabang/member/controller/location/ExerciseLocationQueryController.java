@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -19,9 +20,14 @@ public class ExerciseLocationQueryController {
     private final ExerciseLocationQueryService exerciseLocationQueryService;
 
     @GetMapping("/v1/members")
-    public ResponseEntity<CommonResponse<List<GetMembersExerciseLocationsResponse>>> getMembersExerciseLocations() {
+    public ResponseEntity<CommonResponse<List<GetMembersExerciseLocationsResponse>>> getMembersExerciseLocations(
+            @RequestParam Double leftTopLatitude,
+            @RequestParam Double leftTopLongitude,
+            @RequestParam Double rightBottomLatitude,
+            @RequestParam Double rightBottomLongitude) {
 
-        return ResponseEntity.ok(CommonResponse.success(exerciseLocationQueryService.getMembersExerciseLocations()));
+        return ResponseEntity.ok(CommonResponse.success(exerciseLocationQueryService.getMembersExerciseLocations(
+                leftTopLatitude, leftTopLongitude, rightBottomLatitude, rightBottomLongitude)));
     }
 
     @GetMapping("/v1/exercise-locations")
