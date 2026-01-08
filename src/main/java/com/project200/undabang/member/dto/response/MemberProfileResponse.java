@@ -43,6 +43,7 @@ public class MemberProfileResponse {
 
         List<PreferredExercisesOfMemberResponse> preferredExercises = Optional.ofNullable(member.getPreferredExercises())
                 .map(exercises -> exercises.stream()
+                        .filter(pe -> pe.getPreferredExerciseDeletedAt() == null)
                         .map(PreferredExercisesOfMemberResponse::new)
                         .toList())
                 .orElse(Collections.emptyList()); // null 대신 빈 리스트 반환
