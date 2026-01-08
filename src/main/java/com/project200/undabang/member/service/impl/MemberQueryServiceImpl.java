@@ -5,6 +5,7 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodResponseDto;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
+import com.project200.undabang.member.dto.record.MemberProfileRecord;
 import com.project200.undabang.member.dto.response.*;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
@@ -57,26 +58,26 @@ public class MemberQueryServiceImpl implements MemberQueryService {
     }
 
     /**
-     * 다른 사용자의 멤버 프로필 정보를 조회합니다.
-     * 요청한 사용자가 자신에 대해 요청한 경우 예외를 발생시킵니다.
-     * 삭제된 사용자이거나 존재하지 않는 사용자에 대해 요청한 경우 예외를 발생시킵니다.
+     * 다른 회원의 프로필 정보를 조회합니다.
+     * 조회 대상 회원은 삭제되지 않은 상태여야 하며, 회원이 존재하지 않을 경우 예외가 발생합니다.
+     * 회원의 연간 운동 횟수와 최근 특정 기간 동안의 운동 횟수를 함께 반환합니다.
      *
-     * @param memberId 조회할 다른 사용자의 멤버 ID
-     * @return GetOtherMemberProfileResponse 객체로, 조회된 사용자의 프로필 정보 및 연간 운동 횟수, 최근 운동 횟수를 포함합니다.
+     * @param memberId 조회할 회원의 고유 식별자(UUID)
+     * @return GetOtherMemberProfileResponse 객체로, 다른 회원의 프로필 정보,
+     *         연간 운동 횟수, 최근 운동 횟수를 포함합니다.
      */
     @Override
     public GetOtherMemberProfileResponse getOtherMemberProfile(UUID memberId) {
         validateNotSelfRequest(memberId);
-
-        Member otherMember = memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(memberId)
-                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-
         // TODO : 추후 차단 기능 개발 시, 다른 회원이 차단한 경우 검색 안되게 하는 기능 추가
 
-        int yearlyExerciseCounts = memberRepository.countMemberExerciseInThisYear(otherMember.getMemberId()).intValue();
-        int exerciseCountInLastDays = memberRepository.countMemberExerciseInLastDays(otherMember.getMemberId(), RECENT_EXERCISE_PERIOD_DAYS).intValue();
+        MemberProfileRecord record = memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(memberId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-        return GetOtherMemberProfileResponse.of(otherMember, yearlyExerciseCounts, exerciseCountInLastDays);
+        int yearlyExerciseCounts = memberRepository.countMemberExerciseInThisYear(record.memberId()).intValue();
+        int exerciseCountInLastDays = memberRepository.countMemberExerciseInLastDays(record.memberId(), RECENT_EXERCISE_PERIOD_DAYS).intValue();
+
+        return GetOtherMemberProfileResponse.from(record, yearlyExerciseCounts, exerciseCountInLastDays);
     }
 
     /**
@@ -118,21 +119,23 @@ public class MemberQueryServiceImpl implements MemberQueryService {
     }
 
     /**
-     * 현재 사용자와 관련된 멤버 프로필 정보를 조회합니다.
-     * 삭제된 멤버는 조회 대상에서 제외되며, 해당 사용자의 프로필 정보가 존재하지 않을 경우 예외가 발생합니다.
+     * 현재 사용자의 멤버 프로필 정보를 조회합니다.
+     * 조회된 프로필 정보에는 사용자의 선호 운동 상태, 연간 운동 횟수,
+     * 최근 특정 기간 동안의 운동 횟수가 포함됩니다.
      *
-     * @return MemberProfileResponse 객체로, 현재 사용자와 연결된 멤버의 프로필 정보를 포함합니다.
+     * @return MemberProfileResponse 객체로, 현재 사용자의 멤버 프로필 정보,
+     * 연간 운동 횟수 및 최근 운동 횟수를 포함합니다.
      */
     @Override
     public MemberProfileResponse getMemberProfile() {
-        Member member = memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(UserContextHolder.getUserId())
+        MemberProfileRecord memberProfileRecord = memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(UserContextHolder.getUserId())
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-        int yearlyExerciseCounts = memberRepository.countMemberExerciseInThisYear(member.getMemberId()).intValue();
+        int yearlyExerciseCounts = memberRepository.countMemberExerciseInThisYear(memberProfileRecord.memberId()).intValue();
 
-        int exerciseCountInLastDays = memberRepository.countMemberExerciseInLastDays(member.getMemberId(), RECENT_EXERCISE_PERIOD_DAYS).intValue();
+        int exerciseCountInLastDays = memberRepository.countMemberExerciseInLastDays(memberProfileRecord.memberId(), RECENT_EXERCISE_PERIOD_DAYS).intValue();
 
-        return MemberProfileResponse.of(member, yearlyExerciseCounts, exerciseCountInLastDays);
+        return MemberProfileResponse.from(memberProfileRecord, yearlyExerciseCounts, exerciseCountInLastDays);
     }
 
     /**

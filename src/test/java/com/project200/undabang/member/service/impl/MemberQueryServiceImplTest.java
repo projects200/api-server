@@ -7,6 +7,8 @@ import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.exercise.dto.response.FindExerciseRecordByPeriodResponseDto;
 import com.project200.undabang.exercise.entity.ExerciseType;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
+import com.project200.undabang.member.dto.record.MemberProfileRecord;
+import com.project200.undabang.member.dto.record.PreferredExerciseRecord;
 import com.project200.undabang.member.dto.response.*;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.MemberPicture;
@@ -27,10 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -63,106 +62,6 @@ class MemberQueryServiceImplTest {
                 .memberScore((byte) 50)
                 .memberDesc("테스트 자기소개입니다.")
                 .build();
-    }
-
-    private Member createMemberWithFullProfile(UUID memberId) {
-        Member member = createMember(memberId);
-        addPictureToMember(member);
-        addPreferredExerciseToMember(member, "헬스", false);
-        return member;
-    }
-
-    private Member createMemberWithMixedPreferredExercises(UUID memberId) {
-        Member member = createMember(memberId);
-        addPreferredExerciseToMember(member, "헬스", false); // 활성
-        addPreferredExerciseToMember(member, "요가", true);  // 삭제됨
-        return member;
-    }
-
-    private void addPictureToMember(Member member) {
-        Picture picture = Picture.builder()
-                .id(1L)
-                .pictureName("profile_image.jpg")
-                .pictureUrl("http://example.com/profile_image.jpg")
-                .build();
-
-        MemberPicture memberPicture = MemberPicture.builder()
-                .id(1L)
-                .picture(picture)
-                .member(member)
-                .memberPicturesUrl("http://example.com/profile_image.jpg")
-                .build();
-
-        member.updateProfilePicture(memberPicture);
-    }
-
-    private void addPreferredExerciseToMember(Member member, String exerciseName, boolean isDeleted) {
-        ExerciseType exerciseType = ExerciseType.builder()
-                .id(1L)
-                .exerciseName(exerciseName)
-                .exerciseTypeImageUrl("http://example.com/exercise/weight_training.jpg")
-                .build();
-
-        boolean[] days = {false, false, true, true, true, true, true};
-        PreferredExercise preferredExercise = PreferredExercise.createPreferredExercise(
-                member,
-                exerciseType,
-                ExerciseSkillLevel.PRO,
-                days
-        );
-
-        if (isDeleted) {
-            preferredExercise.delete();
-        }
-
-        List<PreferredExercise> currentList = (List<PreferredExercise>) ReflectionTestUtils.getField(member, "preferredExercises");
-        if (currentList == null) {
-            currentList = new ArrayList<>();
-        }
-
-        List<PreferredExercise> newList = new ArrayList<>(currentList);
-        newList.add(preferredExercise);
-
-        ReflectionTestUtils.setField(member, "preferredExercises", newList);
-    }
-
-    @Nested
-    @DisplayName("getRegistrationStatus 메소드는")
-    class GetRegistrationStatus {
-
-        @Test
-        @DisplayName("이미 가입된 회원이면 registered=true를 반환한다")
-        void returnsTrue_WhenMemberExists() {
-            UUID userId = UUID.randomUUID();
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                given(UserContextHolder.getUserId()).willReturn(userId);
-                given(memberRepository.existsByMemberId(userId)).willReturn(true);
-
-                MemberRegistrationStatusResponseDto response = memberQueryService.getRegistrationStatus();
-
-                assertSoftly(softly -> {
-                    softly.assertThat(response.getMemberId()).isEqualTo(userId);
-                    softly.assertThat(response.isRegistered()).isTrue();
-                });
-            }
-        }
-
-        @Test
-        @DisplayName("가입되지 않은 회원이면 registered=false를 반환한다")
-        void returnsFalse_WhenMemberDoesNotExist() {
-            UUID userId = UUID.randomUUID();
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                given(UserContextHolder.getUserId()).willReturn(userId);
-                given(memberRepository.existsByMemberId(userId)).willReturn(false);
-
-                MemberRegistrationStatusResponseDto response = memberQueryService.getRegistrationStatus();
-
-                assertSoftly(softly -> {
-                    softly.assertThat(response.getMemberId()).isEqualTo(userId);
-                    softly.assertThat(response.isRegistered()).isFalse();
-                });
-            }
-        }
     }
 
     @Nested
@@ -207,65 +106,11 @@ class MemberQueryServiceImplTest {
         }
     }
 
-    @Nested
-    @DisplayName("getMemberProfile 메소드는")
-    class GetMemberProfile {
-
-        @Test
-        @DisplayName("프로필 사진과 선호 운동이 있는 회원의 전체 프로필 정보를 반환한다")
-        void returnsFullProfile_WhenAllDataExists() {
-            UUID userId = UUID.randomUUID();
-            Member member = createMemberWithFullProfile(userId);
-
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                given(UserContextHolder.getUserId()).willReturn(userId);
-                given(memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(userId)).willReturn(Optional.of(member));
-                given(memberRepository.countMemberExerciseInThisYear(userId)).willReturn(10L);
-                given(memberRepository.countMemberExerciseInLastDays(userId, 30)).willReturn(5L);
-
-                MemberProfileResponse response = memberQueryService.getMemberProfile();
-
-                assertSoftly(softly -> {
-                    softly.assertThat(response.getNickname()).isEqualTo("테스트유저");
-                    softly.assertThat(response.getProfileImageUrl()).isEqualTo("http://example.com/profile_image.jpg");
-                    softly.assertThat(response.getPreferredExercises()).hasSize(1);
-                    softly.assertThat(response.getPreferredExercises().getFirst().getName()).isEqualTo("헬스");
-                    softly.assertThat(response.getYearlyExerciseDays()).isEqualTo(10);
-                    softly.assertThat(response.getExerciseCountInLast30Days()).isEqualTo(5);
-                });
-            }
-        }
-
-        @Test
-        @DisplayName("삭제된 선호 운동은 제외하고 반환한다")
-        void filtersOutDeletedPreferredExercises() {
-            UUID userId = UUID.randomUUID();
-            Member member = createMemberWithMixedPreferredExercises(userId);
-
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                given(UserContextHolder.getUserId()).willReturn(userId);
-                given(memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(userId)).willReturn(Optional.of(member));
-
-                MemberProfileResponse response = memberQueryService.getMemberProfile();
-
-                assertThat(response.getPreferredExercises()).hasSize(1);
-                assertThat(response.getPreferredExercises().getFirst().getName()).isEqualTo("헬스");
-            }
-        }
-
-        @Test
-        @DisplayName("회원 정보가 없으면 예외를 던진다")
-        void throwsException_WhenMemberNotFound() {
-            UUID userId = UUID.randomUUID();
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                given(UserContextHolder.getUserId()).willReturn(userId);
-                given(memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(userId)).willReturn(Optional.empty());
-
-                assertThatThrownBy(() -> memberQueryService.getMemberProfile())
-                        .isInstanceOf(CustomException.class)
-                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
-            }
-        }
+    private Member createMemberWithFullProfile(UUID memberId) {
+        Member member = createMember(memberId);
+        addPictureToMember(member);
+        addPreferredExerciseToMember(member, "헬스", false);
+        return member;
     }
 
     @Nested
@@ -374,6 +219,210 @@ class MemberQueryServiceImplTest {
         }
     }
 
+    private Member createMemberWithMixedPreferredExercises(UUID memberId) {
+        Member member = createMember(memberId);
+        addPreferredExerciseToMember(member, "헬스", false); // 활성
+        addPreferredExerciseToMember(member, "요가", true);  // 삭제됨
+        return member;
+    }
+
+    private void addPictureToMember(Member member) {
+        Picture picture = Picture.builder()
+                .id(1L)
+                .pictureName("profile_image.jpg")
+                .pictureUrl("http://example.com/profile_image.jpg")
+                .build();
+
+        MemberPicture memberPicture = MemberPicture.builder()
+                .id(1L)
+                .picture(picture)
+                .member(member)
+                .memberPicturesUrl("http://example.com/profile_image.jpg")
+                .build();
+
+        member.updateProfilePicture(memberPicture);
+    }
+
+    private void addPreferredExerciseToMember(Member member, String exerciseName, boolean isDeleted) {
+        ExerciseType exerciseType = ExerciseType.builder()
+                .id(1L)
+                .exerciseName(exerciseName)
+                .exerciseTypeImageUrl("http://example.com/exercise/weight_training.jpg")
+                .build();
+
+        boolean[] days = {false, false, true, true, true, true, true};
+        PreferredExercise preferredExercise = PreferredExercise.createPreferredExercise(
+                member,
+                exerciseType,
+                ExerciseSkillLevel.PRO,
+                days
+        );
+
+        if (isDeleted) {
+            preferredExercise.delete();
+        }
+
+        List<PreferredExercise> currentList = (List<PreferredExercise>) ReflectionTestUtils.getField(member, "preferredExercises");
+        if (currentList == null) {
+            currentList = new ArrayList<>();
+        }
+
+        List<PreferredExercise> newList = new ArrayList<>(currentList);
+        newList.add(preferredExercise);
+
+        ReflectionTestUtils.setField(member, "preferredExercises", newList);
+    }
+
+    private MemberProfileRecord createMemberProfileRecord(UUID memberId, List<PreferredExerciseRecord> preferredExercises) {
+        return new MemberProfileRecord(
+                memberId,
+                "테스트유저",
+                "테스트 자기소개입니다.",
+                MemberGender.MALE,
+                LocalDate.of(1990, 1, 1),
+                "http://example.com/profile.jpg",
+                "http://example.com/thumbnail.jpg",
+                (byte) 50,
+                preferredExercises
+        );
+    }
+
+    private PreferredExerciseRecord createPreferredExerciseRecord(Long id, String name, ExerciseSkillLevel level) {
+        byte daysOfWeek = 7;
+
+        return new PreferredExerciseRecord(
+                id,
+                name,
+                level,
+                daysOfWeek,
+                "http://example.com/exercise.jpg"
+        );
+    }
+
+    @Nested
+    @DisplayName("getRegistrationStatus 메소드는")
+    class GetRegistrationStatus {
+
+        @Test
+        @DisplayName("이미 가입된 회원이면 registered=true를 반환한다")
+        void returnsTrue_WhenMemberExists() {
+            UUID userId = UUID.randomUUID();
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(userId);
+                given(memberRepository.existsByMemberId(userId)).willReturn(true);
+
+                MemberRegistrationStatusResponseDto response = memberQueryService.getRegistrationStatus();
+                assertThat(response.isRegistered()).isTrue();
+            }
+        }
+
+        @Test
+        @DisplayName("가입되지 않은 회원이면 registered=false를 반환한다")
+        void returnsFalse_WhenMemberDoesNotExist() {
+            UUID userId = UUID.randomUUID();
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(userId);
+                given(memberRepository.existsByMemberId(userId)).willReturn(false);
+
+                MemberRegistrationStatusResponseDto response = memberQueryService.getRegistrationStatus();
+
+                assertSoftly(softly -> {
+                    softly.assertThat(response.getMemberId()).isEqualTo(userId);
+                    softly.assertThat(response.isRegistered()).isFalse();
+                });
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("getMemberProfile 메소드는")
+    class GetMemberProfile {
+
+        @Test
+        @DisplayName("프로필 사진과 선호 운동이 있는 회원의 전체 프로필 정보를 반환한다")
+        void returnsFullProfile_WhenAllDataExists() {
+            UUID userId = UUID.randomUUID();
+            PreferredExerciseRecord exerciseRecord = createPreferredExerciseRecord(1L, "헬스", ExerciseSkillLevel.PRO);
+            MemberProfileRecord record = createMemberProfileRecord(userId, List.of(exerciseRecord));
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(userId);
+                given(memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(userId))
+                        .willReturn(Optional.of(record));
+                given(memberRepository.countMemberExerciseInThisYear(userId)).willReturn(10L);
+                given(memberRepository.countMemberExerciseInLastDays(userId, 30)).willReturn(5L);
+
+                // when
+                MemberProfileResponse response = memberQueryService.getMemberProfile();
+
+                // then
+                assertSoftly(softly -> {
+                    softly.assertThat(response.getNickname()).isEqualTo("테스트유저");
+                    softly.assertThat(response.getProfileImageUrl()).isEqualTo("http://example.com/profile.jpg");
+                    softly.assertThat(response.getExerciseScore()).isEqualTo(50); // Record의 점수 확인
+
+                    softly.assertThat(response.getPreferredExercises()).hasSize(1);
+                    softly.assertThat(response.getPreferredExercises().get(0).getName()).isEqualTo("헬스");
+                    softly.assertThat(response.getPreferredExercises().get(0).getSkillLevel()).isEqualTo(ExerciseSkillLevel.PRO);
+
+                    softly.assertThat(response.getYearlyExerciseDays()).isEqualTo(10);
+                    softly.assertThat(response.getExerciseCountInLast30Days()).isEqualTo(5);
+                });
+            }
+        }
+
+        @Test
+        @DisplayName("선호 운동이 없는 경우(빈 리스트) 정상적으로 빈 목록을 반환한다")
+        void returnsEmptyList_WhenNoPreferredExercises() {
+            // given
+            UUID userId = UUID.randomUUID();
+            MemberProfileRecord record = createMemberProfileRecord(userId, Collections.emptyList());
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(userId);
+                given(memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(userId))
+                        .willReturn(Optional.of(record));
+
+                // when
+                MemberProfileResponse response = memberQueryService.getMemberProfile();
+
+                // then
+                assertThat(response.getPreferredExercises()).isEmpty();
+            }
+        }
+
+        @Test
+        @DisplayName("삭제된 선호 운동은 제외하고 반환한다")
+        void filtersOutDeletedPreferredExercises() {
+            UUID userId = UUID.randomUUID();
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(userId);
+                given(memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(userId))
+                        .willReturn(Optional.empty());
+
+                assertThatThrownBy(() -> memberQueryService.getMemberProfile())
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
+            }
+        }
+
+        @Test
+        @DisplayName("회원 정보가 없으면 예외를 던진다")
+        void throwsException_WhenMemberNotFound() {
+            UUID userId = UUID.randomUUID();
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(userId);
+
+                given(memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(userId))
+                        .willReturn(Optional.empty());
+
+                assertThatThrownBy(() -> memberQueryService.getMemberProfile())
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
+            }
+        }
+    }
+
     @Nested
     @DisplayName("getOtherMemberProfile 메소드는")
     class GetOtherMemberProfile {
@@ -384,13 +433,15 @@ class MemberQueryServiceImplTest {
             // given
             UUID myId = UUID.randomUUID();
             UUID otherId = UUID.randomUUID();
-            Member otherMember = createMemberWithFullProfile(otherId);
+
+            PreferredExerciseRecord exerciseRecord = createPreferredExerciseRecord(2L, "요가", ExerciseSkillLevel.BEGINNER);
+            MemberProfileRecord otherRecord = createMemberProfileRecord(otherId, List.of(exerciseRecord));
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(myId);
-                given(memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(otherId))
-                        .willReturn(Optional.of(otherMember));
-                // 운동 통계 Mocking
+                given(memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(otherId))
+                        .willReturn(Optional.of(otherRecord));
+
                 given(memberRepository.countMemberExerciseInThisYear(otherId)).willReturn(20L);
                 given(memberRepository.countMemberExerciseInLastDays(otherId, 30)).willReturn(3L);
 
@@ -400,10 +451,10 @@ class MemberQueryServiceImplTest {
                 // then
                 assertSoftly(softly -> {
                     softly.assertThat(response.getNickname()).isEqualTo("테스트유저");
-                    softly.assertThat(response.getProfileImageUrl()).isEqualTo("http://example.com/profile_image.jpg"); // 사진 URL 확인
+                    softly.assertThat(response.getProfileImageUrl()).isEqualTo("http://example.com/profile.jpg");
+                    softly.assertThat(response.getPreferredExercises()).hasSize(1);
+                    softly.assertThat(response.getPreferredExercises().get(0).getName()).isEqualTo("요가");
                     softly.assertThat(response.getYearlyExerciseDays()).isEqualTo(20);
-                    softly.assertThat(response.getExerciseCountInLast30Days()).isEqualTo(3);
-                    softly.assertThat(response.getPreferredExercises()).hasSize(1); // 선호운동 개수 확인
                 });
             }
         }
@@ -414,12 +465,21 @@ class MemberQueryServiceImplTest {
             // given
             UUID myId = UUID.randomUUID();
             UUID otherId = UUID.randomUUID();
-            Member otherMember = createMember(otherId); // 사진 없이 생성
+
+            // 사진 URL이 null인 Record 생성
+            MemberProfileRecord record = new MemberProfileRecord(
+                    otherId, "닉네임", "소개", MemberGender.MALE, LocalDate.now(),
+                    null, null, (byte) 0, Collections.emptyList()
+            );
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(myId);
-                given(memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(otherId))
-                        .willReturn(Optional.of(otherMember));
+
+                // [수정] Record 반환 메서드 Mocking
+                given(memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(otherId))
+                        .willReturn(Optional.of(record));
+
+                // 통계 메서드 Mocking
                 given(memberRepository.countMemberExerciseInThisYear(otherId)).willReturn(0L);
                 given(memberRepository.countMemberExerciseInLastDays(otherId, 30)).willReturn(0L);
 
@@ -435,18 +495,45 @@ class MemberQueryServiceImplTest {
         }
 
         @Test
-        @DisplayName("삭제된 선호 운동은 결과 목록에서 제외한다")
-        void filtersOutDeletedPreferredExercises() {
-            // given
+        @DisplayName("Repository에서 필터링된 선호 운동 목록을 그대로 반환한다")
+        void returnsFilteredPreferredExercises() {
             UUID myId = UUID.randomUUID();
             UUID otherId = UUID.randomUUID();
-            // 활성 운동 1개, 삭제된 운동 1개가 섞인 멤버 생성
-            Member otherMember = createMemberWithMixedPreferredExercises(otherId);
+
+            PreferredExerciseRecord activeExercise = createPreferredExerciseRecord(1L, "헬스", ExerciseSkillLevel.PRO);
+            MemberProfileRecord record = createMemberProfileRecord(otherId, List.of(activeExercise));
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(myId);
-                given(memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(otherId))
-                        .willReturn(Optional.of(otherMember));
+                given(memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(otherId))
+                        .willReturn(Optional.of(record));
+                given(memberRepository.countMemberExerciseInThisYear(otherId)).willReturn(10L);
+                given(memberRepository.countMemberExerciseInLastDays(otherId, 30)).willReturn(5L);
+
+                // when
+                GetOtherMemberProfileResponse response = memberQueryService.getOtherMemberProfile(otherId);
+
+                // then
+                assertThat(response.getPreferredExercises()).hasSize(1);
+                assertThat(response.getPreferredExercises().get(0).getName()).isEqualTo("헬스");
+            }
+        }
+
+        @Test
+        @DisplayName("삭제된 선호 운동은 결과 목록에서 제외한다")
+        void filtersOutDeletedPreferredExercises() {
+            UUID myId = UUID.randomUUID();
+            UUID otherId = UUID.randomUUID();
+
+            PreferredExerciseRecord activeRecord = createPreferredExerciseRecord(1L, "헬스", ExerciseSkillLevel.PRO);
+            MemberProfileRecord memberRecord = createMemberProfileRecord(otherId, List.of(activeRecord));
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(myId);
+
+                given(memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(otherId))
+                        .willReturn(Optional.of(memberRecord));
+
                 given(memberRepository.countMemberExerciseInThisYear(otherId)).willReturn(10L);
                 given(memberRepository.countMemberExerciseInLastDays(otherId, 30)).willReturn(5L);
 
@@ -456,8 +543,7 @@ class MemberQueryServiceImplTest {
                 // then
                 assertSoftly(softly -> {
                     softly.assertThat(response.getPreferredExercises()).hasSize(1);
-                    softly.assertThat(response.getPreferredExercises().getFirst().getName()).isEqualTo("헬스");
-                    // "요가"는 삭제되었으므로 포함되지 않아야 함
+                    softly.assertThat(response.getPreferredExercises().get(0).getName()).isEqualTo("헬스");
                 });
             }
         }
@@ -484,7 +570,8 @@ class MemberQueryServiceImplTest {
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(myId);
-                given(memberRepository.findMemberProfileByMemberIdAndMemberDeletedAtNull(otherId))
+
+                given(memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(otherId))
                         .willReturn(Optional.empty());
 
                 assertThatThrownBy(() -> memberQueryService.getOtherMemberProfile(otherId))
