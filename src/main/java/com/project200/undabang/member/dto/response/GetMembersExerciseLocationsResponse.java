@@ -1,6 +1,7 @@
 package com.project200.undabang.member.dto.response;
 
 import com.project200.undabang.member.dto.record.ExerciseLocationRecord;
+import com.project200.undabang.member.dto.record.PreferredExerciseRecord;
 import com.project200.undabang.member.enums.MemberGender;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,7 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -28,5 +29,7 @@ public class GetMembersExerciseLocationsResponse {
     private String nickname;
     private MemberGender gender;
     private LocalDate birthDate;
-    private List<ExerciseLocationRecord> locations;
+    private Byte memberScore;
+    private Set<ExerciseLocationRecord> locations;
+    private Set<PreferredExerciseRecord> preferredExercises;
 }

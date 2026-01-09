@@ -32,7 +32,6 @@ import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
 @DataJpaTest
 @Import(TestQuerydslConfig.class)
 class ExerciseLocationRepositoryImplTest {
@@ -92,13 +91,12 @@ class ExerciseLocationRepositoryImplTest {
         }
     }
 
-
     // ... 기존 @Nested 클래스들 아래에 추가 ...
 
     @BeforeAll
     static void setupH2Geometry(@Autowired DataSource dataSource) throws SQLException {
         try (Connection conn = dataSource.getConnection();
-             Statement stmt = conn.createStatement()) {
+                Statement stmt = conn.createStatement()) {
             String className = "com.project200.undabang.member.repository.impl.ExerciseLocationRepositoryImplTest$H2SpatialFunctions";
             stmt.execute(String.format("CREATE ALIAS IF NOT EXISTS ST_X FOR \"%s.getX\"", className));
             stmt.execute(String.format("CREATE ALIAS IF NOT EXISTS ST_Y FOR \"%s.getY\"", className));
@@ -139,7 +137,8 @@ class ExerciseLocationRepositoryImplTest {
 
             flushAndClear();
 
-            List<ExerciseLocation> results = exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member);
+            List<ExerciseLocation> results = exerciseLocationRepository
+                    .findAllByMemberAndExerciseLocationDeletedAtNull(member);
 
             assertThat(results).isNotNull().isEmpty();
         }
@@ -150,7 +149,8 @@ class ExerciseLocationRepositoryImplTest {
             Member member = createAndSaveMember("userWithNoLocations", false);
             flushAndClear();
 
-            List<ExerciseLocation> results = exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member);
+            List<ExerciseLocation> results = exerciseLocationRepository
+                    .findAllByMemberAndExerciseLocationDeletedAtNull(member);
 
             assertThat(results).isNotNull().isEmpty();
         }
@@ -167,7 +167,8 @@ class ExerciseLocationRepositoryImplTest {
             ExerciseLocation location = createAndSaveExerciseLocation(member, "활성 헬스장", false);
             flushAndClear();
 
-            Optional<ExerciseLocation> result = exerciseLocationRepository.findByExerciseLocationIdAndExerciseLocationDeletedAtNull(location.getExerciseLocationId());
+            Optional<ExerciseLocation> result = exerciseLocationRepository
+                    .findByExerciseLocationIdAndExerciseLocationDeletedAtNull(location.getExerciseLocationId());
 
             assertThat(result).isPresent();
             assertThat(result.get().getExerciseLocationId()).isEqualTo(location.getExerciseLocationId());
@@ -181,7 +182,8 @@ class ExerciseLocationRepositoryImplTest {
             ExerciseLocation location = createAndSaveExerciseLocation(member, "삭제된 헬스장", true);
             flushAndClear();
 
-            Optional<ExerciseLocation> result = exerciseLocationRepository.findByExerciseLocationIdAndExerciseLocationDeletedAtNull(location.getExerciseLocationId());
+            Optional<ExerciseLocation> result = exerciseLocationRepository
+                    .findByExerciseLocationIdAndExerciseLocationDeletedAtNull(location.getExerciseLocationId());
 
             assertThat(result).isEmpty();
         }
@@ -191,7 +193,8 @@ class ExerciseLocationRepositoryImplTest {
         void it_returns_empty_when_location_does_not_exist() {
             Long nonExistentId = 999L;
 
-            Optional<ExerciseLocation> result = exerciseLocationRepository.findByExerciseLocationIdAndExerciseLocationDeletedAtNull(nonExistentId);
+            Optional<ExerciseLocation> result = exerciseLocationRepository
+                    .findByExerciseLocationIdAndExerciseLocationDeletedAtNull(nonExistentId);
 
             assertThat(result).isEmpty();
         }
@@ -234,7 +237,8 @@ class ExerciseLocationRepositoryImplTest {
             createAndSaveExerciseLocation(member, existingName, false);
             flushAndClear();
 
-            boolean result = exerciseLocationRepository.existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, existingName);
+            boolean result = exerciseLocationRepository
+                    .existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, existingName);
 
             assertThat(result).isTrue();
         }
@@ -247,7 +251,8 @@ class ExerciseLocationRepositoryImplTest {
             createAndSaveExerciseLocation(member, deletedName, true);
             flushAndClear();
 
-            boolean result = exerciseLocationRepository.existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, deletedName);
+            boolean result = exerciseLocationRepository
+                    .existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, deletedName);
 
             assertThat(result).isFalse();
         }
@@ -259,7 +264,8 @@ class ExerciseLocationRepositoryImplTest {
             createAndSaveExerciseLocation(member, "Some Other Gym", false);
             flushAndClear();
 
-            boolean result = exerciseLocationRepository.existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, "NonExistent Gym");
+            boolean result = exerciseLocationRepository
+                    .existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, "NonExistent Gym");
 
             assertThat(result).isFalse();
         }
@@ -371,7 +377,7 @@ class ExerciseLocationRepositoryImplTest {
             // given
             Set<UUID> exclusionIds = Set.of(
                     currentUser.getMemberId(), // 1. 나 자신
-                    otherUser2.getMemberId()   // 2. 내가 차단한 회원
+                    otherUser2.getMemberId() // 2. 내가 차단한 회원
             );
 
             flushAndClear();
@@ -399,7 +405,7 @@ class ExerciseLocationRepositoryImplTest {
 
             // 서비스 레이어에서 수행할 로직을 테스트에서 직접 구성
             Set<UUID> exclusionIds = new HashSet<>();
-            exclusionIds.add(currentUser.getMemberId());    // 나
+            exclusionIds.add(currentUser.getMemberId()); // 나
             exclusionIds.add(otherUser2.getMemberId()); // 내가 차단한 사람
             exclusionIds.add(otherUser3.getMemberId()); // 나를 차단한 사람
 
@@ -441,8 +447,7 @@ class ExerciseLocationRepositoryImplTest {
                     .containsExactlyInAnyOrder(
                             otherUser1.getMemberId(),
                             otherUser2.getMemberId(),
-                            otherUser3.getMemberId()
-                    );
+                            otherUser3.getMemberId());
         }
 
         @Test

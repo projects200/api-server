@@ -1,11 +1,14 @@
 package com.project200.undabang.member.repository.impl;
 
 import com.project200.undabang.common.entity.QPicture;
+import com.project200.undabang.exercise.entity.QExerciseType;
 import com.project200.undabang.member.dto.record.ExerciseLocationRecord;
+import com.project200.undabang.member.dto.record.PreferredExerciseRecord;
 import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
 import com.project200.undabang.member.entity.QExerciseLocation;
 import com.project200.undabang.member.entity.QMember;
 import com.project200.undabang.member.entity.QMemberPicture;
+import com.project200.undabang.member.entity.QPreferredExercise;
 import com.project200.undabang.member.repository.ExerciseLocationRepositoryCustom;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
@@ -18,7 +21,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.querydsl.core.group.GroupBy.groupBy;
-import static com.querydsl.core.group.GroupBy.list;
+import static com.querydsl.core.group.GroupBy.set;
 
 @Repository
 @RequiredArgsConstructor
@@ -40,11 +43,17 @@ public class ExerciseLocationRepositoryImpl implements ExerciseLocationRepositor
                 QMemberPicture memberPicture = QMemberPicture.memberPicture;
                 QExerciseLocation exerciseLocation = QExerciseLocation.exerciseLocation;
                 QPicture picture = QPicture.picture;
-                return queryFactory
+                QPreferredExercise preferredExercise = QPreferredExercise.preferredExercise;
+                QExerciseType exerciseType = QExerciseType.exerciseType;
+
+                List<GetMembersExerciseLocationsResponse> responses = queryFactory
                                 .from(exerciseLocation)
                                 .join(exerciseLocation.member, member)
                                 .leftJoin(memberPicture).on(member.memberPicture.id.eq(memberPicture.id))
                                 .leftJoin(memberPicture.picture, picture)
+                                .leftJoin(member.preferredExercises, preferredExercise)
+                                .on(preferredExercise.preferredExerciseDeletedAt.isNull())
+                                .leftJoin(preferredExercise.exercise, exerciseType)
                                 .where(exerciseLocation.exerciseLocationDeletedAt.isNull() // 삭제된 운동장소 제외
                                                 .and(member.memberDeletedAt.isNull()) // 탈퇴한 회원 제외
                                                 .and(member.memberId.notIn(excludeMemberIdSet)) // 내가 차단하거나 나를 차단한 사람들
@@ -67,7 +76,8 @@ public class ExerciseLocationRepositoryImpl implements ExerciseLocationRepositor
                                                                                 member.memberNickname,
                                                                                 member.memberGender,
                                                                                 member.memberBday,
-                                                                                list(
+                                                                                member.memberScore,
+                                                                                set(
                                                                                                 Projections.constructor(
                                                                                                                 ExerciseLocationRecord.class,
                                                                                                                 exerciseLocation.exerciseLocationName,
@@ -83,6 +93,21 @@ public class ExerciseLocationRepositoryImpl implements ExerciseLocationRepositor
                                                                                                                                 exerciseLocation.exerciseLocationPoint) // 경도
                                                                                                                                                                         // 좌표
                                                                                                                                                                         // 매핑
-                                                                                                )))));
+                                                                                                )),
+                                                                                set(
+                                                                                                Projections.constructor(
+                                                                                                                PreferredExerciseRecord.class,
+                                                                                                                exerciseType.exerciseName,
+                                                                                                                preferredExercise.preferredExerciseDate,
+                                                                                                                preferredExercise.preferredExerciseSkillLevel)))));
+
+                // 빈 선호 운동 제거
+                responses.forEach(response -> {
+                        if (response.getPreferredExercises() != null) {
+                                response.getPreferredExercises().removeIf(record -> record.exerciseName() == null);
+                        }
+                });
+
+                return responses;
         }
 }

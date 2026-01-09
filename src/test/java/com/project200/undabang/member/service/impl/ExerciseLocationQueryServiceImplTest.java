@@ -63,13 +63,13 @@ class ExerciseLocationQueryServiceImplTest {
             // given
             List<ExerciseLocation> locations = List.of(
                     createExerciseLocation(1L, "헬스장 A", 127.1, 37.1),
-                    createExerciseLocation(2L, "헬스장 B", 127.2, 37.2)
-            );
+                    createExerciseLocation(2L, "헬스장 B", 127.2, 37.2));
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
                 given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-                given(exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member)).willReturn(locations);
+                given(exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member))
+                        .willReturn(locations);
 
                 // when
                 List<GetExerciseLocationsResponse> results = exerciseLocationQueryService.getExerciseLocations();
@@ -80,8 +80,7 @@ class ExerciseLocationQueryServiceImplTest {
                         .extracting("name", "latitude", "longitude")
                         .containsExactlyInAnyOrder(
                                 tuple("헬스장 A", 37.1, 127.1),
-                                tuple("헬스장 B", 37.2, 127.2)
-                        );
+                                tuple("헬스장 B", 37.2, 127.2));
 
                 verify(memberRepository, times(1)).findById(memberId);
                 verify(exerciseLocationRepository, times(1)).findAllByMemberAndExerciseLocationDeletedAtNull(member);
@@ -95,7 +94,8 @@ class ExerciseLocationQueryServiceImplTest {
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
                 given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-                given(exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member)).willReturn(Collections.emptyList());
+                given(exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member))
+                        .willReturn(Collections.emptyList());
 
                 // when
                 List<GetExerciseLocationsResponse> results = exerciseLocationQueryService.getExerciseLocations();
@@ -124,8 +124,7 @@ class ExerciseLocationQueryServiceImplTest {
     }
 
     private GetMembersExerciseLocationsResponse createGetMembersExerciseLocationsResponse(
-            UUID memberId, String nickname, List<ExerciseLocationRecord> locations
-    ) {
+            UUID memberId, String nickname, Set<ExerciseLocationRecord> locations) {
         return GetMembersExerciseLocationsResponse.builder()
                 .memberId(memberId)
                 .nickname(nickname)
@@ -165,8 +164,9 @@ class ExerciseLocationQueryServiceImplTest {
                 given(memberBlockRepository.findAllBlockedMemberIdsByMember(currentUser)).willReturn(exclusionIds);
 
                 // 2. 주변 회원 목록 조회 Mocking
-                List<ExerciseLocationRecord> locations = List.of(createExerciseLocationRecord("헬스장A", 37.5, 127.0));
-                GetMembersExerciseLocationsResponse response1 = createGetMembersExerciseLocationsResponse(otherUser1Id, "user1", locations);
+                Set<ExerciseLocationRecord> locations = Set.of(createExerciseLocationRecord("헬스장A", 37.5, 127.0));
+                GetMembersExerciseLocationsResponse response1 = createGetMembersExerciseLocationsResponse(otherUser1Id,
+                        "user1", locations);
                 List<GetMembersExerciseLocationsResponse> finalResponse = List.of(response1);
                 given(exerciseLocationRepository.getMembersExerciseLocations(
                         eq(exclusionIds), anyDouble(), anyDouble(), anyDouble(), anyDouble()))
