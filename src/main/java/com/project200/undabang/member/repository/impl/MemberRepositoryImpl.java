@@ -31,7 +31,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Optional<MemberProfileRecord> findMemberProfileWithByMemberIdAndPreferredExerciseActive(UUID memberId) {
+    public Optional<MemberProfileRecord> findMemberProfileWithPreferredExerciseActiveByMemberId(UUID memberId) {
         QMember member = QMember.member;
         QMemberPicture memberPicture = QMemberPicture.memberPicture;
         QPicture picture = QPicture.picture;

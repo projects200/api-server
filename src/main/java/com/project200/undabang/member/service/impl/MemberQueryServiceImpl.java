@@ -71,7 +71,7 @@ public class MemberQueryServiceImpl implements MemberQueryService {
         validateNotSelfRequest(memberId);
         // TODO : 추후 차단 기능 개발 시, 다른 회원이 차단한 경우 검색 안되게 하는 기능 추가
 
-        MemberProfileRecord record = memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(memberId)
+        MemberProfileRecord record = memberRepository.findMemberProfileWithPreferredExerciseActiveByMemberId(memberId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
         int yearlyExerciseCounts = memberRepository.countMemberExerciseInThisYear(record.memberId()).intValue();
@@ -128,7 +128,7 @@ public class MemberQueryServiceImpl implements MemberQueryService {
      */
     @Override
     public MemberProfileResponse getMemberProfile() {
-        MemberProfileRecord memberProfileRecord = memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(UserContextHolder.getUserId())
+        MemberProfileRecord memberProfileRecord = memberRepository.findMemberProfileWithPreferredExerciseActiveByMemberId(UserContextHolder.getUserId())
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
         int yearlyExerciseCounts = memberRepository.countMemberExerciseInThisYear(memberProfileRecord.memberId()).intValue();

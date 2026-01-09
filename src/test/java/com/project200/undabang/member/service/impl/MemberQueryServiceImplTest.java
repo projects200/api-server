@@ -347,7 +347,7 @@ class MemberQueryServiceImplTest {
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(userId);
-                given(memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(userId))
+                given(memberRepository.findMemberProfileWithPreferredExerciseActiveByMemberId(userId))
                         .willReturn(Optional.of(record));
                 given(memberRepository.countMemberExerciseInThisYear(userId)).willReturn(10L);
                 given(memberRepository.countMemberExerciseInLastDays(userId, 30)).willReturn(5L);
@@ -380,7 +380,7 @@ class MemberQueryServiceImplTest {
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(userId);
-                given(memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(userId))
+                given(memberRepository.findMemberProfileWithPreferredExerciseActiveByMemberId(userId))
                         .willReturn(Optional.of(record));
 
                 // when
@@ -397,7 +397,7 @@ class MemberQueryServiceImplTest {
             UUID userId = UUID.randomUUID();
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(userId);
-                given(memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(userId))
+                given(memberRepository.findMemberProfileWithPreferredExerciseActiveByMemberId(userId))
                         .willReturn(Optional.empty());
 
                 assertThatThrownBy(() -> memberQueryService.getMemberProfile())
@@ -413,7 +413,7 @@ class MemberQueryServiceImplTest {
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(userId);
 
-                given(memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(userId))
+                given(memberRepository.findMemberProfileWithPreferredExerciseActiveByMemberId(userId))
                         .willReturn(Optional.empty());
 
                 assertThatThrownBy(() -> memberQueryService.getMemberProfile())
@@ -439,7 +439,7 @@ class MemberQueryServiceImplTest {
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(myId);
-                given(memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(otherId))
+                given(memberRepository.findMemberProfileWithPreferredExerciseActiveByMemberId(otherId))
                         .willReturn(Optional.of(otherRecord));
 
                 given(memberRepository.countMemberExerciseInThisYear(otherId)).willReturn(20L);
@@ -476,7 +476,7 @@ class MemberQueryServiceImplTest {
                 given(UserContextHolder.getUserId()).willReturn(myId);
 
                 // [수정] Record 반환 메서드 Mocking
-                given(memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(otherId))
+                given(memberRepository.findMemberProfileWithPreferredExerciseActiveByMemberId(otherId))
                         .willReturn(Optional.of(record));
 
                 // 통계 메서드 Mocking
@@ -505,7 +505,7 @@ class MemberQueryServiceImplTest {
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(myId);
-                given(memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(otherId))
+                given(memberRepository.findMemberProfileWithPreferredExerciseActiveByMemberId(otherId))
                         .willReturn(Optional.of(record));
                 given(memberRepository.countMemberExerciseInThisYear(otherId)).willReturn(10L);
                 given(memberRepository.countMemberExerciseInLastDays(otherId, 30)).willReturn(5L);
@@ -531,7 +531,7 @@ class MemberQueryServiceImplTest {
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(myId);
 
-                given(memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(otherId))
+                given(memberRepository.findMemberProfileWithPreferredExerciseActiveByMemberId(otherId))
                         .willReturn(Optional.of(memberRecord));
 
                 given(memberRepository.countMemberExerciseInThisYear(otherId)).willReturn(10L);
@@ -571,7 +571,7 @@ class MemberQueryServiceImplTest {
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(myId);
 
-                given(memberRepository.findMemberProfileWithByMemberIdAndPreferredExerciseActive(otherId))
+                given(memberRepository.findMemberProfileWithPreferredExerciseActiveByMemberId(otherId))
                         .willReturn(Optional.empty());
 
                 assertThatThrownBy(() -> memberQueryService.getOtherMemberProfile(otherId))

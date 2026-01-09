@@ -17,5 +17,5 @@ public interface MemberRepositoryCustom {
 
     Optional<Member> findMemberWithProfileImage(UUID memberId);
 
-    Optional<MemberProfileRecord> findMemberProfileWithByMemberIdAndPreferredExerciseActive(UUID memberId);
+    Optional<MemberProfileRecord> findMemberProfileWithPreferredExerciseActiveByMemberId(UUID memberId);
 }

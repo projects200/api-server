@@ -141,7 +141,7 @@ class MemberRepositoryImplTest {
 
             // when
             Optional<MemberProfileRecord> result = memberRepository
-                    .findMemberProfileWithByMemberIdAndPreferredExerciseActive(member.getMemberId());
+                    .findMemberProfileWithPreferredExerciseActiveByMemberId(member.getMemberId());
 
             // then
             assertThat(result).isPresent();
@@ -178,7 +178,7 @@ class MemberRepositoryImplTest {
 
             // when
             Optional<MemberProfileRecord> result = memberRepository
-                    .findMemberProfileWithByMemberIdAndPreferredExerciseActive(member.getMemberId());
+                    .findMemberProfileWithPreferredExerciseActiveByMemberId(member.getMemberId());
 
             // then
             assertThat(result).isPresent();
@@ -198,7 +198,7 @@ class MemberRepositoryImplTest {
 
             // when
             Optional<MemberProfileRecord> result = memberRepository
-                    .findMemberProfileWithByMemberIdAndPreferredExerciseActive(member.getMemberId());
+                    .findMemberProfileWithPreferredExerciseActiveByMemberId(member.getMemberId());
 
             // then
             assertThat(result).isPresent();
@@ -219,7 +219,7 @@ class MemberRepositoryImplTest {
 
             // when
             Optional<MemberProfileRecord> result = memberRepository
-                    .findMemberProfileWithByMemberIdAndPreferredExerciseActive(member.getMemberId());
+                    .findMemberProfileWithPreferredExerciseActiveByMemberId(member.getMemberId());
 
             // then
             assertThat(result).isEmpty();
@@ -233,7 +233,7 @@ class MemberRepositoryImplTest {
 
             // when
             Optional<MemberProfileRecord> result = memberRepository
-                    .findMemberProfileWithByMemberIdAndPreferredExerciseActive(randomId);
+                    .findMemberProfileWithPreferredExerciseActiveByMemberId(randomId);
 
             // then
             assertThat(result).isEmpty();
