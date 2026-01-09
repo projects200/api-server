@@ -1,6 +1,7 @@
 package com.project200.undabang.member.dto.response;
 
 import com.project200.undabang.common.entity.Picture;
+import com.project200.undabang.member.dto.record.MemberProfileRecord;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.MemberPicture;
 import com.project200.undabang.member.enums.MemberGender;
@@ -57,6 +58,27 @@ public class GetOtherMemberProfileResponse {
                 yearlyExerciseDays,
                 exerciseCountInLast30Days,
                 member.getMemberScore(),
+                preferredExercises
+        );
+    }
+
+    public static GetOtherMemberProfileResponse from(MemberProfileRecord record, int yearlyExerciseDays, int exerciseCountInLast30Days) {
+        List<PreferredExercisesOfMemberResponse> preferredExercises = Optional.ofNullable(record.preferredExerciseRecordList())
+                .map(pe -> pe.stream()
+                        .map(PreferredExercisesOfMemberResponse::from)
+                        .toList())
+                .orElse(Collections.emptyList());
+
+        return new GetOtherMemberProfileResponse(
+                record.profileThumbnailUrl(),
+                record.profileImageUrl(),
+                record.nickname(),
+                record.gender(),
+                record.birthDate().toString(),
+                record.bio(),
+                yearlyExerciseDays,
+                exerciseCountInLast30Days,
+                record.memberScore(),
                 preferredExercises
         );
     }
