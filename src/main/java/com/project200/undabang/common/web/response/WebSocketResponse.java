@@ -1,21 +1,18 @@
 package com.project200.undabang.common.web.response;
 
 import com.project200.undabang.common.web.exception.ErrorCode;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
 public class WebSocketResponse<T> {
-    private final boolean succeed;
-    private final WebSocketType type;
-    private final String message;
-    private final T data;
-
-    private WebSocketResponse(boolean succeed, WebSocketType type, String message, T data) {
-        this.succeed = succeed;
-        this.type = type;
-        this.message = message;
-        this.data = data;
-    }
+    private boolean succeed;
+    private WebSocketType type;
+    private String message;
+    private T data;
 
     public static <T> WebSocketResponse<T> success(T data) {
         return new WebSocketResponse<>(true, WebSocketType.TALK, null, data);
