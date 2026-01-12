@@ -91,14 +91,14 @@ public class WebSocketHandler extends TextWebSocketHandler {
             }
 
             // 하트비트 기능 추가
-            if (request.getWebSocketType() == WebSocketType.PING) {
+            if (request.getType() == WebSocketType.PING) {
                 WebSocketResponse<String> webSocketResponse = WebSocketResponse.heartbeat();
                 session.sendMessage(new TextMessage(objectMapper.writeValueAsString(webSocketResponse)));
                 return;
             }
 
             // 실제 채팅 기능 처리
-            if (request.getWebSocketType() == WebSocketType.TALK) {
+            if (request.getType() == WebSocketType.TALK) {
                 Long chatroomId = (Long) session.getAttributes().get("roomId");
                 UUID memberId = (UUID) session.getAttributes().get("memberId");
 
@@ -116,7 +116,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 broadCastToAllChatroom(chatroomId, webSocketResponse);
             }
         } catch (CustomException ce) {
-            sendError(session, ce.getErrorCode().getMessage());
+            sendError(session, WebSocketType.ERROR, ce.getErrorCode());
         } catch (JsonProcessingException je) {
             sendError(session, je.getMessage());
         } catch (Exception e) {
@@ -156,20 +156,6 @@ public class WebSocketHandler extends TextWebSocketHandler {
     }
 
     /**
-     * WebSocket 세션에 에러 메시지를 전송하는 메서드입니다.
-     */
-    private void sendError(WebSocketSession session, String errorMessage) {
-        try {
-            WebSocketResponse<String> errorResponse = WebSocketResponse.error(errorMessage);
-
-            String json = objectMapper.writeValueAsString(errorResponse);
-            session.sendMessage(new TextMessage(json));
-        } catch (IOException e) {
-            log.warn("웹소켓 오류 메시지 전송 실패 {}: {}", session.getId(), e.getMessage(), e);
-        }
-    }
-
-    /**
      * WebSocketSession을 특정 제한 조건과 함께 데코레이트한 ConcurrentWebSocketSessionDecorator 객체를 생성합니다.
      * 전송 제한시간 : 5초
      * 버퍼사이즈 : 20KB (한글 500자 채운 메시지가 8~10개 밀리면 연결 종료)
@@ -187,13 +173,13 @@ public class WebSocketHandler extends TextWebSocketHandler {
     private boolean validateRequest(ChatMessageRequest request, WebSocketSession session) {
 
         // WebSocketType null 체크
-        if (request.getWebSocketType() == null) {
+        if (request.getType() == null) {
             sendError(session, "WebSocketType이 지정되지 않았습니다.");
             return false;
         }
 
         // PING 을 확인하는 경우는 CONTENT 내용 검증할 필요 없이 통과하도록 설정
-        if (request.getWebSocketType() == WebSocketType.PING) {
+        if (request.getType() == WebSocketType.PING) {
             return true;
         }
 
@@ -214,5 +200,33 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
         // 에러가 없거나, content 관련 에러가 아니면 통과
         return true;
+    }
+
+    /**
+     * WebSocket 세션에 에러 메시지를 전송하는 메서드입니다.
+     */
+    private void sendError(WebSocketSession session, String errorMessage) {
+        try {
+            if (session.isOpen()) {
+                WebSocketResponse<String> errorResponse = WebSocketResponse.error(errorMessage);
+                session.sendMessage(new TextMessage(objectMapper.writeValueAsString(errorResponse)));
+            }
+        } catch (IOException e) {
+            log.warn("웹소켓 오류 메시지 전송 실패 {}: {}", session.getId(), e.getMessage(), e);
+        }
+    }
+
+    /**
+     * WebSocket 세션에 특정 타입과 에러 코드를 포함한 에러 메시지를 전송하는 메서드입니다.
+     */
+    private void sendError(WebSocketSession session, WebSocketType type, ErrorCode errorCode) {
+        try {
+            if (session.isOpen()) {
+                WebSocketResponse<?> errorResponse = WebSocketResponse.error(type, errorCode);
+                session.sendMessage(new TextMessage(objectMapper.writeValueAsString(errorResponse)));
+            }
+        } catch (IOException e) {
+            log.warn("전송 실패", e);
+        }
     }
 }

@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChatMessageRequest {
-    private WebSocketType webSocketType;
+    private WebSocketType type;
 
     @Size(max = 500, message = "메시지는 500자를 초과할 수 없습니다.")
     private String content;
