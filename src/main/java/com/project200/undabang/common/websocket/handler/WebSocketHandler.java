@@ -226,7 +226,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 session.sendMessage(new TextMessage(objectMapper.writeValueAsString(errorResponse)));
             }
         } catch (IOException e) {
-            log.warn("전송 실패", e);
+            log.warn("웹소켓 오류 메시지 전송 실패 {}: {}", session.getId(), e.getMessage(), e);
         }
     }
 }
