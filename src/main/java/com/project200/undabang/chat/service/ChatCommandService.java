@@ -11,6 +11,5 @@ public interface ChatCommandService {
     CreateChatroomResponse createChatroom(CreateChatroomRequest request);
     CreateMessageResponse createMessage(Long chatroomId, CreateMessageRequest request);
     void leaveChatroom(Long chatroomId);
-
     SaveMessageResponse saveMessage(SaveMessageRecord record);
 }
