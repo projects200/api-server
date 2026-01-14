@@ -97,14 +97,16 @@ public class ExerciseLocationRepositoryImpl implements ExerciseLocationRepositor
                                                                                 set(
                                                                                                 Projections.constructor(
                                                                                                                 PreferredExerciseRecord.class,
+                                                                                                                preferredExercise.id,
                                                                                                                 exerciseType.exerciseName,
+                                                                                                                preferredExercise.preferredExerciseSkillLevel,
                                                                                                                 preferredExercise.preferredExerciseDate,
-                                                                                                                preferredExercise.preferredExerciseSkillLevel)))));
+                                                                                                                exerciseType.exerciseTypeImageUrl)))));
 
                 // 빈 선호 운동 제거
                 responses.forEach(response -> {
                         if (response.getPreferredExercises() != null) {
-                                response.getPreferredExercises().removeIf(record -> record.exerciseName() == null);
+                                response.getPreferredExercises().removeIf(record -> record.name() == null);
                         }
                 });
 

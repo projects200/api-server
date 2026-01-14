@@ -62,8 +62,11 @@ class ExerciseLocationQueryControllerTest extends AbstractRestDocSupport {
                                                         .memberScore((byte) 50)
                                                         .preferredExercises(java.util.Set.of(
                                                                         new com.project200.undabang.member.dto.record.PreferredExerciseRecord(
-                                                                                        "다이어트 복싱", (byte) 1,
-                                                                                        com.project200.undabang.member.enums.ExerciseSkillLevel.BEGINNER)))
+                                                                                        1L,
+                                                                                        "다이어트 복싱",
+                                                                                        com.project200.undabang.member.enums.ExerciseSkillLevel.BEGINNER,
+                                                                                        (byte) 1,
+                                                                                        "http://example.com/image.jpg")))
                                                         .build());
 
                         BDDMockito.given(exerciseLocationQueryService.getMembersExerciseLocations(
@@ -126,15 +129,21 @@ class ExerciseLocationQueryControllerTest extends AbstractRestDocSupport {
                                                                         fieldWithPath("data[].preferredExercises[]")
                                                                                         .type(ARRAY).optional()
                                                                                         .description("다른 회원의 선호 운동 목록 입니다."),
-                                                                        fieldWithPath("data[].preferredExercises[].exerciseName")
+                                                                        fieldWithPath("data[].preferredExercises[].preferredExerciseId")
+                                                                                        .type(NUMBER).optional()
+                                                                                        .description("선호 운동의 ID 입니다."),
+                                                                        fieldWithPath("data[].preferredExercises[].name")
                                                                                         .type(STRING).optional()
                                                                                         .description("선호 운동의 이름 입니다."),
-                                                                        fieldWithPath("data[].preferredExercises[].preferredExerciseDate")
-                                                                                        .type(NUMBER).optional()
-                                                                                        .description("선호 운동 요일 비트 마스크 입니다."),
+                                                                        fieldWithPath("data[].preferredExercises[].daysOfWeek")
+                                                                                        .type(ARRAY).optional()
+                                                                                        .description("선호 운동 요일 정보 (월~일, boolean 배열) 입니다."),
                                                                         fieldWithPath("data[].preferredExercises[].skillLevel")
                                                                                         .type(STRING).optional()
-                                                                                        .description("선호 운동의 숙련도 입니다.")))));
+                                                                                        .description("선호 운동의 숙련도 입니다."),
+                                                                        fieldWithPath("data[].preferredExercises[].imageUrl")
+                                                                                        .type(STRING).optional()
+                                                                                        .description("선호 운동의 이미지 URL 입니다.")))));
 
                         BDDMockito.then(exerciseLocationQueryService).should(BDDMockito.times(1))
                                         .getMembersExerciseLocations(
