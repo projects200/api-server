@@ -15,7 +15,9 @@ import com.project200.undabang.chat.service.ChatCommandService;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
+import com.project200.undabang.member.entity.ExerciseLocation;
 import com.project200.undabang.member.entity.Member;
+import com.project200.undabang.member.repository.ExerciseLocationRepository;
 import com.project200.undabang.member.repository.MemberBlockRepository;
 import com.project200.undabang.member.repository.MemberRepository;
 import jakarta.persistence.EntityManager;
@@ -41,10 +43,13 @@ public class ChatCommandServiceImpl implements ChatCommandService {
     private final ChatRepository chatRepository;
     private final ChatroomMemberRepository chatroomMemberRepository;
     private final MemberBlockRepository memberBlockRepository;
+    private final ExerciseLocationRepository exerciseLocationRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final EntityManager em;
 
     private final int DIRECT_CHAT_MAX_MEMBER_COUNT = 2;
+    private final Double MAXIMUM_EXERCISE_LOCATION_DISTANCE_METER = 5000.0; // 운동 장소와의 최대 거리 차 (5KM)
+    private final Double EARTH_RADIUS_METER = 6371000.0; // 지구 평균 반지름 (m)
 
     /**
      * 주어진 요청 정보를 기반으로 채팅방을 생성하거나 기존 채팅방을 반환합니다.
@@ -67,6 +72,14 @@ public class ChatCommandServiceImpl implements ChatCommandService {
         // 차단 관계가 있는 경우 채팅방 생성 금지
         if (memberBlockRepository.checkMemberBlockExists(currentMember, targetMember)) {
             throw new CustomException(ErrorCode.CHATROOM_CREATE_BLOCKED);
+        }
+
+        ExerciseLocation targetExerciseLocation = exerciseLocationRepository.findByExerciseLocationIdAndMember_MemberIdAndExerciseLocationDeletedAtNull(request.getExerciseLocationId(), targetMemberId)
+                .orElseThrow(() -> new CustomException(ErrorCode.EXERCISE_LOCATION_NOT_FOUND));
+
+        // 채팅방 생성시 운동 장소와 특정 거리 이상 떨어진 경우 채팅방 생성 금지
+        if (!validateRequesterDistance(targetExerciseLocation, request.getRequesterLatitude(), request.getRequesterLongitude())) {
+            throw new CustomException(ErrorCode.CHATROOM_CREATE_TOO_FAR_DISTANCE);
         }
 
         // Lock이 설정된 상태에서 채팅방을 찾고, 생성함
@@ -253,6 +266,24 @@ public class ChatCommandServiceImpl implements ChatCommandService {
         chatroomMemberRepository.saveAll(List.of(currentChatroomMember, targetChatroomMember));
 
         return newChatroom;
+    }
+
+    private boolean validateRequesterDistance(ExerciseLocation targetExerciseLocation, Double requesterLatitude, Double requesterLongitude) {
+        Double targetLongitude = targetExerciseLocation.getExerciseLocationPoint().getX();
+        Double targetLatitude = targetExerciseLocation.getExerciseLocationPoint().getY();
+
+        Double latDistance = Math.toRadians(requesterLatitude - targetLatitude);
+        Double lonDistance = Math.toRadians(requesterLongitude - targetLongitude);
+
+        Double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2) +
+                Math.cos(Math.toRadians(requesterLatitude)) * Math.cos(Math.toRadians(targetLatitude)) *
+                Math.sin(lonDistance /2) * Math.sin(lonDistance / 2);
+
+        Double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+        double distanceMeters = EARTH_RADIUS_METER * c;
+
+        return distanceMeters <= MAXIMUM_EXERCISE_LOCATION_DISTANCE_METER;
     }
 
     /**
