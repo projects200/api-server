@@ -206,7 +206,7 @@ class ExerciseLocationRepositoryImplTest {
 
     private ExerciseLocation createAndSaveExerciseLocation(Member member, String name, double lon, double lat,
             boolean deleted) {
-        Point point = geometryFactory.createPoint(new Coordinate(lon, lat));
+        Point point = geometryFactory.createPoint(new Coordinate(lat, lon));
         point.setSRID(4326);
 
         ExerciseLocation location = ExerciseLocation.builder()

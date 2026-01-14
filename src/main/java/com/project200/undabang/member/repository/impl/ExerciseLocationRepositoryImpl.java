@@ -60,10 +60,10 @@ public class ExerciseLocationRepositoryImpl implements ExerciseLocationRepositor
                                                                                                 // 제외
                                                 .and(Expressions.numberTemplate(Double.class, "ST_X({0})",
                                                                 exerciseLocation.exerciseLocationPoint)
-                                                                .between(leftTopLongitude, rightBottomLongitude))
+                                                                .between(rightBottomLatitude, leftTopLatitude))
                                                 .and(Expressions.numberTemplate(Double.class, "ST_Y({0})",
                                                                 exerciseLocation.exerciseLocationPoint)
-                                                                .between(rightBottomLatitude, leftTopLatitude)))
+                                                                .between(leftTopLongitude, rightBottomLongitude)))
                                 .transform(
                                                 groupBy(member.memberId).list(
                                                                 Projections.constructor(

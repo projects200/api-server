@@ -62,8 +62,8 @@ class ExerciseLocationQueryServiceImplTest {
         void it_returns_list_of_dto_for_current_user_locations() {
             // given
             List<ExerciseLocation> locations = List.of(
-                    createExerciseLocation(1L, "헬스장 A", 127.1, 37.1),
-                    createExerciseLocation(2L, "헬스장 B", 127.2, 37.2));
+                    createExerciseLocation(1L, "헬스장 A", 37.1, 127.1),
+                    createExerciseLocation(2L, "헬스장 B", 37.2, 127.2));
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
@@ -132,8 +132,8 @@ class ExerciseLocationQueryServiceImplTest {
                 .build();
     }
 
-    private ExerciseLocation createExerciseLocation(Long id, String name, double lon, double lat) {
-        Point point = geometryFactory.createPoint(new Coordinate(lon, lat));
+    private ExerciseLocation createExerciseLocation(Long id, String name, double lat, double lon) {
+        Point point = geometryFactory.createPoint(new Coordinate(lat, lon));
         point.setSRID(4326);
         return ExerciseLocation.builder()
                 .exerciseLocationId(id)
