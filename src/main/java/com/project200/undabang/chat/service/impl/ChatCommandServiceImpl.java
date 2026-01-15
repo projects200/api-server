@@ -51,7 +51,7 @@ public class ChatCommandServiceImpl implements ChatCommandService {
     private final EntityManager em;
 
     private final int DIRECT_CHAT_MAX_MEMBER_COUNT = 2;
-    private final Double EARTH_RADIUS_METER = 6371000.0; // 지구 평균 반지름 (m)
+    private static final double EARTH_RADIUS_METER = 6371000.0; // 지구 평균 반지름 (m)
 
     /**
      * 지정된 요청 정보를 바탕으로 새로운 채팅방을 생성하거나 기존의 채팅방을 반환합니다.
@@ -290,20 +290,26 @@ public class ChatCommandServiceImpl implements ChatCommandService {
      */
     private boolean validateRequesterDistance(ExerciseLocation targetExerciseLocation, Double requesterLatitude, Double requesterLongitude) {
         // 타겟 운동장소의 좌표
-        Double targetLongitude = targetExerciseLocation.getExerciseLocationPoint().getX();
-        Double targetLatitude = targetExerciseLocation.getExerciseLocationPoint().getY();
+        double targetLongitude = targetExerciseLocation.getExerciseLocationPoint().getX();
+        double targetLatitude = targetExerciseLocation.getExerciseLocationPoint().getY();
 
         // 위도 경도 차이 (라디안 변환)
-        Double deltaLatitude = Math.toRadians(requesterLatitude - targetLatitude);
-        Double deltaLongitude = Math.toRadians(requesterLongitude - targetLongitude);
+        double deltaLatitude = Math.toRadians(requesterLatitude - targetLatitude);
+        double deltaLongitude = Math.toRadians(requesterLongitude - targetLongitude);
 
-        // Haversine 공식을 사용하여 현재 길이 절반의 제곱한 값을 구하는 수식
-        Double squareOfHalfChordLength = Math.sin(deltaLatitude / 2) * Math.sin(deltaLatitude / 2) +
-                Math.cos(Math.toRadians(requesterLatitude)) * Math.cos(Math.toRadians(targetLatitude)) *
-                        Math.sin(deltaLongitude / 2) * Math.sin(deltaLongitude / 2);
+        // 사전에 반복되는 삼각함수 및 라디안 변환 값 계산
+        double sinDeltaLatitudeHalf = Math.sin(deltaLatitude / 2);
+        double sinDeltaLongitudeHalf = Math.sin(deltaLongitude / 2);
+        double requesterLatitudeRadians = Math.toRadians(requesterLatitude);
+        double targetLatitudeRadians = Math.toRadians(targetLatitude);
+
+        // 두 지점 사이 현의 절반 길이의 제곱(haversine)을 구하는 수식
+        double squareOfHalfChordLength = sinDeltaLatitudeHalf * sinDeltaLatitudeHalf +
+                Math.cos(requesterLatitudeRadians) * Math.cos(targetLatitudeRadians) *
+                        sinDeltaLongitudeHalf * sinDeltaLongitudeHalf;
 
         // 두 지점 사이의 각도 거리를 라디안 단위로 측정
-        Double angularDistanceRadians = 2 * Math.atan2(Math.sqrt(squareOfHalfChordLength), Math.sqrt(1 - squareOfHalfChordLength));
+        double angularDistanceRadians = 2 * Math.atan2(Math.sqrt(squareOfHalfChordLength), Math.sqrt(1 - squareOfHalfChordLength));
 
         // 최종 거리 계산 (지구의 반지름 길이 * 각도 거리)
         double distanceMeters = EARTH_RADIUS_METER * angularDistanceRadians;

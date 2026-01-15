@@ -84,7 +84,7 @@ class ChatCommandControllerTest extends AbstractRestDocSupport {
                     .andDo(document.document(
                             requestHeaders(HEADER_ACCESS_TOKEN),
                             requestFields(
-                                    fieldWithPath("receiverId").type(JsonFieldType.STRING).description("채팅을 시작할 상대방의 식별자(UUID) 정보를 의미합니다.."),
+                                    fieldWithPath("receiverId").type(JsonFieldType.STRING).description("채팅을 시작할 상대방의 식별자(UUID) 정보를 의미합니다."),
                                     fieldWithPath("exerciseLocationId").type(JsonFieldType.NUMBER).description("상대방의 운동 장소 식별자를 의미합니다."),
                                     fieldWithPath("requesterLatitude").type(JsonFieldType.NUMBER).description("요청자의 현재 위도를 의미합니다. 위도의 범위는 -90 ~ 90 사이여야 합니다."),
                                     fieldWithPath("requesterLongitude").type(JsonFieldType.NUMBER).description("요청자의 현재 경도를 의미합니다. 경도의 범위는 -180 ~ 180 사이여야 합니다.")
@@ -114,7 +114,7 @@ class ChatCommandControllerTest extends AbstractRestDocSupport {
                             .headers(getCommonApiHeaders(memberId))
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpectAll(
-                            status().isBadRequest(), // or isConflict() 에러 코드 매핑에 따라 다름 (보통 400 or 409)
+                            status().isBadRequest(),
                             jsonPath("$.succeed").value(false),
                             jsonPath("$.code").value(ErrorCode.SELF_CHAT_NOT_ALLOWED.getCode()),
                             jsonPath("$.message").value(ErrorCode.SELF_CHAT_NOT_ALLOWED.getMessage())
