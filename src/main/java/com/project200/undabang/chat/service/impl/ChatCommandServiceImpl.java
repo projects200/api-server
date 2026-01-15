@@ -20,6 +20,8 @@ import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.ExerciseLocationRepository;
 import com.project200.undabang.member.repository.MemberBlockRepository;
 import com.project200.undabang.member.repository.MemberRepository;
+import com.project200.undabang.policy.entity.PolicyKey;
+import com.project200.undabang.policy.service.PolicyService;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,10 +47,10 @@ public class ChatCommandServiceImpl implements ChatCommandService {
     private final MemberBlockRepository memberBlockRepository;
     private final ExerciseLocationRepository exerciseLocationRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final PolicyService policyService;
     private final EntityManager em;
 
     private final int DIRECT_CHAT_MAX_MEMBER_COUNT = 2;
-    private final Double MAXIMUM_EXERCISE_LOCATION_DISTANCE_METER = 5000.0; // 운동 장소와의 최대 거리 차 (5KM)
     private final Double EARTH_RADIUS_METER = 6371000.0; // 지구 평균 반지름 (m)
 
     /**
@@ -306,7 +308,7 @@ public class ChatCommandServiceImpl implements ChatCommandService {
         // 최종 거리 계산 (지구의 반지름 길이 * 각도 거리)
         double distanceMeters = EARTH_RADIUS_METER * angularDistanceRadians;
 
-        return distanceMeters <= MAXIMUM_EXERCISE_LOCATION_DISTANCE_METER;
+        return distanceMeters <= policyService.getPolicyValueAsDouble(PolicyKey.EXERCISE_LOCATION_MAX_DISTANCE_METER);
     }
 
     /**

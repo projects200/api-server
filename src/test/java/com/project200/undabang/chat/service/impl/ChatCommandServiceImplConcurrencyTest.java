@@ -12,6 +12,7 @@ import com.project200.undabang.member.entity.ExerciseLocation;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.ExerciseLocationRepository;
 import com.project200.undabang.member.repository.MemberRepository;
+import com.project200.undabang.policy.service.PolicyService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,6 +25,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +38,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 
 @ActiveProfiles("test")
 @SpringBootTest
@@ -54,12 +58,15 @@ class ChatCommandServiceImplConcurrencyTest {
     @Autowired
     private ChatroomMemberRepository chatroomMemberRepository;
 
-    private final GeometryFactory geometryFactory = new GeometryFactory();
-
     @Autowired
     private EntityManager em;
+
     @Autowired
     private ExerciseLocationRepository exerciseLocationRepository;
+
+    private final GeometryFactory geometryFactory = new GeometryFactory();
+    @MockitoBean
+    private PolicyService policyService;
 
     private Member createAndSaveMember(String nickname, String email) {
         Member member = Member.builder()
@@ -68,20 +75,17 @@ class ChatCommandServiceImplConcurrencyTest {
                 .memberEmail(email)
                 .memberBday(LocalDate.of(2000, 1, 1))
                 .build();
-
         return memberRepository.save(member);
     }
 
     private ExerciseLocation createAndSaveExerciseLocation(Member member, double lat, double lon) {
-        Point point = geometryFactory.createPoint(new Coordinate(lon, lat)); // x=lon, y=lat
-
+        Point point = geometryFactory.createPoint(new Coordinate(lon, lat));
         ExerciseLocation location = ExerciseLocation.builder()
                 .member(member)
                 .exerciseLocationName("테스트 운동장소")
                 .exerciseLocationAddress("서울시 테스트구 테스트동")
                 .exerciseLocationPoint(point)
                 .build();
-
         return exerciseLocationRepository.save(location);
     }
 
@@ -92,8 +96,16 @@ class ChatCommandServiceImplConcurrencyTest {
         ChatroomMember cmB = ChatroomMember.of(chatroom, memberB);
         cmB.updateMemberStatus(ChatroomMemberStatus.LEFT);
         chatroomMemberRepository.saveAll(List.of(cmA, cmB));
-
         return chatroom;
+    }
+
+    private CreateChatroomRequest createChatroomRequest(Member targetMember, ExerciseLocation targetLocation) {
+        return new CreateChatroomRequest(
+                targetMember.getMemberId(),
+                targetLocation.getExerciseLocationId(),
+                targetLocation.getExerciseLocationPoint().getY(), // Latitude
+                targetLocation.getExerciseLocationPoint().getX()  // Longitude
+        );
     }
 
     @Nested
@@ -104,10 +116,12 @@ class ChatCommandServiceImplConcurrencyTest {
         @Transactional
         @DisplayName("두 사용자가 거의 동시에 서로에게 채팅방 생성을 요청해도 데드락이 발생하지 않아야 한다")
         void createChatroom_concurrently_shouldNotCauseDeadlock() throws InterruptedException {
+            // 정책 서비스가 무조건 통과되는 거리(50km)를 반환하도록 설정
+            given(policyService.getPolicyValueAsDouble(any())).willReturn(50000.0);
+
             Member memberA = createAndSaveMember("UserA", "a@test.com");
             Member memberB = createAndSaveMember("UserB", "b@test.com");
 
-            // 서울역(A) vs 용산역(B) 정도의 좌표
             ExerciseLocation locationA = createAndSaveExerciseLocation(memberA, 37.5559, 126.9723);
             ExerciseLocation locationB = createAndSaveExerciseLocation(memberB, 37.5298, 126.9647);
 
@@ -117,6 +131,7 @@ class ChatCommandServiceImplConcurrencyTest {
             TestTransaction.end();
             TestTransaction.start();
 
+            // 영속성 컨텍스트 재로딩
             final Member persistedMemberA = memberRepository.findById(memberA.getMemberId()).get();
             final Member persistedMemberB = memberRepository.findById(memberB.getMemberId()).get();
             final ExerciseLocation persistedLocationA = exerciseLocationRepository.findById(locationA.getExerciseLocationId()).get();
@@ -128,19 +143,8 @@ class ChatCommandServiceImplConcurrencyTest {
             CountDownLatch latch = new CountDownLatch(threadCount);
             AtomicInteger failureCount = new AtomicInteger(0);
 
-            CreateChatroomRequest requestFromA = new CreateChatroomRequest(
-                    persistedMemberB.getMemberId(),
-                    persistedLocationB.getExerciseLocationId(),
-                    persistedLocationB.getExerciseLocationPoint().getY(), // Lat
-                    persistedLocationB.getExerciseLocationPoint().getX()  // Lon
-            );
-
-            CreateChatroomRequest requestFromB = new CreateChatroomRequest(
-                    persistedMemberA.getMemberId(),
-                    persistedLocationA.getExerciseLocationId(),
-                    persistedLocationA.getExerciseLocationPoint().getY(), // Lat
-                    persistedLocationA.getExerciseLocationPoint().getX()  // Lon
-            );
+            CreateChatroomRequest requestFromA = createChatroomRequest(persistedMemberB, persistedLocationB); // A -> B
+            CreateChatroomRequest requestFromB = createChatroomRequest(persistedMemberA, persistedLocationA); // B -> A
 
             // 동시성 테스트 실행
             for (int i = 0; i < threadCount; i++) {
@@ -149,11 +153,9 @@ class ChatCommandServiceImplConcurrencyTest {
                 executorService.submit(() -> {
                     try (MockedStatic<UserContextHolder> mockedUserContext = Mockito.mockStatic(UserContextHolder.class)) {
                         if (isAtoBRequest) {
-                            // A가 B에게 요청
                             mockedUserContext.when(UserContextHolder::getUserId).thenReturn(persistedMemberA.getMemberId());
                             chatCommandService.createChatroom(requestFromA);
                         } else {
-                            // B가 A에게 요청
                             mockedUserContext.when(UserContextHolder::getUserId).thenReturn(persistedMemberB.getMemberId());
                             chatCommandService.createChatroom(requestFromB);
                         }

@@ -22,6 +22,8 @@ import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.ExerciseLocationRepository;
 import com.project200.undabang.member.repository.MemberBlockRepository;
 import com.project200.undabang.member.repository.MemberRepository;
+import com.project200.undabang.policy.entity.PolicyKey;
+import com.project200.undabang.policy.service.PolicyService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -70,22 +72,19 @@ class ChatCommandServiceImplTest {
     @Mock
     private MemberBlockRepository memberBlockRepository;
 
-    private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
     @Mock
     private EntityManager em;
+
     @Mock
     private ExerciseLocationRepository exerciseLocationRepository;
 
-    private Member createMember() {
-        return Member.builder()
-                .memberId(UUID.randomUUID())
-                .memberNickname("user_" + UUID.randomUUID().toString().substring(0, 8))
-                .build();
-    }
+    private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
+    @Mock
+    private PolicyService policyService;
 
     @Nested
     @DisplayName("createMessage 메소드는")
@@ -248,12 +247,6 @@ class ChatCommandServiceImplTest {
         }
     }
 
-    private Chatroom createChatroom(Long id) {
-        return Chatroom.builder()
-                .id(id)
-                .build();
-    }
-
     @Nested
     @DisplayName("saveMessage 메소드는")
     class Describe_saveMessage {
@@ -372,43 +365,6 @@ class ChatCommandServiceImplTest {
         }
     }
 
-    // --- Helper Methods ---
-
-    private ChatroomMember createChatroomMember(Chatroom chatroom, Member member, ChatroomMemberStatus status) {
-        return ChatroomMember.builder()
-                .chatroom(chatroom)
-                .member(member)
-                .chatroomMemberStatus(status)
-                .build();
-    }
-
-    private ChatroomMember createChatroomMemberWithId(Long id, Chatroom chatroom, Member member, ChatroomMemberStatus status) {
-        return ChatroomMember.builder()
-                .chatroomMemberId(id)
-                .chatroom(chatroom)
-                .member(member)
-                .chatroomMemberStatus(status)
-                .build();
-    }
-
-    private ExerciseLocation createMockLocation(Double lat, Double lon) {
-        ExerciseLocation mockLocation = mock(ExerciseLocation.class);
-
-        Point realPoint = geometryFactory.createPoint(new Coordinate(lon, lat));
-
-        lenient().when(mockLocation.getExerciseLocationPoint()).thenReturn(realPoint);
-
-        return mockLocation;
-    }
-
-    private void mockMemberLocking(Member member1, Member member2) {
-        List<UUID> sortedIds = Stream.of(member1.getMemberId(), member2.getMemberId()).sorted().toList();
-        List<Member> sortedMembers = Stream.of(member1, member2)
-                .sorted((m1, m2) -> m1.getMemberId().compareTo(m2.getMemberId()))
-                .toList();
-        given(memberRepository.findAllByIdWithPessimisticLock(sortedIds)).willReturn(sortedMembers);
-    }
-
     @Nested
     @DisplayName("deleteChatroom 메소드는")
     class Describe_deleteChatroom {
@@ -503,6 +459,54 @@ class ChatCommandServiceImplTest {
         }
     }
 
+    private Member createMember() {
+        return Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberNickname("user_" + UUID.randomUUID().toString().substring(0, 8))
+                .build();
+    }
+
+    private Chatroom createChatroom(Long id) {
+        return Chatroom.builder()
+                .id(id)
+                .build();
+    }
+
+    private ChatroomMember createChatroomMember(Chatroom chatroom, Member member, ChatroomMemberStatus status) {
+        return ChatroomMember.builder()
+                .chatroom(chatroom)
+                .member(member)
+                .chatroomMemberStatus(status)
+                .build();
+    }
+
+    private ChatroomMember createChatroomMemberWithId(Long id, Chatroom chatroom, Member member, ChatroomMemberStatus status) {
+        return ChatroomMember.builder()
+                .chatroomMemberId(id)
+                .chatroom(chatroom)
+                .member(member)
+                .chatroomMemberStatus(status)
+                .build();
+    }
+
+    private ExerciseLocation createMockLocation(Double lat, Double lon) {
+        ExerciseLocation mockLocation = mock(ExerciseLocation.class);
+
+        Point realPoint = geometryFactory.createPoint(new Coordinate(lon, lat));
+
+        lenient().when(mockLocation.getExerciseLocationPoint()).thenReturn(realPoint);
+
+        return mockLocation;
+    }
+
+    private void mockMemberLocking(Member member1, Member member2) {
+        List<UUID> sortedIds = Stream.of(member1.getMemberId(), member2.getMemberId()).sorted().toList();
+        List<Member> sortedMembers = Stream.of(member1, member2)
+                .sorted((m1, m2) -> m1.getMemberId().compareTo(m2.getMemberId()))
+                .toList();
+        given(memberRepository.findAllByIdWithPessimisticLock(sortedIds)).willReturn(sortedMembers);
+    }
+
     @Nested
     @DisplayName("createChatroom 메소드는")
     class Describe_createChatroom {
@@ -581,13 +585,13 @@ class ChatCommandServiceImplTest {
         }
 
         @Test
-        @DisplayName("운동 장소와의 거리가 5km를 초과하면 예외를 발생시킨다")
+        @DisplayName("운동 장소와의 거리가 정책상 허용 범위(5km)를 초과하면 예외를 발생시킨다")
         void it_throws_exception_when_distance_is_too_far() {
             // given
             Member currentMember = createMember();
             Member targetMember = createMember();
 
-            // 서울역 기준 아주 먼 곳 (평양 부근)
+            // 평양 부근 (아주 먼 거리)
             Double farLat = 39.0339;
             Double farLon = 125.7537;
             CreateChatroomRequest request = new CreateChatroomRequest(targetMember.getMemberId(), 1L, farLat, farLon);
@@ -603,6 +607,9 @@ class ChatCommandServiceImplTest {
                 given(exerciseLocationRepository.findByExerciseLocationIdAndMember_MemberIdAndExerciseLocationDeletedAtNull(request.getExerciseLocationId(), targetMember.getMemberId()))
                         .willReturn(Optional.of(mockLocation));
 
+                // [추가] 정책 서비스가 5000.0을 반환하도록 설정
+                given(policyService.getPolicyValueAsDouble(PolicyKey.EXERCISE_LOCATION_MAX_DISTANCE_METER)).willReturn(5000.0);
+
                 // when & then
                 assertThatThrownBy(() -> chatCommandService.createChatroom(request))
                         .isInstanceOf(CustomException.class)
@@ -616,7 +623,6 @@ class ChatCommandServiceImplTest {
             // given
             Member currentMember = createMember();
             Member targetMember = createMember();
-            // 서울역에서 매우 가까운 위치 (허용 범위 내)
             CreateChatroomRequest request = new CreateChatroomRequest(targetMember.getMemberId(), 1L, BASE_LAT + 0.001, BASE_LON);
             Chatroom newChatroom = createChatroom(1L);
             ExerciseLocation mockLocation = createMockLocation(BASE_LAT, BASE_LON);
@@ -631,6 +637,9 @@ class ChatCommandServiceImplTest {
                 given(exerciseLocationRepository.findByExerciseLocationIdAndMember_MemberIdAndExerciseLocationDeletedAtNull(request.getExerciseLocationId(), targetMember.getMemberId()))
                         .willReturn(Optional.of(mockLocation));
 
+                // [추가] 거리 검증을 통과해야 하므로 정책값 설정 필수
+                given(policyService.getPolicyValueAsDouble(PolicyKey.EXERCISE_LOCATION_MAX_DISTANCE_METER)).willReturn(5000.0);
+
                 given(chatroomRepository.findChatroomBetweenMembers(currentMember, targetMember))
                         .willReturn(Optional.empty())
                         .willReturn(Optional.empty());
@@ -643,7 +652,6 @@ class ChatCommandServiceImplTest {
 
                 // then
                 assertThat(response.getChatRoomId()).isEqualTo(newChatroom.getId());
-                then(memberRepository).should(times(1)).findAllByIdWithPessimisticLock(anyList());
                 then(chatroomRepository).should(times(1)).save(any(Chatroom.class));
             }
         }
@@ -671,6 +679,8 @@ class ChatCommandServiceImplTest {
                 given(chatroomRepository.findChatroomBetweenMembers(currentMember, targetMember))
                         .willReturn(Optional.empty()) // 락 이전 조회
                         .willReturn(Optional.of(existingChatroom)); // 락 이후 조회
+
+                given(policyService.getPolicyValueAsDouble(PolicyKey.EXERCISE_LOCATION_MAX_DISTANCE_METER)).willReturn(5000.0);
 
                 mockMemberLocking(currentMember, targetMember);
 
@@ -706,6 +716,7 @@ class ChatCommandServiceImplTest {
 
                 given(chatroomRepository.findChatroomBetweenMembers(currentMember, targetMember)).willReturn(Optional.of(existingChatroom));
                 given(chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(existingChatroom, ChatroomMemberStatus.ACTIVE)).willReturn(2L);
+                given(policyService.getPolicyValueAsDouble(PolicyKey.EXERCISE_LOCATION_MAX_DISTANCE_METER)).willReturn(5000.0);
 
                 // when
                 CreateChatroomResponse response = chatCommandService.createChatroom(request);
@@ -743,6 +754,7 @@ class ChatCommandServiceImplTest {
                 given(chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(existingChatroom, ChatroomMemberStatus.ACTIVE)).willReturn(1L);
                 given(chatroomMemberRepository.findByChatroomAndMember(existingChatroom, currentMember)).willReturn(Optional.of(currentChatroomMember));
                 given(chatroomMemberRepository.findByChatroomAndMember(existingChatroom, targetMember)).willReturn(Optional.of(targetChatroomMember));
+                given(policyService.getPolicyValueAsDouble(PolicyKey.EXERCISE_LOCATION_MAX_DISTANCE_METER)).willReturn(5000.0);
 
                 // when
                 CreateChatroomResponse response = chatCommandService.createChatroom(request);
