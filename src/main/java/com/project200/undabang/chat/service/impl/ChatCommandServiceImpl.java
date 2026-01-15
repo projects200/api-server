@@ -52,9 +52,19 @@ public class ChatCommandServiceImpl implements ChatCommandService {
     private final Double EARTH_RADIUS_METER = 6371000.0; // 지구 평균 반지름 (m)
 
     /**
-     * 주어진 요청 정보를 기반으로 채팅방을 생성하거나 기존 채팅방을 반환합니다.
-     * 동일 사용자가 자신과의 채팅을 시도하면 예외를 발생시킵니다.
-     * 두 사용자가 동시에 채팅방을 생성할 가능성을 방지하기 위해 비관적 락을 적용합니다.
+     * 지정된 요청 정보를 바탕으로 새로운 채팅방을 생성하거나 기존의 채팅방을 반환합니다.
+     *
+     * @param request 채팅방 생성을 요청하는 정보를 담은 CreateChatroomRequest 객체
+     *                 - receiverId: 상대방 회원의 ID
+     *                 - exerciseLocationId: 운동 장소 ID
+     *                 - requesterLatitude: 요청자의 현재 위도
+     *                 - requesterLongitude: 요청자의 현재 경도
+     * @return 생성된 채팅방의 정보를 담은 CreateChatroomResponse 객체
+     * @throws CustomException 다음과 같은 경우 예외가 발생할 수 있습니다:
+     *                          - 자신과의 채팅방을 생성하려고 할 때 (SELF_CHAT_NOT_ALLOWED)
+     *                          - 상대방과 차단 관계인 경우 (CHATROOM_CREATE_BLOCKED)
+     *                          - 지정된 운동 장소가 존재하지 않을 때 (EXERCISE_LOCATION_NOT_FOUND)
+     *                          - 요청자가 지정된 운동 장소에서 특정 거리 이상 떨어져 있는 경우 (CHATROOM_CREATE_TOO_FAR_DISTANCE)
      */
     @Override
     @Transactional
@@ -268,20 +278,33 @@ public class ChatCommandServiceImpl implements ChatCommandService {
         return newChatroom;
     }
 
+    /**
+     * 요청자의 위치와 타겟 운동 장소 간의 거리를 검증하고, 해당 거리가 최대 허용 범위 내에 있는지 확인합니다.
+     *
+     * @param targetExerciseLocation 요청자가 검증할 대상 운동 장소의 위치 정보를 나타내는 객체
+     * @param requesterLatitude      요청자의 현재 위도 값
+     * @param requesterLongitude     요청자의 현재 경도 값
+     * @return 요청자의 위치와 타겟 운동 장소의 거리가 최대 허용 범위 내에 있으면 true를 반환하며, 그렇지 않으면 false를 반환
+     */
     private boolean validateRequesterDistance(ExerciseLocation targetExerciseLocation, Double requesterLatitude, Double requesterLongitude) {
+        // 타겟 운동장소의 좌표
         Double targetLongitude = targetExerciseLocation.getExerciseLocationPoint().getX();
         Double targetLatitude = targetExerciseLocation.getExerciseLocationPoint().getY();
 
-        Double latDistance = Math.toRadians(requesterLatitude - targetLatitude);
-        Double lonDistance = Math.toRadians(requesterLongitude - targetLongitude);
+        // 위도 경도 차이 (라디안 변환)
+        Double deltaLatitude = Math.toRadians(requesterLatitude - targetLatitude);
+        Double deltaLongitude = Math.toRadians(requesterLongitude - targetLongitude);
 
-        Double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2) +
+        // Haversine 공식을 사용하여 현재 길이 절반의 제곱한 값을 구하는 수식
+        Double squareOfHalfChordLength = Math.sin(deltaLatitude / 2) * Math.sin(deltaLatitude / 2) +
                 Math.cos(Math.toRadians(requesterLatitude)) * Math.cos(Math.toRadians(targetLatitude)) *
-                Math.sin(lonDistance /2) * Math.sin(lonDistance / 2);
+                        Math.sin(deltaLongitude / 2) * Math.sin(deltaLongitude / 2);
 
-        Double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        // 두 지점 사이의 각도 거리를 라디안 단위로 측정
+        Double angularDistanceRadians = 2 * Math.atan2(Math.sqrt(squareOfHalfChordLength), Math.sqrt(1 - squareOfHalfChordLength));
 
-        double distanceMeters = EARTH_RADIUS_METER * c;
+        // 최종 거리 계산 (지구의 반지름 길이 * 각도 거리)
+        double distanceMeters = EARTH_RADIUS_METER * angularDistanceRadians;
 
         return distanceMeters <= MAXIMUM_EXERCISE_LOCATION_DISTANCE_METER;
     }
