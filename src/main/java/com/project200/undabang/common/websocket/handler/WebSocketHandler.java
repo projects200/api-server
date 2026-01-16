@@ -129,7 +129,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
      * 지정된 채팅방에 속한 모든 WebSocket 세션에 메시지를 브로드캐스트하는 메서드입니다.
      * 주어진 응답 객체를 JSON으로 변환하여 모든 세션에 전송합니다.
      */
-    private void broadCastToAllChatroom(Long roomId, WebSocketResponse<?> response) {
+    public void broadCastToAllChatroom(Long roomId, WebSocketResponse<?> response) {
         Map<String, WebSocketSession> sessions = sessionManager.getSessions(roomId);
 
         if (sessions == null || sessions.isEmpty()) {

@@ -1,8 +1,13 @@
 package com.project200.undabang.member.service.impl;
 
+import com.project200.undabang.chat.dto.event.ChatroomMemberStatusEvent;
+import com.project200.undabang.chat.entity.ChatroomMember;
+import com.project200.undabang.chat.repository.ChatroomMemberRepository;
+import com.project200.undabang.chat.repository.ChatroomRepository;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
+import com.project200.undabang.member.dto.event.MemberBlockedEvent;
 import com.project200.undabang.member.dto.response.CreateMemberBlockResponse;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.MemberBlock;
@@ -11,6 +16,7 @@ import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.member.service.MemberBlockCommandService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +29,7 @@ import java.util.UUID;
 public class MemberBlockCommandServiceImpl implements MemberBlockCommandService {
     private final MemberBlockRepository memberBlockRepository;
     private final MemberRepository memberRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 회원 차단(Block) 요청을 생성하는 메서드.
@@ -45,6 +52,9 @@ public class MemberBlockCommandServiceImpl implements MemberBlockCommandService 
         }
 
         MemberBlock savedMemberBlock = memberBlockRepository.save(MemberBlock.of(member, blockedMember));
+
+        eventPublisher.publishEvent(MemberBlockedEvent.of(blockedMember, member));
+
         return CreateMemberBlockResponse.of(savedMemberBlock.getId());
     }
 

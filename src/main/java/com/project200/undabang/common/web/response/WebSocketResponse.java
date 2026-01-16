@@ -76,4 +76,19 @@ public class WebSocketResponse<T> {
     public static WebSocketResponse<String> error(WebSocketType type, ErrorCode errorCode) {
         return new WebSocketResponse<>(false, type, errorCode.getCode(), errorCode.getMessage());
     }
+
+    /**
+     * 시스템 알림용 응답을 생성합니다. (성공 상태)
+     * 데이터(data) 필드 대신 메시지(message) 필드에 내용을 담아 보냅니다.
+     *
+     * @param content 전달할 시스템 메시지 내용 (예: "OOO님이 나갔습니다")
+     * @return succeed=true, type=SYSTEM, message=내용, data=null
+     */
+    public static WebSocketResponse<Void> system(String content) {
+        return new WebSocketResponse<>(true, WebSocketType.SYSTEM_LEAVE, content, null);
+    }
+
+    public static WebSocketResponse<Void> system() {
+        return new WebSocketResponse<>(true, WebSocketType.SYSTEM_BANNED, "차단된 회원과는 대화할 수 없습니다.", null);
+    }
 }

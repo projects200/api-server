@@ -4,5 +4,7 @@ public enum WebSocketType {
     TALK,
     ERROR,
     PING,
-    PONG
+    PONG,
+    SYSTEM_LEAVE,
+    SYSTEM_BANNED
 }
