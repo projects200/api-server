@@ -62,6 +62,7 @@ class ChatCommandControllerTest extends AbstractRestDocSupport {
             // given
             UUID memberId = UUID.randomUUID();
             UUID targetMemberId = UUID.randomUUID();
+
             CreateChatroomRequest request = createRequest(targetMemberId);
             CreateChatroomResponse response = createResponse(1L);
 
@@ -83,10 +84,13 @@ class ChatCommandControllerTest extends AbstractRestDocSupport {
                     .andDo(document.document(
                             requestHeaders(HEADER_ACCESS_TOKEN),
                             requestFields(
-                                    fieldWithPath("receiverId").type(JsonFieldType.STRING).description("채팅을 시작할 상대방의 식별자(UUID) 입니다.")
+                                    fieldWithPath("receiverId").type(JsonFieldType.STRING).description("채팅을 시작할 상대방의 식별자(UUID) 정보를 의미합니다."),
+                                    fieldWithPath("exerciseLocationId").type(JsonFieldType.NUMBER).description("상대방의 운동 장소 식별자를 의미합니다."),
+                                    fieldWithPath("requesterLatitude").type(JsonFieldType.NUMBER).description("요청자의 현재 위도를 의미합니다. 위도의 범위는 -90 ~ 90 사이여야 합니다."),
+                                    fieldWithPath("requesterLongitude").type(JsonFieldType.NUMBER).description("요청자의 현재 경도를 의미합니다. 경도의 범위는 -180 ~ 180 사이여야 합니다.")
                             ),
                             responseFields(commonResponseFields(
-                                    fieldWithPath("data.chatRoomId").type(JsonFieldType.NUMBER).description("생성되거나 조회된 채팅방의 식별자 입니다.")
+                                    fieldWithPath("data.chatRoomId").type(JsonFieldType.NUMBER).description("생성되거나 조회된 채팅방의 식별자")
                             ))
                     ));
 
@@ -130,7 +134,7 @@ class ChatCommandControllerTest extends AbstractRestDocSupport {
                             .accept(MediaType.APPLICATION_JSON)
                             .headers(getCommonApiHeaders(memberId))
                             .content(objectMapper.writeValueAsString(requestWithNullId)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isBadRequest()); // @Valid 실패 시 400
 
             then(chatCommandService).shouldHaveNoInteractions();
         }
@@ -153,7 +157,7 @@ class ChatCommandControllerTest extends AbstractRestDocSupport {
                             .headers(getCommonApiHeaders(memberId))
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpectAll(
-                            status().isForbidden(), // 403 Forbidden
+                            status().isForbidden(),
                             jsonPath("$.succeed").value(false),
                             jsonPath("$.code").value(ErrorCode.CHATROOM_CREATE_BLOCKED.getCode()),
                             jsonPath("$.message").value(ErrorCode.CHATROOM_CREATE_BLOCKED.getMessage())
@@ -163,7 +167,12 @@ class ChatCommandControllerTest extends AbstractRestDocSupport {
         }
 
         private CreateChatroomRequest createRequest(UUID targetMemberId) {
-            return new CreateChatroomRequest(targetMemberId);
+            return new CreateChatroomRequest(
+                    targetMemberId,
+                    1L,
+                    37.555946,
+                    126.972317
+            );
         }
 
         private CreateChatroomResponse createResponse(long chatroomId) {
