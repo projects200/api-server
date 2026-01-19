@@ -19,7 +19,7 @@ public class ChatStatusEventListener {
 
     @Async("generalPurposeAsyncExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleChatroomDeleted(ChatroomMemberStatusEvent event) {
+    public void handleChatroomMemberStatusChange(ChatroomMemberStatusEvent event) {
         try {
             webSocketHandler.broadCastToAllChatroom(event.chatroomId(), WebSocketResponse.system(event.chatContent()));
 

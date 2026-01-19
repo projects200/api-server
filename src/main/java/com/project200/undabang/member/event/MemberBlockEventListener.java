@@ -29,7 +29,7 @@ public class MemberBlockEventListener {
                         webSocketHandler.broadCastToAllChatroom(chatroom.getId(), response);
                     });
         } catch (Exception e) {
-            log.error("채팅방 상태 변경 시스템 메시지 전송 실패.", e);
+            log.error("회원 차단 메시지 전송 실패.", e);
         }
     }
 }

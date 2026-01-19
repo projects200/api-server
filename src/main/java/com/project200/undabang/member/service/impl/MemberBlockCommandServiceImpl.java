@@ -85,7 +85,7 @@ public class MemberBlockCommandServiceImpl implements MemberBlockCommandService 
             throw new CustomException(ErrorCode.MEMBER_BLOCK_DUPLICATED);
         }
 
-        // 차단 상태라면 다시 활성화해줌
+        // 차단 해제 상태 였다면 다시 활성화해줌
         memberBlock.reBlock();
         return memberBlock;
     }
@@ -95,7 +95,7 @@ public class MemberBlockCommandServiceImpl implements MemberBlockCommandService 
      */
     private MemberBlock validateAndSaveMemberBlock(Member member, Member blockedMember) {
         return memberBlockRepository.findByBlockerAndBlocked(member, blockedMember)
-                .map(this::handleMemberBlockExist) // 이미 존재할 경우 예외 반환
+                .map(this::handleMemberBlockExist) // 기존 차단 정보가 있을 경우, 활성 차단이면 예외를 반환하고, 해제된 차단이면 재활성화
                 .orElseGet(() -> memberBlockRepository.save(MemberBlock.of(member, blockedMember)));
     }
 
