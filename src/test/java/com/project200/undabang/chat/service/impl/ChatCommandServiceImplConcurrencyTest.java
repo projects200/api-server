@@ -68,46 +68,6 @@ class ChatCommandServiceImplConcurrencyTest {
     @MockitoBean
     private PolicyService policyService;
 
-    private Member createAndSaveMember(String nickname, String email) {
-        Member member = Member.builder()
-                .memberId(UUID.randomUUID())
-                .memberNickname(nickname)
-                .memberEmail(email)
-                .memberBday(LocalDate.of(2000, 1, 1))
-                .build();
-        return memberRepository.save(member);
-    }
-
-    private ExerciseLocation createAndSaveExerciseLocation(Member member, double lat, double lon) {
-        Point point = geometryFactory.createPoint(new Coordinate(lon, lat));
-        ExerciseLocation location = ExerciseLocation.builder()
-                .member(member)
-                .exerciseLocationName("테스트 운동장소")
-                .exerciseLocationAddress("서울시 테스트구 테스트동")
-                .exerciseLocationPoint(point)
-                .build();
-        return exerciseLocationRepository.save(location);
-    }
-
-    private Chatroom setupLeftChatroom(Member memberA, Member memberB) {
-        Chatroom chatroom = chatroomRepository.save(Chatroom.createChatroom());
-        ChatroomMember cmA = ChatroomMember.of(chatroom, memberA);
-        cmA.updateMemberStatus(ChatroomMemberStatus.LEFT);
-        ChatroomMember cmB = ChatroomMember.of(chatroom, memberB);
-        cmB.updateMemberStatus(ChatroomMemberStatus.LEFT);
-        chatroomMemberRepository.saveAll(List.of(cmA, cmB));
-        return chatroom;
-    }
-
-    private CreateChatroomRequest createChatroomRequest(Member targetMember, ExerciseLocation targetLocation) {
-        return new CreateChatroomRequest(
-                targetMember.getMemberId(),
-                targetLocation.getExerciseLocationId(),
-                targetLocation.getExerciseLocationPoint().getY(), // Latitude
-                targetLocation.getExerciseLocationPoint().getX()  // Longitude
-        );
-    }
-
     @Nested
     @DisplayName("채팅방 생성 동시성 환경에서")
     class ConcurrencyTest {
@@ -180,5 +140,45 @@ class ChatCommandServiceImplConcurrencyTest {
             assertThat(updatedMemberA.getChatroomMemberStatus()).isEqualTo(ChatroomMemberStatus.ACTIVE);
             assertThat(updatedMemberB.getChatroomMemberStatus()).isEqualTo(ChatroomMemberStatus.ACTIVE);
         }
+    }
+
+    private Member createAndSaveMember(String nickname, String email) {
+        Member member = Member.builder()
+                .memberId(UUID.randomUUID())
+                .memberNickname(nickname)
+                .memberEmail(email)
+                .memberBday(LocalDate.of(2000, 1, 1))
+                .build();
+        return memberRepository.save(member);
+    }
+
+    private ExerciseLocation createAndSaveExerciseLocation(Member member, double lat, double lon) {
+        Point point = geometryFactory.createPoint(new Coordinate(lon, lat));
+        ExerciseLocation location = ExerciseLocation.builder()
+                .member(member)
+                .exerciseLocationName("테스트 운동장소")
+                .exerciseLocationAddress("서울시 테스트구 테스트동")
+                .exerciseLocationPoint(point)
+                .build();
+        return exerciseLocationRepository.save(location);
+    }
+
+    private Chatroom setupLeftChatroom(Member memberA, Member memberB) {
+        Chatroom chatroom = chatroomRepository.save(Chatroom.createChatroom());
+        ChatroomMember cmA = ChatroomMember.of(chatroom, memberA);
+        cmA.updateMemberStatus(ChatroomMemberStatus.LEFT);
+        ChatroomMember cmB = ChatroomMember.of(chatroom, memberB);
+        cmB.updateMemberStatus(ChatroomMemberStatus.LEFT);
+        chatroomMemberRepository.saveAll(List.of(cmA, cmB));
+        return chatroom;
+    }
+
+    private CreateChatroomRequest createChatroomRequest(Member targetMember, ExerciseLocation targetLocation) {
+        return new CreateChatroomRequest(
+                targetMember.getMemberId(),
+                targetLocation.getExerciseLocationId(),
+                targetLocation.getExerciseLocationPoint().getY(), // Latitude
+                targetLocation.getExerciseLocationPoint().getX()  // Longitude
+        );
     }
 }
