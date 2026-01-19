@@ -1,10 +1,8 @@
 package com.project200.undabang.chat.event;
 
 import com.project200.undabang.chat.dto.event.ChatroomMemberStatusEvent;
-import com.project200.undabang.chat.repository.ChatroomRepository;
 import com.project200.undabang.common.web.response.WebSocketResponse;
 import com.project200.undabang.common.websocket.handler.WebSocketHandler;
-import com.project200.undabang.member.dto.event.MemberBlockedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -18,7 +16,6 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class ChatStatusEventListener {
 
     private final WebSocketHandler webSocketHandler;
-    private final ChatroomRepository chatroomRepository;
 
     @Async("generalPurposeAsyncExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -26,20 +23,6 @@ public class ChatStatusEventListener {
         try {
             webSocketHandler.broadCastToAllChatroom(event.chatroomId(), WebSocketResponse.system(event.chatContent()));
 
-        } catch (Exception e) {
-            log.error("채팅방 상태 변경 시스템 메시지 전송 실패.", e);
-        }
-    }
-
-    @Async("generalPurposeAsyncExecutor")
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleMemberBlocked(MemberBlockedEvent event) {
-        try {
-            chatroomRepository.findChatroomBetweenMembers(event.blocked(), event.blocker())
-                    .ifPresent(chatroom -> {
-                        WebSocketResponse response = WebSocketResponse.system();
-                        webSocketHandler.broadCastToAllChatroom(chatroom.getId(), response);
-                    });
         } catch (Exception e) {
             log.error("채팅방 상태 변경 시스템 메시지 전송 실패.", e);
         }
