@@ -20,6 +20,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import com.project200.undabang.member.dto.record.Viewport;
+
 import static com.project200.undabang.configuration.HeadersGenerator.getCommonApiHeaders;
 import static com.project200.undabang.configuration.RestDocsUtils.HEADER_ACCESS_TOKEN;
 import static com.project200.undabang.configuration.RestDocsUtils.commonResponseFieldsForList;
@@ -70,15 +72,14 @@ class ExerciseLocationQueryControllerTest extends AbstractRestDocSupport {
                                                         .build());
 
                         BDDMockito.given(exerciseLocationQueryService.getMembersExerciseLocations(
-                                        BDDMockito.anyDouble(), BDDMockito.anyDouble(),
-                                        BDDMockito.anyDouble(), BDDMockito.anyDouble())).willReturn(responseList);
+                                        BDDMockito.any(Viewport.class))).willReturn(responseList);
 
                         // when & then
                         mockMvc.perform(get("/api/v1/members")
-                                        .queryParam("leftTopLatitude", "37.5")
-                                        .queryParam("leftTopLongitude", "127.0")
+                                        .queryParam("leftTopLatitude", "37.7")
+                                        .queryParam("leftTopLongitude", "126.8")
                                         .queryParam("rightBottomLatitude", "37.4")
-                                        .queryParam("rightBottomLongitude", "127.1")
+                                        .queryParam("rightBottomLongitude", "127.2")
                                         .headers(getCommonApiHeaders(memberId1))
                                         .contentType(MediaType.APPLICATION_JSON)
                                         .accept(MediaType.APPLICATION_JSON))
@@ -147,8 +148,7 @@ class ExerciseLocationQueryControllerTest extends AbstractRestDocSupport {
 
                         BDDMockito.then(exerciseLocationQueryService).should(BDDMockito.times(1))
                                         .getMembersExerciseLocations(
-                                                        BDDMockito.anyDouble(), BDDMockito.anyDouble(),
-                                                        BDDMockito.anyDouble(), BDDMockito.anyDouble());
+                                                        BDDMockito.any(Viewport.class));
                 }
 
                 @Test
@@ -157,8 +157,7 @@ class ExerciseLocationQueryControllerTest extends AbstractRestDocSupport {
                         // given
                         UUID memberId = UUID.randomUUID();
                         BDDMockito.given(exerciseLocationQueryService.getMembersExerciseLocations(
-                                        BDDMockito.anyDouble(), BDDMockito.anyDouble(),
-                                        BDDMockito.anyDouble(), BDDMockito.anyDouble()))
+                                        BDDMockito.any(Viewport.class)))
                                         .willReturn(Collections.emptyList());
 
                         // when & then
@@ -179,8 +178,7 @@ class ExerciseLocationQueryControllerTest extends AbstractRestDocSupport {
 
                         BDDMockito.then(exerciseLocationQueryService).should(BDDMockito.times(1))
                                         .getMembersExerciseLocations(
-                                                        BDDMockito.anyDouble(), BDDMockito.anyDouble(),
-                                                        BDDMockito.anyDouble(), BDDMockito.anyDouble());
+                                                        BDDMockito.any(Viewport.class));
                 }
         }
 

@@ -6,9 +6,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import com.project200.undabang.member.dto.record.Viewport;
+
 public interface ExerciseLocationRepositoryCustom {
     List<GetMembersExerciseLocationsResponse> getMembersExerciseLocations(
             Set<UUID> excludeMemberIdSet,
-            Double leftTopLatitude, Double leftTopLongitude,
-            Double rightBottomLatitude, Double rightBottomLongitude);
+            Viewport viewport);
 }

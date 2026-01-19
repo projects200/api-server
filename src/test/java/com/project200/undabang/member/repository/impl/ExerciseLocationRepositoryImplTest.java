@@ -2,6 +2,7 @@ package com.project200.undabang.member.repository.impl;
 
 import com.project200.undabang.common.entity.Picture;
 import com.project200.undabang.configuration.TestQuerydslConfig;
+import com.project200.undabang.member.dto.record.Viewport;
 import com.project200.undabang.member.dto.record.ExerciseLocationRecord;
 import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
 import com.project200.undabang.member.entity.ExerciseLocation;
@@ -206,7 +207,7 @@ class ExerciseLocationRepositoryImplTest {
 
     private ExerciseLocation createAndSaveExerciseLocation(Member member, String name, double lon, double lat,
             boolean deleted) {
-        Point point = geometryFactory.createPoint(new Coordinate(lat, lon));
+        Point point = geometryFactory.createPoint(new Coordinate(lon, lat));
         point.setSRID(4326);
 
         ExerciseLocation location = ExerciseLocation.builder()
@@ -385,8 +386,7 @@ class ExerciseLocationRepositoryImplTest {
             // when
             List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
                     exclusionIds,
-                    38.0, 126.0,
-                    37.0, 128.0);
+                    new Viewport(38.0, 126.0, 37.0, 128.0));
 
             // then
             assertThat(results).hasSize(2)
@@ -414,8 +414,7 @@ class ExerciseLocationRepositoryImplTest {
             // when
             List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
                     exclusionIds,
-                    38.0, 126.0,
-                    37.0, 128.0);
+                    new Viewport(38.0, 126.0, 37.0, 128.0));
 
             // then
             // otherUser1만 조회되어야 함
@@ -437,8 +436,7 @@ class ExerciseLocationRepositoryImplTest {
             // when
             List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
                     exclusionIds,
-                    38.0, 126.0,
-                    37.0, 128.0);
+                    new Viewport(38.0, 126.0, 37.0, 128.0));
 
             // then
             // otherUser1, otherUser2, otherUser3 모두 조회되어야 함
@@ -460,8 +458,7 @@ class ExerciseLocationRepositoryImplTest {
             // when
             List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
                     exclusionIds,
-                    38.0, 126.0,
-                    37.0, 128.0);
+                    new Viewport(38.0, 126.0, 37.0, 128.0));
 
             // then
             assertThat(results).hasSize(4)
@@ -494,9 +491,7 @@ class ExerciseLocationRepositoryImplTest {
             // Box: LeftTop(38.0, 126.0) ~ RightBottom(37.0, 128.0)
             List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
                     Collections.emptySet(),
-                    38.0, 126.0, // LeftTop
-                    37.0, 128.0 // RightBottom
-            );
+                    new Viewport(38.0, 126.0, 37.0, 128.0));
 
             // then
             assertThat(results).hasSize(1);

@@ -2,6 +2,7 @@ package com.project200.undabang.member.repository.impl;
 
 import com.project200.undabang.common.entity.QPicture;
 import com.project200.undabang.exercise.entity.QExerciseType;
+import com.project200.undabang.member.dto.record.Viewport;
 import com.project200.undabang.member.dto.record.ExerciseLocationRecord;
 import com.project200.undabang.member.dto.record.PreferredExerciseRecord;
 import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
@@ -37,8 +38,7 @@ public class ExerciseLocationRepositoryImpl implements ExerciseLocationRepositor
         @Override
         public List<GetMembersExerciseLocationsResponse> getMembersExerciseLocations(
                         Set<UUID> excludeMemberIdSet,
-                        Double leftTopLatitude, Double leftTopLongitude,
-                        Double rightBottomLatitude, Double rightBottomLongitude) {
+                        Viewport viewport) {
                 QMember member = QMember.member;
                 QMemberPicture memberPicture = QMemberPicture.memberPicture;
                 QExerciseLocation exerciseLocation = QExerciseLocation.exerciseLocation;
@@ -60,48 +60,41 @@ public class ExerciseLocationRepositoryImpl implements ExerciseLocationRepositor
                                                                                                 // 제외
                                                 .and(Expressions.numberTemplate(Double.class, "ST_X({0})",
                                                                 exerciseLocation.exerciseLocationPoint)
-                                                                .between(rightBottomLatitude, leftTopLatitude))
+                                                                .between(viewport.leftTopLongitude(),
+                                                                                viewport.rightBottomLongitude()))
                                                 .and(Expressions.numberTemplate(Double.class, "ST_Y({0})",
                                                                 exerciseLocation.exerciseLocationPoint)
-                                                                .between(leftTopLongitude, rightBottomLongitude)))
+                                                                .between(viewport.rightBottomLatitude(),
+                                                                                viewport.leftTopLatitude())))
                                 .transform(
                                                 groupBy(member.memberId).list(
                                                                 Projections.constructor(
                                                                                 GetMembersExerciseLocationsResponse.class,
                                                                                 member.memberId,
-                                                                                memberPicture.memberPicturesUrl, // 썸네일
-                                                                                                                 // 사진
-                                                                                                                 // url
-                                                                                picture.pictureUrl, // 이미지 사진 url
+                                                                                picture.pictureUrl,
+                                                                                memberPicture.memberPicturesUrl,
                                                                                 member.memberNickname,
                                                                                 member.memberGender,
                                                                                 member.memberBday,
                                                                                 member.memberScore,
-                                                                                set(
-                                                                                                Projections.constructor(
-                                                                                                                ExerciseLocationRecord.class,
-                                                                                                                exerciseLocation.exerciseLocationName,
-                                                                                                                Expressions.numberTemplate(
-                                                                                                                                Double.class,
-                                                                                                                                "ST_X({0})",
-                                                                                                                                exerciseLocation.exerciseLocationPoint), // 위도
-                                                                                                                                                                         // 좌표
-                                                                                                                                                                         // 매핑
-                                                                                                                Expressions.numberTemplate(
-                                                                                                                                Double.class,
-                                                                                                                                "ST_Y({0})",
-                                                                                                                                exerciseLocation.exerciseLocationPoint) // 경도
-                                                                                                                                                                        // 좌표
-                                                                                                                                                                        // 매핑
-                                                                                                )),
-                                                                                set(
-                                                                                                Projections.constructor(
-                                                                                                                PreferredExerciseRecord.class,
-                                                                                                                preferredExercise.id,
-                                                                                                                exerciseType.exerciseName,
-                                                                                                                preferredExercise.preferredExerciseSkillLevel,
-                                                                                                                preferredExercise.preferredExerciseDate,
-                                                                                                                exerciseType.exerciseTypeImageUrl)))));
+                                                                                set(Projections.constructor(
+                                                                                                ExerciseLocationRecord.class,
+                                                                                                exerciseLocation.exerciseLocationName,
+                                                                                                Expressions.numberTemplate(
+                                                                                                                Double.class,
+                                                                                                                "ST_Y({0})",
+                                                                                                                exerciseLocation.exerciseLocationPoint),
+                                                                                                Expressions.numberTemplate(
+                                                                                                                Double.class,
+                                                                                                                "ST_X({0})",
+                                                                                                                exerciseLocation.exerciseLocationPoint))),
+                                                                                set(Projections.constructor(
+                                                                                                PreferredExerciseRecord.class,
+                                                                                                preferredExercise.id,
+                                                                                                exerciseType.exerciseName,
+                                                                                                preferredExercise.preferredExerciseSkillLevel,
+                                                                                                preferredExercise.preferredExerciseDate,
+                                                                                                exerciseType.exerciseTypeImageUrl)))));
 
                 // 빈 선호 운동 제거
                 responses.forEach(response -> {

@@ -3,6 +3,7 @@ package com.project200.undabang.member.service.impl;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
+import com.project200.undabang.member.dto.record.Viewport;
 import com.project200.undabang.member.dto.record.ExerciseLocationRecord;
 import com.project200.undabang.member.dto.response.GetExerciseLocationsResponse;
 import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
@@ -169,13 +170,13 @@ class ExerciseLocationQueryServiceImplTest {
                         "user1", locations);
                 List<GetMembersExerciseLocationsResponse> finalResponse = List.of(response1);
                 given(exerciseLocationRepository.getMembersExerciseLocations(
-                        eq(exclusionIds), anyDouble(), anyDouble(), anyDouble(), anyDouble()))
+                        eq(exclusionIds), any(Viewport.class)))
                         .willReturn(finalResponse);
 
                 // when
                 List<GetMembersExerciseLocationsResponse> results = exerciseLocationQueryService
                         .getMembersExerciseLocations(
-                                37.0, 127.0, 36.0, 128.0);
+                                new Viewport(37.0, 127.0, 36.0, 128.0));
 
                 // then
                 assertThat(results).hasSize(1);
@@ -185,7 +186,7 @@ class ExerciseLocationQueryServiceImplTest {
                 verify(memberRepository, times(1)).findById(currentUserId);
                 verify(memberBlockRepository, times(1)).findAllBlockedMemberIdsByMember(currentUser);
                 verify(exerciseLocationRepository, times(1)).getMembersExerciseLocations(
-                        eq(exclusionIds), anyDouble(), anyDouble(), anyDouble(), anyDouble());
+                        eq(exclusionIds), any(Viewport.class));
             }
         }
 
@@ -200,14 +201,14 @@ class ExerciseLocationQueryServiceImplTest {
 
                 // when & then
                 assertThatThrownBy(() -> exerciseLocationQueryService.getMembersExerciseLocations(
-                        37.0, 127.0, 36.0, 128.0))
+                        new Viewport(37.0, 127.0, 36.0, 128.0)))
                         .isInstanceOf(CustomException.class)
                         .hasMessageContaining(ErrorCode.MEMBER_NOT_FOUND.getMessage());
 
                 // verify: 예외 발생 시 다른 리포지토리들은 호출되지 않아야 함
                 verify(memberBlockRepository, never()).findAllBlockedMemberIdsByMember(any());
                 verify(exerciseLocationRepository, never()).getMembersExerciseLocations(
-                        any(), anyDouble(), anyDouble(), anyDouble(), anyDouble());
+                        any(), any(Viewport.class));
             }
         }
     }
