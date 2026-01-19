@@ -31,7 +31,6 @@ import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
 @DataJpaTest
 @Import(TestQuerydslConfig.class)
 class ExerciseLocationRepositoryImplTest {
@@ -236,10 +235,97 @@ class ExerciseLocationRepositoryImplTest {
     }
 
     @Nested
+    @DisplayName("findByExerciseLocationIdAndMember_MemberIdAndExerciseLocationDeletedAtNull 메소드는")
+    class Describe_findByExerciseLocationIdAndMemberIdAndDeletedAtNull {
+
+        @Test
+        @DisplayName("삭제되지 않은 운동 장소를 ID와 회원 ID로 조회하면 Optional에 담아 반환한다")
+        void it_returns_location_when_id_and_member_match_and_not_deleted() {
+            // given
+            Member member = createAndSaveMember("user", false);
+            ExerciseLocation location = createAndSaveExerciseLocation(member, "활성 헬스장", false);
+            flushAndClear();
+
+            // when
+            Optional<ExerciseLocation> result =
+                    exerciseLocationRepository.findByExerciseLocationIdAndMember_MemberIdAndExerciseLocationDeletedAtNull(
+                            location.getExerciseLocationId(),
+                            member.getMemberId()
+                    );
+
+            // then
+            assertThat(result).isPresent();
+            assertThat(result.get().getExerciseLocationId()).isEqualTo(location.getExerciseLocationId());
+            assertThat(result.get().getMember().getMemberId()).isEqualTo(member.getMemberId());
+            assertThat(result.get().getExerciseLocationDeletedAt()).isNull();
+        }
+
+        @Test
+        @DisplayName("운동 장소 ID는 같지만 회원 ID가 다르면 Optional.empty를 반환한다")
+        void it_returns_empty_when_member_id_does_not_match() {
+            // given
+            Member owner = createAndSaveMember("owner", false);
+            Member other = createAndSaveMember("other", false);
+            ExerciseLocation location = createAndSaveExerciseLocation(owner, "헬스장", false);
+            flushAndClear();
+
+            // when
+            Optional<ExerciseLocation> result =
+                    exerciseLocationRepository.findByExerciseLocationIdAndMember_MemberIdAndExerciseLocationDeletedAtNull(
+                            location.getExerciseLocationId(),
+                            other.getMemberId()
+                    );
+
+            // then
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("운동 장소가 삭제된 상태라면 Optional.empty를 반환한다")
+        void it_returns_empty_when_location_is_deleted() {
+            // given
+            Member member = createAndSaveMember("user", false);
+            ExerciseLocation location = createAndSaveExerciseLocation(member, "삭제된 헬스장", true);
+            flushAndClear();
+
+            // when
+            Optional<ExerciseLocation> result =
+                    exerciseLocationRepository.findByExerciseLocationIdAndMember_MemberIdAndExerciseLocationDeletedAtNull(
+                            location.getExerciseLocationId(),
+                            member.getMemberId()
+                    );
+
+            // then
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("운동 장소 ID가 존재하지 않으면 Optional.empty를 반환한다")
+        void it_returns_empty_when_location_id_does_not_exist() {
+            // given
+            Member member = createAndSaveMember("user", false);
+            Long nonExistentLocationId = 9999L;
+            flushAndClear();
+
+            // when
+            Optional<ExerciseLocation> result =
+                    exerciseLocationRepository.findByExerciseLocationIdAndMember_MemberIdAndExerciseLocationDeletedAtNull(
+                            nonExistentLocationId,
+                            member.getMemberId()
+                    );
+
+            // then
+            assertThat(result).isEmpty();
+        }
+    }
+
+    @Nested
     @DisplayName("getMembersExerciseLocations(Set<UUID> excludeMemberIdSet) 메소드는")
     class Describe_getMembersExerciseLocations_with_exclusionSet {
 
         private Member currentUser, otherUser1, otherUser2, otherUser3;
+        // 생성된 운동 장소 ID 검증을 위해 필드 보관
+        private ExerciseLocation currentUserLoc, otherUser1Loc;
 
         @BeforeEach
         void setup() {
@@ -250,8 +336,8 @@ class ExerciseLocationRepositoryImplTest {
             otherUser3 = createAndSaveMember("otherUser3", false); // 나를 차단할 대상
 
             // 모든 회원이 운동 장소를 가지도록 설정
-            createAndSaveExerciseLocation(currentUser, "My Gym", false);
-            createAndSaveExerciseLocation(otherUser1, "User1 Gym", false);
+            currentUserLoc = createAndSaveExerciseLocation(currentUser, "My Gym", false);
+            otherUser1Loc = createAndSaveExerciseLocation(otherUser1, "User1 Gym", false);
             createAndSaveExerciseLocation(otherUser2, "User2 Gym", false);
             createAndSaveExerciseLocation(otherUser3, "User3 Gym", false);
         }
@@ -280,16 +366,13 @@ class ExerciseLocationRepositoryImplTest {
         @DisplayName("나, 내가 차단한 회원, 나를 차단한 회원을 모두 제외하고 결과를 반환한다")
         void it_excludes_self_i_blocked_and_blocked_by_members() {
             // given: 차단 관계 설정
-            // currentUser가 otherUser2를 차단
             createAndSaveMemberBlock(currentUser, otherUser2, false);
-            // otherUser3이 currentUser를 차단
             createAndSaveMemberBlock(otherUser3, currentUser, false);
 
-            // 서비스 레이어에서 수행할 로직을 테스트에서 직접 구성
             Set<UUID> exclusionIds = new HashSet<>();
-            exclusionIds.add(currentUser.getMemberId());    // 나
-            exclusionIds.add(otherUser2.getMemberId()); // 내가 차단한 사람
-            exclusionIds.add(otherUser3.getMemberId()); // 나를 차단한 사람
+            exclusionIds.add(currentUser.getMemberId());
+            exclusionIds.add(otherUser2.getMemberId());
+            exclusionIds.add(otherUser3.getMemberId());
 
             flushAndClear();
 
@@ -297,7 +380,6 @@ class ExerciseLocationRepositoryImplTest {
             List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(exclusionIds);
 
             // then
-            // otherUser1만 조회되어야 함
             assertThat(results).hasSize(1);
             assertThat(results.get(0).getMemberId()).isEqualTo(otherUser1.getMemberId());
         }
@@ -305,11 +387,10 @@ class ExerciseLocationRepositoryImplTest {
         @Test
         @DisplayName("차단했다가 해제한 회원은 결과에 포함시킨다")
         void it_includes_unblocked_members_in_results() {
-            // given: otherUser2를 차단했다가 해제한 상황
-            createAndSaveMemberBlock(currentUser, otherUser2, true); // unblocked = true
+            // given
+            createAndSaveMemberBlock(currentUser, otherUser2, true);
 
-            // 서비스 레이어에서는 차단 해제된 otherUser2를 제외 목록에 포함시키지 않을 것임.
-            Set<UUID> exclusionIds = Set.of(currentUser.getMemberId()); // 나 자신만 제외
+            Set<UUID> exclusionIds = Set.of(currentUser.getMemberId());
 
             flushAndClear();
 
@@ -317,7 +398,6 @@ class ExerciseLocationRepositoryImplTest {
             List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(exclusionIds);
 
             // then
-            // otherUser1, otherUser2, otherUser3 모두 조회되어야 함
             assertThat(results).hasSize(3)
                     .extracting(GetMembersExerciseLocationsResponse::getMemberId)
                     .containsExactlyInAnyOrder(
@@ -328,8 +408,8 @@ class ExerciseLocationRepositoryImplTest {
         }
 
         @Test
-        @DisplayName("제외 목록이 비어있으면 모든 회원(자기 자신 포함)의 위치를 반환한다")
-        void it_returns_all_locations_if_exclusion_set_is_empty() {
+        @DisplayName("제외 목록이 비어있으면 모든 회원의 위치를 반환하며, Location ID가 올바르게 매핑되었는지 확인한다")
+        void it_returns_all_locations_if_exclusion_set_is_empty_and_checks_mapping() {
             // given
             Set<UUID> exclusionIds = Collections.emptySet();
             flushAndClear();
@@ -346,6 +426,15 @@ class ExerciseLocationRepositoryImplTest {
                             otherUser2.getMemberId(),
                             otherUser3.getMemberId()
                     );
+
+            // [추가] Projection 매핑 검증 (exerciseLocationId 확인)
+            GetMembersExerciseLocationsResponse targetResponse = results.stream()
+                    .filter(r -> r.getMemberId().equals(otherUser1.getMemberId()))
+                    .findFirst().orElseThrow();
+
+            assertThat(targetResponse.getLocations()).hasSize(1);
+            assertThat(targetResponse.getLocations().get(0).exerciseLocationId())
+                    .isEqualTo(otherUser1Loc.getExerciseLocationId());
         }
     }
 
@@ -445,91 +534,6 @@ class ExerciseLocationRepositoryImplTest {
                 throw new RuntimeException("Failed to parse WKB for ST_Y", e);
             }
             return 0.0;
-        }
-    }
-
-    @Nested
-    @DisplayName("findByExerciseLocationIdAndMember_MemberIdAndExerciseLocationDeletedAtNull 메소드는")
-    class Describe_findByExerciseLocationIdAndMemberIdAndDeletedAtNull {
-
-        @Test
-        @DisplayName("삭제되지 않은 운동 장소를 ID와 회원 ID로 조회하면 Optional에 담아 반환한다")
-        void it_returns_location_when_id_and_member_match_and_not_deleted() {
-            // given
-            Member member = createAndSaveMember("user", false);
-            ExerciseLocation location = createAndSaveExerciseLocation(member, "활성 헬스장", false);
-            flushAndClear();
-
-            // when
-            Optional<ExerciseLocation> result =
-                    exerciseLocationRepository.findByExerciseLocationIdAndMember_MemberIdAndExerciseLocationDeletedAtNull(
-                            location.getExerciseLocationId(),
-                            member.getMemberId()
-                    );
-
-            // then
-            assertThat(result).isPresent();
-            assertThat(result.get().getExerciseLocationId()).isEqualTo(location.getExerciseLocationId());
-            assertThat(result.get().getMember().getMemberId()).isEqualTo(member.getMemberId());
-            assertThat(result.get().getExerciseLocationDeletedAt()).isNull();
-        }
-
-        @Test
-        @DisplayName("운동 장소 ID는 같지만 회원 ID가 다르면 Optional.empty를 반환한다")
-        void it_returns_empty_when_member_id_does_not_match() {
-            // given
-            Member owner = createAndSaveMember("owner", false);
-            Member other = createAndSaveMember("other", false);
-            ExerciseLocation location = createAndSaveExerciseLocation(owner, "헬스장", false);
-            flushAndClear();
-
-            // when
-            Optional<ExerciseLocation> result =
-                    exerciseLocationRepository.findByExerciseLocationIdAndMember_MemberIdAndExerciseLocationDeletedAtNull(
-                            location.getExerciseLocationId(),
-                            other.getMemberId()
-                    );
-
-            // then
-            assertThat(result).isEmpty();
-        }
-
-        @Test
-        @DisplayName("운동 장소가 삭제된 상태라면 Optional.empty를 반환한다")
-        void it_returns_empty_when_location_is_deleted() {
-            // given
-            Member member = createAndSaveMember("user", false);
-            ExerciseLocation location = createAndSaveExerciseLocation(member, "삭제된 헬스장", true);
-            flushAndClear();
-
-            // when
-            Optional<ExerciseLocation> result =
-                    exerciseLocationRepository.findByExerciseLocationIdAndMember_MemberIdAndExerciseLocationDeletedAtNull(
-                            location.getExerciseLocationId(),
-                            member.getMemberId()
-                    );
-
-            // then
-            assertThat(result).isEmpty();
-        }
-
-        @Test
-        @DisplayName("운동 장소 ID가 존재하지 않으면 Optional.empty를 반환한다")
-        void it_returns_empty_when_location_id_does_not_exist() {
-            // given
-            Member member = createAndSaveMember("user", false);
-            Long nonExistentLocationId = 9999L;
-            flushAndClear();
-
-            // when
-            Optional<ExerciseLocation> result =
-                    exerciseLocationRepository.findByExerciseLocationIdAndMember_MemberIdAndExerciseLocationDeletedAtNull(
-                            nonExistentLocationId,
-                            member.getMemberId()
-                    );
-
-            // then
-            assertThat(result).isEmpty();
         }
     }
 }

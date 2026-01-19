@@ -46,8 +46,8 @@ class ExerciseLocationQueryServiceImplTest {
 
     private final GeometryFactory geometryFactory = new GeometryFactory();
 
-    private ExerciseLocationRecord createExerciseLocationRecord(String name, double lat, double lon) {
-        return new ExerciseLocationRecord(name, lat, lon);
+    private ExerciseLocationRecord createExerciseLocationRecord(Long id, String name, double lat, double lon) {
+        return new ExerciseLocationRecord(id, name, lat, lon);
     }
 
     @Nested
@@ -165,7 +165,7 @@ class ExerciseLocationQueryServiceImplTest {
                 given(memberBlockRepository.findAllBlockedMemberIdsByMember(currentUser)).willReturn(exclusionIds);
 
                 // 2. 주변 회원 목록 조회 Mocking
-                List<ExerciseLocationRecord> locations = List.of(createExerciseLocationRecord("헬스장A", 37.5, 127.0));
+                List<ExerciseLocationRecord> locations = List.of(createExerciseLocationRecord(1L, "헬스장A", 37.5, 127.0));
                 GetMembersExerciseLocationsResponse response1 = createGetMembersExerciseLocationsResponse(otherUser1Id, "user1", locations);
                 List<GetMembersExerciseLocationsResponse> finalResponse = List.of(response1);
                 given(exerciseLocationRepository.getMembersExerciseLocations(exclusionIds)).willReturn(finalResponse);
