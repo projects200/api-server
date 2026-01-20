@@ -58,6 +58,7 @@ public class ExerciseLocationRepositoryImpl implements ExerciseLocationRepositor
                                         list(
                                                 Projections.constructor(
                                                         ExerciseLocationRecord.class,
+                                                        exerciseLocation.exerciseLocationId,
                                                         exerciseLocation.exerciseLocationName,
                                                         Expressions.numberTemplate(Double.class, "ST_X({0})", exerciseLocation.exerciseLocationPoint), // 위도 좌표 매핑
                                                         Expressions.numberTemplate(Double.class, "ST_Y({0})", exerciseLocation.exerciseLocationPoint) // 경도 좌표 매핑

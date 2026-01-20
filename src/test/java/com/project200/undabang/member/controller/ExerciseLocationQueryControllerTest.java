@@ -55,8 +55,8 @@ class ExerciseLocationQueryControllerTest extends AbstractRestDocSupport {
                             .gender(MemberGender.MALE)
                             .birthDate(LocalDate.of(1990, 1, 15))
                             .locations(List.of(
-                                    new ExerciseLocationRecord("헬스장 A", 37.5665, 126.9780),
-                                    new ExerciseLocationRecord("수영장 B", 37.5796, 126.9770)
+                                    new ExerciseLocationRecord(1L, "헬스장 A", 37.5665, 126.9780),
+                                    new ExerciseLocationRecord(2L, "수영장 B", 37.5796, 126.9770)
                             ))
                             .build()
             );
@@ -89,6 +89,7 @@ class ExerciseLocationQueryControllerTest extends AbstractRestDocSupport {
                                     fieldWithPath("data[].gender").type(STRING).description("다른 회원의 성별 (MALE, FEMALE, UNKNOWN) 정보를 나타냅니다."),
                                     fieldWithPath("data[].birthDate").type(STRING).description("다른 회원의 생년월일 정보를 나타냅니다."),
                                     fieldWithPath("data[].locations[]").type(ARRAY).description("다른 회원이 저장한 운동 위치 목록 입니다."),
+                                    fieldWithPath("data[].locations[].exerciseLocationId").type(NUMBER).description("다른 회원이 저장한 운동 위치 목록의 식별자 정보 입니다."),
                                     fieldWithPath("data[].locations[].exerciseLocationName").type(STRING).description("카카오맵 API 에서 반환한 상호명이나 본인이 저장한 운동 장소 이름 입니다."),
                                     fieldWithPath("data[].locations[].latitude").type(NUMBER).description("운동 장소의 위도 정보 입니다."),
                                     fieldWithPath("data[].locations[].longitude").type(NUMBER).description("운동 장소의 경도 정보 입니다.")
