@@ -5,4 +5,7 @@ public record Viewport(
         Double leftTopLongitude,
         Double rightBottomLatitude,
         Double rightBottomLongitude) {
+    public static Viewport of(Double leftTopLatitude, Double leftTopLongitude, Double rightBottomLatitude, Double rightBottomLongitude) {
+        return new Viewport(leftTopLatitude, leftTopLongitude, rightBottomLatitude, rightBottomLongitude);
+    }
 }

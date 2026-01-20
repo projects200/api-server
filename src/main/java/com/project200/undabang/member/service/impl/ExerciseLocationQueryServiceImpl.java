@@ -42,9 +42,7 @@ public class ExerciseLocationQueryServiceImpl implements ExerciseLocationQuerySe
 
         Set<UUID> excludeMemberIdSet = memberBlockRepository.findAllBlockedMemberIdsByMember(member);
 
-        return exerciseLocationRepository.getMembersExerciseLocations(
-                excludeMemberIdSet,
-                viewport);
+        return exerciseLocationRepository.getMembersExerciseLocations(excludeMemberIdSet, viewport);
     }
 
     /**

@@ -7,20 +7,26 @@ import com.project200.undabang.member.entity.ExerciseLocation;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.enums.MemberGender;
 import jakarta.persistence.EntityManager;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.io.ParseException;
+import org.locationtech.jts.io.WKBReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,22 +46,26 @@ public class ExerciseLocationRepositoryTest {
 
     private final GeometryFactory geometryFactory = new GeometryFactory();
 
-    @BeforeEach
-    void setUp() {
-        em.createNativeQuery(
-                "CREATE ALIAS IF NOT EXISTS ST_X FOR \"com.project200.undabang.member.repository.ExerciseLocationRepositoryTest.stX\"")
-                .executeUpdate();
-        em.createNativeQuery(
-                "CREATE ALIAS IF NOT EXISTS ST_Y FOR \"com.project200.undabang.member.repository.ExerciseLocationRepositoryTest.stY\"")
-                .executeUpdate();
-    }
+    @BeforeAll
+    static void setupH2Geometry(@Autowired DataSource dataSource) throws SQLException {
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement()) {
 
-    public static Double stX(org.locationtech.jts.geom.Geometry geometry) {
-        return geometry == null ? null : geometry.getCoordinate().getX();
-    }
+            String className = H2SpatialFunctions.class.getName();
 
-    public static Double stY(org.locationtech.jts.geom.Geometry geometry) {
-        return geometry == null ? null : geometry.getCoordinate().getY();
+            // 기본 ST_X, ST_Y 등록
+            stmt.execute("CREATE ALIAS IF NOT EXISTS ST_X FOR \"" + className + ".getX\"");
+            stmt.execute("CREATE ALIAS IF NOT EXISTS ST_Y FOR \"" + className + ".getY\"");
+
+            // MySQL 8.0 전용 함수인 ST_Latitude, ST_Longitude를 H2용 함수로 연결
+            // H2는 함수명을 대문자로 찾는 경우가 많으므로 대문자로 등록합니다.
+            stmt.execute("CREATE ALIAS IF NOT EXISTS ST_LATITUDE FOR \"" + className + ".getY\"");   // 위도 = Y
+            stmt.execute("CREATE ALIAS IF NOT EXISTS ST_LONGITUDE FOR \"" + className + ".getX\"");  // 경도 = X
+
+            // 혹시 모를 소문자 호출 대비
+            stmt.execute("CREATE ALIAS IF NOT EXISTS ST_latitude FOR \"" + className + ".getY\"");
+            stmt.execute("CREATE ALIAS IF NOT EXISTS ST_longitude FOR \"" + className + ".getX\"");
+        }
     }
 
     @Test
@@ -173,5 +183,31 @@ public class ExerciseLocationRepositoryTest {
                 .build();
         exerciseLocationRepository.save(location);
         return location;
+    }
+
+    public static class H2SpatialFunctions {
+        private static final WKBReader wkbReader = new WKBReader();
+
+        // 경도 (Longitude / X)
+        public static double getX(byte[] wkb) {
+            if (wkb == null) return 0.0;
+            try {
+                Geometry geom = wkbReader.read(wkb);
+                return (geom instanceof Point) ? ((Point) geom).getX() : 0.0;
+            } catch (ParseException e) {
+                throw new RuntimeException("Failed to parse WKB for ST_X/ST_Longitude", e);
+            }
+        }
+
+        // 위도 (Latitude / Y)
+        public static double getY(byte[] wkb) {
+            if (wkb == null) return 0.0;
+            try {
+                Geometry geom = wkbReader.read(wkb);
+                return (geom instanceof Point) ? ((Point) geom).getY() : 0.0;
+            } catch (ParseException e) {
+                throw new RuntimeException("Failed to parse WKB for ST_Y/ST_Latitude", e);
+            }
+        }
     }
 }

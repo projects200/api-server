@@ -10,6 +10,5 @@ import java.util.UUID;
 public interface MemberBlockRepositoryCustom {
     List<MemberBlockRecord> findAllMemberBlockRecordsByMember(Member currentMember);
     Set<UUID> findAllBlockedMemberIdsByMember(Member currentMember);
-
     boolean checkMemberBlockExists(Member currentMember, Member blockedMember);
 }

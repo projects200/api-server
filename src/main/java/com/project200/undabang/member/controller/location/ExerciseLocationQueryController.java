@@ -1,10 +1,10 @@
 package com.project200.undabang.member.controller.location;
 
 import com.project200.undabang.common.web.response.CommonResponse;
+import com.project200.undabang.member.dto.record.Viewport;
 import com.project200.undabang.member.dto.response.GetExerciseLocationsResponse;
 import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
 import com.project200.undabang.member.service.ExerciseLocationQueryService;
-import com.project200.undabang.member.dto.record.Viewport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,8 +27,9 @@ public class ExerciseLocationQueryController {
             @RequestParam Double rightBottomLatitude,
             @RequestParam Double rightBottomLongitude) {
 
-        return ResponseEntity.ok(CommonResponse.success(exerciseLocationQueryService.getMembersExerciseLocations(
-                new Viewport(leftTopLatitude, leftTopLongitude, rightBottomLatitude, rightBottomLongitude))));
+        Viewport viewport = Viewport.of(leftTopLatitude, leftTopLongitude, rightBottomLatitude, rightBottomLongitude);
+
+        return ResponseEntity.ok(CommonResponse.success(exerciseLocationQueryService.getMembersExerciseLocations(viewport)));
     }
 
     @GetMapping("/v1/exercise-locations")
