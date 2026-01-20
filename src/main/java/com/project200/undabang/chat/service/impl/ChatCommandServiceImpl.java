@@ -46,13 +46,13 @@ public class ChatCommandServiceImpl implements ChatCommandService {
     private final ChatRepository chatRepository;
     private final ChatroomMemberRepository chatroomMemberRepository;
     private final MemberBlockRepository memberBlockRepository;
-    private static final double EARTH_RADIUS_METER = 6371000.0; // 지구 평균 반지름 (m)
     private final ApplicationEventPublisher eventPublisher;
     private final ExerciseLocationRepository exerciseLocationRepository;
+    private final PolicyService policyService;
     private final EntityManager em;
 
     private final int DIRECT_CHAT_MAX_MEMBER_COUNT = 2;
-    private final PolicyService policyService;
+    private static final double EARTH_RADIUS_METER = 6371000.0; // 지구 평균 반지름 (m)
 
     /**
      * 지정된 요청 정보를 바탕으로 새로운 채팅방을 생성하거나 기존의 채팅방을 반환합니다.

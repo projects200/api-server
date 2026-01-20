@@ -13,6 +13,5 @@ public interface ExerciseLocationRepository extends JpaRepository<ExerciseLocati
     boolean existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(Member member, String exerciseLocationName);
     long countByMemberAndExerciseLocationDeletedAtNull(Member member);
     Optional<ExerciseLocation> findByExerciseLocationIdAndExerciseLocationDeletedAtNull(Long exerciseLocationId);
-
     Optional<ExerciseLocation> findByExerciseLocationIdAndMember_MemberIdAndExerciseLocationDeletedAtNull(Long exerciseLocationId, UUID memberId);
 }
