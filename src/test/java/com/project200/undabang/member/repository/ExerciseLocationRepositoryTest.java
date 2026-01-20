@@ -2,7 +2,7 @@ package com.project200.undabang.member.repository;
 
 import com.project200.undabang.configuration.TestQuerydslConfig;
 import com.project200.undabang.member.dto.record.Viewport;
-import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
+import com.project200.undabang.member.dto.response.GetOtherMemberExerciseLocationsResponse;
 import com.project200.undabang.member.entity.ExerciseLocation;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.enums.MemberGender;
@@ -86,7 +86,7 @@ public class ExerciseLocationRepositoryTest {
         double rightBottomLon = 127.2;
 
         // when
-        List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
+        List<GetOtherMemberExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
                 Collections.emptySet(),
                 new Viewport(leftTopLat, leftTopLon, rightBottomLat, rightBottomLon));
 
@@ -114,7 +114,7 @@ public class ExerciseLocationRepositoryTest {
         double rightBottomLon = 127.2;
 
         // when
-        List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
+        List<GetOtherMemberExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
                 Collections.emptySet(),
                 new Viewport(leftTopLat, leftTopLon, rightBottomLat, rightBottomLon));
 
@@ -147,7 +147,7 @@ public class ExerciseLocationRepositoryTest {
         double rightBottomLon = 51.0;
 
         // when
-        List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
+        List<GetOtherMemberExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
                 Collections.emptySet(),
                 new Viewport(leftTopLat, leftTopLon, rightBottomLat, rightBottomLon));
 
@@ -169,10 +169,11 @@ public class ExerciseLocationRepositoryTest {
         return member;
     }
 
-    private ExerciseLocation createAndSaveExerciseLocation(Member member, String name, double latitude,
-            double longitude) {
-        // Point(x, y) = Point(longitude, latitude)
-        Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude));
+    private ExerciseLocation createAndSaveExerciseLocation(Member member, String name, double latitude, double longitude) {
+        double coordinateX = longitude;
+        double coordinateY = latitude;
+
+        Point point = geometryFactory.createPoint(new Coordinate(coordinateX, coordinateY));
         point.setSRID(4326); // WGS84
 
         ExerciseLocation location = ExerciseLocation.builder()

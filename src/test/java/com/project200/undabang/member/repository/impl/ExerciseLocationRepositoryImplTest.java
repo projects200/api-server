@@ -3,7 +3,7 @@ package com.project200.undabang.member.repository.impl;
 import com.project200.undabang.configuration.TestQuerydslConfig;
 import com.project200.undabang.member.dto.record.ExerciseLocationRecord;
 import com.project200.undabang.member.dto.record.Viewport;
-import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
+import com.project200.undabang.member.dto.response.GetOtherMemberExerciseLocationsResponse;
 import com.project200.undabang.member.entity.ExerciseLocation;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.MemberBlock;
@@ -55,6 +55,10 @@ class ExerciseLocationRepositoryImplTest {
         }
     }
 
+    // =========================================================================
+    // 테스트 케이스 영역 (비즈니스 로직 검증)
+    // =========================================================================
+
     @Nested
     @DisplayName("countByMemberAndExerciseLocationDeletedAtNull 메소드는")
     class Describe_countByMemberAndExerciseLocationDeletedAtNull {
@@ -99,37 +103,6 @@ class ExerciseLocationRepositoryImplTest {
             long count = exerciseLocationRepository.countByMemberAndExerciseLocationDeletedAtNull(member);
 
             assertThat(count).isZero();
-        }
-    }
-
-    private void flushAndClear() {
-        em.flush();
-        em.clear();
-    }
-
-    public static class H2SpatialFunctions {
-        private static final WKBReader wkbReader = new WKBReader();
-
-        // 경도 (Longitude / X)
-        public static double getX(byte[] wkb) {
-            if (wkb == null) return 0.0;
-            try {
-                Geometry geom = wkbReader.read(wkb);
-                return (geom instanceof Point) ? ((Point) geom).getX() : 0.0;
-            } catch (ParseException e) {
-                throw new RuntimeException("Failed to parse WKB for ST_X/ST_Longitude", e);
-            }
-        }
-
-        // 위도 (Latitude / Y)
-        public static double getY(byte[] wkb) {
-            if (wkb == null) return 0.0;
-            try {
-                Geometry geom = wkbReader.read(wkb);
-                return (geom instanceof Point) ? ((Point) geom).getY() : 0.0;
-            } catch (ParseException e) {
-                throw new RuntimeException("Failed to parse WKB for ST_Y/ST_Latitude", e);
-            }
         }
     }
 
@@ -330,13 +303,11 @@ class ExerciseLocationRepositoryImplTest {
 
         @BeforeEach
         void setup() {
-            // 테스트에 사용할 공통 회원 생성
             currentUser = createAndSaveMember("currentUser", false);
-            otherUser1 = createAndSaveMember("otherUser1", false); // 정상 조회 대상
-            otherUser2 = createAndSaveMember("otherUser2", false); // 내가 차단할 대상
-            otherUser3 = createAndSaveMember("otherUser3", false); // 나를 차단할 대상
+            otherUser1 = createAndSaveMember("otherUser1", false);
+            otherUser2 = createAndSaveMember("otherUser2", false);
+            otherUser3 = createAndSaveMember("otherUser3", false);
 
-            // 모든 회원이 운동 장소를 가지도록 설정
             otherUser1Loc = createAndSaveExerciseLocation(otherUser1, "User1 Gym", false);
             createAndSaveExerciseLocation(otherUser2, "User2 Gym", false);
             createAndSaveExerciseLocation(otherUser3, "User3 Gym", false);
@@ -348,9 +319,9 @@ class ExerciseLocationRepositoryImplTest {
             Set<UUID> exclusionIds = Set.of(currentUser.getMemberId(), otherUser2.getMemberId());
             flushAndClear();
 
-            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(exclusionIds, new Viewport(38.0, 126.0, 37.0, 128.0));
+            List<GetOtherMemberExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(exclusionIds, new Viewport(38.0, 126.0, 37.0, 128.0));
 
-            assertThat(results).hasSize(2).extracting(GetMembersExerciseLocationsResponse::getMemberId).containsExactlyInAnyOrder(otherUser1.getMemberId(), otherUser3.getMemberId());
+            assertThat(results).hasSize(2).extracting(GetOtherMemberExerciseLocationsResponse::getMemberId).containsExactlyInAnyOrder(otherUser1.getMemberId(), otherUser3.getMemberId());
         }
 
         @Test
@@ -366,7 +337,7 @@ class ExerciseLocationRepositoryImplTest {
 
             flushAndClear();
 
-            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(exclusionIds, new Viewport(38.0, 126.0, 37.0, 128.0));
+            List<GetOtherMemberExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(exclusionIds, new Viewport(38.0, 126.0, 37.0, 128.0));
 
             assertThat(results).hasSize(1);
             assertThat(results.get(0).getMemberId()).isEqualTo(otherUser1.getMemberId());
@@ -379,9 +350,9 @@ class ExerciseLocationRepositoryImplTest {
             Set<UUID> exclusionIds = Set.of(currentUser.getMemberId());
             flushAndClear();
 
-            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(exclusionIds, new Viewport(38.0, 126.0, 37.0, 128.0));
+            List<GetOtherMemberExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(exclusionIds, new Viewport(38.0, 126.0, 37.0, 128.0));
 
-            assertThat(results).hasSize(3).extracting(GetMembersExerciseLocationsResponse::getMemberId).containsExactlyInAnyOrder(otherUser1.getMemberId(), otherUser2.getMemberId(), otherUser3.getMemberId());
+            assertThat(results).hasSize(3).extracting(GetOtherMemberExerciseLocationsResponse::getMemberId).containsExactlyInAnyOrder(otherUser1.getMemberId(), otherUser2.getMemberId(), otherUser3.getMemberId());
         }
 
         @Test
@@ -390,15 +361,51 @@ class ExerciseLocationRepositoryImplTest {
             Set<UUID> exclusionIds = Collections.emptySet();
             flushAndClear();
 
-            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(exclusionIds, new Viewport(38.0, 126.0, 37.0, 128.0));
+            List<GetOtherMemberExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(exclusionIds, new Viewport(38.0, 126.0, 37.0, 128.0));
 
             assertThat(results).hasSize(3);
 
-            GetMembersExerciseLocationsResponse targetResponse = results.stream().filter(r -> r.getMemberId().equals(otherUser1.getMemberId())).findFirst().orElseThrow();
+            GetOtherMemberExerciseLocationsResponse targetResponse = results.stream().filter(r -> r.getMemberId().equals(otherUser1.getMemberId())).findFirst().orElseThrow();
 
             assertThat(targetResponse.getLocations()).hasSize(1);
             assertThat(targetResponse.getLocations().iterator().next().exerciseLocationId()).isEqualTo(otherUser1Loc.getExerciseLocationId());
         }
+    }
+
+    @Nested
+    @DisplayName("getMembersExerciseLocations(..., bounds) 데이터 필터링은")
+    class Describe_getMembersExerciseLocations_filtering {
+
+        @Test
+        @DisplayName("주어진 경계 내에 있는 운동 장소만 반환한다")
+        void it_returns_locations_within_bounds_only() {
+            Member insideMember = createAndSaveMember("insideUser", false);
+            createAndSaveExerciseLocation(insideMember, "Inside Gym", 127.0, 37.5, false);
+
+            Member outsideMember = createAndSaveMember("outsideUser", false);
+            createAndSaveExerciseLocation(outsideMember, "Outside Gym", 129.0, 39.0, false);
+
+            flushAndClear();
+
+            // Box: LeftTop(38.0, 126.0) ~ RightBottom(37.0, 128.0)
+            List<GetOtherMemberExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
+                    Collections.emptySet(),
+                    new Viewport(38.0, 126.0, 37.0, 128.0));
+
+            assertThat(results).hasSize(1);
+            assertThat(results.get(0).getLocations())
+                    .extracting(ExerciseLocationRecord::exerciseLocationName)
+                    .containsExactly("Inside Gym");
+        }
+    }
+
+    // =========================================================================
+    // 헬퍼 메소드 및 유틸리티 클래스 영역
+    // =========================================================================
+
+    private void flushAndClear() {
+        em.flush();
+        em.clear();
     }
 
     private ExerciseLocation createAndSaveExerciseLocation(Member member, String name, boolean deleted) {
@@ -443,30 +450,29 @@ class ExerciseLocationRepositoryImplTest {
         em.persist(memberBlock);
     }
 
-    @Nested
-    @DisplayName("getMembersExerciseLocations(..., bounds) 데이터 필터링은")
-    class Describe_getMembersExerciseLocations_filtering {
+    public static class H2SpatialFunctions {
+        private static final WKBReader wkbReader = new WKBReader();
 
-        @Test
-        @DisplayName("주어진 경계 내에 있는 운동 장소만 반환한다")
-        void it_returns_locations_within_bounds_only() {
-            Member insideMember = createAndSaveMember("insideUser", false);
-            createAndSaveExerciseLocation(insideMember, "Inside Gym", 127.0, 37.5, false);
+        // 경도 (Longitude / X)
+        public static double getX(byte[] wkb) {
+            if (wkb == null) return 0.0;
+            try {
+                Geometry geom = wkbReader.read(wkb);
+                return (geom instanceof Point) ? ((Point) geom).getX() : 0.0;
+            } catch (ParseException e) {
+                throw new RuntimeException("Failed to parse WKB for ST_X/ST_Longitude", e);
+            }
+        }
 
-            Member outsideMember = createAndSaveMember("outsideUser", false);
-            createAndSaveExerciseLocation(outsideMember, "Outside Gym", 129.0, 39.0, false);
-
-            flushAndClear();
-
-            // Box: LeftTop(38.0, 126.0) ~ RightBottom(37.0, 128.0)
-            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
-                    Collections.emptySet(),
-                    new Viewport(38.0, 126.0, 37.0, 128.0));
-
-            assertThat(results).hasSize(1);
-            assertThat(results.get(0).getLocations())
-                    .extracting(ExerciseLocationRecord::exerciseLocationName)
-                    .containsExactly("Inside Gym");
+        // 위도 (Latitude / Y)
+        public static double getY(byte[] wkb) {
+            if (wkb == null) return 0.0;
+            try {
+                Geometry geom = wkbReader.read(wkb);
+                return (geom instanceof Point) ? ((Point) geom).getY() : 0.0;
+            } catch (ParseException e) {
+                throw new RuntimeException("Failed to parse WKB for ST_Y/ST_Latitude", e);
+            }
         }
     }
 }

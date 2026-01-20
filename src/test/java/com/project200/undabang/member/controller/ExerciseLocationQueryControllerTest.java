@@ -6,7 +6,7 @@ import com.project200.undabang.member.dto.record.ExerciseLocationRecord;
 import com.project200.undabang.member.dto.record.PreferredExerciseRecord;
 import com.project200.undabang.member.dto.record.Viewport;
 import com.project200.undabang.member.dto.response.GetExerciseLocationsResponse;
-import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
+import com.project200.undabang.member.dto.response.GetOtherMemberExerciseLocationsResponse;
 import com.project200.undabang.member.enums.ExerciseSkillLevel;
 import com.project200.undabang.member.enums.MemberGender;
 import com.project200.undabang.member.service.ExerciseLocationQueryService;
@@ -62,8 +62,8 @@ class ExerciseLocationQueryControllerTest extends AbstractRestDocSupport {
                     "https://www.example.com/image.jpg"
             );
 
-            List<GetMembersExerciseLocationsResponse> responseList = List.of(
-                    GetMembersExerciseLocationsResponse.builder()
+            List<GetOtherMemberExerciseLocationsResponse> responseList = List.of(
+                    GetOtherMemberExerciseLocationsResponse.builder()
                             .memberId(memberId1)
                             .profileThumbnailUrl("https://www.example.com/thumbnail1.jpg")
                             .profileImageUrl("https://www.example.com/profile1.jpg")
@@ -105,10 +105,10 @@ class ExerciseLocationQueryControllerTest extends AbstractRestDocSupport {
                     .andDo(document.document(
                             requestHeaders(HEADER_ACCESS_TOKEN),
                             queryParameters(
-                                    parameterWithName("leftTopLatitude").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("좌상단 위도 (Viewport 시작점)을 의미합니다."),
-                                    parameterWithName("leftTopLongitude").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("좌상단 경도 (Viewport 시작점)을 의미합니다."),
-                                    parameterWithName("rightBottomLatitude").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("우하단 위도 (Viewport 끝점)을 의미합니다."),
-                                    parameterWithName("rightBottomLongitude").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("우하단 경도 (Viewport 끝점)을 의미합니다.")
+                                    parameterWithName("leftTopLatitude").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("좌상단 위도 (-90 ~ 90)를 나타냅니다."),
+                                    parameterWithName("leftTopLongitude").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("좌상단 경도 (-180 ~ 180)를 나타냅니다."),
+                                    parameterWithName("rightBottomLatitude").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("우하단 위도 (-90 ~ 90)를 나타냅니다."),
+                                    parameterWithName("rightBottomLongitude").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("우하단 경도 (-180 ~ 180)를 나타냅니다.")
                             ),
                             responseFields(commonResponseFieldsForList(
                                     fieldWithPath("data[].memberId").type(STRING).description("다른 회원의 식별자(UUID)를 나타냅니다."),
@@ -160,6 +160,36 @@ class ExerciseLocationQueryControllerTest extends AbstractRestDocSupport {
                             jsonPath("$.succeed").value(true),
                             jsonPath("$.data").isArray(),
                             jsonPath("$.data").isEmpty());
+        }
+
+        @Test
+        @DisplayName("유효하지 않은 좌표 범위가 입력되면 예외가 발생한다")
+        void getMembersExerciseLocations_Fail_InvalidRange() throws Exception {
+            // when & then
+            mockMvc.perform(get("/api/v1/members")
+                            .queryParam("leftTopLatitude", "100.0")   // 오류: 90보다 큼
+                            .queryParam("leftTopLongitude", "126.8")
+                            .queryParam("rightBottomLatitude", "37.4")
+                            .queryParam("rightBottomLongitude", "127.2")
+                            .headers(getCommonApiHeaders(UUID.randomUUID()))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest()); // 400 에러 예상
+        }
+
+        @Test
+        @DisplayName("필수 파라미터가 누락되면 예외가 발생한다")
+        void getMembersExerciseLocations_Fail_MissingParam() throws Exception {
+            // when & then
+            mockMvc.perform(get("/api/v1/members")
+                            // .queryParam("leftTopLatitude", "37.7") // 누락 시킴
+                            .queryParam("leftTopLongitude", "126.8")
+                            .queryParam("rightBottomLatitude", "37.4")
+                            .queryParam("rightBottomLongitude", "127.2")
+                            .headers(getCommonApiHeaders(UUID.randomUUID()))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest());
         }
     }
 

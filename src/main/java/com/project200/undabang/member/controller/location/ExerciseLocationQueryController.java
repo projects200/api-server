@@ -2,14 +2,16 @@ package com.project200.undabang.member.controller.location;
 
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.member.dto.record.Viewport;
+import com.project200.undabang.member.dto.request.ViewportRequest;
 import com.project200.undabang.member.dto.response.GetExerciseLocationsResponse;
-import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
+import com.project200.undabang.member.dto.response.GetOtherMemberExerciseLocationsResponse;
 import com.project200.undabang.member.service.ExerciseLocationQueryService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -21,15 +23,9 @@ public class ExerciseLocationQueryController {
     private final ExerciseLocationQueryService exerciseLocationQueryService;
 
     @GetMapping("/v1/members")
-    public ResponseEntity<CommonResponse<List<GetMembersExerciseLocationsResponse>>> getMembersExerciseLocations(
-            @RequestParam Double leftTopLatitude,
-            @RequestParam Double leftTopLongitude,
-            @RequestParam Double rightBottomLatitude,
-            @RequestParam Double rightBottomLongitude) {
+    public ResponseEntity<CommonResponse<List<GetOtherMemberExerciseLocationsResponse>>> getMembersExerciseLocations(@ModelAttribute @Valid ViewportRequest request) {
 
-        Viewport viewport = Viewport.of(leftTopLatitude, leftTopLongitude, rightBottomLatitude, rightBottomLongitude);
-
-        return ResponseEntity.ok(CommonResponse.success(exerciseLocationQueryService.getMembersExerciseLocations(viewport)));
+        return ResponseEntity.ok(CommonResponse.success(exerciseLocationQueryService.getMembersExerciseLocations(Viewport.from(request))));
     }
 
     @GetMapping("/v1/exercise-locations")

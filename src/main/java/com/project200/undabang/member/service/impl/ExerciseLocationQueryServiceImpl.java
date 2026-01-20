@@ -5,7 +5,7 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.dto.record.Viewport;
 import com.project200.undabang.member.dto.response.GetExerciseLocationsResponse;
-import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
+import com.project200.undabang.member.dto.response.GetOtherMemberExerciseLocationsResponse;
 import com.project200.undabang.member.entity.ExerciseLocation;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.ExerciseLocationRepository;
@@ -37,7 +37,7 @@ public class ExerciseLocationQueryServiceImpl implements ExerciseLocationQuerySe
      * @return 다른 회원들의 운동 위치 정보를 포함하는 GetMembersExerciseLocationsResponse 객체 리스트
      */
     @Override
-    public List<GetMembersExerciseLocationsResponse> getMembersExerciseLocations(Viewport viewport) {
+    public List<GetOtherMemberExerciseLocationsResponse> getMembersExerciseLocations(Viewport viewport) {
         Member member = getMember(UserContextHolder.getUserId());
 
         Set<UUID> excludeMemberIdSet = memberBlockRepository.findAllBlockedMemberIdsByMember(member);

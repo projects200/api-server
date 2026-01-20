@@ -5,7 +5,7 @@ import com.project200.undabang.exercise.entity.QExerciseType;
 import com.project200.undabang.member.dto.record.ExerciseLocationRecord;
 import com.project200.undabang.member.dto.record.PreferredExerciseRecord;
 import com.project200.undabang.member.dto.record.Viewport;
-import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
+import com.project200.undabang.member.dto.response.GetOtherMemberExerciseLocationsResponse;
 import com.project200.undabang.member.entity.QExerciseLocation;
 import com.project200.undabang.member.entity.QMember;
 import com.project200.undabang.member.entity.QMemberPicture;
@@ -36,7 +36,7 @@ public class ExerciseLocationRepositoryImpl implements ExerciseLocationRepositor
      * @return 회원의 운동 위치 및 프로필 정보를 담은 GetMembersExerciseLocationsResponse 객체의 리스트
      */
     @Override
-    public List<GetMembersExerciseLocationsResponse> getMembersExerciseLocations(Set<UUID> excludeMemberIdSet, Viewport viewport) {
+    public List<GetOtherMemberExerciseLocationsResponse> getMembersExerciseLocations(Set<UUID> excludeMemberIdSet, Viewport viewport) {
         QMember member = QMember.member;
         QMemberPicture memberPicture = QMemberPicture.memberPicture;
         QExerciseLocation exerciseLocation = QExerciseLocation.exerciseLocation;
@@ -49,8 +49,7 @@ public class ExerciseLocationRepositoryImpl implements ExerciseLocationRepositor
                 .join(exerciseLocation.member, member)
                 .leftJoin(memberPicture).on(member.memberPicture.id.eq(memberPicture.id))
                 .leftJoin(memberPicture.picture, picture)
-                .leftJoin(member.preferredExercises, preferredExercise)
-                .on(preferredExercise.preferredExerciseDeletedAt.isNull())
+                .leftJoin(member.preferredExercises, preferredExercise).on(preferredExercise.preferredExerciseDeletedAt.isNull())
                 .leftJoin(preferredExercise.exercise, exerciseType)
                 .where(exerciseLocation.exerciseLocationDeletedAt.isNull() // 삭제된 운동장소 제외
                         .and(member.memberDeletedAt.isNull()) // 탈퇴한 회원 제외
@@ -62,7 +61,7 @@ public class ExerciseLocationRepositoryImpl implements ExerciseLocationRepositor
                 .transform(
                         groupBy(member.memberId).list(
                                 Projections.constructor(
-                                        GetMembersExerciseLocationsResponse.class,
+                                        GetOtherMemberExerciseLocationsResponse.class,
                                         member.memberId,
                                         picture.pictureUrl,
                                         memberPicture.memberPicturesUrl,

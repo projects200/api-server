@@ -6,7 +6,7 @@ import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.dto.record.ExerciseLocationRecord;
 import com.project200.undabang.member.dto.record.Viewport;
 import com.project200.undabang.member.dto.response.GetExerciseLocationsResponse;
-import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
+import com.project200.undabang.member.dto.response.GetOtherMemberExerciseLocationsResponse;
 import com.project200.undabang.member.entity.ExerciseLocation;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.ExerciseLocationRepository;
@@ -46,29 +46,6 @@ class ExerciseLocationQueryServiceImplTest {
     private MemberBlockRepository memberBlockRepository;
 
     private final GeometryFactory geometryFactory = new GeometryFactory();
-
-    private GetMembersExerciseLocationsResponse createGetMembersExerciseLocationsResponse(
-            UUID memberId, String nickname, Set<ExerciseLocationRecord> locations) {
-        return GetMembersExerciseLocationsResponse.builder()
-                .memberId(memberId)
-                .nickname(nickname)
-                .locations(locations)
-                .build();
-    }
-
-    private ExerciseLocation createExerciseLocation(Long id, String name, double lat, double lon) {
-        Point point = geometryFactory.createPoint(new Coordinate(lat, lon));
-        point.setSRID(4326);
-        return ExerciseLocation.builder()
-                .exerciseLocationId(id)
-                .exerciseLocationName(name)
-                .exerciseLocationPoint(point)
-                .build();
-    }
-
-    private ExerciseLocationRecord createExerciseLocationRecord(Long id, String name, double lat, double lon) {
-        return new ExerciseLocationRecord(id, name, lat, lon);
-    }
 
     @Nested
     @DisplayName("getExerciseLocations 메소드는")
@@ -165,15 +142,15 @@ class ExerciseLocationQueryServiceImplTest {
 
                 // 2. 주변 회원 목록 조회 Mocking
                 Set<ExerciseLocationRecord> locations = Set.of(createExerciseLocationRecord(1L, "헬스장A", 37.5, 127.0));
-                GetMembersExerciseLocationsResponse response1 = createGetMembersExerciseLocationsResponse(otherUser1Id,
+                GetOtherMemberExerciseLocationsResponse response1 = createGetMembersExerciseLocationsResponse(otherUser1Id,
                         "user1", locations);
-                List<GetMembersExerciseLocationsResponse> finalResponse = List.of(response1);
+                List<GetOtherMemberExerciseLocationsResponse> finalResponse = List.of(response1);
                 given(exerciseLocationRepository.getMembersExerciseLocations(
                         eq(exclusionIds), any(Viewport.class)))
                         .willReturn(finalResponse);
 
                 // when
-                List<GetMembersExerciseLocationsResponse> results = exerciseLocationQueryService
+                List<GetOtherMemberExerciseLocationsResponse> results = exerciseLocationQueryService
                         .getMembersExerciseLocations(
                                 new Viewport(37.0, 127.0, 36.0, 128.0));
 
@@ -209,5 +186,28 @@ class ExerciseLocationQueryServiceImplTest {
                 verify(exerciseLocationRepository, never()).getMembersExerciseLocations(any(), any(Viewport.class));
             }
         }
+    }
+
+    private GetOtherMemberExerciseLocationsResponse createGetMembersExerciseLocationsResponse(
+            UUID memberId, String nickname, Set<ExerciseLocationRecord> locations) {
+        return GetOtherMemberExerciseLocationsResponse.builder()
+                .memberId(memberId)
+                .nickname(nickname)
+                .locations(locations)
+                .build();
+    }
+
+    private ExerciseLocation createExerciseLocation(Long id, String name, double lat, double lon) {
+        Point point = geometryFactory.createPoint(new Coordinate(lat, lon));
+        point.setSRID(4326);
+        return ExerciseLocation.builder()
+                .exerciseLocationId(id)
+                .exerciseLocationName(name)
+                .exerciseLocationPoint(point)
+                .build();
+    }
+
+    private ExerciseLocationRecord createExerciseLocationRecord(Long id, String name, double lat, double lon) {
+        return new ExerciseLocationRecord(id, name, lat, lon);
     }
 }

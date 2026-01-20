@@ -15,7 +15,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * 회원의 운동 위치 및 선호 운동 데이터를 응답하기 위한 DTO 클래스입니다.
+ * 다른 회원의 운동 위치 및 선호 운동 데이터를 응답하기 위한 DTO 클래스입니다.
  * QueryDSL에서 Projections.constructor를 사용하여 데이터베이스 조회 결과를 매핑하는 데 활용됩니다.
  *
  * 주요 필드:
@@ -23,14 +23,13 @@ import java.util.stream.Collectors;
  * - 운동 정보: 운동 장소 목록(locations), 선호 운동 목록(preferredExercises)
  *
  * 생성자 설명:
- * - QueryDSL에서 데이터를 가져올 때 Left Join으로 인해 발생할 수 있는 null 값의
- *   컬렉션을 빈 Set으로 초기화하여 NullPointerException을 방지합니다.
+ * - QueryDSL에서 데이터를 가져올 때 Left Join으로 인해 발생할 수 있는 null 컬렉션을 빈 Set으로 초기화하여 NullPointerException을 방지합니다.
  * - 조인된 데이터가 없는 경우 모든 필드가 null인 Ghost Object를 필터링하여 유효한 데이터만 포함합니다.
  */
 @Getter
 @Builder
 @NoArgsConstructor
-public class GetMembersExerciseLocationsResponse {
+public class GetOtherMemberExerciseLocationsResponse {
     private UUID memberId;
     private String profileThumbnailUrl;
     private String profileImageUrl;
@@ -46,7 +45,7 @@ public class GetMembersExerciseLocationsResponse {
      * DB 조회 시 Left Join으로 인해 발생할 수 있는 null 컬렉션을 빈 Set으로 안전하게 초기화하며,
      * 조인된 데이터가 없어 모든 필드가 null인 Ghost Object를 필터링하여 유효한 데이터만 포함하도록 합니다.
      */
-    public GetMembersExerciseLocationsResponse(
+    public GetOtherMemberExerciseLocationsResponse(
             UUID memberId,
             String profileThumbnailUrl,
             String profileImageUrl,
