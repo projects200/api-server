@@ -222,4 +222,10 @@ VALUES ('레슬링', 'https://undabang-public-assets.s3.ap-northeast-2.amazonaws
         'https://undabang-public-assets.s3.ap-northeast-2.amazonaws.com/images/exercises/American_football.png');
 
 INSERT INTO policies (policy_key, policy_value, policy_unit, policy_description)
-VALUES ('PREFERRED_EXERCISE_MAX_COUNT', '5', 'COUNT', '선호 운동 최대 보유 갯수');
+VALUES (21, 'PREFERRED_EXERCISE_MAX_COUNT', '5', 'COUNT', '선호 운동 최대 보유 갯수');
+
+INSERT INTO policies (policy_id, policy_key, policy_value, policy_unit, policy_description)
+VALUES (22, 'EXERCISE_LOCATION_MAX_DISTANCE_METER', '5000', 'METERS', '현재 사용자와 운동장소간의 허용 가능한 최대 거리');
+
+INSERT INTO policy_group_mappings (policy_id, policy_groups_id)
+VALUES (22, 5);

@@ -72,8 +72,8 @@ class ExerciseLocationQueryControllerTest extends AbstractRestDocSupport {
                             .birthDate(LocalDate.of(1990, 1, 15))
                             .memberScore((byte) 50)
                             .locations(java.util.Set.of(
-                                    new ExerciseLocationRecord("헬스장 A", 37.5665, 126.9780),
-                                    new ExerciseLocationRecord("수영장 B", 37.5796, 126.9770)))
+                                    new ExerciseLocationRecord(1L, "헬스장 A", 37.5665, 126.9780),
+                                    new ExerciseLocationRecord(2L, "수영장 B", 37.5796, 126.9770)))
                             .preferredExercises(java.util.Set.of(preferredExercise))
                             .build());
 
@@ -111,44 +111,26 @@ class ExerciseLocationQueryControllerTest extends AbstractRestDocSupport {
                                     parameterWithName("rightBottomLongitude").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("우하단 경도 (Viewport 끝점)을 의미합니다.")
                             ),
                             responseFields(commonResponseFieldsForList(
-                                    fieldWithPath("data[].memberId").type(STRING)
-                                            .description("다른 회원의 식별자(UUID)를 나타냅니다."),
-                                    fieldWithPath("data[].profileThumbnailUrl").type(STRING)
-                                            .description("다른 회원의 썸네일 이미지 URL 정보입니다."),
-                                    fieldWithPath("data[].profileImageUrl").type(STRING)
-                                            .description("다른 회원의 프로필 이미지 URL 정보입니다."),
-                                    fieldWithPath("data[].nickname").type(STRING)
-                                            .description("다른 회원의 닉네임을 나타냅니다."),
-                                    fieldWithPath("data[].gender").type(STRING)
-                                            .description("다른 회원의 성별 (MALE, FEMALE, UNKNOWN) 입니다."),
-                                    fieldWithPath("data[].birthDate").type(STRING)
-                                            .description("다른 회원의 생년월일 정보입니다."),
-                                    fieldWithPath("data[].memberScore").type(NUMBER).optional()
-                                            .description("다른 회원의 운동 점수 (0~100) 입니다."),
+                                    fieldWithPath("data[].memberId").type(STRING).description("다른 회원의 식별자(UUID)를 나타냅니다."),
+                                    fieldWithPath("data[].profileThumbnailUrl").type(STRING).description("다른 회원의 썸네일 이미지 URL 정보입니다."),
+                                    fieldWithPath("data[].profileImageUrl").type(STRING).description("다른 회원의 프로필 이미지 URL 정보입니다."),
+                                    fieldWithPath("data[].nickname").type(STRING).description("다른 회원의 닉네임을 나타냅니다."),
+                                    fieldWithPath("data[].gender").type(STRING).description("다른 회원의 성별 (MALE, FEMALE, UNKNOWN) 입니다."),
+                                    fieldWithPath("data[].birthDate").type(STRING).description("다른 회원의 생년월일 정보입니다."),
+                                    fieldWithPath("data[].memberScore").type(NUMBER).optional().description("다른 회원의 운동 점수 (0~100) 입니다."),
 
-                                    // Locations
-                                    fieldWithPath("data[].locations[]").type(ARRAY)
-                                            .description("다른 회원이 저장한 운동 위치 목록입니다."),
-                                    fieldWithPath("data[].locations[].exerciseLocationName").type(STRING)
-                                            .description("운동 장소의 이름입니다."),
-                                    fieldWithPath("data[].locations[].latitude").type(NUMBER)
-                                            .description("운동 장소의 위도 정보입니다."),
-                                    fieldWithPath("data[].locations[].longitude").type(NUMBER)
-                                            .description("운동 장소의 경도 정보입니다."),
+                                    fieldWithPath("data[].locations[]").type(ARRAY).description("다른 회원이 저장한 운동 위치 목록입니다."),
+                                    fieldWithPath("data[].locations[].exerciseLocationId").type(NUMBER).description("다른 회원이 저장한 운동 위치 목록의 식별자 정보 입니다."),
+                                    fieldWithPath("data[].locations[].exerciseLocationName").type(STRING).description("운동 장소의 이름입니다."),
+                                    fieldWithPath("data[].locations[].latitude").type(NUMBER).description("운동 장소의 위도 정보입니다."),
+                                    fieldWithPath("data[].locations[].longitude").type(NUMBER).description("운동 장소의 경도 정보입니다."),
 
-                                    // Preferred Exercises (수정된 부분)
-                                    fieldWithPath("data[].preferredExercises[]").type(ARRAY).optional()
-                                            .description("다른 회원의 선호 운동 목록입니다."),
-                                    fieldWithPath("data[].preferredExercises[].preferredExerciseId").type(NUMBER).optional()
-                                            .description("선호 운동의 ID입니다."),
-                                    fieldWithPath("data[].preferredExercises[].name").type(STRING).optional()
-                                            .description("선호 운동의 종목 이름입니다."),
-                                    fieldWithPath("data[].preferredExercises[].skillLevel").type(STRING).optional()
-                                            .description("숙련도 (BEGINNER, ROOKIE, INTERMEDIATE, ADVANCED, SKILLED, PRO) 정보를 나타냅니다."),
-                                    fieldWithPath("data[].preferredExercises[].daysOfWeek").type(ARRAY).optional()
-                                            .description("운동 요일 정보 (boolean 배열, 인덱스 0부터 월요일~일요일)를 의미합니다."),
-                                    fieldWithPath("data[].preferredExercises[].imageUrl").type(STRING).optional()
-                                            .description("선호 운동 종목의 대표 이미지 URL입니다.")
+                                    fieldWithPath("data[].preferredExercises[]").type(ARRAY).optional().description("다른 회원의 선호 운동 목록입니다."),
+                                    fieldWithPath("data[].preferredExercises[].preferredExerciseId").type(NUMBER).optional().description("선호 운동의 ID입니다."),
+                                    fieldWithPath("data[].preferredExercises[].name").type(STRING).optional().description("선호 운동의 종목 이름입니다."),
+                                    fieldWithPath("data[].preferredExercises[].skillLevel").type(STRING).optional().description("숙련도 (BEGINNER, ROOKIE, INTERMEDIATE, ADVANCED, SKILLED, PRO) 정보를 나타냅니다."),
+                                    fieldWithPath("data[].preferredExercises[].daysOfWeek").type(ARRAY).optional().description("운동 요일 정보 (boolean 배열, 인덱스 0부터 월요일~일요일)를 의미합니다."),
+                                    fieldWithPath("data[].preferredExercises[].imageUrl").type(STRING).optional().description("선호 운동 종목의 대표 이미지 URL입니다.")
                             ))));
 
             BDDMockito.then(exerciseLocationQueryService).should(BDDMockito.times(1))
@@ -224,19 +206,14 @@ class ExerciseLocationQueryControllerTest extends AbstractRestDocSupport {
                     .andDo(document.document(
                             requestHeaders(HEADER_ACCESS_TOKEN),
                             responseFields(commonResponseFieldsForList(
-                                    fieldWithPath("data[].id").type(NUMBER)
-                                            .description("운동 장소의 고유 식별자 정보를 나타냅니다."),
-                                    fieldWithPath("data[].name").type(STRING)
-                                            .description("운동 장소의 이름(상호명) 입니다."),
-                                    fieldWithPath("data[].address").type(STRING)
-                                            .description("운동 장소의 도로명 주소(혹은 지번주소) 입니다."),
-                                    fieldWithPath("data[].latitude").type(NUMBER)
-                                            .description("운동 장소의 위도 정보 입니다."),
-                                    fieldWithPath("data[].longitude").type(NUMBER)
-                                            .description("운동 장소의 경도 정보 입니다.")))));
+                                    fieldWithPath("data[].id").type(NUMBER).description("운동 장소의 고유 식별자 정보를 나타냅니다."),
+                                    fieldWithPath("data[].name").type(STRING).description("운동 장소의 이름(상호명) 입니다."),
+                                    fieldWithPath("data[].address").type(STRING).description("운동 장소의 도로명 주소(혹은 지번주소) 입니다."),
+                                    fieldWithPath("data[].latitude").type(NUMBER).description("운동 장소의 위도 정보 입니다."),
+                                    fieldWithPath("data[].longitude").type(NUMBER).description("운동 장소의 경도 정보 입니다.")))));
 
-            // 서비스 메서드가 1번 호출되었는지 검증
-            BDDMockito.then(exerciseLocationQueryService).should(BDDMockito.times(1))
+            BDDMockito.then(exerciseLocationQueryService)
+                    .should(BDDMockito.times(1))
                     .getExerciseLocations();
         }
 
@@ -245,8 +222,7 @@ class ExerciseLocationQueryControllerTest extends AbstractRestDocSupport {
         void getExerciseLocations_Success_EmptyList() throws Exception {
             // given
             UUID currentMemberId = UUID.randomUUID();
-            BDDMockito.given(exerciseLocationQueryService.getExerciseLocations())
-                    .willReturn(Collections.emptyList());
+            BDDMockito.given(exerciseLocationQueryService.getExerciseLocations()).willReturn(Collections.emptyList());
 
             // when & then
             mockMvc.perform(get("/api/v1/exercise-locations")
@@ -260,7 +236,8 @@ class ExerciseLocationQueryControllerTest extends AbstractRestDocSupport {
                             jsonPath("$.data").isArray(),
                             jsonPath("$.data").isEmpty());
 
-            BDDMockito.then(exerciseLocationQueryService).should(BDDMockito.times(1))
+            BDDMockito.then(exerciseLocationQueryService)
+                    .should(BDDMockito.times(1))
                     .getExerciseLocations();
         }
     }

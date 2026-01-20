@@ -1,6 +1,7 @@
 package com.project200.undabang.chat.service.impl;
 
 import com.project200.undabang.chat.dto.event.ChatMessageCreatedEvent;
+import com.project200.undabang.chat.dto.event.ChatroomMemberStatusEvent;
 import com.project200.undabang.chat.dto.record.SaveMessageRecord;
 import com.project200.undabang.chat.dto.request.CreateChatroomRequest;
 import com.project200.undabang.chat.dto.request.CreateMessageRequest;
@@ -15,9 +16,13 @@ import com.project200.undabang.chat.service.ChatCommandService;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
+import com.project200.undabang.member.entity.ExerciseLocation;
 import com.project200.undabang.member.entity.Member;
+import com.project200.undabang.member.repository.ExerciseLocationRepository;
 import com.project200.undabang.member.repository.MemberBlockRepository;
 import com.project200.undabang.member.repository.MemberRepository;
+import com.project200.undabang.policy.entity.PolicyKey;
+import com.project200.undabang.policy.service.PolicyService;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,15 +46,28 @@ public class ChatCommandServiceImpl implements ChatCommandService {
     private final ChatRepository chatRepository;
     private final ChatroomMemberRepository chatroomMemberRepository;
     private final MemberBlockRepository memberBlockRepository;
+    private static final double EARTH_RADIUS_METER = 6371000.0; // 지구 평균 반지름 (m)
     private final ApplicationEventPublisher eventPublisher;
+    private final ExerciseLocationRepository exerciseLocationRepository;
     private final EntityManager em;
 
     private final int DIRECT_CHAT_MAX_MEMBER_COUNT = 2;
+    private final PolicyService policyService;
 
     /**
-     * 주어진 요청 정보를 기반으로 채팅방을 생성하거나 기존 채팅방을 반환합니다.
-     * 동일 사용자가 자신과의 채팅을 시도하면 예외를 발생시킵니다.
-     * 두 사용자가 동시에 채팅방을 생성할 가능성을 방지하기 위해 비관적 락을 적용합니다.
+     * 지정된 요청 정보를 바탕으로 새로운 채팅방을 생성하거나 기존의 채팅방을 반환합니다.
+     *
+     * @param request 채팅방 생성을 요청하는 정보를 담은 CreateChatroomRequest 객체
+     *                 - receiverId: 상대방 회원의 ID
+     *                 - exerciseLocationId: 운동 장소 ID
+     *                 - requesterLatitude: 요청자의 현재 위도
+     *                 - requesterLongitude: 요청자의 현재 경도
+     * @return 생성된 채팅방의 정보를 담은 CreateChatroomResponse 객체
+     * @throws CustomException 다음과 같은 경우 예외가 발생할 수 있습니다:
+     *                          - 자신과의 채팅방을 생성하려고 할 때 (SELF_CHAT_NOT_ALLOWED)
+     *                          - 상대방과 차단 관계인 경우 (CHATROOM_CREATE_BLOCKED)
+     *                          - 지정된 운동 장소가 존재하지 않을 때 (EXERCISE_LOCATION_NOT_FOUND)
+     *                          - 요청자가 지정된 운동 장소에서 특정 거리 이상 떨어져 있는 경우 (CHATROOM_CREATE_TOO_FAR_DISTANCE)
      */
     @Override
     @Transactional
@@ -67,6 +85,14 @@ public class ChatCommandServiceImpl implements ChatCommandService {
         // 차단 관계가 있는 경우 채팅방 생성 금지
         if (memberBlockRepository.checkMemberBlockExists(currentMember, targetMember)) {
             throw new CustomException(ErrorCode.CHATROOM_CREATE_BLOCKED);
+        }
+
+        ExerciseLocation targetExerciseLocation = exerciseLocationRepository.findByExerciseLocationIdAndMember_MemberIdAndExerciseLocationDeletedAtNull(request.getExerciseLocationId(), targetMemberId)
+                .orElseThrow(() -> new CustomException(ErrorCode.EXERCISE_LOCATION_NOT_FOUND));
+
+        // 채팅방 생성시 운동 장소와 특정 거리 이상 떨어진 경우 채팅방 생성 금지
+        if (!validateRequesterDistance(targetExerciseLocation, request.getRequesterLatitude(), request.getRequesterLongitude())) {
+            throw new CustomException(ErrorCode.CHATROOM_CREATE_TOO_FAR_DISTANCE);
         }
 
         // Lock이 설정된 상태에서 채팅방을 찾고, 생성함
@@ -126,7 +152,9 @@ public class ChatCommandServiceImpl implements ChatCommandService {
         }
 
         Chat systemChat = Chat.ofRoomCreation(SystemMessage.USER_LEFT_CHAT_ROOM.format(member.getMemberNickname()), chatroom);
-        chatRepository.save(systemChat);
+        Chat savedChat = chatRepository.save(systemChat);
+
+        eventPublisher.publishEvent(ChatroomMemberStatusEvent.of(chatroom.getId(), savedChat.getChatContent()));
     }
 
     /**
@@ -253,6 +281,43 @@ public class ChatCommandServiceImpl implements ChatCommandService {
         chatroomMemberRepository.saveAll(List.of(currentChatroomMember, targetChatroomMember));
 
         return newChatroom;
+    }
+
+    /**
+     * 요청자의 위치와 타겟 운동 장소 간의 거리를 검증하고, 해당 거리가 최대 허용 범위 내에 있는지 확인합니다.
+     *
+     * @param targetExerciseLocation 요청자가 검증할 대상 운동 장소의 위치 정보를 나타내는 객체
+     * @param requesterLatitude      요청자의 현재 위도 값
+     * @param requesterLongitude     요청자의 현재 경도 값
+     * @return 요청자의 위치와 타겟 운동 장소의 거리가 최대 허용 범위 내에 있으면 true를 반환하며, 그렇지 않으면 false를 반환
+     */
+    private boolean validateRequesterDistance(ExerciseLocation targetExerciseLocation, Double requesterLatitude, Double requesterLongitude) {
+        // 타겟 운동장소의 좌표
+        double targetLongitude = targetExerciseLocation.getExerciseLocationPoint().getX();
+        double targetLatitude = targetExerciseLocation.getExerciseLocationPoint().getY();
+
+        // 위도 경도 차이 (라디안 변환)
+        double deltaLatitude = Math.toRadians(requesterLatitude - targetLatitude);
+        double deltaLongitude = Math.toRadians(requesterLongitude - targetLongitude);
+
+        // 사전에 반복되는 삼각함수 및 라디안 변환 값 계산
+        double sinDeltaLatitudeHalf = Math.sin(deltaLatitude / 2);
+        double sinDeltaLongitudeHalf = Math.sin(deltaLongitude / 2);
+        double requesterLatitudeRadians = Math.toRadians(requesterLatitude);
+        double targetLatitudeRadians = Math.toRadians(targetLatitude);
+
+        // 두 지점 사이 현의 절반 길이의 제곱(haversine)을 구하는 수식
+        double squareOfHalfChordLength = sinDeltaLatitudeHalf * sinDeltaLatitudeHalf +
+                Math.cos(requesterLatitudeRadians) * Math.cos(targetLatitudeRadians) *
+                        sinDeltaLongitudeHalf * sinDeltaLongitudeHalf;
+
+        // 두 지점 사이의 각도 거리를 라디안 단위로 측정
+        double angularDistanceRadians = 2 * Math.atan2(Math.sqrt(squareOfHalfChordLength), Math.sqrt(1 - squareOfHalfChordLength));
+
+        // 최종 거리 계산 (지구의 반지름 길이 * 각도 거리)
+        double distanceMeters = EARTH_RADIUS_METER * angularDistanceRadians;
+
+        return distanceMeters <= policyService.getPolicyValueAsDouble(PolicyKey.EXERCISE_LOCATION_MAX_DISTANCE_METER);
     }
 
     /**

@@ -5,6 +5,7 @@ import com.project200.undabang.policy.entity.PolicyKey;
 
 public interface PolicyService {
 
+    double getPolicyValueAsDouble(PolicyKey key);
     /**
      * 캐시된 Map에서 특정 정책 값을 정수형으로 편리하게 조회하는 메소드입니다.
      * @param key 정책 키(policy_key)

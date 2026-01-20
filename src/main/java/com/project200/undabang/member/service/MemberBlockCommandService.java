@@ -6,6 +6,5 @@ import java.util.UUID;
 
 public interface MemberBlockCommandService {
     CreateMemberBlockResponse createMemberBlock(UUID blockMemberId);
-
     void unBlockMember(UUID blockMemberId);
 }

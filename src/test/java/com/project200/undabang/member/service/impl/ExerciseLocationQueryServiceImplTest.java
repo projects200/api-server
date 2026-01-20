@@ -3,8 +3,8 @@ package com.project200.undabang.member.service.impl;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
-import com.project200.undabang.member.dto.record.Viewport;
 import com.project200.undabang.member.dto.record.ExerciseLocationRecord;
+import com.project200.undabang.member.dto.record.Viewport;
 import com.project200.undabang.member.dto.response.GetExerciseLocationsResponse;
 import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
 import com.project200.undabang.member.entity.ExerciseLocation;
@@ -47,8 +47,27 @@ class ExerciseLocationQueryServiceImplTest {
 
     private final GeometryFactory geometryFactory = new GeometryFactory();
 
-    private ExerciseLocationRecord createExerciseLocationRecord(String name, double lat, double lon) {
-        return new ExerciseLocationRecord(name, lat, lon);
+    private GetMembersExerciseLocationsResponse createGetMembersExerciseLocationsResponse(
+            UUID memberId, String nickname, Set<ExerciseLocationRecord> locations) {
+        return GetMembersExerciseLocationsResponse.builder()
+                .memberId(memberId)
+                .nickname(nickname)
+                .locations(locations)
+                .build();
+    }
+
+    private ExerciseLocation createExerciseLocation(Long id, String name, double lat, double lon) {
+        Point point = geometryFactory.createPoint(new Coordinate(lat, lon));
+        point.setSRID(4326);
+        return ExerciseLocation.builder()
+                .exerciseLocationId(id)
+                .exerciseLocationName(name)
+                .exerciseLocationPoint(point)
+                .build();
+    }
+
+    private ExerciseLocationRecord createExerciseLocationRecord(Long id, String name, double lat, double lon) {
+        return new ExerciseLocationRecord(id, name, lat, lon);
     }
 
     @Nested
@@ -95,8 +114,7 @@ class ExerciseLocationQueryServiceImplTest {
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
                 given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-                given(exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member))
-                        .willReturn(Collections.emptyList());
+                given(exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member)).willReturn(Collections.emptyList());
 
                 // when
                 List<GetExerciseLocationsResponse> results = exerciseLocationQueryService.getExerciseLocations();
@@ -124,25 +142,6 @@ class ExerciseLocationQueryServiceImplTest {
         }
     }
 
-    private GetMembersExerciseLocationsResponse createGetMembersExerciseLocationsResponse(
-            UUID memberId, String nickname, Set<ExerciseLocationRecord> locations) {
-        return GetMembersExerciseLocationsResponse.builder()
-                .memberId(memberId)
-                .nickname(nickname)
-                .locations(locations)
-                .build();
-    }
-
-    private ExerciseLocation createExerciseLocation(Long id, String name, double lat, double lon) {
-        Point point = geometryFactory.createPoint(new Coordinate(lat, lon));
-        point.setSRID(4326);
-        return ExerciseLocation.builder()
-                .exerciseLocationId(id)
-                .exerciseLocationName(name)
-                .exerciseLocationPoint(point)
-                .build();
-    }
-
     @Nested
     @DisplayName("getMembersExerciseLocations 메소드는")
     class Describe_getMembersExerciseLocations {
@@ -165,7 +164,7 @@ class ExerciseLocationQueryServiceImplTest {
                 given(memberBlockRepository.findAllBlockedMemberIdsByMember(currentUser)).willReturn(exclusionIds);
 
                 // 2. 주변 회원 목록 조회 Mocking
-                Set<ExerciseLocationRecord> locations = Set.of(createExerciseLocationRecord("헬스장A", 37.5, 127.0));
+                Set<ExerciseLocationRecord> locations = Set.of(createExerciseLocationRecord(1L, "헬스장A", 37.5, 127.0));
                 GetMembersExerciseLocationsResponse response1 = createGetMembersExerciseLocationsResponse(otherUser1Id,
                         "user1", locations);
                 List<GetMembersExerciseLocationsResponse> finalResponse = List.of(response1);
@@ -207,8 +206,7 @@ class ExerciseLocationQueryServiceImplTest {
 
                 // verify: 예외 발생 시 다른 리포지토리들은 호출되지 않아야 함
                 verify(memberBlockRepository, never()).findAllBlockedMemberIdsByMember(any());
-                verify(exerciseLocationRepository, never()).getMembersExerciseLocations(
-                        any(), any(Viewport.class));
+                verify(exerciseLocationRepository, never()).getMembersExerciseLocations(any(), any(Viewport.class));
             }
         }
     }

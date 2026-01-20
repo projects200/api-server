@@ -72,6 +72,7 @@ public class ExerciseLocationRepositoryImpl implements ExerciseLocationRepositor
                                         member.memberScore,
                                         set(Projections.constructor(
                                                 ExerciseLocationRecord.class,
+                                                exerciseLocation.exerciseLocationId,
                                                 exerciseLocation.exerciseLocationName,
                                                 Expressions.numberTemplate(
                                                         Double.class, "ST_Latitude({0})", exerciseLocation.exerciseLocationPoint),

@@ -47,15 +47,9 @@ class ExerciseLocationRepositoryImplTest {
     static void setupH2Geometry(@Autowired DataSource dataSource) throws SQLException {
         try (Connection conn = dataSource.getConnection();
              Statement stmt = conn.createStatement()) {
-            // H2에는 기본적으로 ST_X, ST_Latitude 등의 함수가 없으므로 Java 메서드를 Alias로 등록해야 합니다.
-            String className = "com.project200.undabang.member.repository.impl.ExerciseLocationRepositoryImplTest$H2SpatialFunctions";
+            String className = H2SpatialFunctions.class.getName();
 
-            // ST_X, ST_Y 등록 (기존)
-            stmt.execute(String.format("CREATE ALIAS IF NOT EXISTS ST_X FOR \"%s.getX\"", className));
-            stmt.execute(String.format("CREATE ALIAS IF NOT EXISTS ST_Y FOR \"%s.getY\"", className));
-
-            // [중요] QueryDSL에서 사용하는 ST_Latitude, ST_Longitude도 등록해야 합니다.
-            // Latitude(위도) = Y, Longitude(경도) = X
+            // QueryDSL용 ST_Latitude(Y), ST_Longitude(X)
             stmt.execute(String.format("CREATE ALIAS IF NOT EXISTS ST_Latitude FOR \"%s.getY\"", className));
             stmt.execute(String.format("CREATE ALIAS IF NOT EXISTS ST_Longitude FOR \"%s.getX\"", className));
         }
@@ -108,6 +102,37 @@ class ExerciseLocationRepositoryImplTest {
         }
     }
 
+    private void flushAndClear() {
+        em.flush();
+        em.clear();
+    }
+
+    public static class H2SpatialFunctions {
+        private static final WKBReader wkbReader = new WKBReader();
+
+        // 경도 (Longitude / X)
+        public static double getX(byte[] wkb) {
+            if (wkb == null) return 0.0;
+            try {
+                Geometry geom = wkbReader.read(wkb);
+                return (geom instanceof Point) ? ((Point) geom).getX() : 0.0;
+            } catch (ParseException e) {
+                throw new RuntimeException("Failed to parse WKB for ST_X/ST_Longitude", e);
+            }
+        }
+
+        // 위도 (Latitude / Y)
+        public static double getY(byte[] wkb) {
+            if (wkb == null) return 0.0;
+            try {
+                Geometry geom = wkbReader.read(wkb);
+                return (geom instanceof Point) ? ((Point) geom).getY() : 0.0;
+            } catch (ParseException e) {
+                throw new RuntimeException("Failed to parse WKB for ST_Y/ST_Latitude", e);
+            }
+        }
+    }
+
     @Nested
     @DisplayName("findAllByMemberAndExerciseLocationDeletedAtNull 메소드는")
     class Describe_findAllByMemberAndExerciseLocationDeletedAtNull {
@@ -125,12 +150,9 @@ class ExerciseLocationRepositoryImplTest {
 
             flushAndClear();
 
-            List<ExerciseLocation> results = exerciseLocationRepository
-                    .findAllByMemberAndExerciseLocationDeletedAtNull(member1);
+            List<ExerciseLocation> results = exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member1);
 
-            assertThat(results).hasSize(2)
-                    .extracting(ExerciseLocation::getExerciseLocationName)
-                    .containsExactlyInAnyOrder("Active Gym 1", "Active Gym 2");
+            assertThat(results).hasSize(2).extracting(ExerciseLocation::getExerciseLocationName).containsExactlyInAnyOrder("Active Gym 1", "Active Gym 2");
         }
 
         @Test
@@ -142,8 +164,7 @@ class ExerciseLocationRepositoryImplTest {
 
             flushAndClear();
 
-            List<ExerciseLocation> results = exerciseLocationRepository
-                    .findAllByMemberAndExerciseLocationDeletedAtNull(member);
+            List<ExerciseLocation> results = exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member);
 
             assertThat(results).isNotNull().isEmpty();
         }
@@ -154,8 +175,7 @@ class ExerciseLocationRepositoryImplTest {
             Member member = createAndSaveMember("userWithNoLocations", false);
             flushAndClear();
 
-            List<ExerciseLocation> results = exerciseLocationRepository
-                    .findAllByMemberAndExerciseLocationDeletedAtNull(member);
+            List<ExerciseLocation> results = exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member);
 
             assertThat(results).isNotNull().isEmpty();
         }
@@ -172,8 +192,7 @@ class ExerciseLocationRepositoryImplTest {
             ExerciseLocation location = createAndSaveExerciseLocation(member, "활성 헬스장", false);
             flushAndClear();
 
-            Optional<ExerciseLocation> result = exerciseLocationRepository
-                    .findByExerciseLocationIdAndExerciseLocationDeletedAtNull(location.getExerciseLocationId());
+            Optional<ExerciseLocation> result = exerciseLocationRepository.findByExerciseLocationIdAndExerciseLocationDeletedAtNull(location.getExerciseLocationId());
 
             assertThat(result).isPresent();
             assertThat(result.get().getExerciseLocationId()).isEqualTo(location.getExerciseLocationId());
@@ -187,8 +206,7 @@ class ExerciseLocationRepositoryImplTest {
             ExerciseLocation location = createAndSaveExerciseLocation(member, "삭제된 헬스장", true);
             flushAndClear();
 
-            Optional<ExerciseLocation> result = exerciseLocationRepository
-                    .findByExerciseLocationIdAndExerciseLocationDeletedAtNull(location.getExerciseLocationId());
+            Optional<ExerciseLocation> result = exerciseLocationRepository.findByExerciseLocationIdAndExerciseLocationDeletedAtNull(location.getExerciseLocationId());
 
             assertThat(result).isEmpty();
         }
@@ -198,8 +216,7 @@ class ExerciseLocationRepositoryImplTest {
         void it_returns_empty_when_location_does_not_exist() {
             Long nonExistentId = 999L;
 
-            Optional<ExerciseLocation> result = exerciseLocationRepository
-                    .findByExerciseLocationIdAndExerciseLocationDeletedAtNull(nonExistentId);
+            Optional<ExerciseLocation> result = exerciseLocationRepository.findByExerciseLocationIdAndExerciseLocationDeletedAtNull(nonExistentId);
 
             assertThat(result).isEmpty();
         }
@@ -217,8 +234,7 @@ class ExerciseLocationRepositoryImplTest {
             createAndSaveExerciseLocation(member, existingName, false);
             flushAndClear();
 
-            boolean result = exerciseLocationRepository
-                    .existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, existingName);
+            boolean result = exerciseLocationRepository.existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, existingName);
 
             assertThat(result).isTrue();
         }
@@ -231,8 +247,7 @@ class ExerciseLocationRepositoryImplTest {
             createAndSaveExerciseLocation(member, deletedName, true);
             flushAndClear();
 
-            boolean result = exerciseLocationRepository
-                    .existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, deletedName);
+            boolean result = exerciseLocationRepository.existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, deletedName);
 
             assertThat(result).isFalse();
         }
@@ -244,45 +259,145 @@ class ExerciseLocationRepositoryImplTest {
             createAndSaveExerciseLocation(member, "Some Other Gym", false);
             flushAndClear();
 
-            boolean result = exerciseLocationRepository
-                    .existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, "NonExistent Gym");
+            boolean result = exerciseLocationRepository.existsByMemberAndExerciseLocationNameAndExerciseLocationDeletedAtNull(member, "NonExistent Gym");
 
             assertThat(result).isFalse();
         }
     }
 
-    private void flushAndClear() {
-        em.flush();
-        em.clear();
+    @Nested
+    @DisplayName("findByExerciseLocationIdAndMember_MemberIdAndExerciseLocationDeletedAtNull 메소드는")
+    class Describe_findByExerciseLocationIdAndMemberIdAndDeletedAtNull {
+
+        @Test
+        @DisplayName("삭제되지 않은 운동 장소를 ID와 회원 ID로 조회하면 Optional에 담아 반환한다")
+        void it_returns_location_when_id_and_member_match_and_not_deleted() {
+            Member member = createAndSaveMember("user", false);
+            ExerciseLocation location = createAndSaveExerciseLocation(member, "활성 헬스장", false);
+            flushAndClear();
+
+            Optional<ExerciseLocation> result = exerciseLocationRepository.findByExerciseLocationIdAndMember_MemberIdAndExerciseLocationDeletedAtNull(location.getExerciseLocationId(), member.getMemberId());
+
+            assertThat(result).isPresent();
+            assertThat(result.get().getExerciseLocationId()).isEqualTo(location.getExerciseLocationId());
+            assertThat(result.get().getMember().getMemberId()).isEqualTo(member.getMemberId());
+        }
+
+        @Test
+        @DisplayName("운동 장소 ID는 같지만 회원 ID가 다르면 Optional.empty를 반환한다")
+        void it_returns_empty_when_member_id_does_not_match() {
+            Member owner = createAndSaveMember("owner", false);
+            Member other = createAndSaveMember("other", false);
+            ExerciseLocation location = createAndSaveExerciseLocation(owner, "헬스장", false);
+            flushAndClear();
+
+            Optional<ExerciseLocation> result = exerciseLocationRepository.findByExerciseLocationIdAndMember_MemberIdAndExerciseLocationDeletedAtNull(location.getExerciseLocationId(), other.getMemberId());
+
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("운동 장소가 삭제된 상태라면 Optional.empty를 반환한다")
+        void it_returns_empty_when_location_is_deleted() {
+            Member member = createAndSaveMember("user", false);
+            ExerciseLocation location = createAndSaveExerciseLocation(member, "삭제된 헬스장", true);
+            flushAndClear();
+
+            Optional<ExerciseLocation> result = exerciseLocationRepository.findByExerciseLocationIdAndMember_MemberIdAndExerciseLocationDeletedAtNull(location.getExerciseLocationId(), member.getMemberId());
+
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("운동 장소 ID가 존재하지 않으면 Optional.empty를 반환한다")
+        void it_returns_empty_when_location_id_does_not_exist() {
+            Member member = createAndSaveMember("user", false);
+            Long nonExistentLocationId = 9999L;
+            flushAndClear();
+
+            Optional<ExerciseLocation> result = exerciseLocationRepository.findByExerciseLocationIdAndMember_MemberIdAndExerciseLocationDeletedAtNull(nonExistentLocationId, member.getMemberId());
+
+            assertThat(result).isEmpty();
+        }
     }
 
     @Nested
-    @DisplayName("getMembersExerciseLocations(Set<UUID> excludeMemberIdSet, bounds...) 데이터 필터링은")
-    class Describe_getMembersExerciseLocations_filtering {
+    @DisplayName("getMembersExerciseLocations(Set<UUID> excludeMemberIdSet) 메소드는")
+    class Describe_getMembersExerciseLocations_with_exclusionSet {
+
+        private Member currentUser, otherUser1, otherUser2, otherUser3;
+        private ExerciseLocation otherUser1Loc;
+
+        @BeforeEach
+        void setup() {
+            // 테스트에 사용할 공통 회원 생성
+            currentUser = createAndSaveMember("currentUser", false);
+            otherUser1 = createAndSaveMember("otherUser1", false); // 정상 조회 대상
+            otherUser2 = createAndSaveMember("otherUser2", false); // 내가 차단할 대상
+            otherUser3 = createAndSaveMember("otherUser3", false); // 나를 차단할 대상
+
+            // 모든 회원이 운동 장소를 가지도록 설정
+            otherUser1Loc = createAndSaveExerciseLocation(otherUser1, "User1 Gym", false);
+            createAndSaveExerciseLocation(otherUser2, "User2 Gym", false);
+            createAndSaveExerciseLocation(otherUser3, "User3 Gym", false);
+        }
 
         @Test
-        @DisplayName("주어진 경계 내에 있는 운동 장소만 반환한다")
-        void it_returns_locations_within_bounds_only() {
-            // given
-            Member insideMember = createAndSaveMember("insideUser", false);
-            createAndSaveExerciseLocation(insideMember, "Inside Gym", 127.0, 37.5, false);
+        @DisplayName("주어진 제외 목록(Set)에 포함된 회원들을 결과에서 모두 제외한다")
+        void it_excludes_all_members_in_the_given_exclusion_set() {
+            Set<UUID> exclusionIds = Set.of(currentUser.getMemberId(), otherUser2.getMemberId());
+            flushAndClear();
 
-            Member outsideMember = createAndSaveMember("outsideUser", false);
-            createAndSaveExerciseLocation(outsideMember, "Outside Gym", 129.0, 39.0, false);
+            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(exclusionIds, new Viewport(38.0, 126.0, 37.0, 128.0));
+
+            assertThat(results).hasSize(2).extracting(GetMembersExerciseLocationsResponse::getMemberId).containsExactlyInAnyOrder(otherUser1.getMemberId(), otherUser3.getMemberId());
+        }
+
+        @Test
+        @DisplayName("나, 내가 차단한 회원, 나를 차단한 회원을 모두 제외하고 결과를 반환한다")
+        void it_excludes_self_i_blocked_and_blocked_by_members() {
+            createAndSaveMemberBlock(currentUser, otherUser2, false);
+            createAndSaveMemberBlock(otherUser3, currentUser, false);
+
+            Set<UUID> exclusionIds = new HashSet<>();
+            exclusionIds.add(currentUser.getMemberId());
+            exclusionIds.add(otherUser2.getMemberId());
+            exclusionIds.add(otherUser3.getMemberId());
 
             flushAndClear();
 
-            // when
-            // Box: LeftTop(38.0, 126.0) ~ RightBottom(37.0, 128.0)
-            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
-                    Collections.emptySet(),
-                    new Viewport(38.0, 126.0, 37.0, 128.0));
+            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(exclusionIds, new Viewport(38.0, 126.0, 37.0, 128.0));
 
-            // then
             assertThat(results).hasSize(1);
-            assertThat(results.get(0).getLocations())
-                    .extracting(ExerciseLocationRecord::exerciseLocationName)
-                    .containsExactly("Inside Gym");
+            assertThat(results.get(0).getMemberId()).isEqualTo(otherUser1.getMemberId());
+        }
+
+        @Test
+        @DisplayName("차단했다가 해제한 회원은 결과에 포함시킨다")
+        void it_includes_unblocked_members_in_results() {
+            createAndSaveMemberBlock(currentUser, otherUser2, true);
+            Set<UUID> exclusionIds = Set.of(currentUser.getMemberId());
+            flushAndClear();
+
+            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(exclusionIds, new Viewport(38.0, 126.0, 37.0, 128.0));
+
+            assertThat(results).hasSize(3).extracting(GetMembersExerciseLocationsResponse::getMemberId).containsExactlyInAnyOrder(otherUser1.getMemberId(), otherUser2.getMemberId(), otherUser3.getMemberId());
+        }
+
+        @Test
+        @DisplayName("제외 목록이 비어있으면 모든 회원의 위치를 반환하며, Location ID가 올바르게 매핑되었는지 확인한다")
+        void it_returns_all_locations_if_exclusion_set_is_empty_and_checks_mapping() {
+            Set<UUID> exclusionIds = Collections.emptySet();
+            flushAndClear();
+
+            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(exclusionIds, new Viewport(38.0, 126.0, 37.0, 128.0));
+
+            assertThat(results).hasSize(3);
+
+            GetMembersExerciseLocationsResponse targetResponse = results.stream().filter(r -> r.getMemberId().equals(otherUser1.getMemberId())).findFirst().orElseThrow();
+
+            assertThat(targetResponse.getLocations()).hasSize(1);
+            assertThat(targetResponse.getLocations().iterator().next().exerciseLocationId()).isEqualTo(otherUser1Loc.getExerciseLocationId());
         }
     }
 
@@ -328,139 +443,30 @@ class ExerciseLocationRepositoryImplTest {
         em.persist(memberBlock);
     }
 
-    // H2용 공간 함수 클래스 (static inner class)
-    public static class H2SpatialFunctions {
-        private static final WKBReader wkbReader = new WKBReader();
-
-        // 경도 (Longitude)
-        public static double getX(byte[] wkb) {
-            if (wkb == null) return 0.0;
-            try {
-                Geometry geom = wkbReader.read(wkb);
-                return (geom instanceof Point) ? ((Point) geom).getX() : 0.0;
-            } catch (ParseException e) {
-                throw new RuntimeException("Failed to parse WKB for ST_X/ST_Longitude", e);
-            }
-        }
-
-        // 위도 (Latitude)
-        public static double getY(byte[] wkb) {
-            if (wkb == null) return 0.0;
-            try {
-                Geometry geom = wkbReader.read(wkb);
-                return (geom instanceof Point) ? ((Point) geom).getY() : 0.0;
-            } catch (ParseException e) {
-                throw new RuntimeException("Failed to parse WKB for ST_Y/ST_Latitude", e);
-            }
-        }
-    }
-
     @Nested
-    @DisplayName("getMembersExerciseLocations(Set<UUID> excludeMemberIdSet) 메소드는")
-    class Describe_getMembersExerciseLocations_with_exclusionSet {
-
-        private Member currentUser, otherUser1, otherUser2, otherUser3;
-
-        @BeforeEach
-        void setup() {
-            // 테스트에 사용할 공통 회원 생성
-            currentUser = createAndSaveMember("currentUser", false);
-            otherUser1 = createAndSaveMember("otherUser1", false); // 정상 조회 대상
-            otherUser2 = createAndSaveMember("otherUser2", false); // 내가 차단할 대상
-            otherUser3 = createAndSaveMember("otherUser3", false); // 나를 차단할 대상
-
-            // 모든 회원이 운동 장소를 가지도록 설정 (위치: 서울 중심부 근처)
-            createAndSaveExerciseLocation(currentUser, "My Gym", 127.0, 37.5, false);
-            createAndSaveExerciseLocation(otherUser1, "User1 Gym", 127.0, 37.5, false);
-            createAndSaveExerciseLocation(otherUser2, "User2 Gym", 127.0, 37.5, false);
-            createAndSaveExerciseLocation(otherUser3, "User3 Gym", 127.0, 37.5, false);
-        }
+    @DisplayName("getMembersExerciseLocations(..., bounds) 데이터 필터링은")
+    class Describe_getMembersExerciseLocations_filtering {
 
         @Test
-        @DisplayName("주어진 제외 목록(Set)에 포함된 회원들을 결과에서 모두 제외한다")
-        void it_excludes_all_members_in_the_given_exclusion_set() {
-            // given
-            Set<UUID> exclusionIds = Set.of(
-                    currentUser.getMemberId(), // 1. 나 자신
-                    otherUser2.getMemberId() // 2. 내가 차단한 회원
-            );
+        @DisplayName("주어진 경계 내에 있는 운동 장소만 반환한다")
+        void it_returns_locations_within_bounds_only() {
+            Member insideMember = createAndSaveMember("insideUser", false);
+            createAndSaveExerciseLocation(insideMember, "Inside Gym", 127.0, 37.5, false);
+
+            Member outsideMember = createAndSaveMember("outsideUser", false);
+            createAndSaveExerciseLocation(outsideMember, "Outside Gym", 129.0, 39.0, false);
 
             flushAndClear();
 
-            // when
-            // Viewport 범위를 넉넉하게 잡아서 좌표 문제로 필터링되지 않게 함
+            // Box: LeftTop(38.0, 126.0) ~ RightBottom(37.0, 128.0)
             List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
-                    exclusionIds,
+                    Collections.emptySet(),
                     new Viewport(38.0, 126.0, 37.0, 128.0));
 
-            // then
-            assertThat(results).hasSize(2)
-                    .extracting(GetMembersExerciseLocationsResponse::getMemberId)
-                    .containsExactlyInAnyOrder(otherUser1.getMemberId(), otherUser3.getMemberId());
-        }
-
-        @Test
-        @DisplayName("나, 내가 차단한 회원, 나를 차단한 회원을 모두 제외하고 결과를 반환한다")
-        void it_excludes_self_i_blocked_and_blocked_by_members() {
-            // given: 차단 관계 설정
-            createAndSaveMemberBlock(currentUser, otherUser2, false); // 내가 otherUser2 차단
-            createAndSaveMemberBlock(otherUser3, currentUser, false); // otherUser3이 나를 차단
-
-            Set<UUID> exclusionIds = new HashSet<>();
-            exclusionIds.add(currentUser.getMemberId());
-            exclusionIds.add(otherUser2.getMemberId());
-            exclusionIds.add(otherUser3.getMemberId());
-
-            flushAndClear();
-
-            // when
-            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
-                    exclusionIds,
-                    new Viewport(38.0, 126.0, 37.0, 128.0));
-
-            // then
             assertThat(results).hasSize(1);
-            assertThat(results.get(0).getMemberId()).isEqualTo(otherUser1.getMemberId());
-        }
-
-        @Test
-        @DisplayName("차단했다가 해제한 회원은 결과에 포함시킨다")
-        void it_includes_unblocked_members_in_results() {
-            // given: otherUser2를 차단했다가 해제한 상황
-            createAndSaveMemberBlock(currentUser, otherUser2, true); // unblocked = true
-
-            Set<UUID> exclusionIds = Set.of(currentUser.getMemberId()); // 나 자신만 제외
-
-            flushAndClear();
-
-            // when
-            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
-                    exclusionIds,
-                    new Viewport(38.0, 126.0, 37.0, 128.0));
-
-            // then
-            assertThat(results).hasSize(3)
-                    .extracting(GetMembersExerciseLocationsResponse::getMemberId)
-                    .containsExactlyInAnyOrder(
-                            otherUser1.getMemberId(),
-                            otherUser2.getMemberId(),
-                            otherUser3.getMemberId());
-        }
-
-        @Test
-        @DisplayName("제외 목록이 비어있으면 모든 회원(자기 자신 포함)의 위치를 반환한다")
-        void it_returns_all_locations_if_exclusion_set_is_empty() {
-            // given
-            Set<UUID> exclusionIds = Collections.emptySet();
-            flushAndClear();
-
-            // when
-            List<GetMembersExerciseLocationsResponse> results = exerciseLocationRepository.getMembersExerciseLocations(
-                    exclusionIds,
-                    new Viewport(38.0, 126.0, 37.0, 128.0));
-
-            // then
-            assertThat(results).hasSize(4);
+            assertThat(results.get(0).getLocations())
+                    .extracting(ExerciseLocationRecord::exerciseLocationName)
+                    .containsExactly("Inside Gym");
         }
     }
 }

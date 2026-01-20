@@ -80,6 +80,7 @@ public enum ErrorCode {
     CHAT_NOT_FOUND(404, "CHAT_NOT_FOUND", "존재하지 않는 채팅 입니다."),
     CHATROOM_MEMBER_INACTIVE(409, "CHATROOM_MEMBER_INACTIVE", "회원님이 나간 채팅방 입니다."),
     CHATROOM_OTHER_MEMBER_INACTIVE(409, "CHATROOM_OTHER_MEMBER_INACTIVE", "다른 회원님이 나간 채팅방입니다."),
+    CHATROOM_CREATE_TOO_FAR_DISTANCE(409, "CHATROOM_CREATE_TOO_FAR_DISTANCE", "해당 회원님과는 채팅방을 생성하기에 너무 멀리 있습니다."),
 
     // 차단 관련 에러
     MEMBER_BLOCK_NOT_FOUND(404, "MEMBER_BLOCK_NOT_FOUND", "해당 회원을 차단한 이력이 없습니다."),
