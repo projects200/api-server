@@ -3,6 +3,7 @@ package com.project200.undabang.member.service.impl;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
+import com.project200.undabang.member.dto.event.MemberBlockedEvent;
 import com.project200.undabang.member.dto.response.CreateMemberBlockResponse;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.MemberBlock;
@@ -11,10 +12,10 @@ import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.member.service.MemberBlockCommandService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -23,6 +24,7 @@ import java.util.UUID;
 public class MemberBlockCommandServiceImpl implements MemberBlockCommandService {
     private final MemberBlockRepository memberBlockRepository;
     private final MemberRepository memberRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 회원 차단(Block) 요청을 생성하는 메서드.
@@ -38,13 +40,9 @@ public class MemberBlockCommandServiceImpl implements MemberBlockCommandService 
         Member member = getMember(memberId);
         Member blockedMember = getMember(blockMemberId);
 
-        Optional<MemberBlock> optionalMemberBlock = memberBlockRepository.findByBlockerAndBlocked(member, blockedMember);
+        MemberBlock savedMemberBlock = validateAndSaveMemberBlock(member, blockedMember);
+        eventPublisher.publishEvent(MemberBlockedEvent.of(blockedMember, member));
 
-        if (optionalMemberBlock.isPresent()) {
-            return handleMemberBlockExist(optionalMemberBlock.get());
-        }
-
-        MemberBlock savedMemberBlock = memberBlockRepository.save(MemberBlock.of(member, blockedMember));
         return CreateMemberBlockResponse.of(savedMemberBlock.getId());
     }
 
@@ -80,18 +78,25 @@ public class MemberBlockCommandServiceImpl implements MemberBlockCommandService 
     }
 
     /**
-     * 기존의 MemberBlock이 존재할 경우 해당 상태를 처리하고 응답을 반환하는 메서드.
-     * 존재할 경우 409 Duplicated
-     * 존재하지만, 삭제한 경우 deletedAt = null 업데이트
+     * 주어진 MemberBlock 객체가 이미 존재하는지 확인하고, 기존 차단 상태를 처리하거나 재활성화하는 메서드.
      */
-    private CreateMemberBlockResponse handleMemberBlockExist(MemberBlock memberBlock) {
-
+    private MemberBlock handleMemberBlockExist(MemberBlock memberBlock) {
         if (memberBlock.getMemberBlockDeletedAt() == null) {
             throw new CustomException(ErrorCode.MEMBER_BLOCK_DUPLICATED);
-        } else {
-            memberBlock.reBlock();
-            return CreateMemberBlockResponse.of(memberBlock.getId());
         }
+
+        // 차단 해제 상태 였다면 다시 활성화해줌
+        memberBlock.reBlock();
+        return memberBlock;
+    }
+
+    /**
+     * 회원 차단 정보를 검증하고 저장하는 메서드. 차단 정보가 이미 존재하는 경우 이를 처리하거나, 새롭게 차단 정보를 생성하여 저장합니다.
+     */
+    private MemberBlock validateAndSaveMemberBlock(Member member, Member blockedMember) {
+        return memberBlockRepository.findByBlockerAndBlocked(member, blockedMember)
+                .map(this::handleMemberBlockExist) // 기존 차단 정보가 있을 경우, 활성 차단이면 예외를 반환하고, 해제된 차단이면 재활성화
+                .orElseGet(() -> memberBlockRepository.save(MemberBlock.of(member, blockedMember)));
     }
 
     /**

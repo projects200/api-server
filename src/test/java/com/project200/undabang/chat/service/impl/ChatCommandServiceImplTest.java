@@ -1,6 +1,7 @@
 package com.project200.undabang.chat.service.impl;
 
 import com.project200.undabang.chat.dto.event.ChatMessageCreatedEvent;
+import com.project200.undabang.chat.dto.event.ChatroomMemberStatusEvent;
 import com.project200.undabang.chat.dto.record.SaveMessageRecord;
 import com.project200.undabang.chat.dto.request.CreateChatroomRequest;
 import com.project200.undabang.chat.dto.request.CreateMessageRequest;
@@ -71,7 +72,6 @@ class ChatCommandServiceImplTest {
 
     @Mock
     private MemberBlockRepository memberBlockRepository;
-
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -365,146 +365,11 @@ class ChatCommandServiceImplTest {
         }
     }
 
-    @Nested
-    @DisplayName("deleteChatroom 메소드는")
-    class Describe_deleteChatroom {
-
-        private final Long chatroomId = 1L;
-
-        @Test
-        @DisplayName("성공: 활성 멤버가 채팅방을 나가면 상태를 LEFT로 변경하고 시스템 메시지를 저장한다")
-        void it_leaves_chatroom_successfully() {
-            // given
-            Member member = createMember();
-            Chatroom chatroom = spy(createChatroom(chatroomId));
-            ChatroomMember chatroomMember = spy(createChatroomMember(chatroom, member, ChatroomMemberStatus.ACTIVE));
-
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
-                given(memberRepository.findById(member.getMemberId())).willReturn(Optional.of(member));
-                given(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).willReturn(Optional.of(chatroomMember));
-                given(chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(chatroom, ChatroomMemberStatus.ACTIVE)).willReturn(1L);
-
-                // when
-                chatCommandService.leaveChatroom(chatroomId);
-
-                // then
-                then(chatroomMember).should(times(1)).updateMemberStatus(ChatroomMemberStatus.LEFT);
-                then(chatroom).should(never()).deleteChatroom();
-                verify(chatRepository, times(1)).save(any(Chat.class));
-            }
-        }
-
-        @Test
-        @DisplayName("성공: 마지막 활성 멤버가 나가면 채팅방도 논리적으로 삭제한다")
-        void it_deletes_chatroom_when_last_member_leaves() {
-            // given
-            Member member = createMember();
-            Chatroom chatroom = spy(createChatroom(chatroomId));
-            ChatroomMember chatroomMember = createChatroomMember(chatroom, member, ChatroomMemberStatus.ACTIVE);
-
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
-                given(memberRepository.findById(member.getMemberId())).willReturn(Optional.of(member));
-                given(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).willReturn(Optional.of(chatroomMember));
-                given(chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(chatroom, ChatroomMemberStatus.ACTIVE)).willReturn(0L);
-
-                // when
-                chatCommandService.leaveChatroom(chatroomId);
-
-                // then
-                then(chatroom).should(times(1)).deleteChatroom();
-                verify(chatRepository, times(1)).save(any(Chat.class));
-            }
-        }
-
-        @Test
-        @DisplayName("성공: 이미 나간 멤버가 다시 나가기를 요청하면 아무 작업도 하지 않고 성공 처리한다")
-        void it_does_nothing_if_member_already_left() {
-            // given
-            Member member = createMember();
-            Chatroom chatroom = createChatroom(chatroomId);
-            ChatroomMember chatroomMember = createChatroomMember(chatroom, member, ChatroomMemberStatus.LEFT);
-
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
-                given(memberRepository.findById(member.getMemberId())).willReturn(Optional.of(member));
-                given(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).willReturn(Optional.of(chatroomMember));
-
-                // when
-                chatCommandService.leaveChatroom(chatroomId);
-
-                // then
-                verify(chatroomMemberRepository, never()).countByChatroomAndChatroomMemberStatus(any(Chatroom.class), any(ChatroomMemberStatus.class));
-                verify(chatRepository, never()).save(any(Chat.class));
-            }
-        }
-
-        @Test
-        @DisplayName("실패: 채팅방 멤버가 아닐 경우 예외를 발생시킨다")
-        void it_throws_exception_if_not_a_member() {
-            // given
-            Member member = createMember();
-
-            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
-                ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
-                given(memberRepository.findById(member.getMemberId())).willReturn(Optional.of(member));
-                given(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).willReturn(Optional.empty());
-
-                // when & then
-                assertThatThrownBy(() -> chatCommandService.leaveChatroom(chatroomId))
-                        .isInstanceOf(CustomException.class)
-                        .hasMessage(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND.getMessage());
-            }
-        }
-    }
-
     private Member createMember() {
         return Member.builder()
                 .memberId(UUID.randomUUID())
                 .memberNickname("user_" + UUID.randomUUID().toString().substring(0, 8))
                 .build();
-    }
-
-    private Chatroom createChatroom(Long id) {
-        return Chatroom.builder()
-                .id(id)
-                .build();
-    }
-
-    private ChatroomMember createChatroomMember(Chatroom chatroom, Member member, ChatroomMemberStatus status) {
-        return ChatroomMember.builder()
-                .chatroom(chatroom)
-                .member(member)
-                .chatroomMemberStatus(status)
-                .build();
-    }
-
-    private ChatroomMember createChatroomMemberWithId(Long id, Chatroom chatroom, Member member, ChatroomMemberStatus status) {
-        return ChatroomMember.builder()
-                .chatroomMemberId(id)
-                .chatroom(chatroom)
-                .member(member)
-                .chatroomMemberStatus(status)
-                .build();
-    }
-
-    private ExerciseLocation createMockLocation(Double lat, Double lon) {
-        ExerciseLocation mockLocation = mock(ExerciseLocation.class);
-
-        Point realPoint = geometryFactory.createPoint(new Coordinate(lon, lat));
-
-        lenient().when(mockLocation.getExerciseLocationPoint()).thenReturn(realPoint);
-
-        return mockLocation;
-    }
-
-    private void mockMemberLocking(Member member1, Member member2) {
-        List<UUID> sortedIds = Stream.of(member1.getMemberId(), member2.getMemberId()).sorted().toList();
-        List<Member> sortedMembers = Stream.of(member1, member2)
-                .sorted((m1, m2) -> m1.getMemberId().compareTo(m2.getMemberId()))
-                .toList();
-        given(memberRepository.findAllByIdWithPessimisticLock(sortedIds)).willReturn(sortedMembers);
     }
 
     @Nested
@@ -764,6 +629,167 @@ class ChatCommandServiceImplTest {
                 then(currentChatroomMember).should().updateMemberStatus(ChatroomMemberStatus.ACTIVE);
                 then(targetChatroomMember).should().updateMemberStatus(ChatroomMemberStatus.ACTIVE);
                 then(memberRepository).should(never()).findAllByIdWithPessimisticLock(anyList());
+            }
+        }
+    }
+
+    // --- Helper Methods (Moved to Bottom) ---
+
+    private Chatroom createChatroom(Long id) {
+        return Chatroom.builder()
+                .id(id)
+                .build();
+    }
+
+    private ChatroomMember createChatroomMember(Chatroom chatroom, Member member, ChatroomMemberStatus status) {
+        return ChatroomMember.builder()
+                .chatroom(chatroom)
+                .member(member)
+                .chatroomMemberStatus(status)
+                .build();
+    }
+
+    private ChatroomMember createChatroomMemberWithId(Long id, Chatroom chatroom, Member member, ChatroomMemberStatus status) {
+        return ChatroomMember.builder()
+                .chatroomMemberId(id)
+                .chatroom(chatroom)
+                .member(member)
+                .chatroomMemberStatus(status)
+                .build();
+    }
+
+    private ExerciseLocation createMockLocation(Double lat, Double lon) {
+        ExerciseLocation mockLocation = mock(ExerciseLocation.class);
+
+        Point realPoint = geometryFactory.createPoint(new Coordinate(lon, lat));
+
+        lenient().when(mockLocation.getExerciseLocationPoint()).thenReturn(realPoint);
+
+        return mockLocation;
+    }
+
+    private void mockMemberLocking(Member member1, Member member2) {
+        List<UUID> sortedIds = Stream.of(member1.getMemberId(), member2.getMemberId()).sorted().toList();
+        List<Member> sortedMembers = Stream.of(member1, member2)
+                .sorted((m1, m2) -> m1.getMemberId().compareTo(m2.getMemberId()))
+                .toList();
+        given(memberRepository.findAllByIdWithPessimisticLock(sortedIds)).willReturn(sortedMembers);
+    }
+
+    @Nested
+    @DisplayName("deleteChatroom 메소드는")
+    class Describe_deleteChatroom {
+
+        private final Long chatroomId = 1L;
+
+        @Test
+        @DisplayName("성공: 활성 멤버가 채팅방을 나가면 상태를 LEFT로 변경하고 시스템 메시지를 저장하며, 이벤트를 발행한다")
+        void it_leaves_chatroom_successfully() {
+            // given
+            Member member = createMember();
+            Chatroom chatroom = spy(createChatroom(chatroomId));
+            ChatroomMember chatroomMember = spy(createChatroomMember(chatroom, member, ChatroomMemberStatus.ACTIVE));
+            String systemMessageContent = "사용자님이 나갔습니다";
+
+            // 시스템 메시지용 Mock Chat 객체 생성
+            Chat savedSystemChat = mock(Chat.class);
+            given(savedSystemChat.getChatContent()).willReturn(systemMessageContent);
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
+                given(memberRepository.findById(member.getMemberId())).willReturn(Optional.of(member));
+                given(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).willReturn(Optional.of(chatroomMember));
+                given(chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(chatroom, ChatroomMemberStatus.ACTIVE)).willReturn(1L);
+
+                // 시스템 메시지 저장 시 Mock 객체 반환
+                given(chatRepository.save(any(Chat.class))).willReturn(savedSystemChat);
+
+                // when
+                chatCommandService.leaveChatroom(chatroomId);
+
+                // then
+                then(chatroomMember).should(times(1)).updateMemberStatus(ChatroomMemberStatus.LEFT);
+                then(chatroom).should(never()).deleteChatroom();
+                verify(chatRepository, times(1)).save(any(Chat.class));
+
+                // [추가된 부분] 이벤트 발행 검증
+                ArgumentCaptor<ChatroomMemberStatusEvent> eventCaptor = ArgumentCaptor.forClass(ChatroomMemberStatusEvent.class);
+                verify(eventPublisher).publishEvent(eventCaptor.capture());
+
+                ChatroomMemberStatusEvent capturedEvent = eventCaptor.getValue();
+                assertThat(capturedEvent.chatroomId()).isEqualTo(chatroomId);
+                assertThat(capturedEvent.chatContent()).isEqualTo(systemMessageContent);
+            }
+        }
+
+        @Test
+        @DisplayName("성공: 마지막 활성 멤버가 나가면 채팅방도 논리적으로 삭제한다")
+        void it_deletes_chatroom_when_last_member_leaves() {
+            // given
+            Member member = createMember();
+            Chatroom chatroom = spy(createChatroom(chatroomId));
+            ChatroomMember chatroomMember = createChatroomMember(chatroom, member, ChatroomMemberStatus.ACTIVE);
+
+            Chat savedSystemChat = mock(Chat.class);
+            given(savedSystemChat.getChatContent()).willReturn("나감");
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
+                given(memberRepository.findById(member.getMemberId())).willReturn(Optional.of(member));
+                given(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).willReturn(Optional.of(chatroomMember));
+                given(chatroomMemberRepository.countByChatroomAndChatroomMemberStatus(chatroom, ChatroomMemberStatus.ACTIVE)).willReturn(0L);
+                given(chatRepository.save(any(Chat.class))).willReturn(savedSystemChat);
+
+                // when
+                chatCommandService.leaveChatroom(chatroomId);
+
+                // then
+                then(chatroom).should(times(1)).deleteChatroom();
+                verify(chatRepository, times(1)).save(any(Chat.class));
+
+                // 이벤트 발행 검증 (삭제 시에도 나감 메시지는 전송됨)
+                verify(eventPublisher).publishEvent(any(ChatroomMemberStatusEvent.class));
+            }
+        }
+
+        @Test
+        @DisplayName("성공: 이미 나간 멤버가 다시 나가기를 요청하면 아무 작업도 하지 않고 성공 처리한다")
+        void it_does_nothing_if_member_already_left() {
+            // given
+            Member member = createMember();
+            Chatroom chatroom = createChatroom(chatroomId);
+            ChatroomMember chatroomMember = createChatroomMember(chatroom, member, ChatroomMemberStatus.LEFT);
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
+                given(memberRepository.findById(member.getMemberId())).willReturn(Optional.of(member));
+                given(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).willReturn(Optional.of(chatroomMember));
+
+                // when
+                chatCommandService.leaveChatroom(chatroomId);
+
+                // then
+                verify(chatroomMemberRepository, never()).countByChatroomAndChatroomMemberStatus(any(Chatroom.class), any(ChatroomMemberStatus.class));
+                verify(chatRepository, never()).save(any(Chat.class));
+                verify(eventPublisher, never()).publishEvent(any());
+            }
+        }
+
+        @Test
+        @DisplayName("실패: 채팅방 멤버가 아닐 경우 예외를 발생시킨다")
+        void it_throws_exception_if_not_a_member() {
+            // given
+            Member member = createMember();
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                ignored.when(UserContextHolder::getUserId).thenReturn(member.getMemberId());
+                given(memberRepository.findById(member.getMemberId())).willReturn(Optional.of(member));
+                given(chatroomMemberRepository.findByChatroom_IdAndMember(chatroomId, member)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> chatCommandService.leaveChatroom(chatroomId))
+                        .isInstanceOf(CustomException.class)
+                        .hasMessage(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND.getMessage());
             }
         }
     }

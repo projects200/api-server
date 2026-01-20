@@ -1,6 +1,7 @@
 package com.project200.undabang.chat.service.impl;
 
 import com.project200.undabang.chat.dto.event.ChatMessageCreatedEvent;
+import com.project200.undabang.chat.dto.event.ChatroomMemberStatusEvent;
 import com.project200.undabang.chat.dto.record.SaveMessageRecord;
 import com.project200.undabang.chat.dto.request.CreateChatroomRequest;
 import com.project200.undabang.chat.dto.request.CreateMessageRequest;
@@ -151,7 +152,9 @@ public class ChatCommandServiceImpl implements ChatCommandService {
         }
 
         Chat systemChat = Chat.ofRoomCreation(SystemMessage.USER_LEFT_CHAT_ROOM.format(member.getMemberNickname()), chatroom);
-        chatRepository.save(systemChat);
+        Chat savedChat = chatRepository.save(systemChat);
+
+        eventPublisher.publishEvent(ChatroomMemberStatusEvent.of(chatroom.getId(), savedChat.getChatContent()));
     }
 
     /**

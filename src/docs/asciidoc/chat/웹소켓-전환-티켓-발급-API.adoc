@@ -51,6 +51,16 @@ response body
     "data": "해당 회원님과는 메시지를 주고받을 수 없습니다."
 }
 
+다른 회원이 실시간으로 차단한 경우
+response body
+{
+    "succeed": false,
+    "type": "SYSTEM_BANNED",
+    "message": "차단된 회원과는 대화할 수 없습니다.",
+    "data": null
+}
+
+
 다른 회원이 채팅방을 나간 경우
 {
     "succeed": false,
@@ -58,6 +68,15 @@ response body
     "message": "CHATROOM_OTHER_MEMBER_INACTIVE",
     "data": "다른 회원님이 나간 채팅방입니다."
 }
+
+다른 회원이 채팅방을 실시간으로 나간 경우
+{
+    "succeed": false,
+    "type": "SYSTEM_LEAVE",
+    "message": "{{Nickname}} 님이 채팅방을 나갔습니다.",
+    "data": null
+}
+
 ```
 
 === 개발 이력
