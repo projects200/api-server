@@ -3,8 +3,9 @@ package com.project200.undabang.member.service.impl;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
+import com.project200.undabang.member.dto.record.Viewport;
 import com.project200.undabang.member.dto.response.GetExerciseLocationsResponse;
-import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
+import com.project200.undabang.member.dto.response.GetOtherMemberExerciseLocationsResponse;
 import com.project200.undabang.member.entity.ExerciseLocation;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.ExerciseLocationRepository;
@@ -36,12 +37,12 @@ public class ExerciseLocationQueryServiceImpl implements ExerciseLocationQuerySe
      * @return 다른 회원들의 운동 위치 정보를 포함하는 GetMembersExerciseLocationsResponse 객체 리스트
      */
     @Override
-    public List<GetMembersExerciseLocationsResponse> getMembersExerciseLocations() {
+    public List<GetOtherMemberExerciseLocationsResponse> getMembersExerciseLocations(Viewport viewport) {
         Member member = getMember(UserContextHolder.getUserId());
 
         Set<UUID> excludeMemberIdSet = memberBlockRepository.findAllBlockedMemberIdsByMember(member);
 
-        return exerciseLocationRepository.getMembersExerciseLocations(excludeMemberIdSet);
+        return exerciseLocationRepository.getMembersExerciseLocations(excludeMemberIdSet, viewport);
     }
 
     /**
@@ -55,13 +56,13 @@ public class ExerciseLocationQueryServiceImpl implements ExerciseLocationQuerySe
     public List<GetExerciseLocationsResponse> getExerciseLocations() {
         Member member = getMember(UserContextHolder.getUserId());
 
-        List<ExerciseLocation> exerciseLocationList = exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member);
+        List<ExerciseLocation> exerciseLocationList = exerciseLocationRepository
+                .findAllByMemberAndExerciseLocationDeletedAtNull(member);
 
         return exerciseLocationList.stream()
                 .map(GetExerciseLocationsResponse::from)
                 .toList();
     }
-
 
     /**
      * 주어진 회원 ID에 해당하는 회원 정보를 가져옵니다.

@@ -61,10 +61,9 @@ class ChatCommandServiceImplConcurrencyTest {
     @Autowired
     private EntityManager em;
 
+    private final GeometryFactory geometryFactory = new GeometryFactory();
     @Autowired
     private ExerciseLocationRepository exerciseLocationRepository;
-
-    private final GeometryFactory geometryFactory = new GeometryFactory();
     @MockitoBean
     private PolicyService policyService;
 

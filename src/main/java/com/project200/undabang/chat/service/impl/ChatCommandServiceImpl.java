@@ -46,8 +46,8 @@ public class ChatCommandServiceImpl implements ChatCommandService {
     private final ChatRepository chatRepository;
     private final ChatroomMemberRepository chatroomMemberRepository;
     private final MemberBlockRepository memberBlockRepository;
-    private final ExerciseLocationRepository exerciseLocationRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final ExerciseLocationRepository exerciseLocationRepository;
     private final PolicyService policyService;
     private final EntityManager em;
 

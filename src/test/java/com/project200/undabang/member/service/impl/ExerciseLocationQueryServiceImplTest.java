@@ -4,8 +4,9 @@ import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.dto.record.ExerciseLocationRecord;
+import com.project200.undabang.member.dto.record.Viewport;
 import com.project200.undabang.member.dto.response.GetExerciseLocationsResponse;
-import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
+import com.project200.undabang.member.dto.response.GetOtherMemberExerciseLocationsResponse;
 import com.project200.undabang.member.entity.ExerciseLocation;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.ExerciseLocationRepository;
@@ -46,10 +47,6 @@ class ExerciseLocationQueryServiceImplTest {
 
     private final GeometryFactory geometryFactory = new GeometryFactory();
 
-    private ExerciseLocationRecord createExerciseLocationRecord(Long id, String name, double lat, double lon) {
-        return new ExerciseLocationRecord(id, name, lat, lon);
-    }
-
     @Nested
     @DisplayName("getExerciseLocations 메소드는")
     class Describe_getExerciseLocations {
@@ -62,14 +59,14 @@ class ExerciseLocationQueryServiceImplTest {
         void it_returns_list_of_dto_for_current_user_locations() {
             // given
             List<ExerciseLocation> locations = List.of(
-                    createExerciseLocation(1L, "헬스장 A", 127.1, 37.1),
-                    createExerciseLocation(2L, "헬스장 B", 127.2, 37.2)
-            );
+                    createExerciseLocation(1L, "헬스장 A", 37.1, 127.1),
+                    createExerciseLocation(2L, "헬스장 B", 37.2, 127.2));
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(memberId);
                 given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-                given(exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member)).willReturn(locations);
+                given(exerciseLocationRepository.findAllByMemberAndExerciseLocationDeletedAtNull(member))
+                        .willReturn(locations);
 
                 // when
                 List<GetExerciseLocationsResponse> results = exerciseLocationQueryService.getExerciseLocations();
@@ -80,8 +77,7 @@ class ExerciseLocationQueryServiceImplTest {
                         .extracting("name", "latitude", "longitude")
                         .containsExactlyInAnyOrder(
                                 tuple("헬스장 A", 37.1, 127.1),
-                                tuple("헬스장 B", 37.2, 127.2)
-                        );
+                                tuple("헬스장 B", 37.2, 127.2));
 
                 verify(memberRepository, times(1)).findById(memberId);
                 verify(exerciseLocationRepository, times(1)).findAllByMemberAndExerciseLocationDeletedAtNull(member);
@@ -123,26 +119,6 @@ class ExerciseLocationQueryServiceImplTest {
         }
     }
 
-    private GetMembersExerciseLocationsResponse createGetMembersExerciseLocationsResponse(
-            UUID memberId, String nickname, List<ExerciseLocationRecord> locations
-    ) {
-        return GetMembersExerciseLocationsResponse.builder()
-                .memberId(memberId)
-                .nickname(nickname)
-                .locations(locations)
-                .build();
-    }
-
-    private ExerciseLocation createExerciseLocation(Long id, String name, double lon, double lat) {
-        Point point = geometryFactory.createPoint(new Coordinate(lon, lat));
-        point.setSRID(4326);
-        return ExerciseLocation.builder()
-                .exerciseLocationId(id)
-                .exerciseLocationName(name)
-                .exerciseLocationPoint(point)
-                .build();
-    }
-
     @Nested
     @DisplayName("getMembersExerciseLocations 메소드는")
     class Describe_getMembersExerciseLocations {
@@ -165,13 +141,18 @@ class ExerciseLocationQueryServiceImplTest {
                 given(memberBlockRepository.findAllBlockedMemberIdsByMember(currentUser)).willReturn(exclusionIds);
 
                 // 2. 주변 회원 목록 조회 Mocking
-                List<ExerciseLocationRecord> locations = List.of(createExerciseLocationRecord(1L, "헬스장A", 37.5, 127.0));
-                GetMembersExerciseLocationsResponse response1 = createGetMembersExerciseLocationsResponse(otherUser1Id, "user1", locations);
-                List<GetMembersExerciseLocationsResponse> finalResponse = List.of(response1);
-                given(exerciseLocationRepository.getMembersExerciseLocations(exclusionIds)).willReturn(finalResponse);
+                Set<ExerciseLocationRecord> locations = Set.of(createExerciseLocationRecord(1L, "헬스장A", 37.5, 127.0));
+                GetOtherMemberExerciseLocationsResponse response1 = createGetMembersExerciseLocationsResponse(otherUser1Id,
+                        "user1", locations);
+                List<GetOtherMemberExerciseLocationsResponse> finalResponse = List.of(response1);
+                given(exerciseLocationRepository.getMembersExerciseLocations(
+                        eq(exclusionIds), any(Viewport.class)))
+                        .willReturn(finalResponse);
 
                 // when
-                List<GetMembersExerciseLocationsResponse> results = exerciseLocationQueryService.getMembersExerciseLocations();
+                List<GetOtherMemberExerciseLocationsResponse> results = exerciseLocationQueryService
+                        .getMembersExerciseLocations(
+                                new Viewport(37.0, 127.0, 36.0, 128.0));
 
                 // then
                 assertThat(results).hasSize(1);
@@ -180,7 +161,8 @@ class ExerciseLocationQueryServiceImplTest {
                 // verify: 각 Mock 객체가 올바른 순서와 파라미터로 호출되었는지 검증
                 verify(memberRepository, times(1)).findById(currentUserId);
                 verify(memberBlockRepository, times(1)).findAllBlockedMemberIdsByMember(currentUser);
-                verify(exerciseLocationRepository, times(1)).getMembersExerciseLocations(exclusionIds);
+                verify(exerciseLocationRepository, times(1)).getMembersExerciseLocations(
+                        eq(exclusionIds), any(Viewport.class));
             }
         }
 
@@ -194,14 +176,38 @@ class ExerciseLocationQueryServiceImplTest {
                 given(memberRepository.findById(currentUserId)).willReturn(Optional.empty());
 
                 // when & then
-                assertThatThrownBy(() -> exerciseLocationQueryService.getMembersExerciseLocations())
+                assertThatThrownBy(() -> exerciseLocationQueryService.getMembersExerciseLocations(
+                        new Viewport(37.0, 127.0, 36.0, 128.0)))
                         .isInstanceOf(CustomException.class)
                         .hasMessageContaining(ErrorCode.MEMBER_NOT_FOUND.getMessage());
 
                 // verify: 예외 발생 시 다른 리포지토리들은 호출되지 않아야 함
                 verify(memberBlockRepository, never()).findAllBlockedMemberIdsByMember(any());
-                verify(exerciseLocationRepository, never()).getMembersExerciseLocations(any());
+                verify(exerciseLocationRepository, never()).getMembersExerciseLocations(any(), any(Viewport.class));
             }
         }
+    }
+
+    private GetOtherMemberExerciseLocationsResponse createGetMembersExerciseLocationsResponse(
+            UUID memberId, String nickname, Set<ExerciseLocationRecord> locations) {
+        return GetOtherMemberExerciseLocationsResponse.builder()
+                .memberId(memberId)
+                .nickname(nickname)
+                .locations(locations)
+                .build();
+    }
+
+    private ExerciseLocation createExerciseLocation(Long id, String name, double lat, double lon) {
+        Point point = geometryFactory.createPoint(new Coordinate(lat, lon));
+        point.setSRID(4326);
+        return ExerciseLocation.builder()
+                .exerciseLocationId(id)
+                .exerciseLocationName(name)
+                .exerciseLocationPoint(point)
+                .build();
+    }
+
+    private ExerciseLocationRecord createExerciseLocationRecord(Long id, String name, double lat, double lon) {
+        return new ExerciseLocationRecord(id, name, lat, lon);
     }
 }

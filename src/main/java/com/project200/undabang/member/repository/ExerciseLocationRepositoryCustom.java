@@ -1,11 +1,12 @@
 package com.project200.undabang.member.repository;
 
-import com.project200.undabang.member.dto.response.GetMembersExerciseLocationsResponse;
+import com.project200.undabang.member.dto.record.Viewport;
+import com.project200.undabang.member.dto.response.GetOtherMemberExerciseLocationsResponse;
 
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 public interface ExerciseLocationRepositoryCustom {
-    List<GetMembersExerciseLocationsResponse> getMembersExerciseLocations(Set<UUID> excludeMemberIdSet);
+    List<GetOtherMemberExerciseLocationsResponse> getMembersExerciseLocations(Set<UUID> excludeMemberIdSet, Viewport viewport);
 }
