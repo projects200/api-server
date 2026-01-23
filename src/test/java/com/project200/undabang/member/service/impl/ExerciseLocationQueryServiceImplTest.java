@@ -198,7 +198,7 @@ class ExerciseLocationQueryServiceImplTest {
     }
 
     private ExerciseLocation createExerciseLocation(Long id, String name, double lat, double lon) {
-        Point point = geometryFactory.createPoint(new Coordinate(lat, lon));
+        Point point = geometryFactory.createPoint(new Coordinate(lon, lat));
         point.setSRID(4326);
         return ExerciseLocation.builder()
                 .exerciseLocationId(id)
