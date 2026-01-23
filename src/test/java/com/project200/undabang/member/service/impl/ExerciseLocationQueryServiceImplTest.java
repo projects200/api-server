@@ -76,8 +76,8 @@ class ExerciseLocationQueryServiceImplTest {
                 assertThat(results)
                         .extracting("name", "latitude", "longitude")
                         .containsExactlyInAnyOrder(
-                                tuple("헬스장 A", 127.1, 37.1),
-                                tuple("헬스장 B", 127.2, 37.2));
+                                tuple("헬스장 A", 37.1, 127.1),
+                                tuple("헬스장 B", 37.2, 127.2));
 
                 verify(memberRepository, times(1)).findById(memberId);
                 verify(exerciseLocationRepository, times(1)).findAllByMemberAndExerciseLocationDeletedAtNull(member);
@@ -198,7 +198,7 @@ class ExerciseLocationQueryServiceImplTest {
     }
 
     private ExerciseLocation createExerciseLocation(Long id, String name, double lat, double lon) {
-        Point point = geometryFactory.createPoint(new Coordinate(lat, lon));
+        Point point = geometryFactory.createPoint(new Coordinate(lon, lat));
         point.setSRID(4326);
         return ExerciseLocation.builder()
                 .exerciseLocationId(id)
