@@ -45,10 +45,8 @@ public class GetExerciseLocationsResponse {
                 .id(exerciseLocation.getExerciseLocationId())
                 .name(exerciseLocation.getExerciseLocationName())
                 .address(exerciseLocation.getExerciseLocationAddress())
-                // Point 의 X 좌표는 경도와 매핑됨
-                .latitude(exerciseLocation.getExerciseLocationPoint().getX())
-                // Point 의 Y 좌표는 위도와 매핑됨
-                .longitude(exerciseLocation.getExerciseLocationPoint().getY())
+                .latitude(exerciseLocation.getExerciseLocationPoint().getY())
+                .longitude(exerciseLocation.getExerciseLocationPoint().getX())
                 .build();
     }
 }
