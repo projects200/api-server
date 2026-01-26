@@ -1,58 +1,71 @@
-drop table if exists BATCH_JOB_EXECUTION_CONTEXT;
-drop table if exists BATCH_STEP_EXECUTION_CONTEXT;
-drop table if exists BATCH_JOB_EXECUTION_PARAMS;
-drop table if exists BATCH_STEP_EXECUTION;
-drop table if exists BATCH_JOB_EXECUTION;
-drop table if exists BATCH_JOB_INSTANCE;
+-- 순서 정렬 및 FK 체크 해제
+SET foreign_key_checks = 0;
 
-drop table if exists BATCH_STEP_EXECUTION_SEQ;
-drop table if exists BATCH_JOB_EXECUTION_SEQ;
-drop table if exists BATCH_JOB_SEQ;
+DROP TRIGGER IF EXISTS before_insert_members;
 
-drop table if exists policy_group_mappings;
-drop table if exists policy_groups;
-drop table if exists policies;
+DROP TABLE IF EXISTS BATCH_STEP_EXECUTION_CONTEXT;
+DROP TABLE IF EXISTS BATCH_JOB_EXECUTION_CONTEXT;
+DROP TABLE IF EXISTS BATCH_JOB_EXECUTION_PARAMS;
+DROP TABLE IF EXISTS BATCH_STEP_EXECUTION;
+DROP TABLE IF EXISTS BATCH_JOB_EXECUTION;
+DROP TABLE IF EXISTS BATCH_JOB_INSTANCE;
+DROP TABLE IF EXISTS BATCH_STEP_EXECUTION_SEQ;
+DROP TABLE IF EXISTS BATCH_JOB_EXECUTION_SEQ;
+DROP TABLE IF EXISTS BATCH_JOB_SEQ;
+
+DROP TABLE IF EXISTS policy_group_mappings;
+DROP TABLE IF EXISTS policy_groups;
+DROP TABLE IF EXISTS policies;
+
+DROP TABLE IF EXISTS scenario_message_mappings;
+DROP TABLE IF EXISTS device_notification_settings;
+DROP TABLE IF EXISTS notification_messages;
+DROP TABLE IF EXISTS notification_scenarios;
+DROP TABLE IF EXISTS notification_types;
+DROP TABLE IF EXISTS fcm_tokens;
+
+DROP TABLE IF EXISTS comment_likes;
+DROP TABLE IF EXISTS comments;
+DROP TABLE IF EXISTS feed_likes;
+DROP TABLE IF EXISTS feed_pictures;
+DROP TABLE IF EXISTS feeds;
+DROP TABLE IF EXISTS feed_types;
+
+DROP TABLE IF EXISTS chats;
+DROP TABLE IF EXISTS chatroom_members;
+DROP TABLE IF EXISTS chatrooms;
+
+DROP TABLE IF EXISTS exercise_pictures;
+DROP TABLE IF EXISTS preferred_exercises;
+DROP TABLE IF EXISTS exercise_locations;
+DROP TABLE IF EXISTS exercises;
+DROP TABLE IF EXISTS exercise_types;
+
+DROP TABLE IF EXISTS custom_timer_steps;
+DROP TABLE IF EXISTS custom_timers;
+DROP TABLE IF EXISTS simple_timers;
 
 DROP TABLE IF EXISTS matches;
 DROP TABLE IF EXISTS open_chatrooms;
-DROP TABLE IF EXISTS exercise_locations;
+DROP TABLE IF EXISTS member_blocks;
+DROP TABLE IF EXISTS member_locations;
 
-DROP TABLE IF EXISTS device_notification_settings;
-DROP TABLE IF EXISTS notification_types;
-DROP TABLE IF EXISTS fcm_tokens;
-DROP TABLE IF EXISTS scenario_message_mappings;
-DROP TABLE IF EXISTS notification_messages;
-DROP TABLE IF EXISTS notification_scenarios;
+DROP TABLE IF EXISTS member_reports;
+DROP TABLE IF EXISTS post_reports;
+DROP TABLE IF EXISTS comment_reports;
+DROP TABLE IF EXISTS reports;
+DROP TABLE IF EXISTS member_report_subjects;
+DROP TABLE IF EXISTS post_report_subjects;
+DROP TABLE IF EXISTS comment_report_subjects;
 
-drop table if exists chats;
-drop table if exists chatroom_members;
-drop table if exists chatrooms;
-drop table if exists comment_reports;
-drop table if exists comment_report_subjects;
-drop table if exists comments;
-drop table if exists exercise_pictures;
-drop table if exists exercises;
-drop table if exists likes;
-drop table if exists member_blocks;
-drop table if exists member_locations;
-drop table if exists member_pictures;
-drop table if exists member_reports;
-drop table if exists member_report_subjects;
-drop table if exists post_pictures;
-drop table if exists pictures;
-drop table if exists post_reports;
-drop table if exists post_report_subjects;
-drop table if exists posts;
-drop table if exists post_type;
-drop table if exists preferred_exercises;
-drop table if exists exercise_types;
-drop table if exists custom_timer_steps;
-drop table if exists simple_timers;
-drop table if exists custom_timers;
-drop table if exists members;
-drop table if exists reports;
+DROP TABLE IF EXISTS member_pictures;
+DROP TABLE IF EXISTS members;
+DROP TABLE IF EXISTS pictures;
 
-DROP TRIGGER IF EXISTS before_insert_members;
+DROP TABLE IF EXISTS oauths;
+
+-- FK 재설정
+SET foreign_key_checks = 1;
 
 create table if not exists BATCH_JOB_EXECUTION_SEQ
 (
@@ -166,8 +179,8 @@ create table if not exists exercise_types
     exercise_name            varchar(50)                        not null,
     exercise_type_created_at datetime default CURRENT_TIMESTAMP not null,
     exercise_type_deleted_at datetime                           null,
-    exercise_type_image_url varchar(255)                        null,
-    exercise_selection_count bigint default 0                   not null
+    exercise_type_image_url  varchar(255)     null,
+    exercise_selection_count bigint default 0 not null
 );
 
 create table if not exists member_report_subjects
@@ -327,71 +340,6 @@ create table if not exists post_report_subjects
     post_report_subject_name varchar(255) not null
 );
 
-create table if not exists post_type
-(
-    post_type_id   bigint auto_increment
-        primary key,
-    post_type_name varchar(255) not null,
-    post_type_desc varchar(255) not null
-);
-
-create table if not exists posts
-(
-    post_id          bigint auto_increment
-        primary key,
-    member_id        char(36)                             not null,
-    post_type_id     bigint                               not null,
-    post_content     text                                 not null,
-    post_is_reported tinyint(1) default 0                 null comment '관리자 제제 시 1',
-    post_created_at  datetime   default CURRENT_TIMESTAMP not null,
-    post_deleted_at  datetime                             null,
-    post_likes_cnt   int        default 0                 not null,
-    constraint FK_posts_member
-        foreign key (member_id) references members (member_id),
-    constraint FK_posts_type
-        foreign key (post_type_id) references post_type (post_type_id)
-);
-
-create table if not exists comments
-(
-    comment_id          bigint auto_increment
-        primary key,
-    member_id           char(36)                             not null,
-    post_id             bigint                               not null,
-    comment_content     varchar(255)                         not null,
-    comment_is_reported tinyint(1) default 0                 null comment '관리자 제제 시 1',
-    comment_created_at  datetime   default CURRENT_TIMESTAMP not null,
-    comment_deleted_at  datetime                             null,
-    constraint FK_comments_member
-        foreign key (member_id) references members (member_id),
-    constraint FK_comments_post
-        foreign key (post_id) references posts (post_id)
-);
-
-create table if not exists likes
-(
-    like_id          bigint auto_increment
-        primary key,
-    member_id        char(36)                           not null,
-    post_id          bigint                             not null,
-    like_created_at  datetime default CURRENT_TIMESTAMP not null,
-    like_canceled_at datetime                           null,
-    constraint FK_likes_member
-        foreign key (member_id) references members (member_id),
-    constraint FK_likes_post
-        foreign key (post_id) references posts (post_id)
-);
-
-create table if not exists post_pictures
-(
-    picture_id bigint not null
-        primary key,
-    post_id    bigint not null,
-    constraint FK_pp_pictures
-        foreign key (picture_id) references pictures (picture_id),
-    constraint FK_pp_posts
-        foreign key (post_id) references posts (post_id)
-);
 
 create table if not exists preferred_exercises
 (
@@ -425,19 +373,6 @@ create table if not exists reports
         check (report_processing_status in ('PENDING', 'PROCESSING', 'COMPLETED', 'REJECTED', 'POSTPONED'))
 );
 
-create table if not exists comment_reports
-(
-    report_id                 bigint not null
-        primary key,
-    comment_id                bigint not null,
-    comment_report_subject_id bigint not null,
-    constraint FK_comment_report_subjects_TO_comment_reports_1
-        foreign key (comment_report_subject_id) references comment_report_subjects (comment_report_subject_id),
-    constraint FK_comments_TO_comment_reports_1
-        foreign key (comment_id) references comments (comment_id),
-    constraint FK_reports_TO_comment_reports_1
-        foreign key (report_id) references reports (report_id)
-);
 
 create table if not exists member_reports
 (
@@ -450,20 +385,6 @@ create table if not exists member_reports
     constraint FK_members_TO_member_reports_1
         foreign key (member_id) references members (member_id),
     constraint FK_reports_TO_member_reports_1
-        foreign key (report_id) references reports (report_id)
-);
-
-create table if not exists post_reports
-(
-    report_id              bigint not null
-        primary key,
-    post_id                bigint not null,
-    post_report_subject_id bigint not null,
-    constraint FK_post_report_subjects_TO_post_reports_1
-        foreign key (post_report_subject_id) references post_report_subjects (post_report_subject_id),
-    constraint FK_posts_TO_post_reports_1
-        foreign key (post_id) references posts (post_id),
-    constraint FK_reports_TO_post_reports_1
         foreign key (report_id) references reports (report_id)
 );
 
@@ -507,7 +428,7 @@ CREATE TABLE IF NOT EXISTS fcm_tokens
     fcm_token_id           BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'AUTO_INCREMENT',
     member_id              CHAR(36)     NOT NULL COMMENT 'UUID_SELF',
     fcm_token_value       VARCHAR(255) NOT NULL COMMENT 'FCM 토큰 값 (UNIQUE)',
-    fcm_token_platform VARCHAR(20) NULL COMMENT 'IOS, ANDROID, PC, ETC',
+    fcm_token_platform    VARCHAR(20)  NULL COMMENT 'IOS, ANDROID, PC, ETC',
     fcm_token_access_mode VARCHAR(20)  NULL COMMENT 'PWA, BROWSER, APP',
     fcm_token_user_agent   VARCHAR(255) NULL COMMENT '디바이스 정보 (User Agent)',
     fcm_token_is_active   BOOLEAN      NOT NULL DEFAULT TRUE COMMENT '토큰 활성화 여부',
@@ -676,3 +597,169 @@ CREATE TABLE IF NOT EXISTS device_notification_settings
     CONSTRAINT fk_settings_to_fcm_tokens FOREIGN KEY (fcm_token_id) REFERENCES fcm_tokens (fcm_token_id) ON DELETE CASCADE,
     CONSTRAINT fk_settings_to_notification_types FOREIGN KEY (notification_type_id) REFERENCES notification_types (notification_type_id)
 );
+
+CREATE TABLE feed_types
+(
+    feed_type_id         BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '피드 종류 테이블의 고유 식별자',
+    feed_type_name       VARCHAR(255) NOT NULL COMMENT '피드 종류 이름',
+    feed_type_desc       VARCHAR(255) NOT NULL COMMENT '피드 종류 설명',
+    feed_type_is_active  BOOLEAN      NOT NULL COMMENT '활성화된 피드 종류 여부',
+    feed_type_created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    feed_type_updated_at DATETIME     NULL,
+    feed_type_deleted_at DATETIME     NULL
+);
+
+CREATE TABLE feeds
+(
+    feed_id           BIGINT   NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '피드 식별자',
+    member_id         CHAR(36) NOT NULL COMMENT 'UUID_SELF',
+    feed_type_id      BIGINT   NOT NULL,
+    feed_content      TEXT     NOT NULL,
+    feed_likes_cnt    INTEGER  NOT NULL DEFAULT 0,
+    feed_comments_cnt INTEGER  NOT NULL DEFAULT 0,
+    feed_created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    feed_updated_at   DATETIME NULL,
+    feed_deleted_at   DATETIME NULL,
+
+    CONSTRAINT FK_feeds_member FOREIGN KEY (member_id) REFERENCES members (member_id),
+    CONSTRAINT FK_feeds_type FOREIGN KEY (feed_type_id) REFERENCES feed_types (feed_type_id)
+);
+
+CREATE TABLE feed_pictures
+(
+    picture_id BIGINT NOT NULL PRIMARY KEY,
+    feed_id    BIGINT NOT NULL,
+
+    CONSTRAINT FK_feed_pictures_picture FOREIGN KEY (picture_id) REFERENCES pictures (picture_id),
+    CONSTRAINT FK_feed_pictures_feed FOREIGN KEY (feed_id) REFERENCES feeds (feed_id)
+);
+
+CREATE TABLE feed_likes
+(
+    feed_like_id         BIGINT   NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '피드 좋아요 식별자 번호',
+    member_id            CHAR(36) NOT NULL COMMENT 'UUID_SELF',
+    feed_id              BIGINT   NOT NULL,
+    feed_like_created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT FK_feed_likes_member FOREIGN KEY (member_id) REFERENCES members (member_id),
+    CONSTRAINT FK_feed_likes_feed FOREIGN KEY (feed_id) REFERENCES feeds (feed_id)
+);
+
+CREATE TABLE comments
+(
+    comment_id         BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '피드 댓글 식별자 번호',
+    member_id          CHAR(36)     NOT NULL COMMENT 'UUID_SELF',
+    feed_id            BIGINT       NOT NULL,
+    parent_comment_id  BIGINT       NULL COMMENT 'NULL이면 최상위, 있으면 대댓글',
+    comment_content    VARCHAR(255) NOT NULL COMMENT '댓글은 최대 255자까지 허용',
+    comment_likes_cnt  INTEGER      NOT NULL DEFAULT 0,
+    comment_created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    comment_deleted_at DATETIME     NULL,
+
+    CONSTRAINT FK_comments_member FOREIGN KEY (member_id) REFERENCES members (member_id),
+    CONSTRAINT FK_comments_feed FOREIGN KEY (feed_id) REFERENCES feeds (feed_id)
+);
+
+CREATE TABLE comment_likes
+(
+    comment_like_id         BIGINT   NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '피드 댓글 좋아요 식별자',
+    member_id               CHAR(36) NOT NULL COMMENT 'UUID_SELF',
+    comment_id              BIGINT   NOT NULL,
+    comment_like_created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT FK_comment_likes_member FOREIGN KEY (member_id) REFERENCES members (member_id)
+);
+
+# create table if not exists post_type
+# (
+#     post_type_id   bigint auto_increment
+#         primary key,
+#     post_type_name varchar(255) not null,
+#     post_type_desc varchar(255) not null
+# );
+
+# create table if not exists posts
+# (
+#     post_id          bigint auto_increment
+#         primary key,
+#     member_id        char(36)                             not null,
+#     post_type_id     bigint                               not null,
+#     post_content     text                                 not null,
+#     post_is_reported tinyint(1) default 0                 null comment '관리자 제제 시 1',
+#     post_created_at  datetime   default CURRENT_TIMESTAMP not null,
+#     post_deleted_at  datetime                             null,
+#     post_likes_cnt   int        default 0                 not null,
+#     constraint FK_posts_member
+#         foreign key (member_id) references members (member_id),
+#     constraint FK_posts_type
+#         foreign key (post_type_id) references post_type (post_type_id)
+# );
+
+# create table if not exists comments
+# (
+#     comment_id          bigint auto_increment
+#         primary key,
+#     member_id           char(36)                             not null,
+#     post_id             bigint                               not null,
+#     comment_content     varchar(255)                         not null,
+#     comment_is_reported tinyint(1) default 0                 null comment '관리자 제제 시 1',
+#     comment_created_at  datetime   default CURRENT_TIMESTAMP not null,
+#     comment_deleted_at  datetime                             null,
+#     constraint FK_comments_member
+#         foreign key (member_id) references members (member_id),
+#     constraint FK_comments_post
+#         foreign key (post_id) references posts (post_id)
+# );
+
+# create table if not exists likes
+# (
+#     like_id          bigint auto_increment
+#         primary key,
+#     member_id        char(36)                           not null,
+#     post_id          bigint                             not null,
+#     like_created_at  datetime default CURRENT_TIMESTAMP not null,
+#     like_canceled_at datetime                           null,
+#     constraint FK_likes_member
+#         foreign key (member_id) references members (member_id),
+#     constraint FK_likes_post
+#         foreign key (post_id) references posts (post_id)
+# );
+#
+# create table if not exists post_pictures
+# (
+#     picture_id bigint not null
+#         primary key,
+#     post_id    bigint not null,
+#     constraint FK_pp_pictures
+#         foreign key (picture_id) references pictures (picture_id),
+#     constraint FK_pp_posts
+#         foreign key (post_id) references posts (post_id)
+# );
+
+# create table if not exists post_reports
+# (
+#     report_id              bigint not null
+#         primary key,
+#     post_id                bigint not null,
+#     post_report_subject_id bigint not null,
+#     constraint FK_post_report_subjects_TO_post_reports_1
+#         foreign key (post_report_subject_id) references post_report_subjects (post_report_subject_id),
+#     constraint FK_posts_TO_post_reports_1
+#         foreign key (post_id) references posts (post_id),
+#     constraint FK_reports_TO_post_reports_1
+#         foreign key (report_id) references reports (report_id)
+# );
+
+# create table if not exists comment_reports
+# (
+#     report_id                 bigint not null
+#         primary key,
+#     comment_id                bigint not null,
+#     comment_report_subject_id bigint not null,
+#     constraint FK_comment_report_subjects_TO_comment_reports_1
+#         foreign key (comment_report_subject_id) references comment_report_subjects (comment_report_subject_id),
+#     constraint FK_comments_TO_comment_reports_1
+#         foreign key (comment_id) references comments (comment_id),
+#     constraint FK_reports_TO_comment_reports_1
+#         foreign key (report_id) references reports (report_id)
+# );

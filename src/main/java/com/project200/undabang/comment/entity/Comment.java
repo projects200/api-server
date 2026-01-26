@@ -1,14 +1,14 @@
 package com.project200.undabang.comment.entity;
 
+import com.project200.undabang.feed.entity.Feed;
 import com.project200.undabang.member.entity.Member;
-import com.project200.undabang.post.entity.Post;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Builder
@@ -17,39 +17,40 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "comments")
 public class Comment {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "comment_id", nullable = false, updatable = false)
     private Long id;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "member_id", nullable = false, updatable = false)
     private Member member;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "post_id", nullable = false, updatable = false)
-    private Post post;
+    @JoinColumn(name = "feed_id", nullable = false, updatable = false)
+    private Feed feed;
 
-    @Size(max = 255)
-    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_comment_id")
+    private Comment parent;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
+    private List<Comment> children = new ArrayList<>();
+
     @Column(name = "comment_content", nullable = false)
-    private String commentContent;
+    private String content;
 
-    @org.hibernate.annotations.Comment("관리자 제제 시 1")
+    @Builder.Default
     @ColumnDefault("0")
-    @Column(name = "comment_is_reported")
-    @Builder.Default
-    private Boolean commentIsReported = false;
+    @Column(name = "comment_likes_cnt", nullable = false)
+    private Integer likesCount = 0;
 
-    @NotNull
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "comment_created_at", nullable = false, updatable = false)
     @Builder.Default
-    private LocalDateTime commentCreatedAt = LocalDateTime.now();
+    @Column(name = "comment_created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     @Column(name = "comment_deleted_at")
-    private LocalDateTime commentDeletedAt;
-
+    private LocalDateTime deletedAt;
 }
