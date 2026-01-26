@@ -2,6 +2,7 @@ package com.project200.undabang.feed.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDateTime;
 
@@ -16,17 +17,21 @@ public class FeedType {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "feed_type_id", nullable = false, updatable = false)
-    private Long id;
+    private Long feedTypeId;
 
+    @NotNull
     @Column(name = "feed_type_name", nullable = false)
-    private String name;
+    private String feedTypeName;
 
+    @NotNull
     @Column(name = "feed_type_desc", nullable = false)
-    private String desc;
+    private String feedTypeDesc;
 
+    @NotNull
     @Column(name = "feed_type_is_active", nullable = false)
-    private Boolean isActive;
+    private Boolean feedTypeIsActive;
 
+    @NotNull
     @Builder.Default
     @Column(name = "feed_type_created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

@@ -4,6 +4,7 @@ import com.project200.undabang.comment.entity.Comment;
 import com.project200.undabang.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDateTime;
 
@@ -20,14 +21,17 @@ public class CommentLike {
     @Column(name = "comment_like_id", nullable = false, updatable = false)
     private Long id;
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "member_id", nullable = false, updatable = false)
     private Member member;
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "comment_id", nullable = false, updatable = false)
     private Comment comment;
 
+    @NotNull
     @Builder.Default
     @Column(name = "comment_like_created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

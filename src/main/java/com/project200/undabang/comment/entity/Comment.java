@@ -5,6 +5,7 @@ import com.project200.undabang.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -23,10 +24,12 @@ public class Comment {
     @Column(name = "comment_id", nullable = false, updatable = false)
     private Long id;
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "member_id", nullable = false, updatable = false)
     private Member member;
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "feed_id", nullable = false, updatable = false)
     private Feed feed;
@@ -39,14 +42,17 @@ public class Comment {
     @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
     private List<Comment> children = new ArrayList<>();
 
+    @NotNull
     @Column(name = "comment_content", nullable = false)
     private String content;
 
+    @NotNull
     @Builder.Default
     @ColumnDefault("0")
     @Column(name = "comment_likes_cnt", nullable = false)
     private Integer likesCount = 0;
 
+    @NotNull
     @Builder.Default
     @Column(name = "comment_created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
