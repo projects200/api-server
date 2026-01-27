@@ -1,4 +1,4 @@
-package com.project200.undabang.post.entity;
+package com.project200.undabang.feed.entity;
 
 import com.project200.undabang.common.entity.Picture;
 import jakarta.persistence.*;
@@ -10,8 +10,9 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "post_pictures")
-public class PostPicture {
+@Table(name = "feed_pictures")
+public class FeedPicture {
+
     @Id
     @Column(name = "picture_id", nullable = false, updatable = false)
     private Long id;
@@ -23,7 +24,7 @@ public class PostPicture {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "post_id", nullable = false, updatable = false)
-    private Post post;
+    @JoinColumn(name = "feed_id", nullable = false, updatable = false)
+    private Feed feed;
 
 }

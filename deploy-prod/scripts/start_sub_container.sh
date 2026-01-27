@@ -16,8 +16,8 @@ export MAIN_PORT SUB_PORT ECR_REGISTRY ECR_REPOSITORY IMAGE_TAG # docker-compose
 docker-compose -f docker-compose-sub.yml up -d server-prod-sub
 
 # 간단한 시작 확인 (본격적인 헬스체크는 Validate Service에서 수행)
-echo "Waiting briefly for server-prod-sub to initialize..."
-sleep 15 # 컨테이너가 완전히 시작될 시간을 줍니다. 애플리케이션 시작 시간에 따라 조절.
+echo "Waiting for server-prod-sub to initialize ($INITIAL_WAIT_TIME seconds)..."
+sleep "$INITIAL_WAIT_TIME"  # config.sh에서 설정한 60초 대기# 컨테이너가 완전히 시작될 시간을 줍니다. 애플리케이션 시작 시간에 따라 조절.
 
 if ! docker ps | grep -q "server-prod-sub"; then
     echo "ERROR: server-prod-sub container failed to start!"
