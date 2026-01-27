@@ -17,7 +17,7 @@ if ! check_health "server-prod-sub" "$SUB_PORT" "docker-compose-sub.yml"; then
 fi
 
 echo "Switching Nginx traffic to server-prod-sub (Port: $SUB_PORT)..."
-if ! switch_nginx_traffic "$SUB_PORT"; then
+if ! switch_nginx_traffic $SUB_PORT; then
     echo "ERROR: Failed to switch Nginx traffic to SUB_PORT."
     echo "Cleaning up server-prod-sub..."
     clean_specific_containers "server-prod-sub"
@@ -32,8 +32,8 @@ clean_specific_containers "server-prod"
 echo "Starting new version of server-prod on MAIN_PORT ($MAIN_PORT)..."
 docker-compose -f docker-compose.yml up -d server-prod
 
-echo "Waiting for server-prod-sub to initialize ($INITIAL_WAIT_TIME seconds)..."
-sleep "$INITIAL_WAIT_TIME"  # config.sh에서 설정한 60초 대기 # 애플리케이션 시작 시간에 따라 조절
+echo "Waiting briefly for server-prod to initialize..."
+sleep 15 # 애플리케이션 시작 시간에 따라 조절
 
 if ! docker ps | grep -q "server-prod"; then
     echo "ERROR: server-prod container failed to start!"
@@ -55,7 +55,7 @@ if ! check_health "server-prod" "$MAIN_PORT" "docker-compose.yml"; then
 fi
 
 echo "Switching Nginx traffic back to server-prod (Port: $MAIN_PORT)..."
-if ! switch_nginx_traffic "$MAIN_PORT"; then
+if ! switch_nginx_traffic $MAIN_PORT; then
     echo "ERROR: Failed to switch Nginx traffic to MAIN_PORT."
     echo "Traffic may still be on SUB_PORT. Manual intervention required."
     # server-prod은 정상이나 트래픽 전환 실패. SUB_PORT는 아직 살아있음.

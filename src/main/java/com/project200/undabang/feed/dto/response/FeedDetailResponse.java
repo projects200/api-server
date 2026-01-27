@@ -1,14 +1,18 @@
 package com.project200.undabang.feed.dto.response;
 
+import com.project200.undabang.feed.dto.record.FeedDetailRecord;
 import com.project200.undabang.feed.dto.record.FeedPictureRecord;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 @Getter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class FeedDetailResponse {
@@ -19,9 +23,28 @@ public class FeedDetailResponse {
     private long feedTypeId;
     private String feedTypeName;
     private String feedTypeDesc;
+    private LocalDateTime feedCreatedAt;
     private UUID memberId;
     private String nickname;
     private String profileUrl;
     private String thumbnailUrl;
     List<FeedPictureRecord> feedPictures;
+
+    public static FeedDetailResponse from(FeedDetailRecord record, List<FeedPictureRecord> feedPictures) {
+        return FeedDetailResponse.builder()
+                .feedId(record.feedId())
+                .feedContent(record.feedContent())
+                .feedLikesCount(record.feedLikesCount())
+                .feedCommentsCount(record.feedCommentsCount())
+                .feedTypeId(record.feedTypeId())
+                .feedTypeName(record.feedTypeName())
+                .feedTypeDesc(record.feedTypeDesc())
+                .feedCreatedAt(record.feedCreatedAt())
+                .memberId(record.memberId())
+                .nickname(record.nickname())
+                .profileUrl(record.profileUrl())
+                .thumbnailUrl(record.thumbnailUrl())
+                .feedPictures(feedPictures)
+                .build();
+    }
 }

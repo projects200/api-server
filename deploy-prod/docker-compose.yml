@@ -13,6 +13,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    # 운영 서버는 스왑메모리 영역에 최대한 가지 않도록 설정
+    deploy:
+      resources:
+        limits:
+          memory: 600M
+        reservations:
+          memory: 512M
 
 networks:
   server-network:

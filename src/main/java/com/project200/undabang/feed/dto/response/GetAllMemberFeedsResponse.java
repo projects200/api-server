@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.domain.Slice;
 
 import java.util.List;
 
@@ -14,4 +15,12 @@ import java.util.List;
 public class GetAllMemberFeedsResponse {
 
     private List<FeedDetailResponse> feeds;
+    private boolean hasNext;
+
+    public static GetAllMemberFeedsResponse of(Slice<FeedDetailResponse> feeds) {
+        return GetAllMemberFeedsResponse.builder()
+                .feeds(feeds.getContent())
+                .hasNext(feeds.hasNext())
+                .build();
+    }
 }
