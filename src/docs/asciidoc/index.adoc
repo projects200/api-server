@@ -244,3 +244,7 @@ include::overview/공통-개발-참고-사항.adoc[]
 - 특정 FCM 토큰의 푸시 알림 설정 목록 조회 API #GET# `/api/v1/notification-settings/device`
 
 - 특정 FCM 토큰 기반의 알림 설정 변경 API #PATCH# `/api/v1/notification-settings/device`
+
+=== xref:피드-API.html[피드 API]
+
+- 전체 피드 목록 조회 API #GET# `/api/v1/feeds?prevFeedId={prevFeedId}`
