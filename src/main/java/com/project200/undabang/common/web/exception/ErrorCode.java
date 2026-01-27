@@ -80,6 +80,7 @@ public enum ErrorCode {
     CHAT_NOT_FOUND(404, "CHAT_NOT_FOUND", "존재하지 않는 채팅 입니다."),
     CHATROOM_MEMBER_INACTIVE(409, "CHATROOM_MEMBER_INACTIVE", "회원님이 나간 채팅방 입니다."),
     CHATROOM_OTHER_MEMBER_INACTIVE(409, "CHATROOM_OTHER_MEMBER_INACTIVE", "다른 회원님이 나간 채팅방입니다."),
+    CHATROOM_CREATE_TOO_FAR_DISTANCE(409, "CHATROOM_CREATE_TOO_FAR_DISTANCE", "해당 회원님과는 채팅방을 생성하기에 너무 멀리 있습니다."),
 
     // 차단 관련 에러
     MEMBER_BLOCK_NOT_FOUND(404, "MEMBER_BLOCK_NOT_FOUND", "해당 회원을 차단한 이력이 없습니다."),
@@ -89,7 +90,13 @@ public enum ErrorCode {
     FCM_TOKEN_NOT_FOUND(404, "FCM_TOKEN_NOT_FOUND", "존재하지 않는 FCM 토큰입니다."),
 
     // 기기 푸시 알림 관련 에러
-    NOTIFICATION_TYPE_NOT_FOUND(404, "NOTIFICATION_TYPE_NOT_FOUND", "존재하지 않는 알림 타입입니다.");
+    NOTIFICATION_TYPE_NOT_FOUND(404, "NOTIFICATION_TYPE_NOT_FOUND", "존재하지 않는 알림 타입입니다."),
+
+    // 선호 운동 관련 에러
+    PREFERRED_EXERCISE_MAX_COUNT_VIOLATION(409, "PREFERRED_EXERCISE_MAX_COUNT_VIOLATION", "선호 운동은 최대 5개까지만 등록할 수 있습니다."),
+    PREFERRED_EXERCISE_DUPLICATED(409, "PREFERRED_EXERCISE_DUPLICATED", "이미 등록된 선호 운동 종목입니다."),
+    PREFERRED_EXERCISE_NOT_FOUND(404, "PREFERRED_EXERCISE_NOT_FOUND", "존재하지 않는 운동 종류입니다."),
+    PREFERRED_EXERCISE_DUPLICATED_IN_REQUEST(400, "PREFERRED_EXERCISE_DUPLICATED_IN_REQUEST", "요청 내 선호 운동 종목이 중복되었습니다.");
 
     private final HttpStatusCode status;
     private final String code;

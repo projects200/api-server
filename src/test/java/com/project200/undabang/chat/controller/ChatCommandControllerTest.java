@@ -6,7 +6,9 @@ import com.project200.undabang.chat.dto.request.CreateChatroomRequest;
 import com.project200.undabang.chat.dto.request.CreateMessageRequest;
 import com.project200.undabang.chat.dto.response.CreateChatroomResponse;
 import com.project200.undabang.chat.dto.response.CreateMessageResponse;
+import com.project200.undabang.chat.dto.response.TicketResponse;
 import com.project200.undabang.chat.service.ChatCommandService;
+import com.project200.undabang.chat.service.ChatTicketService;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
@@ -44,6 +46,9 @@ class ChatCommandControllerTest extends AbstractRestDocSupport {
     @MockitoBean
     private ChatCommandService chatCommandService;
 
+    @MockitoBean
+    private ChatTicketService chatTicketService;
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -57,6 +62,7 @@ class ChatCommandControllerTest extends AbstractRestDocSupport {
             // given
             UUID memberId = UUID.randomUUID();
             UUID targetMemberId = UUID.randomUUID();
+
             CreateChatroomRequest request = createRequest(targetMemberId);
             CreateChatroomResponse response = createResponse(1L);
 
@@ -78,10 +84,13 @@ class ChatCommandControllerTest extends AbstractRestDocSupport {
                     .andDo(document.document(
                             requestHeaders(HEADER_ACCESS_TOKEN),
                             requestFields(
-                                    fieldWithPath("receiverId").type(JsonFieldType.STRING).description("채팅을 시작할 상대방의 식별자(UUID) 입니다.")
+                                    fieldWithPath("receiverId").type(JsonFieldType.STRING).description("채팅을 시작할 상대방의 식별자(UUID) 정보를 의미합니다."),
+                                    fieldWithPath("exerciseLocationId").type(JsonFieldType.NUMBER).description("상대방의 운동 장소 식별자를 의미합니다."),
+                                    fieldWithPath("requesterLatitude").type(JsonFieldType.NUMBER).description("요청자의 현재 위도를 의미합니다. 위도의 범위는 -90 ~ 90 사이여야 합니다."),
+                                    fieldWithPath("requesterLongitude").type(JsonFieldType.NUMBER).description("요청자의 현재 경도를 의미합니다. 경도의 범위는 -180 ~ 180 사이여야 합니다.")
                             ),
                             responseFields(commonResponseFields(
-                                    fieldWithPath("data.chatRoomId").type(JsonFieldType.NUMBER).description("생성되거나 조회된 채팅방의 식별자 입니다.")
+                                    fieldWithPath("data.chatRoomId").type(JsonFieldType.NUMBER).description("생성되거나 조회된 채팅방의 식별자")
                             ))
                     ));
 
@@ -125,7 +134,7 @@ class ChatCommandControllerTest extends AbstractRestDocSupport {
                             .accept(MediaType.APPLICATION_JSON)
                             .headers(getCommonApiHeaders(memberId))
                             .content(objectMapper.writeValueAsString(requestWithNullId)))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isBadRequest()); // @Valid 실패 시 400
 
             then(chatCommandService).shouldHaveNoInteractions();
         }
@@ -148,7 +157,7 @@ class ChatCommandControllerTest extends AbstractRestDocSupport {
                             .headers(getCommonApiHeaders(memberId))
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpectAll(
-                            status().isForbidden(), // 403 Forbidden
+                            status().isForbidden(),
                             jsonPath("$.succeed").value(false),
                             jsonPath("$.code").value(ErrorCode.CHATROOM_CREATE_BLOCKED.getCode()),
                             jsonPath("$.message").value(ErrorCode.CHATROOM_CREATE_BLOCKED.getMessage())
@@ -158,7 +167,12 @@ class ChatCommandControllerTest extends AbstractRestDocSupport {
         }
 
         private CreateChatroomRequest createRequest(UUID targetMemberId) {
-            return new CreateChatroomRequest(targetMemberId);
+            return new CreateChatroomRequest(
+                    targetMemberId,
+                    1L,
+                    37.555946,
+                    126.972317
+            );
         }
 
         private CreateChatroomResponse createResponse(long chatroomId) {
@@ -361,6 +375,74 @@ class ChatCommandControllerTest extends AbstractRestDocSupport {
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.succeed").value(false))
                     .andExpect(jsonPath("$.code").value(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND.getCode()));
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/v1/chat-rooms/{chatroomId}/ticket API는")
+    class IssueTicket {
+
+        private final Long chatroomId = 1L;
+
+        @Test
+        @DisplayName("티켓을 성공적으로 생성한다")
+        void issueTicket_Success() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            TicketResponse ticketResponse = new TicketResponse(UUID.randomUUID());
+
+            given(chatTicketService.issueTicket(eq(chatroomId)))
+                    .willReturn(ticketResponse);
+
+            // when & then
+            mockMvc.perform(post("/api/v1/chat-rooms/{chatroomId}/ticket", chatroomId)
+                            .headers(getCommonApiHeaders(memberId))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON))
+                    .andExpectAll(
+                            status().isCreated(),
+                            jsonPath("$.succeed").value(true),
+                            jsonPath("$.code").value("CREATED")
+                    )
+                    .andDo(document.document(
+                            requestHeaders(HEADER_ACCESS_TOKEN),
+                            pathParameters(
+                                    parameterWithName("chatroomId").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("입장하기 원하는 채팅방의 식별자 ID값을 의미합니다.")
+                            ),
+                            responseFields(
+                                    fieldWithPath("succeed").type(JsonFieldType.BOOLEAN).description("요청 성공 여부를 의미합니다."),
+                                    fieldWithPath("code").type(JsonFieldType.STRING).description("결과 코드를 나타냅니다."),
+                                    fieldWithPath("message").type(JsonFieldType.STRING).description("결과 메시지를 의미합니다."),
+                                    fieldWithPath("data").type(JsonFieldType.OBJECT).description("응답 데이터를 나타냅니다."),
+                                    fieldWithPath("data.chatTicket").type(JsonFieldType.STRING).description("발급이 완료된 채팅 티켓 식별자 (UUID) 정보입니다. 이 값을 가지고 웹 소켓 연결시 파라미터로 사용하면 됩니다.")
+                            )
+                    ));
+
+            then(chatTicketService).should(times(1)).issueTicket(eq(chatroomId));
+        }
+
+        @Test
+        @DisplayName("사용자가 채팅방 멤버가 아닐 경우 404 Not Found 를 반환한다")
+        void issueTicket_Fail_NotMember() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+
+            given(chatTicketService.issueTicket(eq(chatroomId)))
+                    .willThrow(new CustomException(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND));
+
+            // when & then
+            mockMvc.perform(post("/api/v1/chat-rooms/{chatroomId}/ticket", chatroomId)
+                            .headers(getCommonApiHeaders(memberId))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON))
+                    .andExpectAll(
+                            status().isNotFound(),
+                            jsonPath("$.succeed").value(false),
+                            jsonPath("$.code").value(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND.getCode()),
+                            jsonPath("$.message").value(ErrorCode.CHATROOM_MEMBERS_NOT_FOUND.getMessage())
+                    );
+
+            then(chatTicketService).should(times(1)).issueTicket(eq(chatroomId));
         }
     }
 }

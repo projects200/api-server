@@ -1,0 +1,29 @@
+== 내 선호 운동 수정 API
+
+=== 설명
+
+- #PATCH# `/api/v1/preferred-exercises`
+- 현재 사용자의 선호 운동 목록을 수정합니다.
+
+=== 개발 이력
+
+- Sprint 20 (2025-12-26) : 기능개발이 완료되었습니다.
+
+=== 개발 참고 사항
+
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+operation::patch-my-preferred-exercises/patch-my-preferred-exercises-success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+
+operation::patch-my-preferred-exercises/patch-my-preferred-exercises-success[snippets="request-headers,response-fields"]
+
+==== 응답 상태 코드
+
+|===
+|상태 코드|설명
+|200|선호 운동 목록을 성공적으로 수정했습니다.
+|404|사용자가 보유하지 않은 운동입니다. (USER_NOT_FOUND)
+|===

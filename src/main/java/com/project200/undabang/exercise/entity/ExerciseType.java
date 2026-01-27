@@ -39,4 +39,10 @@ public class ExerciseType {
     @Column(name = "exercise_type_image_url", length = 255)
     private String exerciseTypeImageUrl;
 
+    @NotNull
+    @ColumnDefault("0")
+    @Column(name = "exercise_selection_count", nullable = false)
+    @Builder.Default
+    private Long selectionCount = 0L;
+
 }

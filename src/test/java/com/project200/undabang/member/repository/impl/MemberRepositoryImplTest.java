@@ -1,8 +1,15 @@
 package com.project200.undabang.member.repository.impl;
 
+import com.project200.undabang.common.entity.Picture;
 import com.project200.undabang.configuration.TestQuerydslConfig;
 import com.project200.undabang.exercise.entity.Exercise;
+import com.project200.undabang.exercise.entity.ExerciseType;
+import com.project200.undabang.member.dto.record.MemberProfileRecord;
+import com.project200.undabang.member.dto.record.PreferredExerciseRecord;
 import com.project200.undabang.member.entity.Member;
+import com.project200.undabang.member.entity.MemberPicture;
+import com.project200.undabang.member.entity.PreferredExercise;
+import com.project200.undabang.member.enums.ExerciseSkillLevel;
 import com.project200.undabang.member.enums.MemberGender;
 import com.project200.undabang.member.repository.MemberRepository;
 import jakarta.persistence.EntityManager;
@@ -16,6 +23,7 @@ import org.springframework.context.annotation.Import;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,15 +37,17 @@ class MemberRepositoryImplTest {
     @Autowired
     private MemberRepository memberRepository;
 
-    // Helper Methods
     private Member createAndSaveMember(String nickname) {
         Member member = Member.builder()
                 .memberId(UUID.randomUUID())
-                .memberEmail(nickname + "@email.com")
+                .memberEmail(nickname + "@example.com")
                 .memberNickname(nickname)
-                .memberGender(MemberGender.UNKNOWN)
-                .memberBday(LocalDate.of(2000, 1, 1))
+                .memberGender(MemberGender.MALE)
+                .memberBday(LocalDate.of(1995, 5, 5))
+                .memberScore((byte) 36)
+                .memberDesc("안녕하세요, " + nickname + "입니다.")
                 .build();
+
         em.persist(member);
         return member;
     }
@@ -53,9 +63,181 @@ class MemberRepositoryImplTest {
         return exercise;
     }
 
+    private ExerciseType createAndSaveExerciseType(String name) {
+        ExerciseType type = ExerciseType.builder()
+                .exerciseName(name)
+                .exerciseTypeImageUrl("http://example.com/" + name + ".png")
+                .build();
+        em.persist(type);
+        return type;
+    }
+
+    private void createAndSavePreferredExercise(Member member, ExerciseType type, boolean isDeleted) {
+        boolean[] days = new boolean[7];
+        days[0] = true;
+
+        PreferredExercise preferred = PreferredExercise.builder()
+                .member(member)
+                .exercise(type)
+                .preferredExerciseSkillLevel(ExerciseSkillLevel.BEGINNER)
+                .build();
+
+        preferred.setDaysOfWeek(days);
+
+        if (isDeleted) {
+            preferred.delete();
+        }
+
+        em.persist(preferred);
+    }
+
+    // [수정됨] Member 엔티티에 사진 정보를 업데이트하는 로직 추가
+    private void createAndSaveMemberPicture(Member member, String url) {
+        // 1. Picture 생성 및 저장
+        Picture picture = Picture.builder()
+                .pictureUrl(url)
+                .build();
+        em.persist(picture);
+
+        // 2. MemberPicture 생성 및 저장
+        MemberPicture memberPicture = MemberPicture.builder()
+                .member(member)
+                .picture(picture)
+                .memberPicturesUrl(url)
+                .build();
+        em.persist(memberPicture);
+
+        // 3. [중요] Member 엔티티(연관관계의 주인)에 사진 정보 업데이트
+        member.updateProfilePicture(memberPicture);
+        // em.persist(member)는 필요 없음 (이미 영속 상태이므로 flush 시점에 Update 쿼리 발생)
+    }
+
     private void flushAndClear() {
         em.flush();
         em.clear();
+    }
+
+    @Nested
+    @DisplayName("findMemberProfileWithByMemberIdAndPreferredExerciseActive 메소드는")
+    class Describe_findMemberProfileWithByMemberIdAndPreferredExerciseActive {
+
+        @Test
+        @DisplayName("회원 프로필 정보(사진 포함)와 삭제되지 않은 선호 운동 목록을 조회한다")
+        void it_returns_member_profile_with_active_preferred_exercises() {
+            // given
+            Member member = createAndSaveMember("healthyUser");
+            createAndSaveMemberPicture(member, "http://my-profile.com/img.jpg");
+
+            ExerciseType soccer = createAndSaveExerciseType("SOCCER");
+            ExerciseType tennis = createAndSaveExerciseType("TENNIS");
+
+            createAndSavePreferredExercise(member, soccer, false);
+            createAndSavePreferredExercise(member, tennis, false);
+
+            ExerciseType deletedSport = createAndSaveExerciseType("DELETED_SPORT");
+            createAndSavePreferredExercise(member, deletedSport, true);
+
+            flushAndClear();
+
+            // when
+            Optional<MemberProfileRecord> result = memberRepository
+                    .findMemberProfileWithPreferredExerciseActiveByMemberId(member.getMemberId());
+
+            // then
+            assertThat(result).isPresent();
+            MemberProfileRecord profile = result.get();
+
+            assertThat(profile.nickname()).isEqualTo("healthyUser");
+            assertThat(profile.bio()).isEqualTo("안녕하세요, healthyUser입니다.");
+            assertThat(profile.gender()).isEqualTo(MemberGender.MALE);
+            assertThat(profile.memberScore()).isEqualTo((byte) 36);
+
+            assertThat(profile.profileImageUrl()).isEqualTo("http://my-profile.com/img.jpg");
+
+            List<PreferredExerciseRecord> exercises = profile.preferredExerciseRecordList();
+            assertThat(exercises).hasSize(2);
+            assertThat(exercises)
+                    .extracting("name")
+                    .containsExactlyInAnyOrder("SOCCER", "TENNIS");
+
+            PreferredExerciseRecord soccerRecord = exercises.stream()
+                    .filter(e -> e.name().equals("SOCCER"))
+                    .findFirst().orElseThrow();
+            assertThat(soccerRecord.skillLevel()).isEqualTo(ExerciseSkillLevel.BEGINNER);
+            assertThat(soccerRecord.imageUrl()).contains("SOCCER.png");
+        }
+
+        @Test
+        @DisplayName("선호 운동이 없어도 회원 프로필은 정상 조회되며, 운동 목록은 빈 리스트다")
+        void it_returns_profile_with_empty_exercise_list() {
+            // given
+            Member member = createAndSaveMember("lonelyUser");
+            createAndSaveMemberPicture(member, "http://my-profile.com/lonely.jpg");
+
+            flushAndClear();
+
+            // when
+            Optional<MemberProfileRecord> result = memberRepository
+                    .findMemberProfileWithPreferredExerciseActiveByMemberId(member.getMemberId());
+
+            // then
+            assertThat(result).isPresent();
+            assertThat(result.get().preferredExerciseRecordList()).isNotNull().isEmpty();
+        }
+
+        @Test
+        @DisplayName("프로필 사진이 설정되지 않은 경우 사진 URL은 null이다")
+        void it_returns_null_image_url_when_no_picture_set() {
+            // given
+            Member member = createAndSaveMember("noPicUser");
+
+            ExerciseType gym = createAndSaveExerciseType("GYM");
+            createAndSavePreferredExercise(member, gym, false);
+
+            flushAndClear();
+
+            // when
+            Optional<MemberProfileRecord> result = memberRepository
+                    .findMemberProfileWithPreferredExerciseActiveByMemberId(member.getMemberId());
+
+            // then
+            assertThat(result).isPresent();
+            assertThat(result.get().profileImageUrl()).isNull();
+            assertThat(result.get().preferredExerciseRecordList()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("탈퇴한(삭제된) 회원은 조회되지 않는다")
+        void it_returns_empty_when_member_is_deleted() {
+            // given
+            Member member = createAndSaveMember("deletedUser");
+
+            org.springframework.test.util.ReflectionTestUtils.setField(member, "memberDeletedAt", LocalDateTime.now());
+
+            em.persist(member);
+            flushAndClear();
+
+            // when
+            Optional<MemberProfileRecord> result = memberRepository
+                    .findMemberProfileWithPreferredExerciseActiveByMemberId(member.getMemberId());
+
+            // then
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 회원 ID 조회 시 Empty Optional을 반환한다")
+        void it_returns_empty_when_id_does_not_exist() {
+            // given
+            UUID randomId = UUID.randomUUID();
+
+            // when
+            Optional<MemberProfileRecord> result = memberRepository
+                    .findMemberProfileWithPreferredExerciseActiveByMemberId(randomId);
+
+            // then
+            assertThat(result).isEmpty();
+        }
     }
 
     @Nested

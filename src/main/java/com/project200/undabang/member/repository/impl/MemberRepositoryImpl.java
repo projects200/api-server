@@ -1,9 +1,17 @@
 package com.project200.undabang.member.repository.impl;
 
+import com.project200.undabang.common.entity.QPicture;
 import com.project200.undabang.exercise.entity.QExercise;
+import com.project200.undabang.exercise.entity.QExerciseType;
+import com.project200.undabang.member.dto.record.MemberProfileRecord;
+import com.project200.undabang.member.dto.record.PreferredExerciseRecord;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.QMember;
+import com.project200.undabang.member.entity.QMemberPicture;
+import com.project200.undabang.member.entity.QPreferredExercise;
 import com.project200.undabang.member.repository.MemberRepositoryCustom;
+import com.querydsl.core.group.GroupBy;
+import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +20,8 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -19,6 +29,74 @@ import java.util.UUID;
 public class MemberRepositoryImpl implements MemberRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
+
+    @Override
+    public Optional<MemberProfileRecord> findMemberProfileWithPreferredExerciseActiveByMemberId(UUID memberId) {
+        QMember member = QMember.member;
+        QMemberPicture memberPicture = QMemberPicture.memberPicture;
+        QPicture picture = QPicture.picture;
+        QPreferredExercise preferredExercise = QPreferredExercise.preferredExercise;
+        QExerciseType exerciseType = QExerciseType.exerciseType;
+
+        Map<UUID, MemberProfileRecord> result = queryFactory.from(member)
+                .leftJoin(member.memberPicture, memberPicture)
+                .leftJoin(memberPicture.picture, picture)
+                .leftJoin(member.preferredExercises, preferredExercise).on(preferredExercise.preferredExerciseDeletedAt.isNull())
+                .leftJoin(preferredExercise.exercise, exerciseType)
+                .where(member.memberId.eq(memberId),
+                        member.memberDeletedAt.isNull()
+                )
+                .transform(
+                        GroupBy.groupBy(member.memberId)
+                                .as(
+                                        Projections.constructor(MemberProfileRecord.class,
+                                                member.memberId,
+                                                member.memberNickname,
+                                                member.memberDesc,
+                                                member.memberGender,
+                                                member.memberBday,
+                                                picture.pictureUrl,
+                                                member.memberPicture.memberPicturesUrl,
+                                                member.memberScore,
+                                                GroupBy.list(
+                                                        Projections.constructor(PreferredExerciseRecord.class,
+                                                                preferredExercise.id,
+                                                                exerciseType.exerciseName,
+                                                                preferredExercise.preferredExerciseSkillLevel,
+                                                                preferredExercise.preferredExerciseDate,
+                                                                exerciseType.exerciseTypeImageUrl
+                                                        ).skipNulls() // 선호운동이 없는 회원은 null 대신 빈 리스트를 넣도록 함
+                                                )
+                                        )
+                                )
+                );
+
+        return Optional.ofNullable(result.get(memberId));
+    }
+
+    /**
+     * 회원의 프로필 이미지 정보를 포함한 상세 정보를 조회합니다.
+     * 주어진 회원 ID를 기준으로 회원 정보를 검색하며, 해당 회원의 프로필 사진이
+     * 관계형 매핑에 따라 포함되어 함께 반환됩니다.
+     *
+     * @param memberId 조회할 회원의 고유 식별자 (UUID 형식)
+     * @return 주어진 회원 ID와 일치하는 회원 정보를 포함한 Optional 객체
+     * 반환된 객체가 비어있을 경우 해당 ID에 해당하는 회원 정보가 존재하지 않음을 나타냅니다.
+     */
+    @Override
+    public Optional<Member> findMemberWithProfileImage(UUID memberId) {
+        QMember member = QMember.member;
+        QMemberPicture memberPicture = QMemberPicture.memberPicture;
+        QPicture picture = QPicture.picture;
+
+        Member result = queryFactory.selectFrom(member)
+                .leftJoin(member.memberPicture, memberPicture).fetchJoin()
+                .leftJoin(memberPicture.picture, picture).fetchJoin()
+                .where(member.memberId.eq(memberId))
+                .fetchOne();
+
+        return Optional.ofNullable(result);
+    }
 
     /**
      * 주어진 회원 ID 목록에 대해 비관적 락(Pessimistic Lock)을 설정하여 회원 정보를 조회합니다.

@@ -30,3 +30,5 @@ include::chat/메시지-생성-API.adoc[]
 include::chat/새-메시지-목록-조회-API.adoc[]
 
 include::chat/채팅방-나가기-API.adoc[]
+
+include::chat/웹소켓-전환-티켓-발급-API.adoc[]
