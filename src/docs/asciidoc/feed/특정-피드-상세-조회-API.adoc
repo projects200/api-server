@@ -1,0 +1,33 @@
+== 특정 피드 상세 조회 API
+
+=== 설명
+
+- #GET# `/api/v1/feeds/{feedId}`
+- 회원이 특정 피드를 상세 조회하는 API 입니다.
+
+=== 개발 이력
+
+- Sprint 23 (2026-01-28): 기능 개발이 완료되었습니다.
+
+=== 개발 참고 사항
+
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+
+operation::get-specific-feed/get-specific-feed_-success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+
+operation::get-specific-feed/get-specific-feed_-success[snippets="request-headers,path-parameters,response-fields"]
+
+==== 응답 상태 코드
+
+|===
+|상태 코드|설명
+|200|요청이 성공적으로 처리되었습니다.
+|401|인증되지 않은 요청입니다. Access Token이 없거나 유효하지 않습니다
+|404|존재하지 않는 회원입니다. +
+존재하지 않는 피드입니다.
+|===
+

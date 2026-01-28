@@ -15,7 +15,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FeedDetailResponse {
+public class GetSpecificFeedResponse {
     private long feedId;
     private String feedContent;
     private int feedLikesCount;
@@ -32,8 +32,8 @@ public class FeedDetailResponse {
     private String profileUrl;
     private List<FeedPictureRecord> feedPictures;
 
-    public static FeedDetailResponse from(FeedDetailRecord record, List<FeedPictureRecord> feedPictures) {
-        return FeedDetailResponse.builder()
+    public static GetSpecificFeedResponse from(FeedDetailRecord record, List<FeedPictureRecord> feedPictures) {
+        return GetSpecificFeedResponse.builder()
                 .feedId(record.feedId())
                 .feedContent(record.feedContent())
                 .feedLikesCount(record.feedLikesCount())

@@ -5,6 +5,7 @@ import com.project200.undabang.common.entity.QPicture;
 import com.project200.undabang.feed.dto.record.FeedDetailRecord;
 import com.project200.undabang.feed.dto.record.FeedPictureRecord;
 import com.project200.undabang.feed.dto.response.FeedDetailResponse;
+import com.project200.undabang.feed.dto.response.GetSpecificFeedResponse;
 import com.project200.undabang.feed.entity.QFeed;
 import com.project200.undabang.feed.entity.QFeedPicture;
 import com.project200.undabang.feed.entity.QFeedType;
@@ -28,6 +29,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
@@ -46,6 +48,57 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
 
     private static final int EXTRA_FETCH_SIZE = 1; // hasNext 확인용 상수
 
+    /**
+     * 특정 피드 ID에 해당하는 피드 정보를 조회합니다.
+     */
+    @Override
+    public Optional<GetSpecificFeedResponse> getSpecificFeed(Member currentMember, Long feedId) {
+        FeedDetailRecord contentRecord = queryFactory
+                .select(Projections.constructor(FeedDetailRecord.class,
+                        feed.id,
+                        feed.feedContent,
+                        feed.likesCount,
+                        feed.commentsCount,
+                        feedType.feedTypeId,
+                        feedType.feedTypeName,
+                        feedType.feedTypeDesc,
+                        feed.createdAt,
+                        isLikedExpression(currentMember),
+                        hasCommentedExpression(currentMember),
+                        member.memberId,
+                        member.memberNickname,
+                        memberPicture.memberPicturesUrl,
+                        picture.pictureUrl))
+                .from(feed)
+                .join(feed.member, member)
+                .leftJoin(member.memberPicture, memberPicture)
+                .leftJoin(memberPicture.picture, picture)
+                .join(feed.feedType, feedType)
+                .where(feed.id.eq(feedId)) // 특정 피드만 조회
+                .fetchOne();
+
+        // 해당 피드 데이터가 없는 경우 Optional.empty()를 반환
+        if (contentRecord == null) {
+            return Optional.empty();
+        }
+
+        List<FeedPictureRecord> feedPictureList = queryFactory
+                .select(Projections.constructor(FeedPictureRecord.class,
+                        feedPicture.id,
+                        feedPicture.picture.pictureUrl))
+                .from(feedPicture)
+                .join(feedPicture.picture, picture)
+                .where(
+                        feedPicture.feed.id.eq(feedId)
+                )
+                .fetch();
+
+        return Optional.of(GetSpecificFeedResponse.from(contentRecord, feedPictureList));
+    }
+
+    /**
+     * 모든 피드의 리스트를 조회하여 페이징된 결과를 반환합니다.
+     */
     @Override
     public Slice<FeedDetailResponse> getAllFeedList(Member currentMember, Long prevFeedId, Pageable pageable) {
 

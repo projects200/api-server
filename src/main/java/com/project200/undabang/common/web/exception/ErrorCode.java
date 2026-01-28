@@ -96,7 +96,10 @@ public enum ErrorCode {
     PREFERRED_EXERCISE_MAX_COUNT_VIOLATION(409, "PREFERRED_EXERCISE_MAX_COUNT_VIOLATION", "선호 운동은 최대 5개까지만 등록할 수 있습니다."),
     PREFERRED_EXERCISE_DUPLICATED(409, "PREFERRED_EXERCISE_DUPLICATED", "이미 등록된 선호 운동 종목입니다."),
     PREFERRED_EXERCISE_NOT_FOUND(404, "PREFERRED_EXERCISE_NOT_FOUND", "존재하지 않는 운동 종류입니다."),
-    PREFERRED_EXERCISE_DUPLICATED_IN_REQUEST(400, "PREFERRED_EXERCISE_DUPLICATED_IN_REQUEST", "요청 내 선호 운동 종목이 중복되었습니다.");
+    PREFERRED_EXERCISE_DUPLICATED_IN_REQUEST(400, "PREFERRED_EXERCISE_DUPLICATED_IN_REQUEST", "요청 내 선호 운동 종목이 중복되었습니다."),
+
+    //피드 관련 에러
+    FEED_NOT_FOUND(404, "FEED_NOT_FOUND", "존재하지 않는 피드입니다.");
 
     private final HttpStatusCode status;
     private final String code;

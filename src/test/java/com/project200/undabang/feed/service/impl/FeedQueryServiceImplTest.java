@@ -5,6 +5,7 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.feed.dto.response.FeedDetailResponse;
 import com.project200.undabang.feed.dto.response.GetAllMemberFeedsResponse;
+import com.project200.undabang.feed.dto.response.GetSpecificFeedResponse;
 import com.project200.undabang.feed.repository.FeedRepository;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
@@ -43,6 +44,101 @@ class FeedQueryServiceImplTest {
 
     @Mock
     private MemberRepository memberRepository;
+
+    @Nested
+    @DisplayName("getSpecificFeed 메소드는")
+    class Describe_getSpecificFeed {
+
+        @Nested
+        @DisplayName("존재하는 회원과 존재하는 피드 ID가 주어지면")
+        class Context_with_existing_member_and_feed {
+
+            @Test
+            @DisplayName("리포지토리에서 조회한 상세 정보를 반환한다")
+            void it_returns_specific_feed_response() {
+                // given
+                Long feedId = 100L;
+                UUID userId = UUID.randomUUID();
+
+                Member mockMember = createMockMember(userId);
+                GetSpecificFeedResponse mockResponse = GetSpecificFeedResponse.builder()
+                        .feedId(feedId)
+                        .feedContent("Detail Content")
+                        .build();
+
+                try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                    given(UserContextHolder.getUserId()).willReturn(userId);
+                    given(memberRepository.findById(userId)).willReturn(Optional.of(mockMember));
+                    given(feedRepository.getSpecificFeed(eq(mockMember), eq(feedId)))
+                            .willReturn(Optional.of(mockResponse));
+
+                    // when
+                    GetSpecificFeedResponse result = feedQueryService.getSpecificFeed(feedId);
+
+                    // then
+                    assertThat(result).isNotNull();
+                    assertThat(result.getFeedId()).isEqualTo(feedId);
+                    assertThat(result.getFeedContent()).isEqualTo("Detail Content");
+
+                    verify(feedRepository).getSpecificFeed(eq(mockMember), eq(feedId));
+                }
+            }
+        }
+
+        @Nested
+        @DisplayName("존재하지 않는 회원 ID(로그인 정보 오류 등)인 경우")
+        class Context_when_member_not_found {
+
+            @Test
+            @DisplayName("MEMBER_NOT_FOUND 예외를 던진다")
+            void it_throws_member_not_found_exception() {
+                // given
+                Long feedId = 100L;
+                UUID userId = UUID.randomUUID();
+
+                try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                    given(UserContextHolder.getUserId()).willReturn(userId);
+                    // 회원 조회 실패 설정
+                    given(memberRepository.findById(userId)).willReturn(Optional.empty());
+
+                    // when & then
+                    assertThatThrownBy(() -> feedQueryService.getSpecificFeed(feedId))
+                            .isInstanceOf(CustomException.class)
+                            .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
+
+                    verify(feedRepository, never()).getSpecificFeed(any(), any());
+                }
+            }
+        }
+
+        @Nested
+        @DisplayName("회원은 존재하지만 피드 ID에 해당하는 데이터가 없는 경우")
+        class Context_when_feed_not_found {
+
+            @Test
+            @DisplayName("FEED_NOT_FOUND 예외를 던진다")
+            void it_throws_feed_not_found_exception() {
+                // given
+                Long feedId = 999L;
+                UUID userId = UUID.randomUUID();
+                Member mockMember = createMockMember(userId);
+
+                try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                    given(UserContextHolder.getUserId()).willReturn(userId);
+                    given(memberRepository.findById(userId)).willReturn(Optional.of(mockMember));
+
+                    // 리포지토리가 빈 Optional 반환
+                    given(feedRepository.getSpecificFeed(eq(mockMember), eq(feedId)))
+                            .willReturn(Optional.empty());
+
+                    // when & then
+                    assertThatThrownBy(() -> feedQueryService.getSpecificFeed(feedId))
+                            .isInstanceOf(CustomException.class)
+                            .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_NOT_FOUND);
+                }
+            }
+        }
+    }
 
     @Nested
     @DisplayName("getAllMemberFeeds 메소드는")
