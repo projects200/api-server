@@ -4,6 +4,7 @@ import com.project200.undabang.configuration.AbstractRestDocSupport;
 import com.project200.undabang.feed.dto.record.FeedPictureRecord;
 import com.project200.undabang.feed.dto.response.FeedDetailResponse;
 import com.project200.undabang.feed.dto.response.GetAllMemberFeedsResponse;
+import com.project200.undabang.feed.dto.response.GetSpecificFeedResponse;
 import com.project200.undabang.feed.service.FeedQueryService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -12,6 +13,7 @@ import org.mockito.BDDMockito;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders;
 import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
@@ -30,8 +32,7 @@ import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuild
 import static org.springframework.restdocs.payload.JsonFieldType.*;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
-import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -40,6 +41,86 @@ class FeedQueryControllerTest extends AbstractRestDocSupport {
 
     @MockitoBean
     private FeedQueryService feedQueryService;
+
+    @Nested
+    @DisplayName("GET /api/v1/feeds/{feedId} API는")
+    class GetSpecificFeed {
+
+        @Test
+        @DisplayName("특정 피드의 상세 정보를 조회한다")
+        void getSpecificFeed_Success() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long feedId = 100L;
+
+            List<FeedPictureRecord> pictures = List.of(
+                    new FeedPictureRecord(501L, "https://example.com/img1.jpg"),
+                    new FeedPictureRecord(502L, "https://example.com/img2.jpg")
+            );
+
+            GetSpecificFeedResponse response = GetSpecificFeedResponse.builder()
+                    .feedId(feedId)
+                    .feedContent("피드 상세 조회 내용입니다.")
+                    .feedLikesCount(123)
+                    .feedCommentsCount(12)
+                    .feedTypeId(2L)
+                    .feedTypeName("러닝다방")
+                    .feedTypeDesc("러닝다방 설명")
+                    .feedIsLiked(true)         // 내가 좋아요 눌렀는지
+                    .feedHasCommented(false)   // 내가 댓글 달았는지
+                    .memberId(UUID.randomUUID())
+                    .nickname("러닝고수")
+                    .profileUrl("https://example.com/profile.jpg")
+                    .thumbnailUrl("https://example.com/thumb.jpg")
+                    .feedCreatedAt(LocalDateTime.now())
+                    .feedPictures(pictures)
+                    .build();
+
+            BDDMockito.given(feedQueryService.getSpecificFeed(eq(feedId))).willReturn(response);
+
+            // when & then
+            mockMvc.perform(RestDocumentationRequestBuilders.get("/api/v1/feeds/{feedId}", feedId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId)))
+                    .andExpectAll(
+                            status().isOk(),
+                            jsonPath("$.succeed").value(true),
+                            jsonPath("$.code").value("SUCCESS"),
+                            jsonPath("$.data.feedId").value(feedId),
+                            jsonPath("$.data.nickname").value("러닝고수"),
+                            jsonPath("$.data.feedPictures").isArray(),
+                            jsonPath("$.data.feedPictures[0].feedPictureUrl").value("https://example.com/img1.jpg")
+                    )
+                    .andDo(document.document(
+                            requestHeaders(HEADER_ACCESS_TOKEN),
+                            pathParameters(
+                                    parameterWithName("feedId").attributes(getTypeFormat(NUMBER)).description("조회할 피드의 고유 식별자(ID)입니다.")
+                            ),
+                            responseFields(commonResponseFields(
+                                    fieldWithPath("data.feedId").type(NUMBER).description("피드 식별자를 의미합니다."),
+                                    fieldWithPath("data.feedContent").type(STRING).description("피드 내용을 의미합니다."),
+                                    fieldWithPath("data.feedLikesCount").type(NUMBER).description("좋아요 수를 의미합니다."),
+                                    fieldWithPath("data.feedCommentsCount").type(NUMBER).description("댓글 수를 의미합니다."),
+                                    fieldWithPath("data.feedTypeId").type(NUMBER).description("피드 타입 식별자를 의미합니다."),
+                                    fieldWithPath("data.feedTypeName").type(STRING).description("피드 타입 이름을 의미합니다."),
+                                    fieldWithPath("data.feedTypeDesc").type(STRING).description("피드 타입 설명을 의미합니다."),
+                                    fieldWithPath("data.feedIsLiked").type(BOOLEAN).description("해당 회원이 피드에 좋아요를 누른 여부를 반환합니다."),
+                                    fieldWithPath("data.feedHasCommented").type(BOOLEAN).description("해당 회원이 피드에 댓글을 작성하였는지 여부를 반환합니다."),
+                                    fieldWithPath("data.memberId").type(STRING).description("작성자 회원 식별자를 의미합니다."),
+                                    fieldWithPath("data.nickname").type(STRING).description("작성자 닉네임을 의미합니다."),
+                                    fieldWithPath("data.profileUrl").type(STRING).description("작성자 프로필 URL을 의미합니다.").optional(),
+                                    fieldWithPath("data.thumbnailUrl").type(STRING).description("작성자 썸네일 URL을 의미합니다.").optional(),
+                                    fieldWithPath("data.feedCreatedAt").type(STRING).description("작성일시 정보를 나타냅니다."),
+                                    fieldWithPath("data.feedPictures").type(ARRAY).description("피드 사진 목록을 의미합니다."),
+                                    fieldWithPath("data.feedPictures[].feedPictureId").type(NUMBER).description("피드 사진 식별자를 의미합니다."),
+                                    fieldWithPath("data.feedPictures[].feedPictureUrl").type(STRING).description("피드 사진 URL을 의미합니다.")
+                            ))
+                    ));
+
+            BDDMockito.then(feedQueryService).should(BDDMockito.times(1)).getSpecificFeed(eq(feedId));
+        }
+    }
 
     @Nested
     @DisplayName("GET /api/v1/feeds API는")

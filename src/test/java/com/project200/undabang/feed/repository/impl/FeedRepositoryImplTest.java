@@ -4,6 +4,7 @@ import com.project200.undabang.comment.entity.Comment;
 import com.project200.undabang.common.entity.Picture;
 import com.project200.undabang.configuration.TestQuerydslConfig;
 import com.project200.undabang.feed.dto.response.FeedDetailResponse;
+import com.project200.undabang.feed.dto.response.GetSpecificFeedResponse;
 import com.project200.undabang.feed.entity.Feed;
 import com.project200.undabang.feed.entity.FeedPicture;
 import com.project200.undabang.feed.entity.FeedType;
@@ -27,6 +28,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,6 +42,111 @@ class FeedRepositoryImplTest {
 
     @Autowired
     private FeedRepository feedRepository;
+
+    @Nested
+    @DisplayName("getSpecificFeed 메소드는")
+    class Describe_getSpecificFeed {
+
+        @Nested
+        @DisplayName("존재하는 피드 ID와 로그인한 사용자가 주어지면")
+        class Context_with_existing_feed_and_login_user {
+
+            @Test
+            @DisplayName("피드 상세 정보, 사진 목록, 좋아요/댓글 여부를 포함한 Optional 객체를 반환한다")
+            void it_returns_feed_detail_with_full_info() {
+                // given
+                Member author = createAndSaveMember("author");
+                Member viewer = createAndSaveMember("viewer"); // 조회자
+                FeedType type = createAndSaveFeedType("상세조회용");
+
+                // 피드 생성
+                Feed feed = createAndSaveFeed(author, type, "Detail View Test");
+
+                // 사진 2장 추가
+                createAndSaveFeedPicture(feed, "http://img1.com");
+                createAndSaveFeedPicture(feed, "http://img2.com");
+
+                // 조회자가 좋아요 & 댓글 작성
+                createAndSaveFeedLike(feed, viewer);
+                createAndSaveComment(feed, viewer, "Nice feed!");
+
+                flushAndClear();
+
+                // when
+                Optional<GetSpecificFeedResponse> result = feedRepository.getSpecificFeed(viewer, feed.getId());
+
+                // then
+                assertThat(result).isPresent();
+                GetSpecificFeedResponse response = result.get();
+
+                // 1. 기본 정보 검증
+                assertThat(response.getFeedId()).isEqualTo(feed.getId());
+                assertThat(response.getFeedContent()).isEqualTo("Detail View Test");
+                assertThat(response.getNickname()).isEqualTo("author");
+
+                // 2. 사진 목록 검증 (별도 쿼리 동작 확인)
+                assertThat(response.getFeedPictures()).hasSize(2);
+                assertThat(response.getFeedPictures())
+                        .extracting("feedPictureUrl")
+                        .containsExactlyInAnyOrder("http://img1.com", "http://img2.com");
+
+                // 3. 좋아요/댓글 여부 검증 (viewer 기준)
+                assertThat(response.isFeedIsLiked()).isTrue();
+                assertThat(response.isFeedHasCommented()).isTrue();
+            }
+        }
+
+        @Nested
+        @DisplayName("존재하는 피드지만 사진이 없고, 비로그인(Guest) 사용자가 조회하면")
+        class Context_with_existing_feed_and_guest_user {
+
+            @Test
+            @DisplayName("사진 목록은 비어있고, 좋아요/댓글 여부는 false인 Optional 객체를 반환한다")
+            void it_returns_feed_detail_without_interaction_info() {
+                // given
+                Member author = createAndSaveMember("writer");
+                FeedType type = createAndSaveFeedType("일반");
+                Feed feed = createAndSaveFeed(author, type, "Guest View Test");
+
+                // 사진 추가 X, 좋아요 X
+
+                flushAndClear();
+
+                // when (Member에 null 전달)
+                Optional<GetSpecificFeedResponse> result = feedRepository.getSpecificFeed(null, feed.getId());
+
+                // then
+                assertThat(result).isPresent();
+                GetSpecificFeedResponse response = result.get();
+
+                assertThat(response.getFeedId()).isEqualTo(feed.getId());
+                assertThat(response.getFeedPictures()).isEmpty(); // 사진 쿼리 결과 0건 확인
+                assertThat(response.isFeedIsLiked()).isFalse();         // 게스트는 무조건 false
+                assertThat(response.isFeedHasCommented()).isFalse();  // 게스트는 무조건 false
+            }
+        }
+
+        @Nested
+        @DisplayName("존재하지 않는 피드 ID가 주어지면")
+        class Context_with_non_existing_feed {
+
+            @Test
+            @DisplayName("비어있는 Optional을 반환한다")
+            void it_returns_empty_optional() {
+                // given
+                Member member = createAndSaveMember("tester");
+                Long nonExistingFeedId = 99999L;
+
+                flushAndClear();
+
+                // when
+                Optional<GetSpecificFeedResponse> result = feedRepository.getSpecificFeed(member, nonExistingFeedId);
+
+                // then
+                assertThat(result).isEmpty();
+            }
+        }
+    }
 
     @Nested
     @DisplayName("getAllFeedList 메소드는")
