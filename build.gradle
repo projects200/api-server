@@ -7,7 +7,7 @@ plugins {
 }
 
 group = 'com.project200'
-version = '0.11.0-SNAPSHOT'
+version = '0.11.1-SNAPSHOT'
 
 java {
     toolchain {
@@ -119,6 +119,8 @@ tasks.named('test') {
     useJUnitPlatform()
 //    systemProperty("spring.profiles.active", System.getProperty("spring.profiles.active", "local"))
     jvmArgs("-javaagent:${configurations.mockitoAgent.asPath}")
+
+    maxHeapSize = '4g'
 }
 
 tasks.named('asciidoctor') {
@@ -139,6 +141,14 @@ tasks.named('asciidoctor') {
     attributes([
             'snippets': snippetsDir
     ])
+
+    forkOptions {
+        jvmArgs(
+                '-Xmx2g', // 최대 힙 메모리 2GB 설정
+                '--add-opens', 'java.base/sun.nio.ch=ALL-UNNAMED',
+                '--add-opens', 'java.base/java.io=ALL-UNNAMED'
+        )
+    }
 }
 
 // 생성된 문서를 JAR에 포함시키기

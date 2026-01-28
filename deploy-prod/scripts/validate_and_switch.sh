@@ -32,8 +32,8 @@ clean_specific_containers "server-prod"
 echo "Starting new version of server-prod on MAIN_PORT ($MAIN_PORT)..."
 docker-compose -f docker-compose.yml up -d server-prod
 
-echo "Waiting for server-prod-sub to initialize ($INITIAL_WAIT_TIME seconds)..."
-sleep "$INITIAL_WAIT_TIME"  # config.sh에서 설정한 60초 대기 # 애플리케이션 시작 시간에 따라 조절
+echo "Waiting briefly for server-prod to initialize..."
+sleep 15 # 애플리케이션 시작 시간에 따라 조절
 
 if ! docker ps | grep -q "server-prod"; then
     echo "ERROR: server-prod container failed to start!"
