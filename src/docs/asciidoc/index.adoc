@@ -248,3 +248,5 @@ include::overview/공통-개발-참고-사항.adoc[]
 === xref:피드-API.html[피드 API]
 
 - 전체 피드 목록 조회 API #GET# `/api/v1/feeds?prevFeedId={prevFeedId}`
+
+- 특정 피드 상세 조회 API #GET# `/api/v1/feeds/{feedId}`
