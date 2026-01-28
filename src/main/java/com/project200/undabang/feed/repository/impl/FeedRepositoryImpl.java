@@ -77,7 +77,7 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .where(feed.id.eq(feedId)) // 특정 피드만 조회
                 .fetchOne();
 
-        // 해당 피드 데이터가 없는경우 Optional.Empty를 반환
+        // 해당 피드 데이터가 없는 경우 Optional.empty()를 반환
         if (contentRecord == null) {
             return Optional.empty();
         }

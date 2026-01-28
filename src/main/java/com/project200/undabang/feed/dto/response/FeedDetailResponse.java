@@ -28,8 +28,8 @@ public class FeedDetailResponse {
     private boolean feedHasCommented;
     private UUID memberId;
     private String nickname;
-    private String profileUrl;
     private String thumbnailUrl;
+    private String profileUrl;
     private List<FeedPictureRecord> feedPictures;
 
     public static FeedDetailResponse from(FeedDetailRecord record, List<FeedPictureRecord> feedPictures) {
@@ -46,8 +46,8 @@ public class FeedDetailResponse {
                 .feedHasCommented(record.feedHasCommented())
                 .memberId(record.memberId())
                 .nickname(record.nickname())
-                .profileUrl(record.profileUrl())
                 .thumbnailUrl(record.thumbnailUrl())
+                .profileUrl(record.profileUrl())
                 .feedPictures(feedPictures)
                 .build();
     }
