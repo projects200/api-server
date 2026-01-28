@@ -89,7 +89,7 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .from(feedPicture)
                 .join(feedPicture.picture, picture)
                 .where(
-                        feedPicture.feed.id.eq(contentRecord.feedId())
+                        feedPicture.feed.id.eq(feedId)
                 )
                 .fetch();
 
