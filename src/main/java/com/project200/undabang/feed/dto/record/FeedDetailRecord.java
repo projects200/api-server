@@ -14,6 +14,6 @@ public record FeedDetailRecord(
         LocalDateTime feedCreatedAt,
         UUID memberId,
         String nickname,
-        String profileUrl,
-        String thumbnailUrl) {
+        String thumbnailUrl,
+        String profileUrl) {
 }

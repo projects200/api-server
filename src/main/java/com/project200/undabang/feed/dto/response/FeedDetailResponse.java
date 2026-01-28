@@ -28,7 +28,7 @@ public class FeedDetailResponse {
     private String nickname;
     private String profileUrl;
     private String thumbnailUrl;
-    List<FeedPictureRecord> feedPictures;
+    private List<FeedPictureRecord> feedPictures;
 
     public static FeedDetailResponse from(FeedDetailRecord record, List<FeedPictureRecord> feedPictures) {
         return FeedDetailResponse.builder()

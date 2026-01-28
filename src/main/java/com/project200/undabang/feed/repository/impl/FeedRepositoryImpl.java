@@ -116,8 +116,8 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
     }
 
     /**
-     * 주어진 페이지 요청 정보와 결과 목록을 기반으로 다음 페이지의 존재 여부를 확인하고,
-     * 결과를 뒤집은 후 Slice 객체를 생성하여 반환합니다.
+     * 주어진 리스트의 크기를 전달된 페이지 크기 기준으로 확인하여,
+     * 페이지 크기를 초과할 경우 초과된 요소를 삭제하고 다음 페이지의 존재 여부를 반환합니다.
      */
     private boolean checkAndTrimForNextPage(List<FeedDetailRecord> recordList, int pageSize) {
         if (recordList.size() > pageSize) {

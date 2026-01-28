@@ -41,7 +41,7 @@ class FeedQueryServiceImplTest {
         class Context_with_valid_page_request {
 
             @Test
-            @DisplayName("리포지토리를 호출하여 피드 목록을 조회하고, 응답 객체로 변환하여 반환한다")
+            @DisplayName("리포지토리를 호출하고, 조회된 Slice 데이터를 응답 객체에 정확히 매핑하여 반환한다")
             void it_calls_repository_and_returns_mapped_response() {
                 // given
                 Long prevFeedId = 100L;
@@ -53,15 +53,27 @@ class FeedQueryServiceImplTest {
                         .feedContent("테스트 피드 내용")
                         .build();
 
+                // Slice 생성 (데이터 있음, 다음 페이지 있음으로 설정)
                 Slice<FeedDetailResponse> mockSlice = new SliceImpl<>(List.of(mockFeed), pageable, true);
 
-                given(feedRepository.getAllFeedList(eq(prevFeedId), any(Pageable.class))).willReturn(mockSlice);
+                given(feedRepository.getAllFeedList(eq(prevFeedId), any(Pageable.class)))
+                        .willReturn(mockSlice);
 
                 // when
                 GetAllMemberFeedsResponse response = feedQueryService.getAllMemberFeeds(prevFeedId, pageable);
 
                 // then
                 verify(feedRepository).getAllFeedList(eq(prevFeedId), eq(pageable));
+
+                assertThat(response).isNotNull();
+
+                // 리스트 내용 검증
+                assertThat(response.getFeeds()).hasSize(1);
+                assertThat(response.getFeeds().get(0).getFeedId()).isEqualTo(99L);
+                assertThat(response.getFeeds().get(0).getFeedContent()).isEqualTo("테스트 피드 내용");
+
+                // Slice 메타데이터(hasNext) 매핑 검증
+                assertThat(response.isHasNext()).isTrue();
             }
         }
 
@@ -70,10 +82,12 @@ class FeedQueryServiceImplTest {
         class Context_when_no_feeds_exist {
 
             @Test
-            @DisplayName("빈 목록을 담은 응답 객체를 반환한다")
+            @DisplayName("빈 리스트와 hasNext=false가 담긴 응답 객체를 반환한다")
             void it_returns_empty_response() {
                 // given
                 Pageable pageable = PageRequest.of(0, 10);
+
+                // 빈 Slice 생성
                 Slice<FeedDetailResponse> emptySlice = new SliceImpl<>(List.of(), pageable, false);
 
                 given(feedRepository.getAllFeedList(any(), any()))
@@ -84,6 +98,9 @@ class FeedQueryServiceImplTest {
 
                 // then
                 assertThat(response).isNotNull();
+
+                assertThat(response.getFeeds()).isEmpty(); // 리스트가 비어있는지
+                assertThat(response.isHasNext()).isFalse(); // 다음 페이지가 없는지
             }
         }
     }
