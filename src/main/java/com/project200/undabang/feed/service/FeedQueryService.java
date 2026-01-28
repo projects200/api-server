@@ -6,6 +6,5 @@ import org.springframework.data.domain.Pageable;
 
 public interface FeedQueryService {
     GetAllMemberFeedsResponse getAllMemberFeeds(Long prevFeedId, Pageable pageable);
-
     GetSpecificFeedResponse getSpecificFeed(Long feedId);
 }
