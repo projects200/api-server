@@ -24,6 +24,8 @@ public class FeedDetailResponse {
     private String feedTypeName;
     private String feedTypeDesc;
     private LocalDateTime feedCreatedAt;
+    private boolean feedIsLiked;
+    private boolean feedHasCommented;
     private UUID memberId;
     private String nickname;
     private String profileUrl;
@@ -40,6 +42,8 @@ public class FeedDetailResponse {
                 .feedTypeName(record.feedTypeName())
                 .feedTypeDesc(record.feedTypeDesc())
                 .feedCreatedAt(record.feedCreatedAt())
+                .feedIsLiked(record.feedIsLiked())
+                .feedHasCommented(record.feedHasCommented())
                 .memberId(record.memberId())
                 .nickname(record.nickname())
                 .profileUrl(record.profileUrl())

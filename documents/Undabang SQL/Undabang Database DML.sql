@@ -260,3 +260,12 @@ VALUES ('헬스 다방', '헬스와 웨이트 트레이닝을 즐기는 사람�
        ('게이트볼 다방', '게이트볼을 즐기는 커뮤니티 피드입니다.', 1),
        ('낚시 다방', '낚시 기록과 조과를 공유하는 피드입니다.', 1),
        ('미식축구 다방', '미식축구 경기와 전술 이야기를 나누는 피드입니다.', 1);
+
+-- 피드 좋아요 인덱스 : (피드ID + 회원ID)
+CREATE INDEX idx_feed_likes_feed_member ON feed_likes (feed_id, member_id);
+
+-- 댓글 인덱스 : (피드ID + 회원ID)
+CREATE INDEX idx_comments_feed_member ON comments (feed_id, member_id);
+
+-- 댓글 좋아요 인덱스: (댓글ID + 회원ID)
+CREATE INDEX idx_comment_likes_comment_member ON comment_likes (comment_id, member_id);

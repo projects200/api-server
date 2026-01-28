@@ -65,6 +65,8 @@ class FeedQueryControllerTest extends AbstractRestDocSupport {
                     .feedTypeId(1L)
                     .feedTypeName("수영다방")
                     .feedTypeDesc("수영다방 피드에 대한 설명")
+                    .feedIsLiked(true)
+                    .feedHasCommented(false)
                     .memberId(UUID.randomUUID())
                     .nickname("수영왕")
                     .profileUrl("https://example.com/profile.jpg")
@@ -105,23 +107,21 @@ class FeedQueryControllerTest extends AbstractRestDocSupport {
                             ),
                             responseFields(commonResponseFields(
                                     fieldWithPath("data.hasNext").type(BOOLEAN).description("다음 페이지 존재 여부를 의미합니다."),
-
                                     fieldWithPath("data.feeds").type(ARRAY).description("조회된 피드 목록 리스트 입니다."),
                                     fieldWithPath("data.feeds[].feedId").type(NUMBER).description("피드 식별자를 의미합니다."),
                                     fieldWithPath("data.feeds[].feedContent").type(STRING).description("피드 내용을 의미합니다."),
                                     fieldWithPath("data.feeds[].feedLikesCount").type(NUMBER).description("좋아요 수를 의미합니다."),
                                     fieldWithPath("data.feeds[].feedCommentsCount").type(NUMBER).description("댓글 수를 의미합니다."),
-
                                     fieldWithPath("data.feeds[].feedTypeId").type(NUMBER).description("피드 타입 식별자를 의미합니다."),
                                     fieldWithPath("data.feeds[].feedTypeName").type(STRING).description("피드 타입 이름을 의미합니다."),
                                     fieldWithPath("data.feeds[].feedTypeDesc").type(STRING).description("피드 타입 설명을 의미합니다."),
-
+                                    fieldWithPath("data.feeds[].feedIsLiked").type(BOOLEAN).description("해당 회원이 피드에 좋아요를 누른 여부를 반환합니다."),
+                                    fieldWithPath("data.feeds[].feedHasCommented").type(BOOLEAN).description("해당 회원이 피드에 댓글을 작성하였는지 여부를 반환합니다."),
                                     fieldWithPath("data.feeds[].memberId").type(STRING).description("작성자 회원 식별자를 의미합니다."),
                                     fieldWithPath("data.feeds[].nickname").type(STRING).description("작성자 닉네임을 의미합니다."),
                                     fieldWithPath("data.feeds[].profileUrl").type(STRING).description("작성자 프로필 URL을 의미합니다.").optional(),
                                     fieldWithPath("data.feeds[].thumbnailUrl").type(STRING).description("작성자 썸네일 URL을 의미합니다.").optional(),
                                     fieldWithPath("data.feeds[].feedCreatedAt").type(STRING).description("작성일시 정보를 나타냅니다."),
-
                                     fieldWithPath("data.feeds[].feedPictures").type(ARRAY).description("피드 사진 목록을 의미합니다."),
                                     fieldWithPath("data.feeds[].feedPictures[].feedPictureId").type(NUMBER).description("피드 사진 식별자를 의미합니다."),
                                     fieldWithPath("data.feeds[].feedPictures[].feedPictureUrl").type(STRING).description("피드 사진 URL을 의미합니다.")

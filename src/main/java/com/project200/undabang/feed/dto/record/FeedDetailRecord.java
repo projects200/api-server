@@ -12,6 +12,8 @@ public record FeedDetailRecord(
         String feedTypeName,
         String feedTypeDesc,
         LocalDateTime feedCreatedAt,
+        boolean feedIsLiked,
+        boolean feedHasCommented,
         UUID memberId,
         String nickname,
         String thumbnailUrl,

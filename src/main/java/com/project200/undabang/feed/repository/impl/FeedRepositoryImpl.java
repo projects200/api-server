@@ -1,5 +1,6 @@
 package com.project200.undabang.feed.repository.impl;
 
+import com.project200.undabang.comment.entity.QComment;
 import com.project200.undabang.common.entity.QPicture;
 import com.project200.undabang.feed.dto.record.FeedDetailRecord;
 import com.project200.undabang.feed.dto.record.FeedPictureRecord;
@@ -8,11 +9,15 @@ import com.project200.undabang.feed.entity.QFeed;
 import com.project200.undabang.feed.entity.QFeedPicture;
 import com.project200.undabang.feed.entity.QFeedType;
 import com.project200.undabang.feed.repository.FeedRepositoryCustom;
+import com.project200.undabang.like.entity.QFeedLike;
+import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.QMember;
 import com.project200.undabang.member.entity.QMemberPicture;
 import com.querydsl.core.group.GroupBy;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -36,11 +41,13 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
     private final QFeed feed = QFeed.feed;
     private final QFeedType feedType = QFeedType.feedType;
     private final QFeedPicture feedPicture = QFeedPicture.feedPicture;
+    private final QFeedLike feedLike = QFeedLike.feedLike;
+    private final QComment comment = QComment.comment;
 
     private static final int EXTRA_FETCH_SIZE = 1; // hasNext 확인용 상수
 
     @Override
-    public Slice<FeedDetailResponse> getAllFeedList(Long prevFeedId, Pageable pageable) {
+    public Slice<FeedDetailResponse> getAllFeedList(Member currentMember, Long prevFeedId, Pageable pageable) {
 
         List<FeedDetailRecord> contentRecords = queryFactory
                 .select(Projections.constructor(FeedDetailRecord.class,
@@ -52,6 +59,8 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                         feedType.feedTypeName,
                         feedType.feedTypeDesc,
                         feed.createdAt,
+                        isLikedExpression(currentMember),
+                        hasCommentedExpression(currentMember),
                         member.memberId,
                         member.memberNickname,
                         memberPicture.memberPicturesUrl,
@@ -126,5 +135,35 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
         }
 
         return false;
+    }
+
+    /**
+     * 현재 사용자가 특정 피드에 댓글을 작성했는지 확인하는 조건식을 생성합니다.
+     */
+    private BooleanExpression hasCommentedExpression(Member currentMember) {
+        if (currentMember == null) {
+            return Expressions.FALSE;
+        }
+
+        return JPAExpressions
+                .selectOne()
+                .from(comment)
+                .where(comment.feed.id.eq(feed.id).and(comment.member.memberId.eq(currentMember.getMemberId())))
+                .exists();
+    }
+
+    /**
+     * 현재 사용자가 특정 피드를 좋아요 했는지 확인하는 조건식을 생성합니다.
+     */
+    private BooleanExpression isLikedExpression(Member currentMember) {
+        if (currentMember == null) {
+            return Expressions.FALSE;
+        }
+
+        return JPAExpressions
+                .selectOne()
+                .from(feedLike)
+                .where(feedLike.feed.id.eq(feed.id).and(feedLike.member.memberId.eq(currentMember.getMemberId())))
+                .exists();
     }
 }

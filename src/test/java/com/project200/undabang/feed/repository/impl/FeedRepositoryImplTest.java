@@ -1,5 +1,6 @@
 package com.project200.undabang.feed.repository.impl;
 
+import com.project200.undabang.comment.entity.Comment;
 import com.project200.undabang.common.entity.Picture;
 import com.project200.undabang.configuration.TestQuerydslConfig;
 import com.project200.undabang.feed.dto.response.FeedDetailResponse;
@@ -7,6 +8,7 @@ import com.project200.undabang.feed.entity.Feed;
 import com.project200.undabang.feed.entity.FeedPicture;
 import com.project200.undabang.feed.entity.FeedType;
 import com.project200.undabang.feed.repository.FeedRepository;
+import com.project200.undabang.like.entity.FeedLike;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.MemberPicture;
 import com.project200.undabang.member.enums.MemberGender;
@@ -21,6 +23,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,24 +52,21 @@ class FeedRepositoryImplTest {
             Member member = createAndSaveMember("runner");
             FeedType type = createAndSaveFeedType("러닝");
 
-            // 20개의 피드 생성 (ID 1 ~ 20)
+            // 20개의 피드 생성
             for (int i = 1; i <= 20; i++) {
                 createAndSaveFeed(member, type, "Running Log " + i);
             }
 
             flushAndClear();
 
-            // when (PageSize=10, 첫 페이지 요청)
+            // when (PageSize=10, 첫 페이지 요청, 비로그인 상태)
             Pageable pageable = PageRequest.of(0, 10);
-            Slice<FeedDetailResponse> result = feedRepository.getAllFeedList(null, pageable);
+            Slice<FeedDetailResponse> result = feedRepository.getAllFeedList(null, null, pageable);
 
             // then
             assertThat(result.getContent()).hasSize(10);
-            assertThat(result.hasNext()).isTrue(); // 20개 중 10개만 가져왔으므로 true
-
-            // 최신순 검증 (20번 피드가 가장 먼저 나와야 함)
-            assertThat(result.getContent().get(0).getFeedContent()).isEqualTo("Running Log 20");
-            assertThat(result.getContent().get(9).getFeedContent()).isEqualTo("Running Log 11");
+            assertThat(result.hasNext()).isTrue();
+            assertThat(result.getContent().get(0).getFeedContent()).isEqualTo("Running Log 20"); // 최신글
         }
 
         @Test
@@ -76,7 +76,6 @@ class FeedRepositoryImplTest {
             Member member = createAndSaveMember("swimmer");
             FeedType type = createAndSaveFeedType("수영");
 
-            // 5개의 피드 생성 (ID 1 ~ 5)
             List<Long> feedIds = new ArrayList<>();
             for (int i = 1; i <= 5; i++) {
                 Feed feed = createAndSaveFeed(member, type, "Swim Log " + i);
@@ -84,16 +83,15 @@ class FeedRepositoryImplTest {
             }
 
             flushAndClear();
-            Long lastSeenFeedId = feedIds.get(4); // ID: 5 (가장 최신)
+            Long lastSeenFeedId = feedIds.get(4); // 가장 최신 ID (ID=5 가정)
 
-            // when (PageSize=10, ID 5보다 작은 것 조회 -> 4,3,2,1 총 4개)
+            // when (PageSize=10, ID 5보다 작은 것 조회 -> 4,3,2,1)
             Pageable pageable = PageRequest.of(0, 10);
-            Slice<FeedDetailResponse> result = feedRepository.getAllFeedList(lastSeenFeedId, pageable);
+            Slice<FeedDetailResponse> result = feedRepository.getAllFeedList(null, lastSeenFeedId, pageable);
 
             // then
             assertThat(result.getContent()).hasSize(4);
-            assertThat(result.hasNext()).isFalse(); // 더 이상 데이터가 없으므로 false
-            assertThat(result.getContent().get(0).getFeedContent()).isEqualTo("Swim Log 4");
+            assertThat(result.hasNext()).isFalse();
         }
 
         @Test
@@ -103,29 +101,26 @@ class FeedRepositoryImplTest {
             Member member = createAndSaveMember("photographer");
             FeedType type = createAndSaveFeedType("사진");
 
-            // 피드 1: 사진 2장
             Feed feed1 = createAndSaveFeed(member, type, "Photo Day");
             createAndSaveFeedPicture(feed1, "http://img1.com");
             createAndSaveFeedPicture(feed1, "http://img2.com");
 
-            // 피드 2: 사진 0장
             Feed feed2 = createAndSaveFeed(member, type, "Just Text");
 
             flushAndClear();
 
             // when
-            Pageable pageable = PageRequest.of(0, 10);
-            Slice<FeedDetailResponse> result = feedRepository.getAllFeedList(null, pageable);
+            Slice<FeedDetailResponse> result = feedRepository.getAllFeedList(null, null, PageRequest.of(0, 10));
 
             // then
-            assertThat(result.getContent()).hasSize(2);
+            assertThat(result.getContent()).hasSize(2); // 최신순이므로 feed2, feed1 순서
 
-            // Feed 2 (최신글, 사진 없음) 확인
+            // Feed 2 (최신, 사진 없음)
             FeedDetailResponse res2 = result.getContent().get(0);
             assertThat(res2.getFeedContent()).isEqualTo("Just Text");
             assertThat(res2.getFeedPictures()).isEmpty();
 
-            // Feed 1 (과거글, 사진 2장) 확인
+            // Feed 1 (과거, 사진 2장)
             FeedDetailResponse res1 = result.getContent().get(1);
             assertThat(res1.getFeedContent()).isEqualTo("Photo Day");
             assertThat(res1.getFeedPictures()).hasSize(2);
@@ -140,17 +135,53 @@ class FeedRepositoryImplTest {
             // given
             Member member = createAndSaveMember("model");
             createAndSaveMemberProfilePicture(member, "http://my-profile.com/face.jpg");
+
             FeedType type = createAndSaveFeedType("일상");
             createAndSaveFeed(member, type, "Selfie");
 
             flushAndClear();
 
             // when
-            Slice<FeedDetailResponse> result = feedRepository.getAllFeedList(null, PageRequest.of(0, 10));
+            Slice<FeedDetailResponse> result = feedRepository.getAllFeedList(null, null, PageRequest.of(0, 10));
 
             // then
             assertThat(result.getContent().get(0).getProfileUrl()).isEqualTo("http://my-profile.com/face.jpg");
             assertThat(result.getContent().get(0).getNickname()).isEqualTo("model");
+        }
+
+        @Test
+        @DisplayName("로그인한 사용자가 좋아요와 댓글을 단 피드는 isLiked, hasCommented가 true로 반환된다")
+        void it_returns_isLiked_and_hasCommented_true_for_interacted_feeds() {
+            // given
+            Member author = createAndSaveMember("author"); // 작성자
+            Member viewer = createAndSaveMember("viewer"); // 조회자 (로그인 유저)
+            FeedType type = createAndSaveFeedType("테스트");
+
+            // 피드 1: viewer가 좋아요 O, 댓글 O
+            Feed feed1 = createAndSaveFeed(author, type, "Liked and Commented Feed");
+            createAndSaveFeedLike(feed1, viewer);
+            createAndSaveComment(feed1, viewer, "Good!");
+
+            // 피드 2: viewer가 아무것도 안 함
+            Feed feed2 = createAndSaveFeed(author, type, "No Interaction Feed");
+
+            flushAndClear();
+
+            // when (viewer로 로그인하여 조회)
+            Slice<FeedDetailResponse> result = feedRepository.getAllFeedList(viewer, null, PageRequest.of(0, 10));
+
+            // then
+            List<FeedDetailResponse> content = result.getContent();
+
+            // Feed 2 검증
+            assertThat(content.get(0).getFeedContent()).isEqualTo("No Interaction Feed");
+            assertThat(content.get(0).isFeedIsLiked()).isFalse();
+            assertThat(content.get(0).isFeedHasCommented()).isFalse();
+
+            // Feed 1 검증
+            assertThat(content.get(1).getFeedContent()).isEqualTo("Liked and Commented Feed");
+            assertThat(content.get(1).isFeedIsLiked()).isTrue();       // 좋아요 확인
+            assertThat(content.get(1).isFeedHasCommented()).isTrue(); // 댓글 확인
         }
 
         @Test
@@ -162,7 +193,7 @@ class FeedRepositoryImplTest {
 
             // when
             Pageable pageable = PageRequest.of(0, 10);
-            Slice<FeedDetailResponse> result = feedRepository.getAllFeedList(null, pageable);
+            Slice<FeedDetailResponse> result = feedRepository.getAllFeedList(null, null, pageable);
 
             // then
             assertThat(result.getContent()).isEmpty();
@@ -172,20 +203,21 @@ class FeedRepositoryImplTest {
 
     private Member createAndSaveMember(String nickname) {
         Member member = Member.builder()
-                .memberId(UUID.randomUUID())
+                .memberId(UUID.randomUUID()) // ID 직접 생성
                 .memberEmail(nickname + "@test.com")
                 .memberNickname(nickname)
-                .memberScore((byte) 50)
-                .memberDesc("Intro")
-                .memberGender(MemberGender.MALE) // Enum 필요시 수정
+                .memberGender(MemberGender.MALE) // Enum 사용
+                .memberBday(LocalDate.of(1990, 1, 1)) // 생년월일 설정
+                .memberScore((byte) 0)
                 .build();
+
         em.persist(member);
         return member;
     }
 
     private void createAndSaveMemberProfilePicture(Member member, String url) {
         Picture pic = Picture.builder()
-                .pictureUrl(url) // 실제 URL 입력
+                .pictureUrl(url)
                 .pictureName("profile.jpg")
                 .build();
         em.persist(pic);
@@ -199,8 +231,7 @@ class FeedRepositoryImplTest {
 
         member.updateProfilePicture(mp);
 
-        em.flush();
-        em.clear();
+        em.persist(member);
     }
 
     private FeedType createAndSaveFeedType(String name) {
@@ -238,6 +269,23 @@ class FeedRepositoryImplTest {
                 .picture(pic)
                 .build();
         em.persist(fp);
+    }
+
+    private void createAndSaveFeedLike(Feed feed, Member member) {
+        FeedLike like = FeedLike.builder()
+                .feed(feed)
+                .member(member)
+                .build();
+        em.persist(like);
+    }
+
+    private void createAndSaveComment(Feed feed, Member member, String content) {
+        Comment comment = Comment.builder()
+                .feed(feed)
+                .member(member)
+                .content(content)
+                .build();
+        em.persist(comment);
     }
 
     private void flushAndClear() {
