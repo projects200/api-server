@@ -66,19 +66,11 @@ class CommentCommandControllerTest extends AbstractRestDocSupport {
                     .andDo(document.document(
                             requestHeaders(HEADER_ACCESS_TOKEN),
                             pathParameters(
-                                    parameterWithName("feedId").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("댓글을 작성할 피드 ID")),
+                                    parameterWithName("feedId").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("댓글을 작성할 피드의 고유 식별자(ID) 입니다.")),
                             requestFields(
-                                    fieldWithPath("content")
-                                            .type(JsonFieldType.STRING)
-                                            .description("댓글 내용"),
-                                    fieldWithPath("parentCommentId")
-                                            .type(JsonFieldType.NUMBER)
-                                            .description("부모 댓글 ID (대댓글인 경우)")
-                                            .optional()),
-                            responseFields(commonResponseFields(
-                                    fieldWithPath("data.commentId")
-                                            .type(JsonFieldType.NUMBER)
-                                            .description("생성된 댓글 ID")))))
+                                    fieldWithPath("content").type(JsonFieldType.STRING).description("작성할 댓글의 내용입니다."),
+                                    fieldWithPath("parentCommentId").type(JsonFieldType.NUMBER).description("해당 댓글이 대댓글인 경우, 부모 댓글의 고유 식별자(ID)입니다.").optional()),
+                            responseFields(commonResponseFields(fieldWithPath("data.commentId").type(JsonFieldType.NUMBER).description("작성된 댓글의 고유 식별자(ID) 입니다.")))))
                     .andReturn().getResponse().getContentAsString();
 
             // then

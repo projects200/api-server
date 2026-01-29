@@ -92,36 +92,23 @@ class CommentQueryControllerTest extends AbstractRestDocSupport {
                                     parameterWithName("feedId").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("댓글을 조회할 피드 ID")),
                             responseFields(commonResponseFieldsForList(
                                     fieldWithPath("data[].commentId").type(JsonFieldType.NUMBER).description("댓글 ID"),
-                                    fieldWithPath("data[].memberId").type(JsonFieldType.STRING)
-                                            .description("작성자 회원 ID"),
-                                    fieldWithPath("data[].memberNickname").type(JsonFieldType.STRING)
-                                            .description("작성자 닉네임"),
-                                    fieldWithPath("data[].memberProfileImageUrl").type(JsonFieldType.STRING)
-                                            .description("작성자 프로필 이미지 URL").optional(),
-                                    fieldWithPath("data[].memberThumbnailUrl").type(JsonFieldType.STRING)
-                                            .description("작성자 프로필 썸네일 URL").optional(),
-                                    fieldWithPath("data[].content").type(JsonFieldType.STRING).description("댓글 내용"),
-                                    fieldWithPath("data[].likesCount").type(JsonFieldType.NUMBER).description("좋아요 수"),
-                                    fieldWithPath("data[].createdAt").type(JsonFieldType.STRING).description("작성 시간"),
-                                    fieldWithPath("data[].children").type(JsonFieldType.ARRAY).description("대댓글 목록"),
-                                    fieldWithPath("data[].children[].commentId").type(JsonFieldType.NUMBER)
-                                            .description("대댓글 ID"),
-                                    fieldWithPath("data[].children[].memberId").type(JsonFieldType.STRING)
-                                            .description("대댓글 작성자 회원 ID"),
-                                    fieldWithPath("data[].children[].memberNickname").type(JsonFieldType.STRING)
-                                            .description("대댓글 작성자 닉네임"),
-                                    fieldWithPath("data[].children[].memberProfileImageUrl").type(JsonFieldType.STRING)
-                                            .description("대댓글 작성자 프로필 이미지 URL").optional(),
-                                    fieldWithPath("data[].children[].memberThumbnailUrl").type(JsonFieldType.STRING)
-                                            .description("대댓글 작성자 프로필 썸네일 URL").optional(),
-                                    fieldWithPath("data[].children[].content").type(JsonFieldType.STRING)
-                                            .description("대댓글 내용"),
-                                    fieldWithPath("data[].children[].likesCount").type(JsonFieldType.NUMBER)
-                                            .description("대댓글 좋아요 수"),
-                                    fieldWithPath("data[].children[].createdAt").type(JsonFieldType.STRING)
-                                            .description("대댓글 작성 시간"),
-                                    fieldWithPath("data[].children[].children").type(JsonFieldType.ARRAY)
-                                            .description("대댓글의 대댓글 (현재 미지원)")))))
+                                    fieldWithPath("data[].memberId").type(JsonFieldType.STRING).description("댓글 작성자의 회원 고유 식별자(ID) 입니다."),
+                                    fieldWithPath("data[].memberNickname").type(JsonFieldType.STRING).description("댓글 작성자의 닉네임입니다."),
+                                    fieldWithPath("data[].memberProfileImageUrl").type(JsonFieldType.STRING).description("댓글 작성자의 프로필 이미지 URL입니다.").optional(),
+                                    fieldWithPath("data[].memberThumbnailUrl").type(JsonFieldType.STRING).description("댓글 작성자 프로필 썸네일 URL입니다.").optional(),
+                                    fieldWithPath("data[].content").type(JsonFieldType.STRING).description("댓글 내용입니다."),
+                                    fieldWithPath("data[].likesCount").type(JsonFieldType.NUMBER).description("댓글 좋아요 수 입니다."),
+                                    fieldWithPath("data[].createdAt").type(JsonFieldType.STRING).description("댓글이 작성된 시간입니다."),
+                                    fieldWithPath("data[].children").type(JsonFieldType.ARRAY).description("대댓글 목록입니다."),
+                                    fieldWithPath("data[].children[].commentId").type(JsonFieldType.NUMBER).description("대댓글 고유 식별자(ID) 입니다."),
+                                    fieldWithPath("data[].children[].memberId").type(JsonFieldType.STRING).description("대댓글 작성자 회원 고유 식별자(ID) 입니다."),
+                                    fieldWithPath("data[].children[].memberNickname").type(JsonFieldType.STRING).description("대댓글 작성자 닉네임 입니다."),
+                                    fieldWithPath("data[].children[].memberProfileImageUrl").type(JsonFieldType.STRING).description("대댓글 작성자 프로필 이미지 URL").optional(),
+                                    fieldWithPath("data[].children[].memberThumbnailUrl").type(JsonFieldType.STRING).description("대댓글 작성자 프로필 썸네일 URL").optional(),
+                                    fieldWithPath("data[].children[].content").type(JsonFieldType.STRING).description("대댓글 내용"),
+                                    fieldWithPath("data[].children[].likesCount").type(JsonFieldType.NUMBER).description("대댓글 좋아요 수"),
+                                    fieldWithPath("data[].children[].createdAt").type(JsonFieldType.STRING).description("대댓글 작성 시간"),
+                                    fieldWithPath("data[].children[].children").type(JsonFieldType.ARRAY).description("대댓글의 대댓글 (현재 미지원)")))))
                     .andReturn().getResponse().getContentAsString();
 
             // then
