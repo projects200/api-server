@@ -29,6 +29,7 @@ operation::create-member-feed/create-member-feed_-success[snippets="request-head
 |===
 |상태 코드|설명
 |200|요청이 성공적으로 처리되었습니다.
+|400|요청 본문을 읽을 수 없거나 형식이 올바르지 않습니다.
 |401|인증되지 않은 요청입니다. Access Token이 없거나 유효하지 않습니다
 |404|존재하지 않는 회원입니다. +
 존재하지 않는 피드 타입 입니다.
