@@ -59,4 +59,12 @@ public class Comment {
 
     @Column(name = "comment_deleted_at")
     private LocalDateTime deletedAt;
+
+    public void delete() {
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public boolean isDeleted() {
+        return this.deletedAt != null;
+    }
 }
