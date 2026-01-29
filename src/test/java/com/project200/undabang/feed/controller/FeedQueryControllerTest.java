@@ -282,24 +282,24 @@ class FeedQueryControllerTest extends AbstractRestDocSupport {
                             ),
                             responseFields(commonResponseFields(
                                     fieldWithPath("data.memberId").type(STRING).description("조회 중인 회원(본인)의 식별자 정보 (UUID) 입니다."),
-                                    fieldWithPath("data.nickname").type(STRING).description("회원의 닉네임입니다."),
-                                    fieldWithPath("data.thumbnailUrl").type(STRING).description("회원의 썸네일 URL입니다.").optional(),
-                                    fieldWithPath("data.profileUrl").type(STRING).description("회원의 프로필 원본 URL입니다.").optional(),
+                                    fieldWithPath("data.nickname").type(STRING).description("회원의 닉네임을 의미합니다."),
+                                    fieldWithPath("data.thumbnailUrl").type(STRING).description("회원의 썸네일 URL 주소입니다.").optional(),
+                                    fieldWithPath("data.profileUrl").type(STRING).description("회원의 프로필 원본 URL 주소입니다.").optional(),
                                     fieldWithPath("data.hasNext").type(BOOLEAN).description("다음 페이지 존재 여부를 반환합니다."),
-                                    fieldWithPath("data.feeds").type(ARRAY).description("작성한 피드 목록 리스트입니다."),
+                                    fieldWithPath("data.feeds").type(ARRAY).description("회원이 작성한 피드 목록 리스트입니다."),
                                     fieldWithPath("data.feeds[].feedId").type(NUMBER).description("피드 식별자입니다."),
-                                    fieldWithPath("data.feeds[].feedContent").type(STRING).description("피드 내용입니다."),
-                                    fieldWithPath("data.feeds[].feedLikesCount").type(NUMBER).description("좋아요 수입니다."),
-                                    fieldWithPath("data.feeds[].feedCommentsCount").type(NUMBER).description("댓글 수입니다."),
+                                    fieldWithPath("data.feeds[].feedContent").type(STRING).description("피드 본문 내용을 의미합니다."),
+                                    fieldWithPath("data.feeds[].feedLikesCount").type(NUMBER).description("피드가 받은 좋아요의 총 갯수입니다."),
+                                    fieldWithPath("data.feeds[].feedCommentsCount").type(NUMBER).description("피드에 달린 댓글의 총 갯수입니다."),
                                     fieldWithPath("data.feeds[].feedTypeId").type(NUMBER).description("피드 타입 식별자입니다."),
                                     fieldWithPath("data.feeds[].feedTypeName").type(STRING).description("피드 타입 이름입니다."),
-                                    fieldWithPath("data.feeds[].feedTypeDesc").type(STRING).description("피드 타입 설명입니다."),
-                                    fieldWithPath("data.feeds[].feedCreatedAt").type(STRING).description("피드 작성일시입니다."),
-                                    fieldWithPath("data.feeds[].feedIsLiked").type(BOOLEAN).description("내가 이 피드에 좋아요를 눌렀는지 여부입니다."),
-                                    fieldWithPath("data.feeds[].feedHasCommented").type(BOOLEAN).description("내가 이 피드에 댓글을 달았는지 여부입니다."),
-                                    fieldWithPath("data.feeds[].feedPictures").type(ARRAY).description("피드 사진 목록입니다."),
-                                    fieldWithPath("data.feeds[].feedPictures[].feedPictureId").type(NUMBER).description("사진 식별자입니다."),
-                                    fieldWithPath("data.feeds[].feedPictures[].feedPictureUrl").type(STRING).description("사진 URL입니다.")
+                                    fieldWithPath("data.feeds[].feedTypeDesc").type(STRING).description("피드 타입에 대한 상세 설명입니다."),
+                                    fieldWithPath("data.feeds[].feedCreatedAt").type(STRING).description("피드 작성일시 정보입니다."),
+                                    fieldWithPath("data.feeds[].feedIsLiked").type(BOOLEAN).description("로그인한 회원이 이 피드에 좋아요를 눌렀는지 여부입니다."),
+                                    fieldWithPath("data.feeds[].feedHasCommented").type(BOOLEAN).description("로그인한 회원이 이 피드에 댓글을 작성했는지 여부입니다."),
+                                    fieldWithPath("data.feeds[].feedPictures").type(ARRAY).description("피드에 포함된 사진 목록입니다."),
+                                    fieldWithPath("data.feeds[].feedPictures[].feedPictureId").type(NUMBER).description("피드 사진 식별자입니다."),
+                                    fieldWithPath("data.feeds[].feedPictures[].feedPictureUrl").type(STRING).description("피드 사진 URL 주소입니다.")
                             ))
                     ));
 
