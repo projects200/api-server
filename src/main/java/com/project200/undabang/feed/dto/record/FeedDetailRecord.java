@@ -1,0 +1,21 @@
+package com.project200.undabang.feed.dto.record;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+public record FeedDetailRecord(
+        long feedId,
+        String feedContent,
+        int feedLikesCount,
+        int feedCommentsCount,
+        long feedTypeId,
+        String feedTypeName,
+        String feedTypeDesc,
+        LocalDateTime feedCreatedAt,
+        boolean feedIsLiked,
+        boolean feedHasCommented,
+        UUID memberId,
+        String nickname,
+        String thumbnailUrl,
+        String profileUrl) {
+}

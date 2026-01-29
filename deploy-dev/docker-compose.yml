@@ -9,6 +9,12 @@ services:
       - "8090:8080"
     networks:
       - dev-server-network
+    environment:
+      - JAVA_OPTS=-Xms128m -Xmx256m -XX:+UseSerialGC
+    deploy:
+      resources:
+        limits:
+          memory: 400M
 
 networks:
   dev-server-network:

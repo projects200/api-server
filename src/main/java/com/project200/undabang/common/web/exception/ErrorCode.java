@@ -52,8 +52,7 @@ public enum ErrorCode {
     // 커스텀 타이머 관련 에러
     CUSTOM_TIMER_NOT_FOUND(404, "CUSTOM_TIMER_NOT_FOUND", "존재하지 않는 타이머 입니다."),
     CUSTOM_TIMER_STEP_MIN_COUNT_VIOLATION(409, "CUSTOM_TIMER_MIN_COUNT_VIOLATION", "최소 1개 이상의 커스텀 타이머 스텝을 보유해야 합니다."),
-    CUSTOM_TIMER_STEP_MAX_COUNT_VIOLATION(409, "CUSTOM_TIMER_STEP_MAX_COUNT_VIOLATION",
-            "최대 커스텀 타이머 스텝 개수(50개)를 초과했습니다."),
+    CUSTOM_TIMER_STEP_MAX_COUNT_VIOLATION(409, "CUSTOM_TIMER_STEP_MAX_COUNT_VIOLATION", "최대 커스텀 타이머 스텝 개수(50개)를 초과했습니다."),
     CUSTOM_TIMER_STEP_ORDER_INVALID(409, "CUSTOM_TIMER_STEP_ORDER_INVALID", "스텝 순서가 잘못되었습니다."),
 
     // 사진 관련 에러
@@ -94,20 +93,13 @@ public enum ErrorCode {
     NOTIFICATION_TYPE_NOT_FOUND(404, "NOTIFICATION_TYPE_NOT_FOUND", "존재하지 않는 알림 타입입니다."),
 
     // 선호 운동 관련 에러
-    PREFERRED_EXERCISE_MAX_COUNT_VIOLATION(409, "PREFERRED_EXERCISE_MAX_COUNT_VIOLATION",
-            "선호 운동은 최대 5개까지만 등록할 수 있습니다."),
+    PREFERRED_EXERCISE_MAX_COUNT_VIOLATION(409, "PREFERRED_EXERCISE_MAX_COUNT_VIOLATION", "선호 운동은 최대 5개까지만 등록할 수 있습니다."),
     PREFERRED_EXERCISE_DUPLICATED(409, "PREFERRED_EXERCISE_DUPLICATED", "이미 등록된 선호 운동 종목입니다."),
     PREFERRED_EXERCISE_NOT_FOUND(404, "PREFERRED_EXERCISE_NOT_FOUND", "존재하지 않는 운동 종류입니다."),
-    PREFERRED_EXERCISE_DUPLICATED_IN_REQUEST(400, "PREFERRED_EXERCISE_DUPLICATED_IN_REQUEST",
-            "요청 내 선호 운동 종목이 중복되었습니다."),
+    PREFERRED_EXERCISE_DUPLICATED_IN_REQUEST(400, "PREFERRED_EXERCISE_DUPLICATED_IN_REQUEST", "요청 내 선호 운동 종목이 중복되었습니다."),
 
-    // 피드 관련 에러
-    FEED_NOT_FOUND(404, "FEED_NOT_FOUND", "존재하지 않는 피드입니다."),
-
-    // 댓글 관련 에러
-    COMMENT_NOT_FOUND(404, "COMMENT_NOT_FOUND", "존재하지 않는 댓글입니다."),
-    COMMENT_DELETE_FORBIDDEN(403, "COMMENT_DELETE_FORBIDDEN", "댓글 삭제 권한이 없습니다."),
-    COMMENT_PARENT_NOT_FOUND(404, "COMMENT_PARENT_NOT_FOUND", "부모 댓글을 찾을 수 없습니다.");
+    //피드 관련 에러
+    FEED_NOT_FOUND(404, "FEED_NOT_FOUND", "존재하지 않는 피드입니다.");
 
     private final HttpStatusCode status;
     private final String code;

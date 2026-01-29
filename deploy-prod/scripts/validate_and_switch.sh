@@ -17,7 +17,7 @@ if ! check_health "server-prod-sub" "$SUB_PORT" "docker-compose-sub.yml"; then
 fi
 
 echo "Switching Nginx traffic to server-prod-sub (Port: $SUB_PORT)..."
-if ! switch_nginx_traffic $SUB_PORT; then
+if ! switch_nginx_traffic "$SUB_PORT"; then
     echo "ERROR: Failed to switch Nginx traffic to SUB_PORT."
     echo "Cleaning up server-prod-sub..."
     clean_specific_containers "server-prod-sub"
@@ -55,7 +55,7 @@ if ! check_health "server-prod" "$MAIN_PORT" "docker-compose.yml"; then
 fi
 
 echo "Switching Nginx traffic back to server-prod (Port: $MAIN_PORT)..."
-if ! switch_nginx_traffic $MAIN_PORT; then
+if ! switch_nginx_traffic "$MAIN_PORT"; then
     echo "ERROR: Failed to switch Nginx traffic to MAIN_PORT."
     echo "Traffic may still be on SUB_PORT. Manual intervention required."
     # server-prod은 정상이나 트래픽 전환 실패. SUB_PORT는 아직 살아있음.
