@@ -252,3 +252,5 @@ include::overview/공통-개발-참고-사항.adoc[]
 - 특정 피드 상세 조회 API #GET# `/api/v1/feeds/{feedId}`
 
 - 마이페이지에서 내가 작성한 피드 목록 조회 API #GET# `/api/v1/mypage/feeds`
+
+- 피드 생성 API #POST# `/api/v1/feeds`
