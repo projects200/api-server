@@ -98,6 +98,11 @@ public enum ErrorCode {
     PREFERRED_EXERCISE_NOT_FOUND(404, "PREFERRED_EXERCISE_NOT_FOUND", "존재하지 않는 운동 종류입니다."),
     PREFERRED_EXERCISE_DUPLICATED_IN_REQUEST(400, "PREFERRED_EXERCISE_DUPLICATED_IN_REQUEST", "요청 내 선호 운동 종목이 중복되었습니다."),
 
+    // 댓글 관련 에러
+    COMMENT_NOT_FOUND(404, "COMMENT_NOT_FOUND", "존재하지 않는 댓글입니다."),
+    COMMENT_DELETE_FORBIDDEN(403, "COMMENT_DELETE_FORBIDDEN", "댓글 삭제 권한이 없습니다."),
+    COMMENT_PARENT_NOT_FOUND(404, "COMMENT_PARENT_NOT_FOUND", "부모 댓글을 찾을 수 없습니다."),
+
     //피드 관련 에러
     FEED_NOT_FOUND(404, "FEED_NOT_FOUND", "존재하지 않는 피드입니다.");
 

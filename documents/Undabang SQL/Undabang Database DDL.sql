@@ -642,7 +642,7 @@ CREATE TABLE feed_likes
     feed_like_created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT FK_feed_likes_member FOREIGN KEY (member_id) REFERENCES members (member_id),
-    CONSTRAINT FK_feed_likes_feed FOREIGN KEY (feed_id) REFERENCES feeds (feed_id),
+    CONSTRAINT FK_feed_likes_feed FOREIGN KEY (feed_id) REFERENCES feeds (feed_id)
 );
 
 CREATE TABLE comments
