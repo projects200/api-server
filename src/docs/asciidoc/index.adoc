@@ -250,3 +250,10 @@ include::overview/공통-개발-참고-사항.adoc[]
 - 전체 피드 목록 조회 API #GET# `/api/v1/feeds?prevFeedId={prevFeedId}`
 
 - 특정 피드 상세 조회 API #GET# `/api/v1/feeds/{feedId}`
+
+=== xref:댓글-API.html[댓글 API]
+- 특정 피드의 댓글 목록 조회 API #GET# `/api/v1/feeds/{feedId}/comments`
+
+- 특정 피드에 댓글 작성 API #POST# `/api/v1/feeds/{feedId}/comments`
+
+- 댓글 삭제 API #DELETE# `/api/v1/comments/{commentId}`
