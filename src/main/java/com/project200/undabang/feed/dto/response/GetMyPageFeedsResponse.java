@@ -24,7 +24,7 @@ public class GetMyPageFeedsResponse {
     private String thumbnailUrl;
     private String profileUrl;
     private boolean hasNext;
-    List<GetMyPageFeedsRecord> feeds;
+    private List<GetMyPageFeedsRecord> feeds;
 
     public static GetMyPageFeedsResponse from(Member member, Slice<FeedDetailResponse> responseSliceList) {
         List<GetMyPageFeedsRecord> feeds = responseSliceList.getContent().stream().map(GetMyPageFeedsRecord::from).toList();

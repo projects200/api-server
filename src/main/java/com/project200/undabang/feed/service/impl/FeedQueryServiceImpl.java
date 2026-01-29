@@ -29,10 +29,6 @@ public class FeedQueryServiceImpl implements FeedQueryService {
 
     /**
      * 이전 피드 ID와 페이지 정보(Pageable)를 기반으로 회원의 피드 목록을 마이페이지에서 조회합니다.
-     *
-     * @param prevFeedId 이전 피드의 ID로, 해당 ID를 기준으로 이후의 피드 목록을 조회합니다.
-     * @param pageable   페이지 정보를 포함하며, 페이징과 관련된 설정을 제공합니다.
-     * @return 마이페이지 피드 목록과 관련된 응답 객체 {@link GetMyPageFeedsResponse}.
      */
     @Override
     public GetMyPageFeedsResponse getMyPageFeeds(Long prevFeedId, Pageable pageable) {
