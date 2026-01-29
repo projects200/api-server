@@ -91,7 +91,7 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .join(feed.member, member)
                 .leftJoin(member.memberPicture, memberPicture)
                 .leftJoin(memberPicture.picture, picture)
-                .join(feed.feedType, feedType)
+                .leftJoin(feed.feedType, feedType)
                 .where(feed.id.eq(feedId)) // 특정 피드만 조회
                 .fetchOne();
 
@@ -145,7 +145,7 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .join(feed.member, member)
                 .leftJoin(member.memberPicture, memberPicture)
                 .leftJoin(memberPicture.picture, picture)
-                .join(feed.feedType, feedType)
+                .leftJoin(feed.feedType, feedType)
                 .where(
                         olderThanPrevFeedId(prevFeedId),
                         condition
