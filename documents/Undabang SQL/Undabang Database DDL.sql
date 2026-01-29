@@ -613,7 +613,7 @@ CREATE TABLE feeds
 (
     feed_id           BIGINT   NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '피드 식별자',
     member_id         CHAR(36) NOT NULL COMMENT 'UUID_SELF',
-    feed_type_id      BIGINT   NOT NULL,
+    feed_type_id BIGINT NULL,
     feed_content      TEXT     NOT NULL,
     feed_likes_cnt    INTEGER  NOT NULL DEFAULT 0,
     feed_comments_cnt INTEGER  NOT NULL DEFAULT 0,
