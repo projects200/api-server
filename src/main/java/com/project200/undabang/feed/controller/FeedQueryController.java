@@ -2,6 +2,7 @@ package com.project200.undabang.feed.controller;
 
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.feed.dto.response.GetAllMemberFeedsResponse;
+import com.project200.undabang.feed.dto.response.GetMyPageFeedsResponse;
 import com.project200.undabang.feed.dto.response.GetSpecificFeedResponse;
 import com.project200.undabang.feed.service.FeedQueryService;
 import lombok.RequiredArgsConstructor;
@@ -43,5 +44,12 @@ public class FeedQueryController {
     public ResponseEntity<CommonResponse<GetSpecificFeedResponse>> getSpecificFeed(@PathVariable Long feedId) {
 
         return ResponseEntity.ok(CommonResponse.success(feedQueryService.getSpecificFeed(feedId)));
+    }
+
+    @GetMapping("/v1/mypage/feeds")
+    public ResponseEntity<CommonResponse<GetMyPageFeedsResponse>> getAllMyFeeds(@RequestParam(value = "prevFeedId", required = false) Long prevFeedId,
+                                                                                @PageableDefault(size = 10) Pageable pageable) {
+
+        return ResponseEntity.ok(CommonResponse.success(feedQueryService.getMyPageFeeds(prevFeedId, pageable)));
     }
 }
