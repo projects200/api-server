@@ -50,6 +50,21 @@ class FeedRepositoryImplTest {
         @Nested
         @DisplayName("존재하는 피드 ID와 로그인한 사용자가 주어지면")
         class Context_with_existing_feed_and_login_user {
+            @Test
+            @DisplayName("피드가 존재하더라도 삭제된(deletedAt이 있는) 피드라면 Optional.empty()를 반환한다")
+            void it_returns_empty_optional_for_deleted_feed() {
+                // given
+                Member author = createAndSaveMember("author");
+                Feed feed = createAndSaveDeletedFeed(author, "삭제된 좀비 피드");
+
+                flushAndClear();
+
+                // when
+                Optional<GetSpecificFeedResponse> result = feedRepository.getSpecificFeed(null, feed.getId());
+
+                // then
+                assertThat(result).isEmpty();
+            }
 
             @Test
             @DisplayName("피드 상세 정보, 사진 목록, 좋아요/댓글 여부를 포함한 Optional 객체를 반환한다")
@@ -151,6 +166,26 @@ class FeedRepositoryImplTest {
     @Nested
     @DisplayName("getAllFeedList 메소드는")
     class Describe_getAllFeedList {
+        @Test
+        @DisplayName("전체 피드를 조회할 때 삭제된 피드는 목록에서 제외한다")
+        void it_excludes_deleted_feeds_from_list() {
+            // given
+            Member member = createAndSaveMember("runner");
+            createAndSaveFeed(member, null, "살아있는 피드 1");
+            createAndSaveDeletedFeed(member, "죽은 피드 (조회금지)");
+            createAndSaveFeed(member, null, "살아있는 피드 2");
+
+            flushAndClear();
+
+            // when
+            Slice<FeedDetailResponse> result = feedRepository.getAllFeedList(null, null, PageRequest.of(0, 10));
+
+            // then
+            assertThat(result.getContent()).hasSize(2);
+            assertThat(result.getContent())
+                    .extracting("feedContent")
+                    .doesNotContain("죽은 피드 (조회금지)");
+        }
 
         @Test
         @DisplayName("피드 목록을 최신순(ID 역순)으로 조회하고, 다음 페이지가 있다면 hasNext는 true이다")
@@ -311,6 +346,23 @@ class FeedRepositoryImplTest {
     @Nested
     @DisplayName("getMyPageFeedList 메소드는")
     class Describe_getMyPageFeedList {
+        @Test
+        @DisplayName("마이페이지 조회 시 본인의 피드라도 삭제된 것이라면 제외한다")
+        void it_excludes_my_deleted_feeds() {
+            // given
+            Member me = createAndSaveMember("me");
+            createAndSaveFeed(me, null, "내 살아있는 글");
+            createAndSaveDeletedFeed(me, "내 삭제된 글");
+
+            flushAndClear();
+
+            // when
+            Slice<FeedDetailResponse> result = feedRepository.getMyPageFeedList(me, null, PageRequest.of(0, 10));
+
+            // then
+            assertThat(result.getContent()).hasSize(1);
+            assertThat(result.getContent().get(0).getFeedContent()).isEqualTo("내 살아있는 글");
+        }
 
         @Nested
         @DisplayName("특정 회원이 작성한 피드 목록을 요청하면")
@@ -429,6 +481,19 @@ class FeedRepositoryImplTest {
         member.updateProfilePicture(mp);
 
         em.persist(member);
+    }
+
+    private Feed createAndSaveDeletedFeed(Member member, String content) {
+        Feed feed = Feed.builder()
+                .member(member)
+                .feedContent(content)
+                .likesCount(0)
+                .commentsCount(0)
+                .createdAt(LocalDateTime.now())
+                .deletedAt(LocalDateTime.now()) // 삭제 시간 주입
+                .build();
+        em.persist(feed);
+        return feed;
     }
 
     private FeedType createAndSaveFeedType(String name) {

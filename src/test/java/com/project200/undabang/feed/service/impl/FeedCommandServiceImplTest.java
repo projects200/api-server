@@ -47,6 +47,49 @@ class FeedCommandServiceImplTest {
     private MemberRepository memberRepository;
 
     @Nested
+    @DisplayName("deleteMemberFeed 메소드는")
+    class Describe_deleteMemberFeed {
+
+        @Test
+        @DisplayName("본인이 작성한 피드 ID가 주어지면 피드를 논리 삭제한다")
+        void it_soft_deletes_feed() {
+            // given
+            UUID userId = UUID.randomUUID();
+            Long feedId = 100L;
+            Member member = createMember(userId);
+            Feed existingFeed = createFeed(feedId, member, null);
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(userId);
+                given(memberRepository.findById(userId)).willReturn(Optional.of(member));
+                given(feedRepository.findByIdAndMemberAndDeletedAtNull(feedId, member)).willReturn(Optional.of(existingFeed));
+
+                // when
+                feedCommandService.deleteMemberFeed(feedId);
+
+                // then
+                assertThat(existingFeed.getDeletedAt()).isNotNull(); // 삭제 시간 기록 확인
+            }
+        }
+
+        @Test
+        @DisplayName("피드가 없거나 내 것이 아니면 FEED_NOT_FOUND 예외를 던진다")
+        void it_throws_feed_not_found_when_deleting() {
+            UUID userId = UUID.randomUUID();
+            Member member = createMember(userId);
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(userId);
+                given(memberRepository.findById(userId)).willReturn(Optional.of(member));
+                given(feedRepository.findByIdAndMemberAndDeletedAtNull(anyLong(), any())).willReturn(Optional.empty());
+
+                assertThatThrownBy(() -> feedCommandService.deleteMemberFeed(999L))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_NOT_FOUND);
+            }
+        }
+    }
+
+    @Nested
     @DisplayName("updateMemberFeed 메소드는")
     class Describe_updateMemberFeed {
 
