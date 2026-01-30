@@ -105,7 +105,7 @@ class FeedCommandServiceImplTest {
         }
 
         @Test
-        @DisplayName("존재하지 않는 회원 ID인 경우 MEMBER_NOT_FOUND 예외를 던든다")
+        @DisplayName("존재하지 않는 회원 ID인 경우 MEMBER_NOT_FOUND 예외를 던진다")
         void it_throws_member_not_found_when_updating() {
             UUID userId = UUID.randomUUID();
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
