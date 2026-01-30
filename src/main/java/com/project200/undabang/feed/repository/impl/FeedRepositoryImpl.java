@@ -92,7 +92,10 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .leftJoin(member.memberPicture, memberPicture)
                 .leftJoin(memberPicture.picture, picture)
                 .leftJoin(feed.feedType, feedType)
-                .where(feed.id.eq(feedId)) // 특정 피드만 조회
+                .where(
+                        feed.id.eq(feedId),
+                        feed.deletedAt.isNull()
+                ) // 삭제되지 않은 특정 피드만 조회
                 .fetchOne();
 
         // 해당 피드 데이터가 없는 경우 Optional.empty()를 반환
@@ -107,7 +110,8 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .from(feedPicture)
                 .join(feedPicture.picture, picture)
                 .where(
-                        feedPicture.feed.id.eq(feedId)
+                        feedPicture.feed.id.eq(feedId),
+                        feedPicture.feed.deletedAt.isNull()
                 )
                 .fetch();
 
@@ -148,6 +152,7 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .leftJoin(feed.feedType, feedType)
                 .where(
                         olderThanPrevFeedId(prevFeedId),
+                        feed.deletedAt.isNull(),
                         condition
                 )
                 .orderBy(feed.id.desc()) // 최근 피드부터 읽기 (정확히는 최근에 작성된 피드가 생성도 늦게 되었다고 가정)
@@ -183,7 +188,10 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
         return queryFactory
                 .from(feedPicture)
                 .join(feedPicture.picture, picture)
-                .where(feedPicture.feed.id.in(feedIdList))
+                .where(
+                        feedPicture.feed.id.in(feedIdList),
+                        feedPicture.feed.deletedAt.isNull()
+                )
                 .transform(GroupBy.groupBy(feedPicture.feed.id)
                         .as(GroupBy.list(Projections.constructor(FeedPictureRecord.class,
                                 feedPicture.id,

@@ -29,6 +29,19 @@ public class FeedCommandServiceImpl implements FeedCommandService {
     private final MemberRepository memberRepository;
 
     /**
+     * 주어진 피드 ID를 바탕으로 회원의 피드를 삭제합니다.
+     */
+    @Override
+    public Void deleteMemberFeed(Long feedId) {
+        Member member = getMember(UserContextHolder.getUserId());
+
+        Feed feed = getFeed(feedId, member);
+        feed.delete();
+
+        return null;
+    }
+
+    /**
      * 주어진 피드 ID와 업데이트 요청 정보를 바탕으로 피드 정보를 수정합니다.
      */
     @Override
