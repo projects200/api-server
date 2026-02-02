@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateFeedRequest {
+public class UpdateFeedRequest {
     @NotBlank(message = "피드 내용을 입력해주세요.")
     private String feedContent;
     private Long feedTypeId;

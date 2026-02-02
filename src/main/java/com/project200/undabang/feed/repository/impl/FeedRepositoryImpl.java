@@ -118,9 +118,9 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
      * 주어진 조건을 기반으로 피드 상세 정보를 페이징 처리하여 반환합니다.
      *
      * @param currentMember 현재 요청을 보낸 회원의 정보
-     * @param prevFeedId 이전에 조회한 마지막 피드의 ID
-     * @param pageable 페이징 정보를 담고 있는 객체
-     * @param condition 추가로 적용할 조건식
+     * @param prevFeedId    이전에 조회한 마지막 피드의 ID
+     * @param pageable      페이징 정보를 담고 있는 객체
+     * @param condition     추가로 적용할 조건식
      * @return 특정 조건과 페이징 정보를 기반으로 필터링된 피드 상세 응답의 슬라이스
      */
     private Slice<FeedDetailResponse> getFeedDetailSlice(Member currentMember, Long prevFeedId, Pageable pageable, BooleanExpression condition) {

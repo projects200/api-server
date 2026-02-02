@@ -67,4 +67,10 @@ public class Feed {
                 .createdAt(LocalDateTime.now())
                 .build();
     }
+
+    public void update(String feedContent, FeedType feedType) {
+        this.feedContent = feedContent;
+        this.feedType = feedType;
+        this.updatedAt = LocalDateTime.now();
+    }
 }

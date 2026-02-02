@@ -1,0 +1,36 @@
+== 피드 수정 API
+
+=== 설명
+
+- #PATCH# `/api/v1/feeds/{feedId}`
+- 회원이 작성한 피드를 수정하는 API 입니다.
+- 요청시 피드 내용은 필수로 입력받으며, 피드 게시판 내용을 제거하고 싶은경우 요청 본문에 피드 게시판 식별자를 입력하지 않으면 자동으로 게시판 내용이 삭제되도록 하였습니다.
+
+=== 개발 이력
+
+- Sprint 23 (2026-01-30): 기능 개발이 완료되었습니다.
+
+=== 개발 참고 사항
+
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+
+operation::update-member-feed/update-member-feed_-success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+
+operation::update-member-feed/update-member-feed_-success[snippets="request-headers,path-parameters,response-fields"]
+
+==== 응답 상태 코드
+
+|===
+|상태 코드|설명
+|200|요청이 성공적으로 처리되었습니다.
+|400|요청 본문을 읽을 수 없거나 형식이 올바르지 않습니다.
+|401|인증되지 않은 요청입니다. Access Token이 없거나 유효하지 않습니다
+|404|존재하지 않는 회원입니다. +
+존재하지 않는 피드 타입 입니다. +
+존재하지 않는 피드 입니다.
+|===
+
