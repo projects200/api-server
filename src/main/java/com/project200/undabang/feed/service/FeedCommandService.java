@@ -9,6 +9,5 @@ public interface FeedCommandService {
     CreateFeedResponse createMemberFeed(CreateFeedRequest request);
 
     UpdateFeedResponse updateMemberFeed(Long feedId, UpdateFeedRequest request);
-
     Void deleteMemberFeed(Long feedId);
 }
