@@ -66,7 +66,7 @@ class FeedCommandControllerTest extends AbstractRestDocSupport {
                             .headers(getCommonApiHeaders(memberId))
                             .contentType(MediaType.MULTIPART_FORM_DATA))
                     .andExpectAll(
-                            status().isOk(),
+                            status().isCreated(),
                             jsonPath("$.data", hasSize(1)),
                             jsonPath("$.data[0].pictureId").value(1L)
                     )

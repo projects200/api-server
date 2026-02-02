@@ -37,7 +37,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class FeedPictureServiceTest {
+class FeedPictureServiceImplTest {
 
     @InjectMocks
     private FeedPictureServiceImpl feedPictureService;

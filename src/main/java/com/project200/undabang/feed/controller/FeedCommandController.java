@@ -65,8 +65,8 @@ public class FeedCommandController {
             @PathVariable @Positive(message = "올바른 피드 식별자를 입력해주세요") Long feedId,
             @Size(max = 5, message = "최대 5개의 파일만 업로드 할 수 있습니다.")
             @AllowedExtensions(extensions = {".jpg", ".jpeg", ".png"})
-            @RequestParam("pictures") List<MultipartFile> feedPictureList) {
+            @RequestPart("pictures") List<MultipartFile> feedPictureList) {
 
-        return ResponseEntity.ok(CommonResponse.create(feedPictureService.createFeedPictures(feedId, feedPictureList)));
+        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(feedPictureService.createFeedPictures(feedId, feedPictureList)));
     }
 }
