@@ -16,16 +16,16 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FeedDetailResponse {
-    private long feedId;
+    private Long feedId;
     private String feedContent;
-    private int feedLikesCount;
-    private int feedCommentsCount;
-    private long feedTypeId;
+    private Integer feedLikesCount;
+    private Integer feedCommentsCount;
+    private Long feedTypeId;
     private String feedTypeName;
     private String feedTypeDesc;
     private LocalDateTime feedCreatedAt;
-    private boolean feedIsLiked;
-    private boolean feedHasCommented;
+    private Boolean feedIsLiked;
+    private Boolean feedHasCommented;
     private UUID memberId;
     private String nickname;
     private String thumbnailUrl;

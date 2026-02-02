@@ -91,8 +91,8 @@ class FeedRepositoryImplTest {
                         .containsExactlyInAnyOrder("http://img1.com", "http://img2.com");
 
                 // 3. 좋아요/댓글 여부 검증 (viewer 기준)
-                assertThat(response.isFeedIsLiked()).isTrue();
-                assertThat(response.isFeedHasCommented()).isTrue();
+                assertThat(response.getFeedIsLiked()).isTrue();
+                assertThat(response.getFeedHasCommented()).isTrue();
             }
         }
 
@@ -121,8 +121,8 @@ class FeedRepositoryImplTest {
 
                 assertThat(response.getFeedId()).isEqualTo(feed.getId());
                 assertThat(response.getFeedPictures()).isEmpty(); // 사진 쿼리 결과 0건 확인
-                assertThat(response.isFeedIsLiked()).isFalse();         // 게스트는 무조건 false
-                assertThat(response.isFeedHasCommented()).isFalse();  // 게스트는 무조건 false
+                assertThat(response.getFeedIsLiked()).isFalse();         // 게스트는 무조건 false
+                assertThat(response.getFeedHasCommented()).isFalse();  // 게스트는 무조건 false
             }
         }
 
@@ -282,13 +282,13 @@ class FeedRepositoryImplTest {
 
             // Feed 2 검증
             assertThat(content.get(0).getFeedContent()).isEqualTo("No Interaction Feed");
-            assertThat(content.get(0).isFeedIsLiked()).isFalse();
-            assertThat(content.get(0).isFeedHasCommented()).isFalse();
+            assertThat(content.get(0).getFeedIsLiked()).isFalse();
+            assertThat(content.get(0).getFeedHasCommented()).isFalse();
 
             // Feed 1 검증
             assertThat(content.get(1).getFeedContent()).isEqualTo("Liked and Commented Feed");
-            assertThat(content.get(1).isFeedIsLiked()).isTrue();       // 좋아요 확인
-            assertThat(content.get(1).isFeedHasCommented()).isTrue(); // 댓글 확인
+            assertThat(content.get(1).getFeedIsLiked()).isTrue();       // 좋아요 확인
+            assertThat(content.get(1).getFeedHasCommented()).isTrue(); // 댓글 확인
         }
 
         @Test

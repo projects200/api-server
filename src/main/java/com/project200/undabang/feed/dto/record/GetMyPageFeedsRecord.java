@@ -9,14 +9,14 @@ import java.util.List;
 @Builder
 public record GetMyPageFeedsRecord(long feedId,
                                    String feedContent,
-                                   int feedLikesCount,
-                                   int feedCommentsCount,
-                                   long feedTypeId,
+                                   Integer feedLikesCount,
+                                   Integer feedCommentsCount,
+                                   Long feedTypeId,
                                    String feedTypeName,
                                    String feedTypeDesc,
                                    LocalDateTime feedCreatedAt,
-                                   boolean feedIsLiked,
-                                   boolean feedHasCommented,
+                                   Boolean feedIsLiked,
+                                   Boolean feedHasCommented,
                                    List<FeedPictureRecord> feedPictures) {
 
     public static GetMyPageFeedsRecord from(FeedDetailResponse response) {
@@ -29,8 +29,8 @@ public record GetMyPageFeedsRecord(long feedId,
                 .feedTypeName(response.getFeedTypeName())
                 .feedTypeDesc(response.getFeedTypeDesc())
                 .feedCreatedAt(response.getFeedCreatedAt())
-                .feedIsLiked(response.isFeedIsLiked())
-                .feedHasCommented(response.isFeedHasCommented())
+                .feedIsLiked(response.getFeedIsLiked())
+                .feedHasCommented(response.getFeedHasCommented())
                 .feedPictures(response.getFeedPictures())
                 .build();
     }
