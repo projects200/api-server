@@ -3,34 +3,36 @@ package com.project200.undabang.feed.controller;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
 import com.project200.undabang.feed.dto.request.CreateFeedRequest;
 import com.project200.undabang.feed.dto.request.UpdateFeedRequest;
+import com.project200.undabang.feed.dto.response.CreateFeedPictureResponse;
 import com.project200.undabang.feed.dto.response.CreateFeedResponse;
 import com.project200.undabang.feed.dto.response.UpdateFeedResponse;
 import com.project200.undabang.feed.service.FeedCommandService;
+import com.project200.undabang.feed.service.FeedPictureService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders;
 import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.util.List;
 import java.util.UUID;
 
 import static com.networknt.schema.JsonType.*;
 import static com.project200.undabang.configuration.DocumentFormatGenerator.getTypeFormat;
 import static com.project200.undabang.configuration.HeadersGenerator.getCommonApiHeaders;
-import static com.project200.undabang.configuration.RestDocsUtils.HEADER_ACCESS_TOKEN;
-import static com.project200.undabang.configuration.RestDocsUtils.commonResponseFields;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static com.project200.undabang.configuration.RestDocsUtils.*;
+import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
-import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -40,6 +42,52 @@ class FeedCommandControllerTest extends AbstractRestDocSupport {
 
     @MockitoBean
     private FeedCommandService feedCommandService;
+
+    @MockitoBean
+    private FeedPictureService feedPictureService;
+
+    @Nested
+    @DisplayName("createFeedPictures 메소드는")
+    class CreateFeedPictures {
+
+        @Test
+        @DisplayName("이미지 파일 리스트를 받아 업로드하고 저장된 정보를 반환한다")
+        void createFeedPictures_Success() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long feedId = 100L;
+            MockMultipartFile file = new MockMultipartFile("pictures", "test.jpg", "image/jpeg", "image-data".getBytes());
+            List<CreateFeedPictureResponse> response = List.of(new CreateFeedPictureResponse(1L, "http://s3.url/test.jpg"));
+
+            given(feedPictureService.createFeedPictures(eq(feedId), anyList())).willReturn(response);
+
+            mockMvc.perform(RestDocumentationRequestBuilders.multipart("/api/v1/feeds/{feedId}/pictures", feedId)
+                            .file(file)
+                            .headers(getCommonApiHeaders(memberId))
+                            .contentType(MediaType.MULTIPART_FORM_DATA))
+                    .andExpectAll(
+                            status().isOk(),
+                            jsonPath("$.data", hasSize(1)),
+                            jsonPath("$.data[0].pictureId").value(1L)
+                    )
+                    .andDo(document.document(
+                            requestHeaders(HEADER_ACCESS_TOKEN),
+                            pathParameters(
+                                    parameterWithName("feedId").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("피드의 고유 식별자입니다.")
+                            ),
+                            requestParts(
+                                    partWithName("pictures").attributes(getTypeFormat(JsonFieldType.ARRAY)).description("업로드할 이미지 파일 리스트 (최대 5개, jpg/jpeg/png 지원)")
+                            ),
+                            responseFields(
+                                    commonResponseFieldsForList(
+                                            fieldWithPath("data").attributes(getTypeFormat(JsonFieldType.ARRAY)).description("업로드된 사진 결과 리스트입니다."),
+                                            fieldWithPath("data[].pictureId").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("저장된 사진의 고유 식별자입니다."),
+                                            fieldWithPath("data[].pictureUrl").attributes(getTypeFormat(JsonFieldType.STRING)).description("S3에 업로드된 사진의 URL입니다.")
+                                    )
+                            )
+                    ));
+        }
+    }
 
     @Nested
     @DisplayName("deleteMemberFeed 메소드는")
