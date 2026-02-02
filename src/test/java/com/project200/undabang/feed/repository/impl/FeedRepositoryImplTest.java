@@ -308,6 +308,96 @@ class FeedRepositoryImplTest {
         }
     }
 
+    @Nested
+    @DisplayName("getMyPageFeedList 메소드는")
+    class Describe_getMyPageFeedList {
+
+        @Nested
+        @DisplayName("특정 회원이 작성한 피드 목록을 요청하면")
+        class Context_with_member_specific_request {
+
+            @Test
+            @DisplayName("해당 회원의 피드만 최신순으로 조회하고, 타인의 피드는 포함하지 않는다")
+            void it_returns_only_target_member_feeds() {
+                // given
+                Member me = createAndSaveMember("me");
+                Member other = createAndSaveMember("other");
+                FeedType type = createAndSaveFeedType("일상");
+
+                // 내 피드 2개 생성
+                createAndSaveFeed(me, type, "My Feed 1");
+                createAndSaveFeed(me, type, "My Feed 2");
+
+                // 타인의 피드 1개 생성 (조회되면 안 됨)
+                createAndSaveFeed(other, type, "Other's Feed");
+
+                flushAndClear();
+
+                // when
+                Pageable pageable = PageRequest.of(0, 10);
+                Slice<FeedDetailResponse> result = feedRepository.getMyPageFeedList(me, null, pageable);
+
+                // then
+                assertThat(result.getContent()).hasSize(2);
+                assertThat(result.getContent())
+                        .extracting("feedContent")
+                        .containsExactly("My Feed 2", "My Feed 1"); // 최신순 정렬 확인
+                assertThat(result.getContent().stream()
+                        .allMatch(f -> f.getNickname().equals("me")))
+                        .isTrue(); // 작성자 필터링 확인
+            }
+        }
+
+        @Nested
+        @DisplayName("이전 피드 ID(prevFeedId)가 주어지면")
+        class Context_with_prev_feed_id {
+
+            @Test
+            @DisplayName("No-Offset 페이징을 적용하여 해당 ID보다 이전의 피드들을 반환한다")
+            void it_returns_feeds_older_than_prev_id() {
+                // given
+                Member me = createAndSaveMember("me");
+                FeedType type = createAndSaveFeedType("운동");
+
+                List<Long> ids = new ArrayList<>();
+                for (int i = 1; i <= 5; i++) {
+                    ids.add(createAndSaveFeed(me, type, "Feed " + i).getId());
+                }
+
+                flushAndClear();
+                Long cursorId = ids.get(3); // 4번째 피드 (ID가 생성 순서대로라고 가정 시)
+
+                // when (4번보다 작은 것 요청 -> 3, 2, 1 조회 예상)
+                Pageable pageable = PageRequest.of(0, 10);
+                Slice<FeedDetailResponse> result = feedRepository.getMyPageFeedList(me, cursorId, pageable);
+
+                // then
+                assertThat(result.getContent()).hasSize(3);
+                assertThat(result.getContent().get(0).getFeedId()).isLessThan(cursorId);
+            }
+        }
+
+        @Nested
+        @DisplayName("작성한 피드가 하나도 없는 회원을 조회하면")
+        class Context_with_no_feeds_member {
+
+            @Test
+            @DisplayName("빈 리스트를 반환하며 예외가 발생하지 않는다")
+            void it_returns_empty_slice() {
+                // given
+                Member me = createAndSaveMember("newbie");
+                flushAndClear();
+
+                // when
+                Slice<FeedDetailResponse> result = feedRepository.getMyPageFeedList(me, null, PageRequest.of(0, 10));
+
+                // then
+                assertThat(result.getContent()).isEmpty();
+                assertThat(result.hasNext()).isFalse();
+            }
+        }
+    }
+
     private Member createAndSaveMember(String nickname) {
         Member member = Member.builder()
                 .memberId(UUID.randomUUID()) // ID 직접 생성

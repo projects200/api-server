@@ -49,6 +49,24 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
     private static final int EXTRA_FETCH_SIZE = 1; // hasNext 확인용 상수
 
     /**
+     * 현재 사용자의 "마이 페이지"에 표시될 피드 리스트를 조회하여 반환합니다.
+     */
+    @Override
+    public Slice<FeedDetailResponse> getMyPageFeedList(Member currentMember, Long prevFeedId, Pageable pageable) {
+        BooleanExpression condition = feed.member.memberId.eq(currentMember.getMemberId());
+
+        return getFeedDetailSlice(currentMember, prevFeedId, pageable, condition);
+    }
+
+    /**
+     * 모든 피드의 리스트를 조회하여 페이징된 결과를 반환합니다.
+     */
+    @Override
+    public Slice<FeedDetailResponse> getAllFeedList(Member currentMember, Long prevFeedId, Pageable pageable) {
+        return getFeedDetailSlice(currentMember, prevFeedId, pageable, null);
+    }
+
+    /**
      * 특정 피드 ID에 해당하는 피드 정보를 조회합니다.
      */
     @Override
@@ -97,10 +115,15 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
     }
 
     /**
-     * 모든 피드의 리스트를 조회하여 페이징된 결과를 반환합니다.
+     * 주어진 조건을 기반으로 피드 상세 정보를 페이징 처리하여 반환합니다.
+     *
+     * @param currentMember 현재 요청을 보낸 회원의 정보
+     * @param prevFeedId 이전에 조회한 마지막 피드의 ID
+     * @param pageable 페이징 정보를 담고 있는 객체
+     * @param condition 추가로 적용할 조건식
+     * @return 특정 조건과 페이징 정보를 기반으로 필터링된 피드 상세 응답의 슬라이스
      */
-    @Override
-    public Slice<FeedDetailResponse> getAllFeedList(Member currentMember, Long prevFeedId, Pageable pageable) {
+    private Slice<FeedDetailResponse> getFeedDetailSlice(Member currentMember, Long prevFeedId, Pageable pageable, BooleanExpression condition) {
 
         List<FeedDetailRecord> contentRecords = queryFactory
                 .select(Projections.constructor(FeedDetailRecord.class,
@@ -124,7 +147,8 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .leftJoin(memberPicture.picture, picture)
                 .join(feed.feedType, feedType)
                 .where(
-                        olderThanPrevFeedId(prevFeedId)
+                        olderThanPrevFeedId(prevFeedId),
+                        condition
                 )
                 .orderBy(feed.id.desc()) // 최근 피드부터 읽기 (정확히는 최근에 작성된 피드가 생성도 늦게 되었다고 가정)
                 .limit(pageable.getPageSize() + EXTRA_FETCH_SIZE) // 다음 피드가 존재하는지 구별하도록 10 + 1 로 설정
