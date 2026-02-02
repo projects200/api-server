@@ -1,0 +1,36 @@
+== 피드 이미지 목록 추가 API
+
+=== 설명
+
+- #POST# `/api/v1/feeds/{feedId}/pictures`
+- 회원이 작성한 피드에 이미지를 추가하는 API 입니다.
+- 저장 가능한 최대 이미지 갯수는 5개 입니다.
+
+=== 개발 이력
+
+- Sprint 23 (2026-02-02): 기능 개발이 완료되었습니다.
+
+=== 개발 참고 사항
+
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+
+operation::create-feed-pictures/create-feed-pictures_-success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+
+operation::create-feed-pictures/create-feed-pictures_-success[snippets="request-headers,path-parameters,request-parts,response-fields"]
+
+==== 응답 상태 코드
+
+|===
+|상태 코드|설명
+|200|요청이 성공적으로 처리되었습니다.
+|400|요청 본문을 읽을 수 없거나 형식이 올바르지 않습니다.
+|401|인증되지 않은 요청입니다. Access Token이 없거나 유효하지 않습니다
+|404|존재하지 않는 회원입니다. +
+존재하지 않는 피드 입니다.
+|409|저장할 수 있는 최대 피드 사진 갯수를 초과했습니다.
+|===
+
