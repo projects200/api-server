@@ -30,3 +30,5 @@ include::feed/피드-생성-API.adoc[]
 include::feed/피드-수정-API.adoc[]
 
 include::feed/피드-삭제-API.adoc[]
+
+include::feed/피드-이미지-목록-추가-API.adoc[]
