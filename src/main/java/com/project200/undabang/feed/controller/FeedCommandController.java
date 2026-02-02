@@ -38,4 +38,13 @@ public class FeedCommandController {
 
         return ResponseEntity.ok(CommonResponse.update(feedCommandService.updateMemberFeed(feedId, request)));
     }
+
+    /**
+     * 주어진 피드 ID를 기반으로 특정 피드를 논리적으로 삭제합니다.
+     */
+    @DeleteMapping("/v1/feeds/{feedId}")
+    public ResponseEntity<CommonResponse<Void>> deleteMemberFeed(@PathVariable Long feedId) {
+
+        return ResponseEntity.ok(CommonResponse.delete(feedCommandService.deleteMemberFeed(feedId)));
+    }
 }

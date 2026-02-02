@@ -17,8 +17,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.UUID;
 
-import static com.networknt.schema.JsonType.NUMBER;
-import static com.networknt.schema.JsonType.STRING;
+import static com.networknt.schema.JsonType.*;
 import static com.project200.undabang.configuration.DocumentFormatGenerator.getTypeFormat;
 import static com.project200.undabang.configuration.HeadersGenerator.getCommonApiHeaders;
 import static com.project200.undabang.configuration.RestDocsUtils.HEADER_ACCESS_TOKEN;
@@ -26,6 +25,7 @@ import static com.project200.undabang.configuration.RestDocsUtils.commonResponse
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
@@ -40,6 +40,47 @@ class FeedCommandControllerTest extends AbstractRestDocSupport {
 
     @MockitoBean
     private FeedCommandService feedCommandService;
+
+    @Nested
+    @DisplayName("deleteMemberFeed 메소드는")
+    class DeleteMemberFeed {
+
+        @Test
+        @DisplayName("피드 삭제 요청이 유효하면 200 상태코드와 성공 메시지를 반환한다")
+        void deleteMemberFeed_Success() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long feedId = 100L;
+
+            // 에러 해결: void 메서드는 doNothing()을 사용하거나 스터빙을 생략합니다.
+            doNothing().when(feedCommandService).deleteMemberFeed(feedId);
+
+            // when & then
+            mockMvc.perform(RestDocumentationRequestBuilders.delete("/api/v1/feeds/{feedId}", feedId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(memberId)))
+                    .andExpectAll(
+                            status().isOk(),
+                            jsonPath("$.succeed").value(true)
+                    )
+                    .andDo(document.document(
+                            requestHeaders(HEADER_ACCESS_TOKEN),
+                            pathParameters(
+                                    parameterWithName("feedId").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("삭제할 피드의 고유 식별자입니다.")
+                            ),
+                            responseFields(
+                                    fieldWithPath("succeed").type(BOOLEAN).description("요청 성공 여부입니다."),
+                                    fieldWithPath("code").type(STRING).description("응답 코드 정보 입니다."),
+                                    fieldWithPath("message").type(STRING).description("응답 메시지입니다."),
+                                    fieldWithPath("data").type(NULL).description("삭제 API는 반환 데이터가 없습니다.")
+                            )
+                    ));
+
+            // 호출 여부 검증
+            verify(feedCommandService).deleteMemberFeed(feedId);
+        }
+    }
 
     @Nested
     @DisplayName("updateMemberFeed 메소드는")

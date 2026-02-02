@@ -73,4 +73,9 @@ public class Feed {
         this.feedType = feedType;
         this.updatedAt = LocalDateTime.now();
     }
+
+    public void delete() {
+        this.updatedAt = LocalDateTime.now();
+        this.deletedAt = LocalDateTime.now();
+    }
 }
