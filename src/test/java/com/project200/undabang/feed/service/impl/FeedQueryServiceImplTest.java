@@ -1,13 +1,16 @@
 package com.project200.undabang.feed.service.impl;
 
 import com.project200.undabang.common.context.UserContextHolder;
+import com.project200.undabang.common.entity.Picture;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.feed.dto.response.FeedDetailResponse;
 import com.project200.undabang.feed.dto.response.GetAllMemberFeedsResponse;
+import com.project200.undabang.feed.dto.response.GetMyPageFeedsResponse;
 import com.project200.undabang.feed.dto.response.GetSpecificFeedResponse;
 import com.project200.undabang.feed.repository.FeedRepository;
 import com.project200.undabang.member.entity.Member;
+import com.project200.undabang.member.entity.MemberPicture;
 import com.project200.undabang.member.repository.MemberRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -238,6 +241,105 @@ class FeedQueryServiceImplTest {
         }
     }
 
+    @Nested
+    @DisplayName("getMyPageFeeds 메소드는")
+    class Describe_getMyPageFeeds {
+
+        @Nested
+        @DisplayName("유효한 회원 ID와 피드 목록이 존재하면")
+        class Context_with_valid_member_and_feeds {
+
+            @Test
+            @DisplayName("Fetch Join으로 회원 정보를 가져오고, 피드 목록과 결합된 응답을 반환한다")
+            void it_returns_combined_mypage_response() {
+                // given
+                UUID userId = UUID.randomUUID();
+                Pageable pageable = PageRequest.of(0, 10);
+
+                // 프로필 사진이 포함된 Mock Member
+                Member mockMember = createMockMemberWithProfile(userId);
+
+                // 피드 목록 Mock 데이터
+                FeedDetailResponse feedResponse = createMockFeedResponse(100L, "My Page Feed");
+                Slice<FeedDetailResponse> mockSlice = new SliceImpl<>(List.of(feedResponse), pageable, true);
+
+                try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                    given(UserContextHolder.getUserId()).willReturn(userId);
+                    // findById가 아닌 findMemberWithProfileImage를 호출해야 함
+                    given(memberRepository.findMemberWithProfileImage(userId)).willReturn(Optional.of(mockMember));
+                    given(feedRepository.getMyPageFeedList(eq(mockMember), any(), eq(pageable))).willReturn(mockSlice);
+
+                    // when
+                    GetMyPageFeedsResponse result = feedQueryService.getMyPageFeeds(null, pageable);
+
+                    // then
+                    assertThat(result.getMemberId()).isEqualTo(userId);
+                    assertThat(result.getNickname()).isEqualTo("운동하는개발자");
+                    assertThat(result.getProfileUrl()).isEqualTo("https://example.com/profile.jpg"); // Optional 체이닝 결과
+                    assertThat(result.getFeeds()).hasSize(1);
+                    assertThat(result.isHasNext()).isTrue();
+
+                    verify(memberRepository).findMemberWithProfileImage(userId);
+                    verify(feedRepository).getMyPageFeedList(mockMember, null, pageable);
+                }
+            }
+        }
+
+        @Nested
+        @DisplayName("회원의 프로필 사진 정보가 없는 경우")
+        class Context_with_member_no_profile_picture {
+
+            @Test
+            @DisplayName("프로필 관련 URL들을 null로 설정하여 안전하게 응답을 반환한다")
+            void it_returns_response_with_null_urls() {
+                // given
+                UUID userId = UUID.randomUUID();
+                Member memberNoPic = Member.builder()
+                        .memberId(userId)
+                        .memberNickname("사진없는유저")
+                        .build(); // memberPicture가 null인 상태
+
+                Slice<FeedDetailResponse> emptySlice = new SliceImpl<>(List.of(), PageRequest.of(0, 10), false);
+
+                try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                    given(UserContextHolder.getUserId()).willReturn(userId);
+                    given(memberRepository.findMemberWithProfileImage(userId)).willReturn(Optional.of(memberNoPic));
+                    given(feedRepository.getMyPageFeedList(any(), any(), any())).willReturn(emptySlice);
+
+                    // when
+                    GetMyPageFeedsResponse result = feedQueryService.getMyPageFeeds(null, PageRequest.of(0, 10));
+
+                    // then
+                    assertThat(result.getThumbnailUrl()).isNull();
+                    assertThat(result.getProfileUrl()).isNull();
+                    assertThat(result.getNickname()).isEqualTo("사진없는유저");
+                }
+            }
+        }
+
+        @Nested
+        @DisplayName("존재하지 않는 회원 ID가 주어지면")
+        class Context_with_non_existing_member {
+
+            @Test
+            @DisplayName("MEMBER_NOT_FOUND 예외를 던진다")
+            void it_throws_member_not_found_exception() {
+                // given
+                UUID userId = UUID.randomUUID();
+
+                try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                    given(UserContextHolder.getUserId()).willReturn(userId);
+                    given(memberRepository.findMemberWithProfileImage(userId)).willReturn(Optional.empty());
+
+                    // when & then
+                    assertThatThrownBy(() -> feedQueryService.getMyPageFeeds(null, PageRequest.of(0, 10)))
+                            .isInstanceOf(CustomException.class)
+                            .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
+                }
+            }
+        }
+    }
+
     private Member createMockMember(UUID memberId) {
         return Member.builder()
                 .memberId(memberId)
@@ -248,6 +350,23 @@ class FeedQueryServiceImplTest {
         return FeedDetailResponse.builder()
                 .feedId(feedId)
                 .feedContent(content)
+                .build();
+    }
+
+    private Member createMockMemberWithProfile(UUID userId) {
+        Picture picture = Picture.builder()
+                .pictureUrl("https://example.com/profile.jpg")
+                .build();
+
+        MemberPicture memberPicture = MemberPicture.builder()
+                .memberPicturesUrl("https://example.com/thumb.jpg")
+                .picture(picture)
+                .build();
+
+        return Member.builder()
+                .memberId(userId)
+                .memberNickname("운동하는개발자")
+                .memberPicture(memberPicture)
                 .build();
     }
 }

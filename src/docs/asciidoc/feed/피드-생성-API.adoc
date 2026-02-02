@@ -1,0 +1,37 @@
+== 피드 생성 API
+
+=== 설명
+
+- #POST# `/api/v1/feeds`
+- 회원이 피드를 작성하는 API 입니다.
+피드 생성시 피드 내용과 피드 게시판 타입을 받아 피드를 생성합니다.
+- 피드 게시판은 입력하지 않아도 됩니다.
+- 피드 이미지는 피드 이미지 추가 API 를 사용해주세요
+
+=== 개발 이력
+
+- Sprint 23 (2026-01-29): 기능 개발이 완료되었습니다.
+
+=== 개발 참고 사항
+
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+
+operation::create-member-feed/create-member-feed_-success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+
+operation::create-member-feed/create-member-feed_-success[snippets="request-headers,response-fields"]
+
+==== 응답 상태 코드
+
+|===
+|상태 코드|설명
+|200|요청이 성공적으로 처리되었습니다.
+|400|요청 본문을 읽을 수 없거나 형식이 올바르지 않습니다.
+|401|인증되지 않은 요청입니다. Access Token이 없거나 유효하지 않습니다
+|404|존재하지 않는 회원입니다. +
+존재하지 않는 피드 타입 입니다.
+|===
+

@@ -22,3 +22,11 @@ include::overview/공통-개발-참고-사항.adoc[]
 include::feed/전체-피드-목록-조회-API.adoc[]
 
 include::feed/특정-피드-상세-조회-API.adoc[]
+
+include::feed/마이페이지-내가-작성한-피드-목록-조회-API.adoc[]
+
+include::feed/피드-생성-API.adoc[]
+
+include::feed/피드-수정-API.adoc[]
+
+include::feed/피드-삭제-API.adoc[]
