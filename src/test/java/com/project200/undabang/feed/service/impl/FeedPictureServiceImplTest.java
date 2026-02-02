@@ -150,5 +150,19 @@ class FeedPictureServiceTest {
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_NOT_FOUND);
             }
         }
+
+        @Test
+        @DisplayName("존재하지 않는 회원 ID면 MEMBER_NOT_FOUND 예외를 던진다")
+        void it_throws_member_not_found() {
+            UUID invalidId = UUID.randomUUID();
+            try (MockedStatic<UserContextHolder> userContext = mockStatic(UserContextHolder.class)) {
+                userContext.when(UserContextHolder::getUserId).thenReturn(invalidId);
+                given(memberRepository.findByMemberIdAndMemberDeletedAtNull(invalidId)).willReturn(Optional.empty());
+
+                assertThatThrownBy(() -> feedPictureService.createFeedPictures(1L, List.of()))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
+            }
+        }
     }
 }
