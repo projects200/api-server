@@ -3,7 +3,8 @@ package com.project200.undabang.common.service;
 public enum FileType {
     EXERCISE("exercises"),
     PROFILE("profiles"),
-    THUMBNAIL("thumbnails");
+    THUMBNAIL("thumbnails"),
+    FEED("feeds");
 
     private final String path;
 

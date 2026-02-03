@@ -40,5 +40,8 @@ public enum PolicyKey {
     PREFERRED_EXERCISE_MAX_COUNT, // 선호 운동 최대 보유 갯수
 
     // 채팅방 생성시 거리 제한
-    EXERCISE_LOCATION_MAX_DISTANCE_METER
+    EXERCISE_LOCATION_MAX_DISTANCE_METER,
+
+    // 보유할 수 있는 최대 피드 사진 갯수
+    FEED_PICTURE_MAX_COUNT
 }
