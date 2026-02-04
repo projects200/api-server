@@ -50,6 +50,21 @@ class FeedRepositoryImplTest {
         @Nested
         @DisplayName("존재하는 피드 ID와 로그인한 사용자가 주어지면")
         class Context_with_existing_feed_and_login_user {
+            @Test
+            @DisplayName("피드가 존재하더라도 삭제된(deletedAt이 있는) 피드라면 Optional.empty()를 반환한다")
+            void it_returns_empty_optional_for_deleted_feed() {
+                // given
+                Member author = createAndSaveMember("author");
+                Feed feed = createAndSaveDeletedFeed(author, "삭제된 좀비 피드");
+
+                flushAndClear();
+
+                // when
+                Optional<GetSpecificFeedResponse> result = feedRepository.getSpecificFeed(null, feed.getId());
+
+                // then
+                assertThat(result).isEmpty();
+            }
 
             @Test
             @DisplayName("피드 상세 정보, 사진 목록, 좋아요/댓글 여부를 포함한 Optional 객체를 반환한다")
@@ -91,8 +106,8 @@ class FeedRepositoryImplTest {
                         .containsExactlyInAnyOrder("http://img1.com", "http://img2.com");
 
                 // 3. 좋아요/댓글 여부 검증 (viewer 기준)
-                assertThat(response.isFeedIsLiked()).isTrue();
-                assertThat(response.isFeedHasCommented()).isTrue();
+                assertThat(response.getFeedIsLiked()).isTrue();
+                assertThat(response.getFeedHasCommented()).isTrue();
             }
         }
 
@@ -121,8 +136,8 @@ class FeedRepositoryImplTest {
 
                 assertThat(response.getFeedId()).isEqualTo(feed.getId());
                 assertThat(response.getFeedPictures()).isEmpty(); // 사진 쿼리 결과 0건 확인
-                assertThat(response.isFeedIsLiked()).isFalse();         // 게스트는 무조건 false
-                assertThat(response.isFeedHasCommented()).isFalse();  // 게스트는 무조건 false
+                assertThat(response.getFeedIsLiked()).isFalse();         // 게스트는 무조건 false
+                assertThat(response.getFeedHasCommented()).isFalse();  // 게스트는 무조건 false
             }
         }
 
@@ -151,6 +166,26 @@ class FeedRepositoryImplTest {
     @Nested
     @DisplayName("getAllFeedList 메소드는")
     class Describe_getAllFeedList {
+        @Test
+        @DisplayName("전체 피드를 조회할 때 삭제된 피드는 목록에서 제외한다")
+        void it_excludes_deleted_feeds_from_list() {
+            // given
+            Member member = createAndSaveMember("runner");
+            createAndSaveFeed(member, null, "살아있는 피드 1");
+            createAndSaveDeletedFeed(member, "죽은 피드 (조회금지)");
+            createAndSaveFeed(member, null, "살아있는 피드 2");
+
+            flushAndClear();
+
+            // when
+            Slice<FeedDetailResponse> result = feedRepository.getAllFeedList(null, null, PageRequest.of(0, 10));
+
+            // then
+            assertThat(result.getContent()).hasSize(2);
+            assertThat(result.getContent())
+                    .extracting("feedContent")
+                    .doesNotContain("죽은 피드 (조회금지)");
+        }
 
         @Test
         @DisplayName("피드 목록을 최신순(ID 역순)으로 조회하고, 다음 페이지가 있다면 hasNext는 true이다")
@@ -282,13 +317,13 @@ class FeedRepositoryImplTest {
 
             // Feed 2 검증
             assertThat(content.get(0).getFeedContent()).isEqualTo("No Interaction Feed");
-            assertThat(content.get(0).isFeedIsLiked()).isFalse();
-            assertThat(content.get(0).isFeedHasCommented()).isFalse();
+            assertThat(content.get(0).getFeedIsLiked()).isFalse();
+            assertThat(content.get(0).getFeedHasCommented()).isFalse();
 
             // Feed 1 검증
             assertThat(content.get(1).getFeedContent()).isEqualTo("Liked and Commented Feed");
-            assertThat(content.get(1).isFeedIsLiked()).isTrue();       // 좋아요 확인
-            assertThat(content.get(1).isFeedHasCommented()).isTrue(); // 댓글 확인
+            assertThat(content.get(1).getFeedIsLiked()).isTrue();       // 좋아요 확인
+            assertThat(content.get(1).getFeedHasCommented()).isTrue(); // 댓글 확인
         }
 
         @Test
@@ -305,6 +340,113 @@ class FeedRepositoryImplTest {
             // then
             assertThat(result.getContent()).isEmpty();
             assertThat(result.hasNext()).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("getMyPageFeedList 메소드는")
+    class Describe_getMyPageFeedList {
+        @Test
+        @DisplayName("마이페이지 조회 시 본인의 피드라도 삭제된 것이라면 제외한다")
+        void it_excludes_my_deleted_feeds() {
+            // given
+            Member me = createAndSaveMember("me");
+            createAndSaveFeed(me, null, "내 살아있는 글");
+            createAndSaveDeletedFeed(me, "내 삭제된 글");
+
+            flushAndClear();
+
+            // when
+            Slice<FeedDetailResponse> result = feedRepository.getMyPageFeedList(me, null, PageRequest.of(0, 10));
+
+            // then
+            assertThat(result.getContent()).hasSize(1);
+            assertThat(result.getContent().get(0).getFeedContent()).isEqualTo("내 살아있는 글");
+        }
+
+        @Nested
+        @DisplayName("특정 회원이 작성한 피드 목록을 요청하면")
+        class Context_with_member_specific_request {
+
+            @Test
+            @DisplayName("해당 회원의 피드만 최신순으로 조회하고, 타인의 피드는 포함하지 않는다")
+            void it_returns_only_target_member_feeds() {
+                // given
+                Member me = createAndSaveMember("me");
+                Member other = createAndSaveMember("other");
+                FeedType type = createAndSaveFeedType("일상");
+
+                // 내 피드 2개 생성
+                createAndSaveFeed(me, type, "My Feed 1");
+                createAndSaveFeed(me, type, "My Feed 2");
+
+                // 타인의 피드 1개 생성 (조회되면 안 됨)
+                createAndSaveFeed(other, type, "Other's Feed");
+
+                flushAndClear();
+
+                // when
+                Pageable pageable = PageRequest.of(0, 10);
+                Slice<FeedDetailResponse> result = feedRepository.getMyPageFeedList(me, null, pageable);
+
+                // then
+                assertThat(result.getContent()).hasSize(2);
+                assertThat(result.getContent())
+                        .extracting("feedContent")
+                        .containsExactly("My Feed 2", "My Feed 1"); // 최신순 정렬 확인
+                assertThat(result.getContent().stream()
+                        .allMatch(f -> f.getNickname().equals("me")))
+                        .isTrue(); // 작성자 필터링 확인
+            }
+        }
+
+        @Nested
+        @DisplayName("이전 피드 ID(prevFeedId)가 주어지면")
+        class Context_with_prev_feed_id {
+
+            @Test
+            @DisplayName("No-Offset 페이징을 적용하여 해당 ID보다 이전의 피드들을 반환한다")
+            void it_returns_feeds_older_than_prev_id() {
+                // given
+                Member me = createAndSaveMember("me");
+                FeedType type = createAndSaveFeedType("운동");
+
+                List<Long> ids = new ArrayList<>();
+                for (int i = 1; i <= 5; i++) {
+                    ids.add(createAndSaveFeed(me, type, "Feed " + i).getId());
+                }
+
+                flushAndClear();
+                Long cursorId = ids.get(3); // 4번째 피드 (ID가 생성 순서대로라고 가정 시)
+
+                // when (4번보다 작은 것 요청 -> 3, 2, 1 조회 예상)
+                Pageable pageable = PageRequest.of(0, 10);
+                Slice<FeedDetailResponse> result = feedRepository.getMyPageFeedList(me, cursorId, pageable);
+
+                // then
+                assertThat(result.getContent()).hasSize(3);
+                assertThat(result.getContent().get(0).getFeedId()).isLessThan(cursorId);
+            }
+        }
+
+        @Nested
+        @DisplayName("작성한 피드가 하나도 없는 회원을 조회하면")
+        class Context_with_no_feeds_member {
+
+            @Test
+            @DisplayName("빈 리스트를 반환하며 예외가 발생하지 않는다")
+            void it_returns_empty_slice() {
+                // given
+                Member me = createAndSaveMember("newbie");
+                flushAndClear();
+
+                // when
+                Slice<FeedDetailResponse> result = feedRepository.getMyPageFeedList(me, null, PageRequest.of(0, 10));
+
+                // then
+                assertThat(result.getContent()).isEmpty();
+                assertThat(result.hasNext()).isFalse();
+            }
         }
     }
 
@@ -339,6 +481,19 @@ class FeedRepositoryImplTest {
         member.updateProfilePicture(mp);
 
         em.persist(member);
+    }
+
+    private Feed createAndSaveDeletedFeed(Member member, String content) {
+        Feed feed = Feed.builder()
+                .member(member)
+                .feedContent(content)
+                .likesCount(0)
+                .commentsCount(0)
+                .createdAt(LocalDateTime.now())
+                .deletedAt(LocalDateTime.now()) // 삭제 시간 주입
+                .build();
+        em.persist(feed);
+        return feed;
     }
 
     private FeedType createAndSaveFeedType(String name) {
