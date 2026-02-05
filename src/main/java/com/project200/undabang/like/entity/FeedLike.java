@@ -35,4 +35,11 @@ public class FeedLike {
     @Builder.Default
     @Column(name = "feed_like_created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    public static FeedLike create(Feed feed, Member member) {
+        return FeedLike.builder()
+                .feed(feed)
+                .member(member)
+                .build();
+    }
 }
