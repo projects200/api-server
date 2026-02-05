@@ -40,19 +40,12 @@ public class CommentCommandServiceImpl implements CommentCommandService {
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
         // 부모 댓글 조회 (대댓글인 경우)
-        Comment parentComment = null;
-        if (request.parentCommentId() != null) {
-            parentComment = commentRepository.findByIdAndDeletedAtIsNull(request.parentCommentId())
-                    .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_PARENT_NOT_FOUND));
-        }
+        Comment parentComment = request.parentCommentId() == null ? null :
+                commentRepository.findByIdAndDeletedAtIsNull(request.parentCommentId())
+                        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_PARENT_NOT_FOUND));
 
         // 댓글 생성
-        Comment comment = Comment.builder()
-                .member(member)
-                .feed(feed)
-                .parent(parentComment)
-                .content(request.content())
-                .build();
+        Comment comment = Comment.create(member, feed, parentComment, request);
 
         Comment savedComment = commentRepository.save(comment);
 
@@ -68,6 +61,8 @@ public class CommentCommandServiceImpl implements CommentCommandService {
                 .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
         // 작성자 권한 검증
+        memberRepository.findByMemberIdAndMemberDeletedAtNull(currentUserId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
         if (!comment.getMember().getMemberId().equals(currentUserId)) {
             throw new CustomException(ErrorCode.COMMENT_DELETE_FORBIDDEN);
         }
