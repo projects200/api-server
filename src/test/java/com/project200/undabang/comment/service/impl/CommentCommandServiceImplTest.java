@@ -211,6 +211,7 @@ class CommentCommandServiceImplTest {
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(userId);
+                given(memberRepository.findByMemberIdAndMemberDeletedAtNull(userId)).willReturn(Optional.of(member));
                 given(commentRepository.findByIdAndDeletedAtIsNull(commentId)).willReturn(Optional.of(comment));
 
                 // when
@@ -248,11 +249,14 @@ class CommentCommandServiceImplTest {
             Long commentId = 1L;
 
             Member author = createMember(authorId);
+            Member nonAuthor = createMember(currentUserId);
             Feed feed = createFeed(1L, author);
             Comment comment = createComment(commentId, author, feed, null);
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(currentUserId);
+                given(memberRepository.findByMemberIdAndMemberDeletedAtNull(currentUserId))
+                        .willReturn(Optional.of(nonAuthor));
                 given(commentRepository.findByIdAndDeletedAtIsNull(commentId)).willReturn(Optional.of(comment));
 
                 // when & then
