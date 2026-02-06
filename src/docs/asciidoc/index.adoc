@@ -260,3 +260,9 @@ include::overview/공통-개발-참고-사항.adoc[]
 - 피드 삭제 API #DELETE# `/api/v1/feeds/{feedId}`
 
 - 피드 이미지 목록 추가 API #POST# `/api/v1/feeds/{feedId}/pictures`
+
+=== xref:좋아요-API.html[좋아요 API]
+
+
+
+- 특정 피드의 좋아요 작성 API #POST# `/api/v1/feeds/{feedId}/like`
