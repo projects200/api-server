@@ -67,56 +67,13 @@ public class CommentRepositoryImpl implements CommentRepositoryCustom {
         Map<Long, List<CommentResponse>> childrenMap = childComments.stream()
                 .collect(Collectors.groupingBy(
                         c -> c.getParent().getId(),
-                        Collectors.mapping(this::toCommentResponse, Collectors.toList())));
+                        Collectors.mapping(CommentResponse::from, Collectors.toList())));
 
         // 5. 부모 댓글에 대댓글 조립
         return parentComments.stream()
-                .map(parent -> toCommentResponseWithChildren(parent,
+                .map(parent -> CommentResponse.of(parent,
                         childrenMap.getOrDefault(parent.getId(), new ArrayList<>())))
                 .collect(Collectors.toList());
     }
 
-    private CommentResponse toCommentResponse(Comment comment) {
-        String profileImageUrl = null;
-        String thumbnailUrl = null;
-
-        if (comment.getMember().getMemberPicture() != null) {
-            profileImageUrl = comment.getMember().getMemberPicture().getMemberPicturesUrl();
-            if (comment.getMember().getMemberPicture().getPicture() != null) {
-                thumbnailUrl = null; // 썸네일은 추후 개발 예정
-            }
-        }
-
-        return new CommentResponse(
-                comment.getId(),
-                comment.getMember().getMemberId(),
-                comment.getMember().getMemberNickname(),
-                profileImageUrl,
-                thumbnailUrl,
-                comment.getContent(),
-                comment.getLikesCount(),
-                comment.getCreatedAt(),
-                new ArrayList<>() // 대댓글은 별도로 조립
-        );
-    }
-
-    private CommentResponse toCommentResponseWithChildren(Comment comment, List<CommentResponse> children) {
-        String profileImageUrl = null;
-        String thumbnailUrl = null;
-
-        if (comment.getMember().getMemberPicture() != null) {
-            profileImageUrl = comment.getMember().getMemberPicture().getMemberPicturesUrl();
-        }
-
-        return new CommentResponse(
-                comment.getId(),
-                comment.getMember().getMemberId(),
-                comment.getMember().getMemberNickname(),
-                profileImageUrl,
-                thumbnailUrl,
-                comment.getContent(),
-                comment.getLikesCount(),
-                comment.getCreatedAt(),
-                children);
-    }
 }

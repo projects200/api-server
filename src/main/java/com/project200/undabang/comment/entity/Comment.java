@@ -1,6 +1,8 @@
 package com.project200.undabang.comment.entity;
 
+import com.project200.undabang.comment.dto.request.CreateCommentRequest;
 import com.project200.undabang.feed.entity.Feed;
+import com.project200.undabang.feed.entity.FeedType;
 import com.project200.undabang.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.*;
@@ -66,5 +68,14 @@ public class Comment {
 
     public boolean isDeleted() {
         return this.deletedAt != null;
+    }
+
+    public static Comment create(Member member, Feed feed, Comment parent, CreateCommentRequest request) {
+        return Comment.builder()
+                .member(member)
+                .feed(feed)
+                .parent(parent)
+                .content(request.content())
+                .build();
     }
 }
