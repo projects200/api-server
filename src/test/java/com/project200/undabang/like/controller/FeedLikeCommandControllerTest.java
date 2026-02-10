@@ -47,7 +47,7 @@ class FeedLikeCommandControllerTest extends AbstractRestDocSupport {
                         UUID testMemberId = UUID.randomUUID();
                         Long feedId = 5L;
                         CreateFeedLikeRequest request = new CreateFeedLikeRequest(true);
-                        CreateFeedLikeResponse responseDto = new CreateFeedLikeResponse();
+                        CreateFeedLikeResponse responseDto = new CreateFeedLikeResponse(true, 1);
 
                         BDDMockito
                                         .given(feedLikeCommandService.createFeedLike(BDDMockito.eq(feedId),
@@ -70,10 +70,16 @@ class FeedLikeCommandControllerTest extends AbstractRestDocSupport {
                                                                                         getTypeFormat(JsonFieldType.NUMBER))
                                                                                         .description("좋아요할 피드의 ID")),
                                                         requestFields(
-                                                                        fieldWithPath("status")
+                                                                        fieldWithPath("liked")
                                                                                         .type(JsonFieldType.BOOLEAN)
                                                                                         .description("좋아요 상태 (true: 좋아요, false: 좋아요 취소)")),
-                                                        responseFields(commonResponseFields()))) // Assuming data is
+                                                        responseFields(commonResponseFields(
+                                                                        fieldWithPath("data.liked")
+                                                                                        .type(JsonFieldType.BOOLEAN)
+                                                                                        .description("좋아요 여부"),
+                                                                        fieldWithPath("data.likesCount")
+                                                                                        .type(JsonFieldType.NUMBER)
+                                                                                        .description("피드 좋아요 수")))))
                                         // empty object {}
                                         // success
                                         .andReturn().getResponse().getContentAsString();

@@ -44,15 +44,19 @@ public class FeedLikeCommandServiceImpl implements FeedLikeCommandService {
         // 피드 좋아요 생성
         Optional<FeedLike> existingLike = feedLikeRepository.findByFeedAndMember(feed, member);
 
-        if (Boolean.TRUE.equals(request.status())) {
+        if (Boolean.TRUE.equals(request.liked())) {
             // 좋아요 생성: 이미 존재하면 아무것도 안 함
             if (existingLike.isEmpty()) {
                 feedLikeRepository.save(FeedLike.create(feed, member));
+                feed.incrementLikesCount();
             }
         } else {
             // 좋아요 취소: 존재하면 삭제
-            existingLike.ifPresent(feedLikeRepository::delete);
+            existingLike.ifPresent(like -> {
+                feedLikeRepository.delete(like);
+                feed.decrementLikesCount();
+            });
         }
-        return new CreateFeedLikeResponse();
+        return new CreateFeedLikeResponse(request.liked(), feed.getLikesCount());
     }
 }

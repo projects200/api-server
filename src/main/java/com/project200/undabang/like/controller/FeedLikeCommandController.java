@@ -19,7 +19,7 @@ public class FeedLikeCommandController {
 
     @PostMapping("/v1/feeds/{feedId}/like")
     public ResponseEntity<CommonResponse<CreateFeedLikeResponse>> createFeedLike(@PathVariable Long feedId,
-            @Valid @RequestBody CreateFeedLikeRequest request) {
+                                                                                 @Valid @RequestBody CreateFeedLikeRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(CommonResponse.create(feedLikeCommandService.createFeedLike(feedId, request)));
     }
