@@ -116,6 +116,7 @@ class CommentCommandServiceImplTest {
 
                 // then
                 assertThat(result.commentId()).isEqualTo(1L);
+                assertThat(feed.getCommentsCount()).isEqualTo(1);
             }
         }
 
@@ -146,6 +147,7 @@ class CommentCommandServiceImplTest {
 
                 // then
                 assertThat(result.commentId()).isEqualTo(2L);
+                assertThat(feed.getCommentsCount()).isEqualTo(1);
             }
         }
 
@@ -219,6 +221,7 @@ class CommentCommandServiceImplTest {
 
                 // then
                 assertThat(comment.isDeleted()).isTrue();
+                assertThat(feed.getCommentsCount()).isEqualTo(0);
             }
         }
 
