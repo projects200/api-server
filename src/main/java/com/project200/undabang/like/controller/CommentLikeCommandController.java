@@ -13,13 +13,13 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
-public class CommentCommandLikeController {
+public class CommentLikeCommandController {
 
     private final CommentCommandLikeServiceImpl commentCommandLikeService;
 
     @PostMapping("/v1/comments/{commentId}/like")
     public ResponseEntity<CommonResponse<CreateCommentLikeResponse>> createCommentLike(@PathVariable Long commentId,
-            @Valid @RequestBody CreateCommentLikeRequest request) {
+                                                                                       @Valid @RequestBody CreateCommentLikeRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(CommonResponse.create(commentCommandLikeService.createCommentLike(commentId, request)));
 

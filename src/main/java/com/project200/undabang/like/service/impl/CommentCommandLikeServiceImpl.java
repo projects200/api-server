@@ -43,15 +43,19 @@ public class CommentCommandLikeServiceImpl implements CommentCommandLikeService 
         // 댓글 좋아요 생성
         Optional<CommentLike> existingLike = commentLikeRepository.findByCommentAndMember(comment, member);
 
-        if (Boolean.TRUE.equals(request.status())) {
+        if (Boolean.TRUE.equals(request.liked())) {
             // 좋아요 생성: 이미 존재하면 아무것도 안 함
             if (existingLike.isEmpty()) {
                 commentLikeRepository.save(CommentLike.create(comment, member));
+                comment.incrementLikesCount();
             }
         } else {
             // 좋아요 취소: 존재하면 삭제
-            existingLike.ifPresent(commentLikeRepository::delete);
+            existingLike.ifPresent(like -> {
+                commentLikeRepository.delete(like);
+                comment.decrementLikesCount();
+            });
         }
-        return new CreateCommentLikeResponse();
+        return new CreateCommentLikeResponse(request.liked(), comment.getLikesCount());
     }
 }

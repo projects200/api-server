@@ -7,6 +7,7 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.feed.entity.Feed;
 import com.project200.undabang.like.dto.request.CreateCommentLikeRequest;
+import com.project200.undabang.like.dto.response.CreateCommentLikeResponse;
 import com.project200.undabang.like.entity.CommentLike;
 import com.project200.undabang.like.repository.CommentLikeRepository;
 import com.project200.undabang.member.entity.Member;
@@ -33,7 +34,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
-class CommentCommandLikeServiceImplTest {
+class CommentLikeCommandServiceImplTest {
 
     @InjectMocks
     private CommentCommandLikeServiceImpl commentCommandLikeService;
@@ -75,10 +76,12 @@ class CommentCommandLikeServiceImplTest {
                 given(commentLikeRepository.findByCommentAndMember(comment, member)).willReturn(Optional.empty());
 
                 // when
-                commentCommandLikeService.createCommentLike(commentId, request);
+                CreateCommentLikeResponse response = commentCommandLikeService.createCommentLike(commentId, request);
 
                 // then
                 then(commentLikeRepository).should(times(1)).save(any(CommentLike.class));
+                assertThat(response.liked()).isTrue();
+                assertThat(response.likesCount()).isEqualTo(1);
             }
         }
 
@@ -104,10 +107,12 @@ class CommentCommandLikeServiceImplTest {
                         .willReturn(Optional.of(existingLike));
 
                 // when
-                commentCommandLikeService.createCommentLike(commentId, request);
+                CreateCommentLikeResponse response = commentCommandLikeService.createCommentLike(commentId, request);
 
                 // then
                 then(commentLikeRepository).should(never()).save(any(CommentLike.class));
+                assertThat(response.liked()).isTrue();
+                assertThat(response.likesCount()).isEqualTo(0);
             }
         }
 
@@ -127,6 +132,7 @@ class CommentCommandLikeServiceImplTest {
                         .member(member)
                         .feed(feed)
                         .content("test content")
+                        .likesCount(1)
                         .build();
                 CommentLike existingLike = CommentLike.create(comment, member);
 
@@ -137,10 +143,12 @@ class CommentCommandLikeServiceImplTest {
                         .willReturn(Optional.of(existingLike));
 
                 // when
-                commentCommandLikeService.createCommentLike(commentId, request);
+                CreateCommentLikeResponse response = commentCommandLikeService.createCommentLike(commentId, request);
 
                 // then
                 then(commentLikeRepository).should(times(1)).delete(existingLike);
+                assertThat(response.liked()).isFalse();
+                assertThat(response.likesCount()).isEqualTo(0);
             }
         }
 

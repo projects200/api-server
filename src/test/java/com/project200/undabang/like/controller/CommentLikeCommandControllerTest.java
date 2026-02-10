@@ -29,9 +29,9 @@ import static org.springframework.restdocs.request.RequestDocumentation.paramete
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(CommentCommandLikeController.class)
+@WebMvcTest(CommentLikeCommandController.class)
 @DisplayName("CommentCommandLikeController 테스트")
-class CommentCommandLikeControllerTest extends AbstractRestDocSupport {
+class CommentLikeCommandControllerTest extends AbstractRestDocSupport {
 
     @MockitoBean
     private CommentCommandLikeServiceImpl commentCommandLikeService;
@@ -47,7 +47,7 @@ class CommentCommandLikeControllerTest extends AbstractRestDocSupport {
             UUID testMemberId = UUID.randomUUID();
             Long commentId = 5L;
             CreateCommentLikeRequest request = new CreateCommentLikeRequest(true);
-            CreateCommentLikeResponse responseDto = new CreateCommentLikeResponse();
+            CreateCommentLikeResponse responseDto = new CreateCommentLikeResponse(true, 1);
 
             BDDMockito
                     .given(commentCommandLikeService.createCommentLike(BDDMockito.eq(commentId),
@@ -70,12 +70,16 @@ class CommentCommandLikeControllerTest extends AbstractRestDocSupport {
                                                     getTypeFormat(JsonFieldType.NUMBER))
                                             .description("좋아요할 댓글의 ID")),
                             requestFields(
-                                    fieldWithPath("status")
+                                    fieldWithPath("liked")
                                             .type(JsonFieldType.BOOLEAN)
                                             .description("좋아요 상태 (true: 좋아요, false: 좋아요 취소)")),
-                            responseFields(commonResponseFields()))) // Assuming data is
-                    // empty object {}
-                    // success
+                            responseFields(commonResponseFields(
+                                    fieldWithPath("data.liked")
+                                            .type(JsonFieldType.BOOLEAN)
+                                            .description("좋아요 여부"),
+                                    fieldWithPath("data.likesCount")
+                                            .type(JsonFieldType.NUMBER)
+                                            .description("댓글 좋아요 수")))))
                     .andReturn().getResponse().getContentAsString();
 
             // then
