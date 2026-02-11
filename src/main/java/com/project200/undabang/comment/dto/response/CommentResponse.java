@@ -27,7 +27,7 @@ public record CommentResponse(
         String thumbnailUrl = null;
 
         if (comment.getMember().getMemberPicture() != null) {
-            profileImageUrl = comment.getMember().getMemberPicture().getMemberPicturesUrl();
+            profileImageUrl = comment.getMember().getMemberPicture().getPicture().getPictureUrl();
             if (comment.getMember().getMemberPicture().getPicture() != null) {
                 thumbnailUrl = null; // 썸네일은 추후 개발 예정
             }
