@@ -1,5 +1,6 @@
 package com.project200.undabang.comment.dto.response;
 
+import com.project200.undabang.comment.dto.record.TaggedMemberRecord;
 import com.project200.undabang.comment.entity.Comment;
 
 import java.time.LocalDateTime;
@@ -16,13 +17,14 @@ public record CommentResponse(
         String content,
         Integer likesCount,
         LocalDateTime createdAt,
+        TaggedMemberRecord taggedMember,
         List<CommentResponse> children) {
 
     public static CommentResponse from(Comment comment) {
-        return of(comment, new ArrayList<>());
+        return of(comment, new ArrayList<>(), null);
     }
 
-    public static CommentResponse of(Comment comment, List<CommentResponse> children) {
+    public static CommentResponse of(Comment comment, List<CommentResponse> children, TaggedMemberRecord taggedMember) {
         String profileImageUrl = null;
         String thumbnailUrl = null;
 
@@ -42,6 +44,7 @@ public record CommentResponse(
                 comment.getContent(),
                 comment.getLikesCount(),
                 comment.getCreatedAt(),
+                taggedMember,
                 children);
     }
 }

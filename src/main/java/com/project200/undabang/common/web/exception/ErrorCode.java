@@ -103,6 +103,9 @@ public enum ErrorCode {
     COMMENT_DELETE_FORBIDDEN(403, "COMMENT_DELETE_FORBIDDEN", "댓글 삭제 권한이 없습니다."),
     COMMENT_PARENT_NOT_FOUND(404, "COMMENT_PARENT_NOT_FOUND", "부모 댓글을 찾을 수 없습니다."),
 
+    // 댓글 태그 관련 에러
+    COMMENT_TAG_NOT_ALLOWED(400, "COMMENT_TAG_NOT_ALLOWED", "대댓글에서만 태그 기능을 사용할 수 있습니다."),
+
     // 피드 관련 에러
     FEED_NOT_FOUND(404, "FEED_NOT_FOUND", "존재하지 않는 피드입니다."),
 

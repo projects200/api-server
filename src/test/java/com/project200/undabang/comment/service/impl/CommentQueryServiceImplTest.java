@@ -44,6 +44,7 @@ class CommentQueryServiceImplTest {
                 "대댓글 내용입니다.",
                 3,
                 LocalDateTime.now().minusMinutes(30),
+                null, // taggedMember
                 new ArrayList<>());
 
         CommentResponse parent = new CommentResponse(
@@ -55,6 +56,7 @@ class CommentQueryServiceImplTest {
                 "부모 댓글 내용입니다.",
                 5,
                 LocalDateTime.now().minusHours(1),
+                null, // taggedMember
                 List.of(reply));
 
         return List.of(parent);

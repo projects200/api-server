@@ -3,7 +3,9 @@ package com.project200.undabang.comment.service.impl;
 import com.project200.undabang.comment.dto.request.CreateCommentRequest;
 import com.project200.undabang.comment.dto.response.CreateCommentResponse;
 import com.project200.undabang.comment.entity.Comment;
+import com.project200.undabang.comment.entity.CommentTag;
 import com.project200.undabang.comment.repository.CommentRepository;
+import com.project200.undabang.comment.repository.CommentTagRepository;
 import com.project200.undabang.comment.service.CommentCommandService;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
@@ -24,6 +26,7 @@ import java.util.UUID;
 public class CommentCommandServiceImpl implements CommentCommandService {
 
     private final CommentRepository commentRepository;
+    private final CommentTagRepository commentTagRepository;
     private final FeedRepository feedRepository;
     private final MemberRepository memberRepository;
 
@@ -40,14 +43,30 @@ public class CommentCommandServiceImpl implements CommentCommandService {
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
         // 부모 댓글 조회 (대댓글인 경우)
-        Comment parentComment = request.parentCommentId() == null ? null :
-                commentRepository.findByIdAndDeletedAtIsNull(request.parentCommentId())
-                        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_PARENT_NOT_FOUND));
+        Comment parentComment = request.parentCommentId() == null ? null
+                : commentRepository.findByIdAndDeletedAtIsNull(request.parentCommentId())
+                .orElseThrow(() -> new CustomException(
+                        ErrorCode.COMMENT_PARENT_NOT_FOUND));
 
         // 댓글 생성
         Comment comment = Comment.create(member, feed, parentComment, request);
-
         Comment savedComment = commentRepository.save(comment);
+
+        // 태그 처리
+        if (request.taggedMemberId() != null) {
+            // 대댓글인지 검증
+            if (request.parentCommentId() == null) {
+                throw new CustomException(ErrorCode.COMMENT_TAG_NOT_ALLOWED);
+            }
+
+            // 태그된 회원 존재 여부 검증
+            Member taggedMember = memberRepository.findById(request.taggedMemberId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+            // CommentTag 생성 및 저장
+            CommentTag commentTag = CommentTag.of(savedComment, taggedMember);
+            commentTagRepository.save(commentTag);
+        }
 
         return new CreateCommentResponse(savedComment.getId());
     }
