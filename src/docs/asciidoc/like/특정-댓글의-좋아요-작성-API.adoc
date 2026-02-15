@@ -1,0 +1,32 @@
+== 특정 댓글의 좋아요 작성 API
+
+=== 설명
+
+- #POST# `/api/v1/comments/{commentId}/like`
+- 특정 댓글에 좋아요를 하거나 취소하는 API 입니다.
+- `status` 필드가 `true`이면 좋아요, `false`이면 좋아요 취소입니다.
+
+=== 개발 이력
+
+- Sprint 24 (2026-02-04): 기능 개발이 완료되었습니다.
+
+=== 개발 참고 사항
+
+- <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+
+=== 코드 샘플
+
+operation::create-comment-like/create-comment-like_success[snippets="curl-request,http-request,http-response"]
+
+=== 매개 변수
+
+operation::create-comment-like/create-comment-like_success[snippets="request-headers,path-parameters,request-fields,response-fields"]
+
+==== 응답 상태 코드
+
+|===
+|상태 코드|설명
+|201|리소스가 성공적으로 생성되었습니다. (좋아요 성공/취소 모두 성공 응답)
+|401|인증되지 않은 요청입니다. Access Token이 없거나 유효하지 않습니다.
+|404|존재하지 않는 댓글입니다.
+|===

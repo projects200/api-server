@@ -267,3 +267,7 @@ include::overview/공통-개발-참고-사항.adoc[]
 - 특정 피드에 댓글 작성 API #POST# `/api/v1/feeds/{feedId}/comments`
 
 - 댓글 삭제 API #DELETE# `/api/v1/comments/{commentId}`
+
+=== xref:좋아요-API.html[좋아요 API]
+
+- 특정 댓글의 좋아요 작성 API #POST# `/api/v1/comments/{commentId}/like`

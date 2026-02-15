@@ -35,4 +35,11 @@ public class CommentLike {
     @Builder.Default
     @Column(name = "comment_like_created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    public static CommentLike create(Comment comment, Member member) {
+        return CommentLike.builder()
+                .comment(comment)
+                .member(member)
+                .build();
+    }
 }
