@@ -70,16 +70,6 @@ public class Comment {
         return this.deletedAt != null;
     }
 
-    public void incrementLikesCount() {
-        this.likesCount++;
-    }
-
-    public void decrementLikesCount() {
-        if (this.likesCount > 0) {
-            this.likesCount--;
-        }
-    }
-
     public static Comment create(Member member, Feed feed, Comment parent, CreateCommentRequest request) {
         return Comment.builder()
                 .member(member)
