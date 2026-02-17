@@ -77,10 +77,10 @@ public class FeedCommandController {
      * 주어진 피드 ID와 사진 ID를 기반으로 특정 피드에서 사진을 삭제합니다.
      */
     @DeleteMapping("/v1/feeds/{feedId}/pictures/{pictureId}")
-    public ResponseEntity<CommonResponse<Void>> deleteFeedPictures(@PathVariable long feedId,
-                                                                   @PathVariable long pictureId) {
+    public ResponseEntity<CommonResponse<Void>> deleteFeedPicture(@PathVariable Long feedId,
+                                                                  @PathVariable Long pictureId) {
 
-        feedPictureService.deleteFeedPictures(feedId, pictureId);
+        feedPictureService.deleteFeedPicture(feedId, pictureId);
         return ResponseEntity.ok(CommonResponse.delete(null));
     }
 }

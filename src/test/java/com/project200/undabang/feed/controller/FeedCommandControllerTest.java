@@ -245,7 +245,7 @@ class FeedCommandControllerTest extends AbstractRestDocSupport {
             Long pictureId = 100L;
 
             // Service는 void 반환이므로 doNothing() 설정
-            doNothing().when(feedPictureService).deleteFeedPictures(feedId, pictureId);
+            doNothing().when(feedPictureService).deleteFeedPicture(feedId, pictureId);
 
             // when & then
             mockMvc.perform(RestDocumentationRequestBuilders.delete("/api/v1/feeds/{feedId}/pictures/{pictureId}", feedId, pictureId)

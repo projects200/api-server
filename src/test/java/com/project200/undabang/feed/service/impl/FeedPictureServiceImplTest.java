@@ -200,7 +200,7 @@ class FeedPictureServiceImplTest {
                 given(feedPicture.getPicture()).willReturn(picture);
 
                 // when
-                feedPictureService.deleteFeedPictures(feedId, pictureId);
+                feedPictureService.deleteFeedPicture(feedId, pictureId);
 
                 // then
                 // PictureService의 삭제 메서드가 올바른 인자(picture)로 호출되었는지 검증
@@ -230,7 +230,7 @@ class FeedPictureServiceImplTest {
                         .willReturn(Optional.empty());
 
                 // when & then
-                assertThatThrownBy(() -> feedPictureService.deleteFeedPictures(feedId, pictureId))
+                assertThatThrownBy(() -> feedPictureService.deleteFeedPicture(feedId, pictureId))
                         .isInstanceOf(CustomException.class)
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_PICTURE_NOT_FOUND);
 
@@ -255,7 +255,7 @@ class FeedPictureServiceImplTest {
                 given(feedRepository.findByIdAndMemberAndDeletedAtNull(feedId, member)).willReturn(Optional.empty());
 
                 // when & then
-                assertThatThrownBy(() -> feedPictureService.deleteFeedPictures(feedId, pictureId))
+                assertThatThrownBy(() -> feedPictureService.deleteFeedPicture(feedId, pictureId))
                         .isInstanceOf(CustomException.class)
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_NOT_FOUND);
 

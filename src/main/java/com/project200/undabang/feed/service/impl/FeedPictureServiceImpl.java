@@ -40,7 +40,7 @@ public class FeedPictureServiceImpl implements FeedPictureService {
      * 이미지가 존재하지 않거나 이미 삭제된 경우 예외를 발생시킵니다.
      */
     @Override
-    public void deleteFeedPictures(long feedId, long pictureId) {
+    public void deleteFeedPicture(long feedId, long pictureId) {
         Member member = getMember(UserContextHolder.getUserId());
         Feed feed = getFeed(feedId, member);
 
