@@ -110,6 +110,7 @@ public enum ErrorCode {
     FEED_TYPE_NOT_FOUND(404, "FEED_TYPE_NOT_FOUND", "존재하지 않는 피드 타입입니다."),
 
     // 피드 사진 관련 에러
+    FEED_PICTURE_NOT_FOUND(404, "FEED_PICTURE_NOT_FOUND", "존재하지 않는 피드 사진 입니다."),
     FEED_PICTURE_MAX_COUNT_EXCEED(409, "FEED_PICTURE_MAX_COUNT_EXCEED", "저장할 수 있는 최대 피드 사진 갯수를 초과했습니다.");
 
     private final HttpStatusCode status;
