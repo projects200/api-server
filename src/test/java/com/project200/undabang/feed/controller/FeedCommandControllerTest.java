@@ -231,4 +231,41 @@ class FeedCommandControllerTest extends AbstractRestDocSupport {
             verify(feedCommandService).createMemberFeed(any(CreateFeedRequest.class));
         }
     }
+
+    @Nested
+    @DisplayName("deleteFeedPictures 메소드는")
+    class DeleteFeedPictures {
+
+        @Test
+        @DisplayName("피드 사진 삭제 요청이 유효하면 200 상태코드를 반환한다")
+        void deleteFeedPictures_Success() throws Exception {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long feedId = 1L;
+            Long pictureId = 100L;
+
+            // Service는 void 반환이므로 doNothing() 설정
+            doNothing().when(feedPictureService).deleteFeedPictures(feedId, pictureId);
+
+            // when & then
+            mockMvc.perform(RestDocumentationRequestBuilders.delete("/api/v1/feeds/{feedId}/pictures/{pictureId}", feedId, pictureId)
+                            .headers(getCommonApiHeaders(memberId))
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpectAll(
+                            status().isOk(),
+                            jsonPath("$.succeed").value(true),
+                            jsonPath("$.data").isEmpty() // null 확인
+                    )
+                    .andDo(document.document(
+                            requestHeaders(HEADER_ACCESS_TOKEN),
+                            pathParameters(
+                                    parameterWithName("feedId").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("삭제할 사진이 속한 피드의 식별자입니다."),
+                                    parameterWithName("pictureId").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("삭제할 사진의 고유 식별자입니다.")
+                            ),
+                            responseFields(commonResponseFields(
+                                    fieldWithPath("data").attributes(getTypeFormat(JsonFieldType.NULL)).description("삭제 성공 시 데이터는 반환되지 않습니다.")
+                            ))
+                    ));
+        }
+    }
 }

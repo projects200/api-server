@@ -165,4 +165,102 @@ class FeedPictureServiceImplTest {
             }
         }
     }
+
+    @Nested
+    @DisplayName("Describe: deleteFeedPictures 메소드는")
+    class Describe_DeleteFeedPictures {
+
+        @Test
+        @DisplayName("본인의 피드에 존재하고 삭제되지 않은 사진 ID가 주어지면 사진을 삭제한다")
+        void it_deletes_picture_successfully() {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long feedId = 1L;
+            Long pictureId = 100L;
+
+            // Mock 객체 생성
+            Member member = mock(Member.class);
+            Feed feed = mock(Feed.class);
+            Picture picture = mock(Picture.class);
+            FeedPicture feedPicture = mock(FeedPicture.class);
+
+            try (MockedStatic<UserContextHolder> userContext = mockStatic(UserContextHolder.class)) {
+                // 1. 로그인 유저 ID 설정
+                userContext.when(UserContextHolder::getUserId).thenReturn(memberId);
+
+                // 2. Member & Feed 조회 성공 설정
+                given(memberRepository.findByMemberIdAndMemberDeletedAtNull(memberId)).willReturn(Optional.of(member));
+                given(feedRepository.findByIdAndMemberAndDeletedAtNull(feedId, member)).willReturn(Optional.of(feed));
+
+                // 3. FeedPicture 조회 성공 설정 (Stubbing)
+                given(feedPictureRepository.findByFeedAndIdAndPicture_PictureDeletedAtNull(feed, pictureId))
+                        .willReturn(Optional.of(feedPicture));
+
+                // 4. feedPicture.getPicture() 호출 시 반환할 Picture 설정
+                given(feedPicture.getPicture()).willReturn(picture);
+
+                // when
+                feedPictureService.deleteFeedPictures(feedId, pictureId);
+
+                // then
+                // PictureService의 삭제 메서드가 올바른 인자(picture)로 호출되었는지 검증
+                verify(pictureService, times(1)).deletePictureFromS3AndDB(picture);
+            }
+        }
+
+        @Test
+        @DisplayName("사진이 해당 피드에 없거나 이미 삭제된 경우 FEED_PICTURE_NOT_FOUND 예외를 던진다")
+        void it_throws_exception_when_picture_not_found() {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long feedId = 1L;
+            Long pictureId = 999L; // 존재하지 않거나 삭제된 ID
+
+            Member member = mock(Member.class);
+            Feed feed = mock(Feed.class);
+
+            try (MockedStatic<UserContextHolder> userContext = mockStatic(UserContextHolder.class)) {
+                // 1. 로그인 유저 및 피드 정상 조회
+                userContext.when(UserContextHolder::getUserId).thenReturn(memberId);
+                given(memberRepository.findByMemberIdAndMemberDeletedAtNull(memberId)).willReturn(Optional.of(member));
+                given(feedRepository.findByIdAndMemberAndDeletedAtNull(feedId, member)).willReturn(Optional.of(feed));
+
+                // 2. FeedPicture 조회 실패 (Optional.empty 반환)
+                given(feedPictureRepository.findByFeedAndIdAndPicture_PictureDeletedAtNull(feed, pictureId))
+                        .willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> feedPictureService.deleteFeedPictures(feedId, pictureId))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_PICTURE_NOT_FOUND);
+
+                verify(pictureService, never()).deletePictureFromS3AndDB(any(Picture.class));
+            }
+        }
+
+        @Test
+        @DisplayName("요청한 피드가 존재하지 않거나 본인의 것이 아니면 FEED_NOT_FOUND 예외를 던진다")
+        void it_throws_exception_when_feed_not_found() {
+            // given
+            UUID memberId = UUID.randomUUID();
+            Long feedId = 999L;
+            Long pictureId = 100L;
+            Member member = mock(Member.class);
+
+            try (MockedStatic<UserContextHolder> userContext = mockStatic(UserContextHolder.class)) {
+                userContext.when(UserContextHolder::getUserId).thenReturn(memberId);
+                given(memberRepository.findByMemberIdAndMemberDeletedAtNull(memberId)).willReturn(Optional.of(member));
+
+                // 피드 조회 실패 설정
+                given(feedRepository.findByIdAndMemberAndDeletedAtNull(feedId, member)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> feedPictureService.deleteFeedPictures(feedId, pictureId))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_NOT_FOUND);
+
+                verify(pictureService, never()).deletePictureFromS3AndDB(any(Picture.class));
+            }
+        }
+    }
 }
