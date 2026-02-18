@@ -7,7 +7,7 @@ on:
 
 jobs:
   backend-CI:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     # Testcontainers가 CI 환경에서 Docker를 잘 찾도록 환경 변수 추가
     env:
@@ -73,7 +73,7 @@ jobs:
       - name: Build Gradle
         run: |
           chmod +x gradlew
-               ./gradlew clean build -Dspring.profiles.active=dev-docs --no-daemon --info
+               ./gradlew clean build -Dspring.profiles.active=dev-docs --no-daemon
         shell: bash
 
       - name: Build and push image to Amazon ECR
