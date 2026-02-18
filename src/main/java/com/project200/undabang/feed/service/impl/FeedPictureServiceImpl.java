@@ -36,6 +36,21 @@ public class FeedPictureServiceImpl implements FeedPictureService {
     private final PolicyService policyService;
 
     /**
+     * 주어진 피드 ID와 사진 ID에 해당하는 피드 이미지를 삭제합니다.
+     * 이미지가 존재하지 않거나 이미 삭제된 경우 예외를 발생시킵니다.
+     */
+    @Override
+    public void deleteFeedPicture(long feedId, long pictureId) {
+        Member member = getMember(UserContextHolder.getUserId());
+        Feed feed = getFeed(feedId, member);
+
+        FeedPicture feedPicture = feedPictureRepository.findByFeedAndIdAndPicture_PictureDeletedAtNull(feed, pictureId)
+                .orElseThrow(() -> new CustomException(ErrorCode.FEED_PICTURE_NOT_FOUND));
+
+        pictureService.deletePictureFromS3AndDB(feedPicture.getPicture());
+    }
+
+    /**
      * 주어진 피드 ID에 해당하는 피드에 이미지 파일 리스트를 업로드한 후, 이를 데이터베이스에 저장하고 결과를 반환합니다.
      */
     @Override
