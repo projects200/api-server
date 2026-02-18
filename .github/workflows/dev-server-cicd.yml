@@ -8,6 +8,12 @@ on:
 jobs:
   backend-CI:
     runs-on: ubuntu-latest
+
+    # Testcontainers가 CI 환경에서 Docker를 잘 찾도록 환경 변수 추가
+    env:
+      TESTCONTAINERS_RYUK_DISABLED: true
+      TESTCONTAINERS_CHECKS_DISABLE: true
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,10 +57,12 @@ jobs:
         shell: bash
 
       # 3. 모든 설정이 끝난 후 빌드 실행
+      # 권한 부여 및 --no-daemon 옵션 추가 (메모리 절약)
       - name: Build Gradle
         run: |
           chmod +x gradlew
-          ./gradlew build -Dspring.profiles.active=dev-docs
+          # ./gradlew build -Dspring.profiles.active=dev-docs
+               ./gradlew clean build -Dspring.profiles.active=dev-docs --no-daemon
         shell: bash
 
       - name: Build and push image to Amazon ECR
