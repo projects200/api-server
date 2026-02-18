@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface FeedPictureService {
     List<CreateFeedPictureResponse> createFeedPictures(Long feedId, List<MultipartFile> imageFileList);
+
+    void deleteFeedPicture(long feedId, long pictureId);
 }
