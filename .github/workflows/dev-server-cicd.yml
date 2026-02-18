@@ -13,6 +13,7 @@ jobs:
     env:
       TESTCONTAINERS_RYUK_DISABLED: true
       TESTCONTAINERS_CHECKS_DISABLE: true
+      DOCKER_HOST: unix:///var/run/docker.sock
 
     steps:
       - name: Checkout
@@ -33,6 +34,17 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
+
+      # [핵심 2] Docker 소켓 권한 부여 & 상태 확인
+      # 이 스텝이 실패하면 아예 Runner 문제임
+      - name: Check Docker & Grant Permissions
+        run: |
+          echo "Granting permissions to docker socket..."
+          sudo chmod 666 /var/run/docker.sock
+          
+          echo "Checking Docker info..."
+          docker info
+        shell: bash
 
       - name: Configure AWS credentials
         if: ${{ github.ref == 'refs/heads/develop'}}
@@ -56,18 +68,12 @@ jobs:
           echo ${{ secrets.DEV_FIREBASE_ADMIN_SDK_JSON }} | base64 -d > src/main/resources/firebase/undabang-firebase-adminsdk.json
         shell: bash
 
-      # [추가] Docker 소켓 권한 부여 (Testcontainers가 접근할 수 있도록)
-      - name: Grant permission for Docker socket
-        run: sudo chmod 666 /var/run/docker.sock
-        shell: bash
-
       # 3. 모든 설정이 끝난 후 빌드 실행
       # 권한 부여 및 --no-daemon 옵션 추가 (메모리 절약)
       - name: Build Gradle
         run: |
           chmod +x gradlew
-          # ./gradlew build -Dspring.profiles.active=dev-docs
-               ./gradlew clean build -Dspring.profiles.active=dev-docs --no-daemon
+               ./gradlew clean build -Dspring.profiles.active=dev-docs --no-daemon --info
         shell: bash
 
       - name: Build and push image to Amazon ECR
