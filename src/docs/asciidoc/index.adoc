@@ -273,3 +273,5 @@ include::overview/공통-개발-참고-사항.adoc[]
 === xref:좋아요-API.html[좋아요 API]
 
 - 특정 댓글의 좋아요 작성 API #POST# `/api/v1/comments/{commentId}/like`
+
+- 특정 피드의 좋아요 작성 API #POST# `/api/v1/feeds/{feedId}/like`
