@@ -1,6 +1,7 @@
 package com.project200.undabang.common.service;
 
 import com.project200.undabang.common.context.UserContextHolder;
+import com.project200.undabang.common.support.IntegrationTestSupport;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,12 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.ResponseBytes;
@@ -31,15 +27,15 @@ import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mockStatic;
 
-@Testcontainers
+//@Testcontainers
 @SpringBootTest
-class S3ServiceTest {
+class S3ServiceTest extends IntegrationTestSupport {
 
-    @Container
-    static LocalStackContainer localStack = new LocalStackContainer(
-            DockerImageName.parse("localstack/localstack:latest"))
-            .withServices(LocalStackContainer.Service.S3)
-            .withEnv("DEFAULT_REGION", "ap-northeast-2");
+    //    @Container
+//    static LocalStackContainer localStack = new LocalStackContainer(
+//            DockerImageName.parse("localstack/localstack:latest"))
+//            .withServices(LocalStackContainer.Service.S3)
+//            .withEnv("DEFAULT_REGION", "ap-northeast-2");
     @Autowired
     private S3Service s3Service;
     @Autowired
@@ -47,20 +43,20 @@ class S3ServiceTest {
     @Value("${app.s3.bucket-name}")
     private String BUCKET_NAME;
 
-    @DynamicPropertySource
-    static void overrideProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.cloud.aws.s3.endpoint", () -> localStack.getEndpointOverride(LocalStackContainer.Service.S3).toString());
-        registry.add("spring.cloud.aws.credentials.access-key", localStack::getAccessKey);
-        registry.add("spring.cloud.aws.credentials.secret-key", localStack::getSecretKey);
-        registry.add("spring.cloud.aws.region.static", localStack::getRegion);
-    }
+//    @DynamicPropertySource
+//    static void overrideProperties(DynamicPropertyRegistry registry) {
+//        registry.add("spring.cloud.aws.s3.endpoint", () -> localStack.getEndpointOverride(LocalStackContainer.Service.S3).toString());
+//        registry.add("spring.cloud.aws.credentials.access-key", localStack::getAccessKey);
+//        registry.add("spring.cloud.aws.credentials.secret-key", localStack::getSecretKey);
+//        registry.add("spring.cloud.aws.region.static", localStack::getRegion);
+//    }
 
     @BeforeAll
     static void beforeAll() {
         S3Client s3ClientForSetup = S3Client.builder()
-                .endpointOverride(localStack.getEndpointOverride(LocalStackContainer.Service.S3))
-                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(localStack.getAccessKey(), localStack.getSecretKey())))
-                .region(Region.of(localStack.getRegion()))
+                .endpointOverride(LOCAL_STACK.getEndpointOverride(LocalStackContainer.Service.S3))
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(LOCAL_STACK.getAccessKey(), LOCAL_STACK.getSecretKey())))
+                .region(Region.of(LOCAL_STACK.getRegion()))
                 .build();
         try {
             s3ClientForSetup.createBucket(CreateBucketRequest.builder().bucket("my-test-image-bucket").build());
@@ -132,7 +128,7 @@ class S3ServiceTest {
 
             // Then: 결과 검증
             assertThat(publicUrl).isNotNull();
-            String expectedUrlPrefix = localStack.getEndpointOverride(LocalStackContainer.Service.S3).toString() + "/" + BUCKET_NAME + "/";
+            String expectedUrlPrefix = LOCAL_STACK.getEndpointOverride(LocalStackContainer.Service.S3).toString() + "/" + BUCKET_NAME + "/";
             assertThat(publicUrl)
                     .startsWith(expectedUrlPrefix)
                     .endsWith(objectKey);
@@ -179,7 +175,7 @@ class S3ServiceTest {
 
             // Then: 결과 검증
             assertThat(publicUrl).isNotNull();
-            String expectedUrlPrefix = localStack.getEndpointOverride(LocalStackContainer.Service.S3).toString() + "/" + BUCKET_NAME + "/";
+            String expectedUrlPrefix = LOCAL_STACK.getEndpointOverride(LocalStackContainer.Service.S3).toString() + "/" + BUCKET_NAME + "/";
             assertThat(publicUrl)
                     .startsWith(expectedUrlPrefix)
                     .endsWith(objectKey);
