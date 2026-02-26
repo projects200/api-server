@@ -111,7 +111,8 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .join(feedPicture.picture, picture)
                 .where(
                         feedPicture.feed.id.eq(feedId),
-                        feedPicture.feed.deletedAt.isNull()
+                        feedPicture.feed.deletedAt.isNull(),
+                        picture.pictureDeletedAt.isNull()
                 )
                 .fetch();
 
@@ -190,7 +191,8 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .join(feedPicture.picture, picture)
                 .where(
                         feedPicture.feed.id.in(feedIdList),
-                        feedPicture.feed.deletedAt.isNull()
+                        feedPicture.feed.deletedAt.isNull(),
+                        picture.pictureDeletedAt.isNull()
                 )
                 .transform(GroupBy.groupBy(feedPicture.feed.id)
                         .as(GroupBy.list(Projections.constructor(FeedPictureRecord.class,

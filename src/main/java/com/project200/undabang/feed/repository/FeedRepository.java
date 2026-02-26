@@ -8,4 +8,5 @@ import java.util.Optional;
 
 public interface FeedRepository extends JpaRepository<Feed, Long>, FeedRepositoryCustom {
     Optional<Feed> findByIdAndMemberAndDeletedAtNull(Long id, Member member);
+    Optional<Feed> findByIdAndDeletedAtNull(Long id);
 }
