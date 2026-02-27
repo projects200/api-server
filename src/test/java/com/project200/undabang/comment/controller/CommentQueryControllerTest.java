@@ -49,6 +49,7 @@ class CommentQueryControllerTest extends AbstractRestDocSupport {
                 null,
                 "대댓글 내용입니다.",
                 3,
+                false,
                 LocalDateTime.now().minusMinutes(30),
                 new ArrayList<>());
 
@@ -60,6 +61,7 @@ class CommentQueryControllerTest extends AbstractRestDocSupport {
                 null,
                 "부모 댓글 내용입니다.",
                 5,
+                true,
                 LocalDateTime.now().minusHours(1),
                 List.of(reply));
 
@@ -81,10 +83,11 @@ class CommentQueryControllerTest extends AbstractRestDocSupport {
             BDDMockito.given(commentQueryService.getComments(feedId)).willReturn(comments);
 
             // when
-            String response = mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/feeds/{feedId}/comments", feedId)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .accept(MediaType.APPLICATION_JSON)
-                    .headers(getCommonApiHeaders(testMemberId)))
+            String response = mockMvc
+                    .perform(MockMvcRequestBuilders.get("/api/v1/feeds/{feedId}/comments", feedId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .accept(MediaType.APPLICATION_JSON)
+                            .headers(getCommonApiHeaders(testMemberId)))
                     .andExpect(status().isOk())
                     .andDo(document.document(
                             requestHeaders(HEADER_ACCESS_TOKEN),
@@ -98,6 +101,7 @@ class CommentQueryControllerTest extends AbstractRestDocSupport {
                                     fieldWithPath("data[].memberThumbnailUrl").type(JsonFieldType.STRING).description("댓글 작성자 프로필 썸네일 URL입니다.").optional(),
                                     fieldWithPath("data[].content").type(JsonFieldType.STRING).description("댓글 내용입니다."),
                                     fieldWithPath("data[].likesCount").type(JsonFieldType.NUMBER).description("댓글 좋아요 수 입니다."),
+                                    fieldWithPath("data[].commentIsLiked").type(JsonFieldType.BOOLEAN).description("현재 사용자의 댓글 좋아요 여부입니다."),
                                     fieldWithPath("data[].createdAt").type(JsonFieldType.STRING).description("댓글이 작성된 시간입니다."),
                                     fieldWithPath("data[].children").type(JsonFieldType.ARRAY).description("대댓글 목록입니다."),
                                     fieldWithPath("data[].children[].commentId").type(JsonFieldType.NUMBER).description("대댓글 고유 식별자(ID) 입니다."),
@@ -107,6 +111,7 @@ class CommentQueryControllerTest extends AbstractRestDocSupport {
                                     fieldWithPath("data[].children[].memberThumbnailUrl").type(JsonFieldType.STRING).description("대댓글 작성자 프로필 썸네일 URL").optional(),
                                     fieldWithPath("data[].children[].content").type(JsonFieldType.STRING).description("대댓글 내용"),
                                     fieldWithPath("data[].children[].likesCount").type(JsonFieldType.NUMBER).description("대댓글 좋아요 수"),
+                                    fieldWithPath("data[].children[].commentIsLiked").type(JsonFieldType.BOOLEAN).description("현재 사용자의 대댓글 좋아요 여부"),
                                     fieldWithPath("data[].children[].createdAt").type(JsonFieldType.STRING).description("대댓글 작성 시간"),
                                     fieldWithPath("data[].children[].children").type(JsonFieldType.ARRAY).description("대댓글의 대댓글 (현재 미지원)")))))
                     .andReturn().getResponse().getContentAsString();
