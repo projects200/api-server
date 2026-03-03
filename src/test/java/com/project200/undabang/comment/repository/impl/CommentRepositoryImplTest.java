@@ -52,7 +52,7 @@ class CommentRepositoryImplTest {
             flushAndClear();
 
             // when
-            List<CommentResponse> result = commentRepository.findCommentsWithChildrenByFeedId(feed.getId());
+            List<CommentResponse> result = commentRepository.findCommentsWithChildrenByFeedId(feed.getId(), author);
 
             // then
             assertThat(result).hasSize(1);
@@ -73,7 +73,7 @@ class CommentRepositoryImplTest {
             flushAndClear();
 
             // when
-            List<CommentResponse> result = commentRepository.findCommentsWithChildrenByFeedId(feed.getId());
+            List<CommentResponse> result = commentRepository.findCommentsWithChildrenByFeedId(feed.getId(), author);
 
             // then
             assertThat(result).hasSize(1);
@@ -96,7 +96,7 @@ class CommentRepositoryImplTest {
             flushAndClear();
 
             // when
-            List<CommentResponse> result = commentRepository.findCommentsWithChildrenByFeedId(feed.getId());
+            List<CommentResponse> result = commentRepository.findCommentsWithChildrenByFeedId(feed.getId(), author);
 
             // then
             assertThat(result).hasSize(1);
@@ -122,7 +122,7 @@ class CommentRepositoryImplTest {
             flushAndClear();
 
             // when
-            List<CommentResponse> result = commentRepository.findCommentsWithChildrenByFeedId(feed.getId());
+            List<CommentResponse> result = commentRepository.findCommentsWithChildrenByFeedId(feed.getId(), author);
 
             // then
             assertThat(result).hasSize(1);
@@ -142,7 +142,7 @@ class CommentRepositoryImplTest {
             flushAndClear();
 
             // when
-            List<CommentResponse> result = commentRepository.findCommentsWithChildrenByFeedId(feed.getId());
+            List<CommentResponse> result = commentRepository.findCommentsWithChildrenByFeedId(feed.getId(), author);
 
             // then
             assertThat(result).hasSize(1);
@@ -160,7 +160,7 @@ class CommentRepositoryImplTest {
             flushAndClear();
 
             // when
-            List<CommentResponse> result = commentRepository.findCommentsWithChildrenByFeedId(feed.getId());
+            List<CommentResponse> result = commentRepository.findCommentsWithChildrenByFeedId(feed.getId(), author);
 
             // then
             assertThat(result).isEmpty();
@@ -183,7 +183,7 @@ class CommentRepositoryImplTest {
             flushAndClear();
 
             // when
-            List<CommentResponse> result = commentRepository.findCommentsWithChildrenByFeedId(feed.getId());
+            List<CommentResponse> result = commentRepository.findCommentsWithChildrenByFeedId(feed.getId(), author);
 
             // then
             assertThat(result).hasSize(2);
@@ -209,7 +209,7 @@ class CommentRepositoryImplTest {
             flushAndClear();
 
             // when
-            List<CommentResponse> result = commentRepository.findCommentsWithChildrenByFeedId(feed.getId());
+            List<CommentResponse> result = commentRepository.findCommentsWithChildrenByFeedId(feed.getId(), author);
 
             // then
             assertThat(result).hasSize(1);
@@ -243,10 +243,12 @@ class CommentRepositoryImplTest {
         MemberPicture memberPicture = MemberPicture.builder()
                 .member(member)
                 .picture(picture)
+                .memberPicturesUrl(url)
                 .build();
         em.persist(memberPicture);
 
         member.updateProfilePicture(memberPicture);
+        em.flush();
     }
 
     private Feed createAndSaveFeed(Member member, String content) {
