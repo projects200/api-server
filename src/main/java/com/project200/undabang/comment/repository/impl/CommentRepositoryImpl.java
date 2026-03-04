@@ -7,6 +7,7 @@ import com.project200.undabang.common.entity.QPicture;
 import com.project200.undabang.like.entity.QCommentLike;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.QMember;
+import com.project200.undabang.member.entity.QMemberBlock;
 import com.project200.undabang.member.entity.QMemberPicture;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -33,6 +34,7 @@ public class CommentRepositoryImpl implements CommentRepositoryCustom {
     private final QMemberPicture memberPicture = QMemberPicture.memberPicture;
     private final QPicture picture = QPicture.picture;
     private final QCommentLike commentLike = QCommentLike.commentLike;
+    private final QMemberBlock memberBlock = QMemberBlock.memberBlock;
 
     @Override
     public List<CommentResponse> findCommentsWithChildrenByFeedId(Long feedId, Member currentMember) {
@@ -56,7 +58,8 @@ public class CommentRepositoryImpl implements CommentRepositoryCustom {
                 .where(
                         comment.feed.id.eq(feedId),
                         comment.parent.isNull(),
-                        comment.deletedAt.isNull())
+                        comment.deletedAt.isNull(),
+                        isNotBlockedCommentOwner(currentMember))
                 .orderBy(comment.createdAt.asc())
                 .fetch();
 
@@ -88,7 +91,8 @@ public class CommentRepositoryImpl implements CommentRepositoryCustom {
                 .leftJoin(memberPicture.picture, picture)
                 .where(
                         comment.parent.id.in(parentIds),
-                        comment.deletedAt.isNull())
+                        comment.deletedAt.isNull(),
+                        isNotBlockedCommentOwner(currentMember))
                 .orderBy(comment.createdAt.asc())
                 .fetch();
 
@@ -151,5 +155,30 @@ public class CommentRepositoryImpl implements CommentRepositoryCustom {
                 .where(commentLike.comment.id.eq(comment.id)
                         .and(commentLike.member.memberId.eq(currentMember.getMemberId())))
                 .exists();
+    }
+
+    /**
+     * 차단 관계(양방향)인 회원의 댓글을 제외하는 조건식을 생성합니다.
+     */
+    private BooleanExpression isNotBlockedCommentOwner(Member currentMember) {
+        if (currentMember == null) {
+            return null;
+        }
+
+        return JPAExpressions
+                .selectOne()
+                .from(memberBlock)
+                .where(
+                        memberBlock.memberBlockDeletedAt.isNull(),
+                        memberBlock.blocker.memberId.eq(currentMember.getMemberId())
+                                .and(memberBlock.blocked.memberId
+                                        .eq(comment.member.memberId))
+                                .or(
+                                        memberBlock.blocker.memberId.eq(
+                                                        comment.member.memberId)
+                                                .and(memberBlock.blocked.memberId
+                                                        .eq(currentMember
+                                                                .getMemberId()))))
+                .notExists();
     }
 }
