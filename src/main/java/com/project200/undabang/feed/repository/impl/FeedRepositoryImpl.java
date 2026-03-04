@@ -11,6 +11,7 @@ import com.project200.undabang.feed.entity.QFeedPicture;
 import com.project200.undabang.feed.entity.QFeedType;
 import com.project200.undabang.feed.repository.FeedRepositoryCustom;
 import com.project200.undabang.like.entity.QFeedLike;
+import com.project200.undabang.member.entity.QMemberBlock;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.entity.QMember;
 import com.project200.undabang.member.entity.QMemberPicture;
@@ -45,6 +46,7 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
     private final QFeedPicture feedPicture = QFeedPicture.feedPicture;
     private final QFeedLike feedLike = QFeedLike.feedLike;
     private final QComment comment = QComment.comment;
+    private final QMemberBlock memberBlock = QMemberBlock.memberBlock;
 
     private static final int EXTRA_FETCH_SIZE = 1; // hasNext 확인용 상수
 
@@ -94,8 +96,7 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .leftJoin(feed.feedType, feedType)
                 .where(
                         feed.id.eq(feedId),
-                        feed.deletedAt.isNull()
-                ) // 삭제되지 않은 특정 피드만 조회
+                        feed.deletedAt.isNull()) // 삭제되지 않은 특정 피드만 조회
                 .fetchOne();
 
         // 해당 피드 데이터가 없는 경우 Optional.empty()를 반환
@@ -111,8 +112,8 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .join(feedPicture.picture, picture)
                 .where(
                         feedPicture.feed.id.eq(feedId),
-                        feedPicture.feed.deletedAt.isNull()
-                )
+                        feedPicture.feed.deletedAt.isNull(),
+                        picture.pictureDeletedAt.isNull())
                 .fetch();
 
         return Optional.of(GetSpecificFeedResponse.from(contentRecord, feedPictureList));
@@ -127,7 +128,8 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
      * @param condition     추가로 적용할 조건식
      * @return 특정 조건과 페이징 정보를 기반으로 필터링된 피드 상세 응답의 슬라이스
      */
-    private Slice<FeedDetailResponse> getFeedDetailSlice(Member currentMember, Long prevFeedId, Pageable pageable, BooleanExpression condition) {
+    private Slice<FeedDetailResponse> getFeedDetailSlice(Member currentMember, Long prevFeedId, Pageable pageable,
+            BooleanExpression condition) {
 
         List<FeedDetailRecord> contentRecords = queryFactory
                 .select(Projections.constructor(FeedDetailRecord.class,
@@ -153,8 +155,8 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .where(
                         olderThanPrevFeedId(prevFeedId),
                         feed.deletedAt.isNull(),
-                        condition
-                )
+                        isNotBlockedFeedOwner(currentMember),
+                        condition)
                 .orderBy(feed.id.desc()) // 최근 피드부터 읽기 (정확히는 최근에 작성된 피드가 생성도 늦게 되었다고 가정)
                 .limit(pageable.getPageSize() + EXTRA_FETCH_SIZE) // 다음 피드가 존재하는지 구별하도록 10 + 1 로 설정
                 .fetch();
@@ -190,7 +192,8 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .join(feedPicture.picture, picture)
                 .where(
                         feedPicture.feed.id.in(feedIdList),
-                        feedPicture.feed.deletedAt.isNull()
+                        feedPicture.feed.deletedAt.isNull(),
+                        picture.pictureDeletedAt.isNull()
                 )
                 .transform(GroupBy.groupBy(feedPicture.feed.id)
                         .as(GroupBy.list(Projections.constructor(FeedPictureRecord.class,
@@ -250,5 +253,26 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .from(feedLike)
                 .where(feedLike.feed.id.eq(feed.id).and(feedLike.member.memberId.eq(currentMember.getMemberId())))
                 .exists();
+    }
+
+    /**
+     * 차단 관계(양방향)인 회원의 피드를 제외하는 조건식을 생성합니다.
+     */
+    private BooleanExpression isNotBlockedFeedOwner(Member currentMember) {
+        if (currentMember == null) {
+            return null;
+        }
+
+        return JPAExpressions
+                .selectOne()
+                .from(memberBlock)
+                .where(
+                        memberBlock.memberBlockDeletedAt.isNull(),
+                        memberBlock.blocker.memberId.eq(currentMember.getMemberId())
+                                .and(memberBlock.blocked.memberId.eq(feed.member.memberId))
+                                .or(
+                                        memberBlock.blocker.memberId.eq(feed.member.memberId)
+                                                .and(memberBlock.blocked.memberId.eq(currentMember.getMemberId()))))
+                .notExists();
     }
 }

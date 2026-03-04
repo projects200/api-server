@@ -78,4 +78,24 @@ public class Feed {
         this.updatedAt = LocalDateTime.now();
         this.deletedAt = LocalDateTime.now();
     }
+
+    public void incrementLikesCount() {
+        this.likesCount++;
+    }
+
+    public void decrementLikesCount() {
+        if (this.likesCount > 0) {
+            this.likesCount--;
+        }
+    }
+
+    public void incrementCommentsCount() {
+        this.commentsCount++;
+    }
+
+    public void decrementCommentsCount() {
+        if (this.commentsCount > 0) {
+            this.commentsCount--;
+        }
+    }
 }

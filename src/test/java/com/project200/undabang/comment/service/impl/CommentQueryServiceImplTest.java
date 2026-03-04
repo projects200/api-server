@@ -2,25 +2,33 @@ package com.project200.undabang.comment.service.impl;
 
 import com.project200.undabang.comment.dto.response.CommentResponse;
 import com.project200.undabang.comment.repository.CommentRepository;
+import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.feed.repository.FeedRepository;
+import com.project200.undabang.member.entity.Member;
+import com.project200.undabang.member.repository.MemberRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mockStatic;
 
 @ExtendWith(MockitoExtension.class)
 class CommentQueryServiceImplTest {
@@ -34,6 +42,27 @@ class CommentQueryServiceImplTest {
     @Mock
     private FeedRepository feedRepository;
 
+    @Mock
+    private MemberRepository memberRepository;
+
+    @Mock
+    private Member currentMember;
+
+    private MockedStatic<UserContextHolder> userContextHolderMock;
+    private UUID testUserId;
+
+    @BeforeEach
+    void setUp() {
+        testUserId = UUID.randomUUID();
+        userContextHolderMock = mockStatic(UserContextHolder.class);
+        userContextHolderMock.when(UserContextHolder::getUserId).thenReturn(testUserId);
+    }
+
+    @AfterEach
+    void tearDown() {
+        userContextHolderMock.close();
+    }
+
     private List<CommentResponse> createSampleComments() {
         CommentResponse reply = new CommentResponse(
                 2L,
@@ -43,6 +72,7 @@ class CommentQueryServiceImplTest {
                 null,
                 "대댓글 내용입니다.",
                 3,
+                false,
                 LocalDateTime.now().minusMinutes(30),
                 null, // taggedMember
                 new ArrayList<>());
@@ -55,6 +85,7 @@ class CommentQueryServiceImplTest {
                 null,
                 "부모 댓글 내용입니다.",
                 5,
+                true,
                 LocalDateTime.now().minusHours(1),
                 null, // taggedMember
                 List.of(reply));
@@ -74,7 +105,10 @@ class CommentQueryServiceImplTest {
             List<CommentResponse> mockComments = createSampleComments();
 
             given(feedRepository.existsById(feedId)).willReturn(true);
-            given(commentRepository.findCommentsWithChildrenByFeedId(feedId)).willReturn(mockComments);
+            given(memberRepository.findByMemberIdAndMemberDeletedAtNull(testUserId))
+                    .willReturn(Optional.of(currentMember));
+            given(commentRepository.findCommentsWithChildrenByFeedId(feedId, currentMember))
+                    .willReturn(mockComments);
 
             // when
             List<CommentResponse> result = commentQueryService.getComments(feedId);
@@ -105,7 +139,10 @@ class CommentQueryServiceImplTest {
             Long feedId = 1L;
 
             given(feedRepository.existsById(feedId)).willReturn(true);
-            given(commentRepository.findCommentsWithChildrenByFeedId(feedId)).willReturn(new ArrayList<>());
+            given(memberRepository.findByMemberIdAndMemberDeletedAtNull(testUserId))
+                    .willReturn(Optional.of(currentMember));
+            given(commentRepository.findCommentsWithChildrenByFeedId(feedId, currentMember))
+                    .willReturn(new ArrayList<>());
 
             // when
             List<CommentResponse> result = commentQueryService.getComments(feedId);

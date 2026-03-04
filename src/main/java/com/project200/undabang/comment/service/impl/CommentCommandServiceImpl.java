@@ -3,9 +3,7 @@ package com.project200.undabang.comment.service.impl;
 import com.project200.undabang.comment.dto.request.CreateCommentRequest;
 import com.project200.undabang.comment.dto.response.CreateCommentResponse;
 import com.project200.undabang.comment.entity.Comment;
-import com.project200.undabang.comment.entity.CommentTag;
 import com.project200.undabang.comment.repository.CommentRepository;
-import com.project200.undabang.comment.repository.CommentTagRepository;
 import com.project200.undabang.comment.service.CommentCommandService;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
@@ -26,7 +24,6 @@ import java.util.UUID;
 public class CommentCommandServiceImpl implements CommentCommandService {
 
     private final CommentRepository commentRepository;
-    private final CommentTagRepository commentTagRepository;
     private final FeedRepository feedRepository;
     private final MemberRepository memberRepository;
 
@@ -52,21 +49,8 @@ public class CommentCommandServiceImpl implements CommentCommandService {
         Comment comment = Comment.create(member, feed, parentComment, request);
         Comment savedComment = commentRepository.save(comment);
 
-        // 태그 처리
-        if (request.taggedMemberId() != null) {
-            // 대댓글인지 검증
-            if (request.parentCommentId() == null) {
-                throw new CustomException(ErrorCode.COMMENT_TAG_NOT_ALLOWED);
-            }
-
-            // 태그된 회원 존재 여부 검증
-            Member taggedMember = memberRepository.findById(request.taggedMemberId())
-                    .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-
-            // CommentTag 생성 및 저장
-            CommentTag commentTag = CommentTag.of(savedComment, taggedMember);
-            commentTagRepository.save(commentTag);
-        }
+        // 피드 댓글 수 증가
+        feed.incrementCommentsCount();
 
         return new CreateCommentResponse(savedComment.getId());
     }
@@ -85,6 +69,9 @@ public class CommentCommandServiceImpl implements CommentCommandService {
         if (!comment.getMember().getMemberId().equals(currentUserId)) {
             throw new CustomException(ErrorCode.COMMENT_DELETE_FORBIDDEN);
         }
+
+        // 피드 댓글 수 감소
+        comment.getFeed().decrementCommentsCount();
 
         // Soft delete
         comment.delete();

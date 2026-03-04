@@ -2,28 +2,22 @@ package com.project200.undabang.integrate;
 
 import com.project200.undabang.common.entity.Picture;
 import com.project200.undabang.common.service.S3Service;
+import com.project200.undabang.common.support.IntegrationTestSupport;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.member.entity.Member;
-import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -31,7 +25,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
-import java.io.File;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -46,11 +39,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@Testcontainers
+//@Testcontainers
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-public class ExerciseImageIntegrationTest {
+public class ExerciseImageIntegrationTest extends IntegrationTestSupport {
 
     @Autowired
     private MockMvc mockMvc;
@@ -64,28 +57,28 @@ public class ExerciseImageIntegrationTest {
     @Autowired
     private S3Client s3Client;
 
-    @Container
-    static LocalStackContainer localStack = new LocalStackContainer(
-            DockerImageName.parse("localstack/localstack:latest"))
-            .withServices(LocalStackContainer.Service.S3)
-            .withEnv("DEFAULT_REGION", "ap-northeast-2");
+//    @Container
+//    static LocalStackContainer localStack = new LocalStackContainer(
+//            DockerImageName.parse("localstack/localstack:latest"))
+//            .withServices(LocalStackContainer.Service.S3)
+//            .withEnv("DEFAULT_REGION", "ap-northeast-2");
 
-    private static String BUCKET_NAME = "my-test-image-bucket";
+    private static final String BUCKET_NAME = "my-test-image-bucket";
 
-    @DynamicPropertySource
-    static void overrideProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.cloud.aws.s3.endpoint", () -> localStack.getEndpointOverride(LocalStackContainer.Service.S3).toString());
-        registry.add("spring.cloud.aws.credentials.access-key", localStack::getAccessKey);
-        registry.add("spring.cloud.aws.credentials.secret-key", localStack::getSecretKey);
-        registry.add("spring.cloud.aws.region.static", localStack::getRegion);
-    }
+//    @DynamicPropertySource
+//    static void overrideProperties(DynamicPropertyRegistry registry) {
+//        registry.add("spring.cloud.aws.s3.endpoint", () -> localStack.getEndpointOverride(LocalStackContainer.Service.S3).toString());
+//        registry.add("spring.cloud.aws.credentials.access-key", localStack::getAccessKey);
+//        registry.add("spring.cloud.aws.credentials.secret-key", localStack::getSecretKey);
+//        registry.add("spring.cloud.aws.region.static", localStack::getRegion);
+//    }
 
     @BeforeAll
     static void beforeAll() {
         S3Client s3ClientForSetup = S3Client.builder()
-                .endpointOverride(localStack.getEndpointOverride(LocalStackContainer.Service.S3))
-                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(localStack.getAccessKey(), localStack.getSecretKey())))
-                .region(Region.of(localStack.getRegion()))
+                .endpointOverride(LOCAL_STACK.getEndpointOverride(LocalStackContainer.Service.S3))
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(LOCAL_STACK.getAccessKey(), LOCAL_STACK.getSecretKey())))
+                .region(Region.of(LOCAL_STACK.getRegion()))
                 .build();
         try {
             s3ClientForSetup.createBucket(CreateBucketRequest.builder().bucket(BUCKET_NAME).build());
@@ -94,8 +87,8 @@ public class ExerciseImageIntegrationTest {
         }
         s3ClientForSetup.close();
 
-        URI endpointOverride = localStack.getEndpointOverride(LocalStackContainer.Service.S3);
-        String region = localStack.getRegion();
+        URI endpointOverride = LOCAL_STACK.getEndpointOverride(LocalStackContainer.Service.S3);
+        String region = LOCAL_STACK.getRegion();
 
         System.out.println("LocalStack S3 endpoint: " + endpointOverride);
         System.out.println("LocalStack S3 region: " + region);

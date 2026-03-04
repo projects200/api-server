@@ -60,6 +60,9 @@ public class FeedCommandController {
         return ResponseEntity.ok(CommonResponse.delete(feedCommandService.deleteMemberFeed(feedId)));
     }
 
+    /**
+     * 주어진 피드 ID를 기반으로 피드에 새로운 사진을 추가합니다.
+     */
     @PostMapping(value = "/v1/feeds/{feedId}/pictures", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CommonResponse<List<CreateFeedPictureResponse>>> createFeedPictures(
             @PathVariable @Positive(message = "올바른 피드 식별자를 입력해주세요") Long feedId,
@@ -68,5 +71,16 @@ public class FeedCommandController {
             @RequestPart("pictures") List<MultipartFile> feedPictureList) {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(feedPictureService.createFeedPictures(feedId, feedPictureList)));
+    }
+
+    /**
+     * 주어진 피드 ID와 사진 ID를 기반으로 특정 피드에서 사진을 삭제합니다.
+     */
+    @DeleteMapping("/v1/feeds/{feedId}/pictures/{pictureId}")
+    public ResponseEntity<CommonResponse<Void>> deleteFeedPicture(@PathVariable Long feedId,
+                                                                  @PathVariable Long pictureId) {
+
+        feedPictureService.deleteFeedPicture(feedId, pictureId);
+        return ResponseEntity.ok(CommonResponse.delete(null));
     }
 }
