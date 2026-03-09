@@ -3,7 +3,9 @@ package com.project200.undabang.comment.service.impl;
 import com.project200.undabang.comment.dto.request.CreateCommentRequest;
 import com.project200.undabang.comment.dto.response.CreateCommentResponse;
 import com.project200.undabang.comment.entity.Comment;
+import com.project200.undabang.comment.entity.CommentTag;
 import com.project200.undabang.comment.repository.CommentRepository;
+import com.project200.undabang.comment.repository.CommentTagRepository;
 import com.project200.undabang.comment.service.CommentCommandService;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
@@ -24,6 +26,7 @@ import java.util.UUID;
 public class CommentCommandServiceImpl implements CommentCommandService {
 
     private final CommentRepository commentRepository;
+    private final CommentTagRepository commentTagRepository;
     private final FeedRepository feedRepository;
     private final MemberRepository memberRepository;
 
@@ -48,6 +51,14 @@ public class CommentCommandServiceImpl implements CommentCommandService {
         // 댓글 생성
         Comment comment = Comment.create(member, feed, parentComment, request);
         Comment savedComment = commentRepository.save(comment);
+
+        // 태그된 멤버가 있으면 CommentTag 생성
+        if (request.taggedMemberId() != null) {
+            Member taggedMember = memberRepository
+                    .findByMemberIdAndMemberDeletedAtNull(request.taggedMemberId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+            commentTagRepository.save(CommentTag.of(savedComment, taggedMember));
+        }
 
         // 피드 댓글 수 증가
         feed.incrementCommentsCount();

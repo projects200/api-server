@@ -47,7 +47,7 @@ class CommentCommandControllerTest extends AbstractRestDocSupport {
             // given
             UUID testMemberId = UUID.randomUUID();
             Long feedId = 1L;
-            CreateCommentRequest request = new CreateCommentRequest("댓글 내용입니다.", null);
+            CreateCommentRequest request = new CreateCommentRequest("댓글 내용입니다.", null, null);
             CreateCommentResponse responseDto = new CreateCommentResponse(1L);
 
             BDDMockito
@@ -69,7 +69,8 @@ class CommentCommandControllerTest extends AbstractRestDocSupport {
                                     parameterWithName("feedId").attributes(getTypeFormat(JsonFieldType.NUMBER)).description("댓글을 작성할 피드의 고유 식별자(ID) 입니다.")),
                             requestFields(
                                     fieldWithPath("content").type(JsonFieldType.STRING).description("작성할 댓글의 내용입니다."),
-                                    fieldWithPath("parentCommentId").type(JsonFieldType.NUMBER).description("해당 댓글이 대댓글인 경우, 부모 댓글의 고유 식별자(ID)입니다.").optional()),
+                                    fieldWithPath("parentCommentId").type(JsonFieldType.NUMBER).description("해당 댓글이 대댓글인 경우, 부모 댓글의 고유 식별자(ID)입니다.").optional(),
+                                    fieldWithPath("taggedMemberId").type(JsonFieldType.STRING).description("태그할 멤버의 고유 식별자(ID)입니다.").optional()),
                             responseFields(commonResponseFields(fieldWithPath("data.commentId").type(JsonFieldType.NUMBER).description("작성된 댓글의 고유 식별자(ID) 입니다.")))))
                     .andReturn().getResponse().getContentAsString();
 
@@ -86,7 +87,7 @@ class CommentCommandControllerTest extends AbstractRestDocSupport {
             UUID testMemberId = UUID.randomUUID();
             Long feedId = 1L;
             Long parentCommentId = 1L;
-            CreateCommentRequest request = new CreateCommentRequest("대댓글 내용입니다.", parentCommentId);
+            CreateCommentRequest request = new CreateCommentRequest("대댓글 내용입니다.", parentCommentId, null);
             CreateCommentResponse responseDto = new CreateCommentResponse(2L);
 
             BDDMockito
@@ -114,7 +115,7 @@ class CommentCommandControllerTest extends AbstractRestDocSupport {
             // given
             UUID testMemberId = UUID.randomUUID();
             Long feedId = 999L;
-            CreateCommentRequest request = new CreateCommentRequest("댓글 내용입니다.", null);
+            CreateCommentRequest request = new CreateCommentRequest("댓글 내용입니다.", null, null);
 
             BDDMockito
                     .given(commentCommandService.createComment(BDDMockito.eq(feedId),
@@ -141,7 +142,7 @@ class CommentCommandControllerTest extends AbstractRestDocSupport {
             // given
             UUID testMemberId = UUID.randomUUID();
             Long feedId = 1L;
-            CreateCommentRequest request = new CreateCommentRequest("대댓글 내용입니다.", 999L);
+            CreateCommentRequest request = new CreateCommentRequest("대댓글 내용입니다.", 999L, null);
 
             BDDMockito
                     .given(commentCommandService.createComment(BDDMockito.eq(feedId),
@@ -167,7 +168,7 @@ class CommentCommandControllerTest extends AbstractRestDocSupport {
         void createComment_Failed_Not_Having_Token() throws Exception {
             // given
             Long feedId = 1L;
-            CreateCommentRequest request = new CreateCommentRequest("댓글 내용입니다.", null);
+            CreateCommentRequest request = new CreateCommentRequest("댓글 내용입니다.", null, null);
 
             // when & then
             mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/feeds/{feedId}/comments", feedId)
@@ -201,7 +202,8 @@ class CommentCommandControllerTest extends AbstractRestDocSupport {
                     .andDo(document.document(
                             requestHeaders(HEADER_ACCESS_TOKEN),
                             pathParameters(
-                                    parameterWithName("commentId").attributes(getTypeFormat(JsonFieldType.NUMBER))
+                                    parameterWithName("commentId").attributes(
+                                                    getTypeFormat(JsonFieldType.NUMBER))
                                             .description("삭제할 댓글 ID")),
                             responseFields(commonResponseFieldsOnly())));
 
