@@ -1,7 +1,9 @@
 package com.project200.undabang.comment.repository.impl;
 
+import com.project200.undabang.comment.dto.record.TaggedMemberRecord;
 import com.project200.undabang.comment.dto.response.CommentResponse;
 import com.project200.undabang.comment.entity.QComment;
+import com.project200.undabang.comment.entity.QCommentTag;
 import com.project200.undabang.comment.repository.CommentRepositoryCustom;
 import com.project200.undabang.common.entity.QPicture;
 import com.project200.undabang.like.entity.QCommentLike;
@@ -35,6 +37,8 @@ public class CommentRepositoryImpl implements CommentRepositoryCustom {
     private final QPicture picture = QPicture.picture;
     private final QCommentLike commentLike = QCommentLike.commentLike;
     private final QMemberBlock memberBlock = QMemberBlock.memberBlock;
+    private final QCommentTag commentTag = QCommentTag.commentTag;
+    private final QMember taggedMember = new QMember("taggedMember");
 
     @Override
     public List<CommentResponse> findCommentsWithChildrenByFeedId(Long feedId, Member currentMember) {
@@ -50,11 +54,16 @@ public class CommentRepositoryImpl implements CommentRepositoryCustom {
                         comment.likesCount,
                         isCommentLikedExpression(currentMember),
                         comment.createdAt,
+                        Projections.constructor(TaggedMemberRecord.class,
+                                taggedMember.memberId,
+                                taggedMember.memberNickname),
                         Expressions.constant(Collections.<CommentResponse>emptyList())))
                 .from(comment)
                 .leftJoin(comment.member, member)
                 .leftJoin(member.memberPicture, memberPicture)
                 .leftJoin(memberPicture.picture, picture)
+                .leftJoin(commentTag).on(commentTag.comment.eq(comment))
+                .leftJoin(commentTag.taggedMember, taggedMember)
                 .where(
                         comment.feed.id.eq(feedId),
                         comment.parent.isNull(),
@@ -84,11 +93,16 @@ public class CommentRepositoryImpl implements CommentRepositoryCustom {
                         comment.likesCount,
                         isCommentLikedExpression(currentMember),
                         comment.createdAt,
+                        Projections.constructor(TaggedMemberRecord.class,
+                                taggedMember.memberId,
+                                taggedMember.memberNickname),
                         Expressions.constant(Collections.<CommentResponse>emptyList())))
                 .from(comment)
                 .leftJoin(comment.member, member)
                 .leftJoin(member.memberPicture, memberPicture)
                 .leftJoin(memberPicture.picture, picture)
+                .leftJoin(commentTag).on(commentTag.comment.eq(comment))
+                .leftJoin(commentTag.taggedMember, taggedMember)
                 .where(
                         comment.parent.id.in(parentIds),
                         comment.deletedAt.isNull(),
@@ -111,6 +125,7 @@ public class CommentRepositoryImpl implements CommentRepositoryCustom {
                         parent.likesCount(),
                         parent.commentIsLiked(),
                         parent.createdAt(),
+                        parent.taggedMember(),
                         childrenMap.getOrDefault(parent.commentId(), new ArrayList<>())))
                 .collect(Collectors.toList());
     }

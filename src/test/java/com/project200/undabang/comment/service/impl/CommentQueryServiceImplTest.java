@@ -74,6 +74,7 @@ class CommentQueryServiceImplTest {
                 3,
                 false,
                 LocalDateTime.now().minusMinutes(30),
+                null, // taggedMember
                 new ArrayList<>());
 
         CommentResponse parent = new CommentResponse(
@@ -86,6 +87,7 @@ class CommentQueryServiceImplTest {
                 5,
                 true,
                 LocalDateTime.now().minusHours(1),
+                null, // taggedMember
                 List.of(reply));
 
         return List.of(parent);

@@ -4,6 +4,7 @@ import com.project200.undabang.comment.dto.request.CreateCommentRequest;
 import com.project200.undabang.comment.dto.response.CreateCommentResponse;
 import com.project200.undabang.comment.entity.Comment;
 import com.project200.undabang.comment.repository.CommentRepository;
+import com.project200.undabang.comment.repository.CommentTagRepository;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
@@ -41,6 +42,9 @@ class CommentCommandServiceImplTest {
 
     @Mock
     private CommentRepository commentRepository;
+
+    @Mock
+    private CommentTagRepository commentTagRepository;
 
     @Mock
     private FeedRepository feedRepository;
@@ -99,7 +103,7 @@ class CommentCommandServiceImplTest {
             // given
             UUID userId = UUID.randomUUID();
             Long feedId = 1L;
-            CreateCommentRequest request = new CreateCommentRequest("새 댓글입니다.", null);
+            CreateCommentRequest request = new CreateCommentRequest("새 댓글입니다.", null, null);
 
             Member member = createMember(userId);
             Feed feed = createFeed(feedId, member);
@@ -127,7 +131,7 @@ class CommentCommandServiceImplTest {
             UUID userId = UUID.randomUUID();
             Long feedId = 1L;
             Long parentCommentId = 1L;
-            CreateCommentRequest request = new CreateCommentRequest("대댓글입니다.", parentCommentId);
+            CreateCommentRequest request = new CreateCommentRequest("대댓글입니다.", parentCommentId, null);
 
             Member member = createMember(userId);
             Feed feed = createFeed(feedId, member);
@@ -157,7 +161,7 @@ class CommentCommandServiceImplTest {
             // given
             UUID userId = UUID.randomUUID();
             Long feedId = 999L;
-            CreateCommentRequest request = new CreateCommentRequest("새 댓글입니다.", null);
+            CreateCommentRequest request = new CreateCommentRequest("새 댓글입니다.", null, null);
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 given(UserContextHolder.getUserId()).willReturn(userId);
@@ -177,7 +181,7 @@ class CommentCommandServiceImplTest {
             UUID userId = UUID.randomUUID();
             Long feedId = 1L;
             Long parentCommentId = 999L;
-            CreateCommentRequest request = new CreateCommentRequest("대댓글입니다.", parentCommentId);
+            CreateCommentRequest request = new CreateCommentRequest("대댓글입니다.", parentCommentId, null);
 
             Member member = createMember(userId);
             Feed feed = createFeed(feedId, member);
