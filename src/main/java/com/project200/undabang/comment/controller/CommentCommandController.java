@@ -33,4 +33,5 @@ public class CommentCommandController {
         commentCommandService.deleteComment(commentId);
         return ResponseEntity.ok(CommonResponse.delete(null));
     }
+
 }
