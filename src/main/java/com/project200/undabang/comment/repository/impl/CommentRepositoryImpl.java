@@ -48,7 +48,7 @@ public class CommentRepositoryImpl implements CommentRepositoryCustom {
                         comment.id,
                         member.memberId,
                         member.memberNickname,
-                        memberPicture.memberPicturesUrl,
+                        picture.pictureUrl,
                         Expressions.nullExpression(String.class), // 썸네일은 추후 개발 예정
                         comment.content,
                         comment.likesCount,
@@ -87,7 +87,7 @@ public class CommentRepositoryImpl implements CommentRepositoryCustom {
                         comment.id,
                         member.memberId,
                         member.memberNickname,
-                        memberPicture.memberPicturesUrl,
+                        picture.pictureUrl,
                         Expressions.nullExpression(String.class),
                         comment.content,
                         comment.likesCount,
