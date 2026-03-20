@@ -4,6 +4,7 @@ import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.entity.Picture;
 import com.project200.undabang.common.entity.dto.PictureUploadParameters;
 import com.project200.undabang.common.repository.PictureRepository;
+import com.project200.undabang.common.support.IntegrationTestSupport;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.exception.S3UploadFailedException;
@@ -17,14 +18,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.web.multipart.MultipartFile;
 import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -41,15 +37,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
-@Testcontainers
+//@Testcontainers
 @SpringBootTest
-public class PictureServiceIntegrationTest {
+public class PictureServiceIntegrationTest extends IntegrationTestSupport {
 
-    @Container
-    static LocalStackContainer localStack = new LocalStackContainer(
-            DockerImageName.parse("localstack/localstack:latest"))
-            .withServices(LocalStackContainer.Service.S3)
-            .withEnv("DEFAULT_REGION", "ap-northeast-2");
+    //    @Container
+//    static LocalStackContainer localStack = new LocalStackContainer(
+//            DockerImageName.parse("localstack/localstack:latest"))
+//            .withServices(LocalStackContainer.Service.S3)
+//            .withEnv("DEFAULT_REGION", "ap-northeast-2");
     @Autowired
     private PictureService pictureService;
     @Autowired
@@ -67,13 +63,13 @@ public class PictureServiceIntegrationTest {
     @MockitoSpyBean
     private PictureRepository pictureRepositorySpy;
 
-    @DynamicPropertySource
-    static void overrideProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.cloud.aws.s3.endpoint", () -> localStack.getEndpointOverride(LocalStackContainer.Service.S3).toString());
-        registry.add("spring.cloud.aws.credentials.access-key", localStack::getAccessKey);
-        registry.add("spring.cloud.aws.credentials.secret-key", localStack::getSecretKey);
-        registry.add("spring.cloud.aws.region.static", localStack::getRegion);
-    }
+//    @DynamicPropertySource
+//    static void overrideProperties(DynamicPropertyRegistry registry) {
+//        registry.add("spring.cloud.aws.s3.endpoint", () -> localStack.getEndpointOverride(LocalStackContainer.Service.S3).toString());
+//        registry.add("spring.cloud.aws.credentials.access-key", localStack::getAccessKey);
+//        registry.add("spring.cloud.aws.credentials.secret-key", localStack::getSecretKey);
+//        registry.add("spring.cloud.aws.region.static", localStack::getRegion);
+//    }
 
     @BeforeEach
     void setUp() {
@@ -82,9 +78,9 @@ public class PictureServiceIntegrationTest {
         pictureRepository.deleteAllInBatch();
 
         S3Client s3 = S3Client.builder()
-                .endpointOverride(localStack.getEndpointOverride(LocalStackContainer.Service.S3))
-                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(localStack.getAccessKey(), localStack.getSecretKey())))
-                .region(Region.of(localStack.getRegion()))
+                .endpointOverride(LOCAL_STACK.getEndpointOverride(LocalStackContainer.Service.S3))
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(LOCAL_STACK.getAccessKey(), LOCAL_STACK.getSecretKey())))
+                .region(Region.of(LOCAL_STACK.getRegion()))
                 .build();
         try {
             s3.createBucket(CreateBucketRequest.builder().bucket(BUCKET_NAME).build());

@@ -1,6 +1,3 @@
-INSERT INTO post_type (post_type_name, post_type_desc)
-VALUES ('오운완 게시판', '오늘의 운동한 모습이나 결과를 자랑하는 게시판입니다');
-
 INSERT INTO comment_report_subjects (comment_report_subject_name)
 VALUES ('스팸홍보/도배입니다.'),
        ('음란물입니다.'),
@@ -221,7 +218,7 @@ VALUES ('레슬링', 'https://undabang-public-assets.s3.ap-northeast-2.amazonaws
        ('미식축구',
         'https://undabang-public-assets.s3.ap-northeast-2.amazonaws.com/images/exercises/American_football.png');
 
-INSERT INTO policies (policy_key, policy_value, policy_unit, policy_description)
+INSERT INTO policies (policy_id, policy_key, policy_value, policy_unit, policy_description)
 VALUES (21, 'PREFERRED_EXERCISE_MAX_COUNT', '5', 'COUNT', '선호 운동 최대 보유 갯수');
 
 INSERT INTO policies (policy_id, policy_key, policy_value, policy_unit, policy_description)
@@ -229,3 +226,57 @@ VALUES (22, 'EXERCISE_LOCATION_MAX_DISTANCE_METER', '5000', 'METERS', '현재 �
 
 INSERT INTO policy_group_mappings (policy_id, policy_groups_id)
 VALUES (22, 5);
+
+INSERT INTO feed_types (feed_type_name, feed_type_desc, feed_type_is_active)
+VALUES
+('레슬링 다방', '레슬링 기술과 훈련 과정, 실전 경험을 공유하는 피드입니다.', 1),
+('수구 다방', '수구 경기와 수중 훈련 노하우를 나누는 피드입니다.', 1),
+('배구 다방', '배구 경기 후기와 팀 플레이 이야기를 나누는 피드입니다.', 1),
+('테니스 다방', '테니스 플레이와 연습 팁, 레슨 정보를 공유하는 피드입니다.', 1),
+('태권도 다방', '태권도 수련 과정과 품새, 겨루기 경험을 나누는 피드입니다.', 1),
+('탁구 다방', '탁구 경기 결과와 연습 영상을 공유하는 피드입니다.', 1),
+('스쿼시 다방', '스쿼시 플레이와 체력 훈련을 기록하는 피드입니다.', 1),
+('축구 다방', '축구 경기와 전술, 팀 활동을 자유롭게 소통하는 피드입니다.', 1),
+('스키 다방', '스키 시즌 이야기와 슬로프 후기를 공유하는 피드입니다.', 1),
+('런닝 다방', '러닝 기록과 코스, 목표 달성을 공유하는 피드입니다.', 1),
+('럭비 다방', '럭비 경기와 강도 높은 훈련 경험을 나누는 피드입니다.', 1),
+('조정 다방', '조정 운동과 수상 훈련 기록을 공유하는 피드입니다.', 1),
+('파워 리프팅 다방', '파워 리프팅 중량 기록과 훈련 루틴을 공유하는 피드입니다.', 1),
+('필라테스 다방', '필라테스 동작과 자세 교정 경험을 기록하는 피드입니다.', 1),
+('마라톤 다방', '마라톤 도전 과정과 대회 준비 이야기를 나누는 피드입니다.', 1),
+('핸드볼 다방', '핸드볼 경기와 팀 훈련 소식을 공유하는 피드입니다.', 1),
+('골프 다방', '골프 라운딩 후기와 연습 경험을 나누는 피드입니다.', 1),
+('게이트볼 다방', '게이트볼을 즐기는 사람들의 소통 공간입니다.', 1),
+('풋살 다방', '풋살 경기와 팀 활동을 공유하는 피드입니다.', 1),
+('헬스 다방', '헬스와 웨이트 트레이닝 기록을 공유하는 피드입니다.', 1),
+('낚시 다방', '낚시 기록과 조과, 포인트 정보를 나누는 피드입니다.', 1),
+('펜싱 다방', '펜싱 훈련과 경기 경험을 공유하는 피드입니다.', 1),
+('컬링 다방', '컬링 경기와 전략, 팀워크를 나누는 피드입니다.', 1),
+('크로스핏 다방', '고강도 크로스핏 운동 기록을 공유하는 피드입니다.', 1),
+('크리켓 다방', '크리켓 경기를 즐기는 사람들의 피드입니다.', 1),
+('복싱 다방', '복싱 훈련과 스파링 경험을 나누는 피드입니다.', 1),
+('볼링 다방', '볼링 점수와 플레이 경험을 공유하는 피드입니다.', 1),
+('자전거 다방', '라이딩 코스와 자전거 운동 기록을 공유하는 피드입니다.', 1),
+('농구 다방', '농구 경기와 플레이 이야기를 나누는 피드입니다.', 1),
+('야구 다방', '야구 경기와 사회인 야구 활동을 공유하는 피드입니다.', 1),
+('배드민턴 다방', '배드민턴을 즐기는 사람들의 소통 피드입니다.', 1),
+('미식축구 다방', '미식축구 경기와 전술 이야기를 나누는 피드입니다.', 1);
+
+
+-- 피드 좋아요 인덱스 : (피드ID + 회원ID)
+CREATE INDEX idx_feed_likes_feed_member ON feed_likes (feed_id, member_id);
+
+-- 댓글 인덱스 : (피드ID + 회원ID)
+CREATE INDEX idx_comments_feed_member ON comments (feed_id, member_id);
+
+-- 댓글 좋아요 인덱스: (댓글ID + 회원ID)
+CREATE INDEX idx_comment_likes_comment_member ON comment_likes (comment_id, member_id);
+
+INSERT INTO policies (policy_id, policy_key, policy_value, policy_unit, policy_description)
+VALUES (23, 'FEED_PICTURE_MAX_COUNT', '5', 'COUNT', '저장할 수 있는 최대 피드 사진 수');
+
+INSERT INTO policy_groups (policy_groups_id, policy_groups_name)
+VALUES (6, 'feed');
+
+INSERT INTO policy_group_mappings (policy_id, policy_groups_id)
+VALUES (23, 6);

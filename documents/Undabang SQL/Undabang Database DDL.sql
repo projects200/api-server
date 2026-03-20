@@ -25,6 +25,7 @@ DROP TABLE IF EXISTS notification_types;
 DROP TABLE IF EXISTS fcm_tokens;
 
 DROP TABLE IF EXISTS comment_likes;
+DROP TABLE IF EXISTS comment_tags;
 DROP TABLE IF EXISTS comments;
 DROP TABLE IF EXISTS feed_likes;
 DROP TABLE IF EXISTS feed_pictures;
@@ -613,7 +614,7 @@ CREATE TABLE feeds
 (
     feed_id           BIGINT   NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '피드 식별자',
     member_id         CHAR(36) NOT NULL COMMENT 'UUID_SELF',
-    feed_type_id      BIGINT   NOT NULL,
+    feed_type_id BIGINT NULL,
     feed_content      TEXT     NOT NULL,
     feed_likes_cnt    INTEGER  NOT NULL DEFAULT 0,
     feed_comments_cnt INTEGER  NOT NULL DEFAULT 0,
@@ -658,6 +659,17 @@ CREATE TABLE comments
 
     CONSTRAINT FK_comments_member FOREIGN KEY (member_id) REFERENCES members (member_id),
     CONSTRAINT FK_comments_feed FOREIGN KEY (feed_id) REFERENCES feeds (feed_id)
+);
+
+CREATE TABLE comment_tags
+(
+    comment_tag_id         BIGINT   NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '댓글 태그 식별자',
+    comment_id             BIGINT   NOT NULL,
+    tagged_member_id       CHAR(36) NOT NULL COMMENT '태그된 회원 UUID',
+    comment_tag_created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT FK_comment_tags_comment FOREIGN KEY (comment_id) REFERENCES comments (comment_id),
+    CONSTRAINT FK_comment_tags_member FOREIGN KEY (tagged_member_id) REFERENCES members (member_id)
 );
 
 CREATE TABLE comment_likes

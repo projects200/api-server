@@ -20,8 +20,5 @@ export ACTIVE_APP_CONF=sudo sed -i 's|export ACTIVE_APP_CONF="active_app.conf"|e
  # Nginx가 include할 활성 앱 upstream 설정 파일 이름
 
 # 헬스 체크 설정
-export MAX_HEALTH_RETRIES=20       # 30초 * 20 회
-export HEALTH_CHECK_INTERVAL=30
-
-# 초기 구동 대기 시간
-export INITIAL_WAIT_TIME=90 # 90초 동안 대기
+export MAX_HEALTH_RETRIES=30 # 최대 재시도 횟수
+export HEALTH_CHECK_INTERVAL=10 # 헬스 체크 간격 (초)

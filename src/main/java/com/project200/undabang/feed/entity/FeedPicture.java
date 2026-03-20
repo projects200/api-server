@@ -27,4 +27,10 @@ public class FeedPicture {
     @JoinColumn(name = "feed_id", nullable = false, updatable = false)
     private Feed feed;
 
+    public static FeedPicture of(Picture picture, Feed feed) {
+        return FeedPicture.builder()
+                .picture(picture)
+                .feed(feed)
+                .build();
+    }
 }

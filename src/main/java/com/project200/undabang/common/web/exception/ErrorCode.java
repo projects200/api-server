@@ -96,7 +96,25 @@ public enum ErrorCode {
     PREFERRED_EXERCISE_MAX_COUNT_VIOLATION(409, "PREFERRED_EXERCISE_MAX_COUNT_VIOLATION", "선호 운동은 최대 5개까지만 등록할 수 있습니다."),
     PREFERRED_EXERCISE_DUPLICATED(409, "PREFERRED_EXERCISE_DUPLICATED", "이미 등록된 선호 운동 종목입니다."),
     PREFERRED_EXERCISE_NOT_FOUND(404, "PREFERRED_EXERCISE_NOT_FOUND", "존재하지 않는 운동 종류입니다."),
-    PREFERRED_EXERCISE_DUPLICATED_IN_REQUEST(400, "PREFERRED_EXERCISE_DUPLICATED_IN_REQUEST", "요청 내 선호 운동 종목이 중복되었습니다.");
+    PREFERRED_EXERCISE_DUPLICATED_IN_REQUEST(400, "PREFERRED_EXERCISE_DUPLICATED_IN_REQUEST", "요청 내 선호 운동 종목이 중복되었습니다."),
+
+    // 댓글 관련 에러
+    COMMENT_NOT_FOUND(404, "COMMENT_NOT_FOUND", "존재하지 않는 댓글입니다."),
+    COMMENT_DELETE_FORBIDDEN(403, "COMMENT_DELETE_FORBIDDEN", "댓글 삭제 권한이 없습니다."),
+    COMMENT_PARENT_NOT_FOUND(404, "COMMENT_PARENT_NOT_FOUND", "부모 댓글을 찾을 수 없습니다."),
+
+    // 댓글 태그 관련 에러
+    COMMENT_TAG_NOT_ALLOWED(400, "COMMENT_TAG_NOT_ALLOWED", "대댓글에서만 태그 기능을 사용할 수 있습니다."),
+
+    // 피드 관련 에러
+    FEED_NOT_FOUND(404, "FEED_NOT_FOUND", "존재하지 않는 피드입니다."),
+
+    // 피드 타입 관련 에러
+    FEED_TYPE_NOT_FOUND(404, "FEED_TYPE_NOT_FOUND", "존재하지 않는 피드 타입입니다."),
+
+    // 피드 사진 관련 에러
+    FEED_PICTURE_NOT_FOUND(404, "FEED_PICTURE_NOT_FOUND", "존재하지 않는 피드 사진입니다."),
+    FEED_PICTURE_MAX_COUNT_EXCEED(409, "FEED_PICTURE_MAX_COUNT_EXCEED", "저장할 수 있는 최대 피드 사진 갯수를 초과했습니다.");
 
     private final HttpStatusCode status;
     private final String code;

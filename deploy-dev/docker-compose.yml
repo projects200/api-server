@@ -10,11 +10,11 @@ services:
     networks:
       - dev-server-network
     environment:
-      # 개발 서버용 초경량 메모리 설정
-      # Xms128m: 시작할 때 128MB로 시작
-      # Xmx256m: 최대 256MB까지만 사용
-      # -XX:+UseSerialGC: 코어가 적은 CPU에서 효율적
       - JAVA_OPTS=-Xms128m -Xmx256m -XX:+UseSerialGC
+    deploy:
+      resources:
+        limits:
+          memory: 400M
 
 networks:
   dev-server-network:

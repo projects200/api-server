@@ -2,6 +2,7 @@ package com.project200.undabang.common.message.impl;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.project200.undabang.common.message.MessageSender;
+import com.project200.undabang.common.support.IntegrationTestSupport;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
 import com.project200.undabang.policy.service.PolicyService;
 import com.project200.undabang.score.validation.ExercisePolicyValidator;
@@ -9,34 +10,27 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import java.util.concurrent.TimeUnit;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.awaitility.Awaitility.await;
 
-@Testcontainers
+//@Testcontainers
 @SpringBootTest
-class SlackMessageSenderTest {
+class SlackMessageSenderTest extends IntegrationTestSupport {
 
-    @Container
-    static GenericContainer<?> wiremockContainer = new GenericContainer<>(DockerImageName.parse("wiremock/wiremock:3.5.2-1"))
-            .withExposedPorts(8080)
-            .waitingFor(Wait.forHttp("/__admin/mappings").forStatusCode(200))
-            .withCommand("--verbose")
-            .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(SlackMessageSenderTest.class)));
+//    @Container
+//    static GenericContainer<?> wiremockContainer = new GenericContainer<>(DockerImageName.parse("wiremock/wiremock:3.5.2-1"))
+//            .withExposedPorts(8080)
+//            .waitingFor(Wait.forHttp("/__admin/mappings").forStatusCode(200))
+//            .withCommand("--verbose")
+//            .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(SlackMessageSenderTest.class)));
 
     @Nested
     @SpringBootTest
@@ -57,13 +51,18 @@ class SlackMessageSenderTest {
         static void overrideProperties(DynamicPropertyRegistry registry) {
             String webhookPath = "/mock/slack-webhook";
             registry.add("slack.webhook.url",
-                    () -> String.format("http://%s:%d%s", wiremockContainer.getHost(), wiremockContainer.getFirstMappedPort(), webhookPath));
+                    () -> String.format("http://%s:%d%s",
+                            WIREMOCK_CONTAINER.getHost(),
+                            WIREMOCK_CONTAINER.getFirstMappedPort(),
+                            webhookPath));
+//            registry.add("slack.webhook.url",
+//                    () -> String.format("http://%s:%d%s", wiremockContainer.getHost(), wiremockContainer.getFirstMappedPort(), webhookPath));
             registry.add("slack.webhook.enabled", () -> "true");
         }
 
         @BeforeEach
         void setUp() {
-            WireMock.configureFor(wiremockContainer.getHost(), wiremockContainer.getFirstMappedPort());
+            WireMock.configureFor(WIREMOCK_CONTAINER.getHost(), WIREMOCK_CONTAINER.getFirstMappedPort());
             WireMock.reset();
         }
 
@@ -175,14 +174,19 @@ class SlackMessageSenderTest {
         @DynamicPropertySource
         static void overrideProperties(DynamicPropertyRegistry registry) {
             String webhookPath = "/mock/slack-webhook";
+//            registry.add("slack.webhook.url",
+//                    () -> String.format("http://%s:%d%s", wiremockContainer.getHost(), wiremockContainer.getFirstMappedPort(), webhookPath));
             registry.add("slack.webhook.url",
-                    () -> String.format("http://%s:%d%s", wiremockContainer.getHost(), wiremockContainer.getFirstMappedPort(), webhookPath));
+                    () -> String.format("http://%s:%d%s",
+                            WIREMOCK_CONTAINER.getHost(),
+                            WIREMOCK_CONTAINER.getFirstMappedPort(),
+                            webhookPath));
             registry.add("slack.webhook.enabled", () -> "false");
         }
 
         @BeforeEach
         void setUp() {
-            WireMock.configureFor(wiremockContainer.getHost(), wiremockContainer.getFirstMappedPort());
+            WireMock.configureFor(WIREMOCK_CONTAINER.getHost(), WIREMOCK_CONTAINER.getFirstMappedPort());
             WireMock.reset();
         }
 

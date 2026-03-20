@@ -26,9 +26,8 @@ public class Feed {
     @JoinColumn(name = "member_id", nullable = false, updatable = false)
     private Member member;
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "feed_type_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "feed_type_id")
     private FeedType feedType;
 
     @NotNull
@@ -57,4 +56,46 @@ public class Feed {
 
     @Column(name = "feed_deleted_at")
     private LocalDateTime deletedAt;
+
+    public static Feed create(Member member, String feedContent, FeedType feedType) {
+        return Feed.builder()
+                .member(member)
+                .feedContent(feedContent)
+                .feedType(feedType)
+                .likesCount(0)
+                .commentsCount(0)
+                .createdAt(LocalDateTime.now())
+                .build();
+    }
+
+    public void update(String feedContent, FeedType feedType) {
+        this.feedContent = feedContent;
+        this.feedType = feedType;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void delete() {
+        this.updatedAt = LocalDateTime.now();
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public void incrementLikesCount() {
+        this.likesCount++;
+    }
+
+    public void decrementLikesCount() {
+        if (this.likesCount > 0) {
+            this.likesCount--;
+        }
+    }
+
+    public void incrementCommentsCount() {
+        this.commentsCount++;
+    }
+
+    public void decrementCommentsCount() {
+        if (this.commentsCount > 0) {
+            this.commentsCount--;
+        }
+    }
 }
