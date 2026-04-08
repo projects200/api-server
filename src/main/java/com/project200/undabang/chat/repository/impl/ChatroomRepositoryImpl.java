@@ -174,6 +174,6 @@ public class ChatroomRepositoryImpl implements ChatroomRepositoryCustom {
                 .where(chatroomMember.member.in(currentMember, targetMember))
                 .groupBy(chatroomMember.chatroom.id)
                 .having(chatroomMember.count().eq(2L))
-                .fetchFirst();
+                .fetchOne();
     }
 }
