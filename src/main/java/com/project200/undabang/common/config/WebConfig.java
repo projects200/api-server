@@ -2,6 +2,8 @@ package com.project200.undabang.common.config;
 
 import com.project200.undabang.common.web.interceptor.XUserEmailCheckInterceptor;
 import com.project200.undabang.common.web.interceptor.XUserIdCheckInterceptor;
+import com.project200.undabang.member.repository.MemberRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -13,7 +15,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * 이 클래스는 인터셉터 등록 및 기타 웹 관련 설정을 담당합니다.
  */
 @Configuration
+@RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
+
+    private final MemberRepository memberRepository;
 
     /**
      * XUserIdCheckInterceptor 빈을 생성합니다.
@@ -23,7 +28,7 @@ public class WebConfig implements WebMvcConfigurer {
      */
     @Bean
     public XUserIdCheckInterceptor xUserIdCheckInterceptor() {
-        return new XUserIdCheckInterceptor();
+        return new XUserIdCheckInterceptor(memberRepository);
     }
 
     @Bean
