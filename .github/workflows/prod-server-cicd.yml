@@ -60,7 +60,7 @@ jobs:
       - name: Build and push image to Amazon ECR
         if: ${{ github.ref == 'refs/heads/main' }}
         env:
-          REGISTRY: 825773631552.dkr.ecr.ap-northeast-2.amazonaws.com
+          REGISTRY: 867637277997.dkr.ecr.ap-northeast-2.amazonaws.com
           REPOSITORY: undabang/prod-server-repository
           IMAGE_TAG: latest
         run: |

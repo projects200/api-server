@@ -6,7 +6,7 @@ export DEPLOY_DIR="/home/ec2-user/deploy/prod/zip"
 export SCRIPTS_DIR="${DEPLOY_DIR}/scripts"
 
 # ECR 설정
-export ECR_REGISTRY="825773631552.dkr.ecr.ap-northeast-2.amazonaws.com"
+export ECR_REGISTRY="867637277997.dkr.ecr.ap-northeast-2.amazonaws.com"
 export ECR_REPOSITORY="undabang/prod-server-repository"
 export IMAGE_TAG="latest"
 
