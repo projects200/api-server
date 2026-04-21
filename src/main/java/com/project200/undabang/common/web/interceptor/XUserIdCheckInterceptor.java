@@ -82,12 +82,19 @@ public class XUserIdCheckInterceptor implements HandlerInterceptor {
                 return true;
             } catch (IllegalArgumentException e) {
                 // UUID 형식이 잘못된 경우 로깅 또는 에러 처리
-                log.error("X-USER-ID header가 유효하지 않은 UUID 형식입니다: " + userIdString, e);
+                log.error("X-USER-ID header가 유효하지 않은 UUID 형식입니다: {}", userIdString, e);
                 throw new CustomException(ErrorCode.INVALID_USER_ID_FORMAT);
             }
         }
 
-        log.error("X-USER-ID / X-USER-EMAIL 헤더가 모두 누락되었습니다: " + request.getRequestURI());
+        // X-USER-EMAIL 이 있었지만 DB 에서 회원을 찾지 못했고 X-USER-ID 도 없는 경우 → 인증 실패
+        if (userEmail != null && !userEmail.isEmpty()) {
+            log.error("X-USER-EMAIL로 회원을 찾을 수 없고 X-USER-ID도 없습니다: uri={}, email={}",
+                    request.getRequestURI(), userEmail);
+            throw new CustomException(ErrorCode.AUTHENTICATION_FAILED);
+        }
+
+        log.error("X-USER-ID / X-USER-EMAIL 헤더가 모두 누락되었습니다: {}", request.getRequestURI());
         throw new CustomException(ErrorCode.USER_ID_HEADER_MISSING);
     }
 
