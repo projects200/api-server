@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.Nullable;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.util.Optional;
@@ -37,6 +38,11 @@ public class XUserIdCheckInterceptor implements HandlerInterceptor {
     /** X-USER-EMAIL 헤더 상수 */
     private static final String USER_EMAIL_HEADER = "X-USER-EMAIL";
 
+    /**
+     * MemberRepository 는 @WebMvcTest 등 JPA가 없는 슬라이스 테스트 컨텍스트에서는 null 일 수 있으며,
+     * 이 경우 email 기반 조회는 생략되고 기존 X-USER-ID(sub) fallback 만 수행됩니다.
+     */
+    @Nullable
     private final MemberRepository memberRepository;
 
     /**
@@ -61,7 +67,8 @@ public class XUserIdCheckInterceptor implements HandlerInterceptor {
         String userIdString = request.getHeader(USER_ID_HEADER);
 
         // 우선순위 1: email로 DB 조회 (Cognito 이전 후 sub 값이 바뀌어도 동작)
-        if (userEmail != null && !userEmail.isEmpty()) {
+        // memberRepository 가 주입되지 않은 테스트 컨텍스트에서는 건너뛰고 X-USER-ID fallback 사용
+        if (memberRepository != null && userEmail != null && !userEmail.isEmpty()) {
             Optional<Member> memberOpt = memberRepository.findByMemberEmailAndMemberDeletedAtNull(userEmail);
             if (memberOpt.isPresent()) {
                 UserContextHolder.setUserId(memberOpt.get().getMemberId());

@@ -3,7 +3,7 @@ package com.project200.undabang.common.config;
 import com.project200.undabang.common.web.interceptor.XUserEmailCheckInterceptor;
 import com.project200.undabang.common.web.interceptor.XUserIdCheckInterceptor;
 import com.project200.undabang.member.repository.MemberRepository;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -15,20 +15,26 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * 이 클래스는 인터셉터 등록 및 기타 웹 관련 설정을 담당합니다.
  */
 @Configuration
-@RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
 
-    private final MemberRepository memberRepository;
+    private final ObjectProvider<MemberRepository> memberRepositoryProvider;
+
+    public WebConfig(ObjectProvider<MemberRepository> memberRepositoryProvider) {
+        this.memberRepositoryProvider = memberRepositoryProvider;
+    }
 
     /**
      * XUserIdCheckInterceptor 빈을 생성합니다.
      * 이 인터셉터는 요청에 X-User-Id 헤더가 있는지 확인합니다.
+     * <p>
+     * MemberRepository 는 {@link ObjectProvider} 로 주입받아 JPA 컨텍스트가 없는
+     * 테스트 슬라이스(@WebMvcTest 등)에서도 컨텍스트 로딩이 실패하지 않도록 합니다.
      *
      * @return XUserIdCheckInterceptor 인스턴스
      */
     @Bean
     public XUserIdCheckInterceptor xUserIdCheckInterceptor() {
-        return new XUserIdCheckInterceptor(memberRepository);
+        return new XUserIdCheckInterceptor(memberRepositoryProvider.getIfAvailable());
     }
 
     @Bean
@@ -56,7 +62,7 @@ public class WebConfig implements WebMvcConfigurer {
         // build reports를 위한 리소스 핸들러
         registry.addResourceHandler("/build/reports/**")
                 .addResourceLocations("classpath:/static/", "file:./build/reports/")
-                .setCachePeriod(3600) 
+                .setCachePeriod(3600)
                 .resourceChain(true);
 
         // REST Docs 문서를 위한 리소스 핸들러
