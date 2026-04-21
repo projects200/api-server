@@ -94,14 +94,14 @@ public class XUserIdCheckInterceptor implements HandlerInterceptor {
             }
         }
 
-        // X-USER-EMAIL 이 있었지만 DB 에서 회원을 찾지 못했고 X-USER-ID 도 없는 경우 → 인증 실패
+        // X-USER-ID 가 없어 컨텍스트를 설정할 수 없음
+        // (X-USER-EMAIL 이 있었지만 회원을 찾지 못한 케이스도 여기 포함 — 가입 전 유저일 수 있음)
         if (userEmail != null && !userEmail.isEmpty()) {
-            log.error("X-USER-EMAIL로 회원을 찾을 수 없고 X-USER-ID도 없습니다: uri={}, email={}",
+            log.error("X-USER-EMAIL은 있으나 회원 조회 실패 + X-USER-ID 누락: uri={}, email={}",
                     request.getRequestURI(), userEmail);
-            throw new CustomException(ErrorCode.AUTHENTICATION_FAILED);
+        } else {
+            log.error("X-USER-ID / X-USER-EMAIL 헤더가 모두 누락되었습니다: {}", request.getRequestURI());
         }
-
-        log.error("X-USER-ID / X-USER-EMAIL 헤더가 모두 누락되었습니다: {}", request.getRequestURI());
         throw new CustomException(ErrorCode.USER_ID_HEADER_MISSING);
     }
 
