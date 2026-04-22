@@ -1,5 +1,5 @@
 restdocs:
   uris:
     scheme: https
-    host: api.undabang.store
+    host: api.undabang.site
     port: 443
