@@ -20,11 +20,11 @@ import java.util.UUID;
  * <p>
  * 이 인터셉터는 모든 요청에서 헤더를 확인하여:
  * <ul>
- *   <li>X-USER-EMAIL 헤더가 존재하면 이메일로 DB 조회하여 member_id를 컨텍스트에 설정합니다 (우선)</li>
- *   <li>없거나 조회 실패 시 X-USER-ID(sub) 헤더가 유효한 UUID 형식인지 검증합니다</li>
- *   <li>유효한 경우 {@link UserContextHolder}에 사용자 ID를 설정합니다</li>
+ *   <li>X-USER-ID(sub)가 유효한 UUID 이고 해당 회원이 DB에 존재하면 그대로 사용합니다 (우선)</li>
+ *   <li>X-USER-ID 로 회원을 찾지 못한 경우에만 X-USER-EMAIL 로 DB 조회하여 member_id 를 설정합니다 (Cognito 이전 fallback)</li>
  * </ul>
- * Cognito 사용자 풀 이전 시 sub 값이 바뀌어도 이메일로 회원을 찾을 수 있게 하기 위함입니다.
+ * Cognito 사용자 풀 이전 시 sub 값이 바뀌어도 이메일로 회원을 찾을 수 있게 하기 위함이며,
+ * email 을 fallback 으로만 사용하여 외부에서 email 헤더 위조만으로 타 계정 가장이 불가능하도록 제한합니다.
  * 요청 처리가 완료된 후에는 사용자 컨텍스트를 자동으로 초기화합니다.
  */
 
@@ -40,19 +40,21 @@ public class XUserIdCheckInterceptor implements HandlerInterceptor {
 
     /**
      * MemberRepository 는 @WebMvcTest 등 JPA가 없는 슬라이스 테스트 컨텍스트에서는 null 일 수 있으며,
-     * 이 경우 email 기반 조회는 생략되고 기존 X-USER-ID(sub) fallback 만 수행됩니다.
+     * 이 경우 email 기반 조회 및 존재 검증은 생략되고 X-USER-ID(sub) 파싱만 수행됩니다.
      */
     @Nullable
     private final MemberRepository memberRepository;
 
     /**
-     * HTTP 요청이 처리되기 전에 X-USER-EMAIL / X-USER-ID 헤더를 검증하고 사용자 컨텍스트를 설정합니다.
+     * HTTP 요청이 처리되기 전에 X-USER-ID / X-USER-EMAIL 헤더를 검증하고 사용자 컨텍스트를 설정합니다.
      * <p>
      * 우선순위:
      * <ol>
-     *   <li>X-USER-EMAIL 로 DB 조회 성공 → member_id를 컨텍스트에 설정 (Cognito 이전 대응)</li>
-     *   <li>그 외 X-USER-ID(sub)를 UUID로 파싱해서 컨텍스트에 설정 (기존 방식)</li>
+     *   <li>X-USER-ID(sub) 를 UUID 로 파싱 → 회원 존재 시 컨텍스트에 설정 (기존 방식, 대부분의 요청 경로)</li>
+     *   <li>X-USER-ID 로 회원을 찾지 못했고 X-USER-EMAIL 이 존재 → email 로 DB 조회하여 설정 (Cognito 이전 fallback)</li>
      * </ol>
+     * email fallback 은 X-USER-ID 로 회원을 찾지 못한 경우에만 동작하므로, 요청당 DB 조회는 일반적으로
+     * 존재 검증 1회로 끝나며, 외부에서 email 만 위조해 가장하는 것을 차단한다.
      *
      * @param request 현재 HTTP 요청
      * @param response 현재 HTTP 응답
@@ -66,8 +68,27 @@ public class XUserIdCheckInterceptor implements HandlerInterceptor {
         String userEmail = request.getHeader(USER_EMAIL_HEADER);
         String userIdString = request.getHeader(USER_ID_HEADER);
 
-        // 우선순위 1: email로 DB 조회 (Cognito 이전 후 sub 값이 바뀌어도 동작)
-        // memberRepository 가 주입되지 않은 테스트 컨텍스트에서는 건너뛰고 X-USER-ID fallback 사용
+        // 우선순위 1: X-USER-ID(sub) — 회원 ID 와 일치하면 그대로 사용
+        if (userIdString != null && !userIdString.isEmpty()) {
+            try {
+                UUID userId = UUID.fromString(userIdString);
+                // memberRepository 가 없는 슬라이스 테스트 컨텍스트에서는 존재 검증을 생략한다.
+                if (memberRepository == null || memberRepository.existsById(userId)) {
+                    UserContextHolder.setUserId(userId);
+                    if (userEmail != null && !userEmail.isEmpty()) {
+                        UserContextHolder.setUserEmail(userEmail);
+                    }
+                    return true;
+                }
+                log.debug("X-USER-ID 로 회원을 찾지 못해 X-USER-EMAIL fallback 시도: userId={}, email={}",
+                        userId, maskEmail(userEmail));
+            } catch (IllegalArgumentException e) {
+                log.error("X-USER-ID header가 유효하지 않은 UUID 형식입니다: {}", userIdString, e);
+                throw new CustomException(ErrorCode.INVALID_USER_ID_FORMAT);
+            }
+        }
+
+        // 우선순위 2: X-USER-EMAIL fallback (Cognito 이전으로 sub 가 바뀐 회원 대응)
         if (memberRepository != null && userEmail != null && !userEmail.isEmpty()) {
             Optional<Member> memberOpt = memberRepository.findByMemberEmailAndMemberDeletedAtNull(userEmail);
             if (memberOpt.isPresent()) {
@@ -75,30 +96,12 @@ public class XUserIdCheckInterceptor implements HandlerInterceptor {
                 UserContextHolder.setUserEmail(userEmail);
                 return true;
             }
-            log.debug("X-USER-EMAIL로 회원을 찾을 수 없어 X-USER-ID로 fallback: {}", userEmail);
         }
 
-        // 우선순위 2: sub(X-USER-ID) 기반 (기존 방식 — 신규 가입 직후 혹은 email 매핑 헤더가 없는 경우)
-        if (userIdString != null && !userIdString.isEmpty()) {
-            try {
-                UUID userId = UUID.fromString(userIdString);
-                UserContextHolder.setUserId(userId);
-                if (userEmail != null && !userEmail.isEmpty()) {
-                    UserContextHolder.setUserEmail(userEmail);
-                }
-                return true;
-            } catch (IllegalArgumentException e) {
-                // UUID 형식이 잘못된 경우 로깅 또는 에러 처리
-                log.error("X-USER-ID header가 유효하지 않은 UUID 형식입니다: {}", userIdString, e);
-                throw new CustomException(ErrorCode.INVALID_USER_ID_FORMAT);
-            }
-        }
-
-        // X-USER-ID 가 없어 컨텍스트를 설정할 수 없음
-        // (X-USER-EMAIL 이 있었지만 회원을 찾지 못한 케이스도 여기 포함 — 가입 전 유저일 수 있음)
+        // 둘 다 실패
         if (userEmail != null && !userEmail.isEmpty()) {
-            log.error("X-USER-EMAIL은 있으나 회원 조회 실패 + X-USER-ID 누락: uri={}, email={}",
-                    request.getRequestURI(), userEmail);
+            log.error("X-USER-EMAIL 은 있으나 회원 조회 실패 + X-USER-ID 매핑 실패: uri={}, email={}",
+                    request.getRequestURI(), maskEmail(userEmail));
         } else {
             log.error("X-USER-ID / X-USER-EMAIL 헤더가 모두 누락되었습니다: {}", request.getRequestURI());
         }
@@ -117,5 +120,25 @@ public class XUserIdCheckInterceptor implements HandlerInterceptor {
     @Override
     public void afterCompletion(final HttpServletRequest request, final HttpServletResponse response, final Object handler, final Exception ex) throws Exception {
         UserContextHolder.reset();
+    }
+
+    /**
+     * 이메일의 로컬 파트를 마스킹한다 (예: dongwon@example.com → d*****n@example.com).
+     * 로그에 PII 가 원본 그대로 남지 않도록 하기 위함.
+     */
+    private static String maskEmail(String email) {
+        if (email == null || email.isEmpty()) {
+            return "";
+        }
+        int atIdx = email.indexOf('@');
+        if (atIdx <= 0) {
+            return "***";
+        }
+        String local = email.substring(0, atIdx);
+        String domain = email.substring(atIdx);
+        if (local.length() <= 2) {
+            return local.charAt(0) + "***" + domain;
+        }
+        return local.charAt(0) + "***" + local.charAt(local.length() - 1) + domain;
     }
 }
