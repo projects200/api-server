@@ -13,6 +13,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -21,13 +22,13 @@ import java.util.UUID;
  * 우선순위:
  * <ol>
  *   <li>X-USER-ID(sub) 가 유효한 UUID 이고 해당 회원이 DB 에 존재 → 그대로 컨텍스트에 설정 (대부분의 요청 경로)</li>
- *   <li>X-USER-ID 로 회원을 찾지 못했고 X-USER-EMAIL 로 회원을 찾으면 그 회원의 member_id 로 설정 (Cognito 이전 fallback)</li>
- *   <li>둘 다 실패했지만 X-USER-ID 가 유효한 UUID 인 경우 → '아직 가입되지 않은 사용자' (e.g. /auth/v1/sign-up) 로 간주하고
- *       X-USER-ID 를 그대로 컨텍스트에 설정하여 하위 핸들러가 처리하도록 pass-through 한다</li>
+ *   <li>X-USER-ID 는 있으나 DB 에 없고 X-USER-EMAIL 로 회원을 찾으면 그 회원의 member_id 로 설정 (Cognito 이전 fallback).
+ *       이 fallback 은 반드시 X-USER-ID 가 선행되어야 동작하므로, email 헤더만 단독으로 위조해 가장하는 경로는 차단된다.</li>
+ *   <li>{@link #UNREGISTERED_USER_ALLOWED_URIS} 에 등록된 URI (e.g. /auth/v1/sign-up) 에서는 DB/email 모두 찾지 못해도
+ *       X-USER-ID 로 컨텍스트만 세팅하고 pass-through 한다 (아직 가입되지 않은 사용자용).</li>
  * </ol>
- * X-USER-ID / X-USER-EMAIL 은 API Gateway Cognito Authorizer 가 검증된 JWT 클레임에서 주입/덮어쓰는 것으로
- * 신뢰되며, 외부에서 email 헤더만 위조해 타 계정을 가장하는 것은 Authorizer 계층에서 차단된다.
- * 요청 처리가 완료된 후에는 사용자 컨텍스트를 자동으로 초기화합니다.
+ * X-USER-ID / X-USER-EMAIL 은 API Gateway Cognito Authorizer 가 검증된 JWT 클레임에서 주입/덮어쓰는 것으로 신뢰된다.
+ * 요청 처리가 완료된 후에는 사용자 컨텍스트를 자동으로 초기화한다.
  */
 
 @Slf4j
@@ -39,6 +40,14 @@ public class XUserIdCheckInterceptor implements HandlerInterceptor {
 
     /** X-USER-EMAIL 헤더 상수 */
     private static final String USER_EMAIL_HEADER = "X-USER-EMAIL";
+
+    /**
+     * DB 에 회원이 아직 존재하지 않아도 통과시켜야 하는 URI allowlist.
+     * 회원 가입 플로우는 신규 사용자를 DB 에 저장하기 전 단계이므로 컨텍스트만 세팅하고 pass-through 한다.
+     */
+    private static final Set<String> UNREGISTERED_USER_ALLOWED_URIS = Set.of(
+            "/auth/v1/sign-up"
+    );
 
     /**
      * MemberRepository 는 @WebMvcTest 등 JPA가 없는 슬라이스 테스트 컨텍스트에서는 null 일 수 있으며,
@@ -79,7 +88,8 @@ public class XUserIdCheckInterceptor implements HandlerInterceptor {
         }
 
         // 우선순위 2: X-USER-EMAIL fallback (Cognito 이전으로 sub 가 바뀐 기존 회원 대응)
-        if (memberRepository != null && userEmail != null && !userEmail.isEmpty()) {
+        // X-USER-ID 가 선행 존재해야만 동작시켜, email 헤더 단독 위조로 타 계정을 가장하는 것을 차단한다.
+        if (parsedUserId != null && memberRepository != null && userEmail != null && !userEmail.isEmpty()) {
             Optional<Member> memberOpt = memberRepository.findByMemberEmailAndMemberDeletedAtNull(userEmail);
             if (memberOpt.isPresent()) {
                 setContext(memberOpt.get().getMemberId(), userEmail);
@@ -87,19 +97,23 @@ public class XUserIdCheckInterceptor implements HandlerInterceptor {
             }
         }
 
-        // 우선순위 3: X-USER-ID 는 유효하지만 DB 에 없고 email 로도 찾지 못한 경우
-        //            → '아직 가입되지 않은 사용자' (e.g. /auth/v1/sign-up) 플로우로 간주하고
-        //              X-USER-ID 로 컨텍스트만 세팅한 뒤 pass-through 한다.
-        if (parsedUserId != null) {
-            log.debug("신규 사용자 추정 pass-through: userId={}, email={}, uri={}",
-                    parsedUserId, maskEmail(userEmail), request.getRequestURI());
+        // 우선순위 3: 회원 가입 등 allowlist URI 에서만, X-USER-ID 로 컨텍스트 세팅 후 pass-through
+        String uri = request.getRequestURI();
+        if (parsedUserId != null && UNREGISTERED_USER_ALLOWED_URIS.contains(uri)) {
+            log.debug("신규 사용자 pass-through: userId={}, email={}, uri={}",
+                    parsedUserId, maskEmail(userEmail), uri);
             setContext(parsedUserId, userEmail);
             return true;
         }
 
-        // X-USER-ID 자체가 없는 경우
-        log.error("X-USER-ID 헤더가 누락되었습니다: {}", request.getRequestURI());
-        throw new CustomException(ErrorCode.USER_ID_HEADER_MISSING);
+        // 그 외: 회원을 특정할 수 없어 인증 실패로 처리
+        if (parsedUserId == null) {
+            log.error("X-USER-ID 헤더가 누락되었습니다: {}", uri);
+            throw new CustomException(ErrorCode.USER_ID_HEADER_MISSING);
+        }
+        log.error("X-USER-ID / X-USER-EMAIL 로 회원을 특정하지 못했습니다: userId={}, email={}, uri={}",
+                parsedUserId, maskEmail(userEmail), uri);
+        throw new CustomException(ErrorCode.AUTHENTICATION_FAILED);
     }
 
     private static void setContext(UUID userId, String userEmail) {

@@ -107,8 +107,8 @@ class XUserIdCheckInterceptorTest {
     class NewUserPassThrough {
 
         @Test
-        @DisplayName("X-USER-ID 가 유효 UUID 이고 DB/email 모두 찾지 못해도 신규 가입 플로우로 간주하고 통과")
-        void unknownUserId_andEmailNotFound_passesThroughForSignUp() {
+        @DisplayName("/auth/v1/sign-up 에서 X-USER-ID 가 유효 UUID 이고 DB/email 모두 찾지 못해도 통과")
+        void signUpUri_unknownUserIdAndEmail_passesThrough() {
             UUID incomingSub = UUID.randomUUID();
             request.addHeader("X-USER-ID", incomingSub.toString());
             request.addHeader("X-USER-EMAIL", "newuser@example.com");
@@ -125,10 +125,11 @@ class XUserIdCheckInterceptorTest {
         }
 
         @Test
-        @DisplayName("X-USER-EMAIL 없이 X-USER-ID 만 있는 신규 사용자도 통과")
-        void unknownUserId_withoutEmail_passesThrough() {
+        @DisplayName("/auth/v1/sign-up 에서 X-USER-EMAIL 없이 X-USER-ID 만 있어도 통과")
+        void signUpUri_userIdOnly_passesThrough() {
             UUID incomingSub = UUID.randomUUID();
             request.addHeader("X-USER-ID", incomingSub.toString());
+            request.setRequestURI("/auth/v1/sign-up");
             given(memberRepository.existsById(incomingSub)).willReturn(false);
 
             boolean result = interceptor.preHandle(request, response, new Object());
@@ -163,14 +164,52 @@ class XUserIdCheckInterceptorTest {
         }
 
         @Test
-        @DisplayName("X-USER-ID 는 비어있고 X-USER-EMAIL 만 있는 경우에도 USER_ID_HEADER_MISSING")
-        void onlyEmailHeader_throwsUserIdHeaderMissing() {
-            request.addHeader("X-USER-EMAIL", "user@example.com");
+        @DisplayName("X-USER-ID 없이 X-USER-EMAIL 만 있어도 email fallback 은 동작하지 않고 USER_ID_HEADER_MISSING")
+        void onlyEmailHeader_doesNotTriggerFallbackAndThrowsUserIdHeaderMissing() {
+            // email 단독 위조로 타 계정을 가장할 수 없도록, fallback 은 X-USER-ID 가 선행되어야 한다.
+            Member existing = Member.builder().memberId(UUID.randomUUID()).memberEmail("victim@example.com").build();
+            request.addHeader("X-USER-EMAIL", "victim@example.com");
+            // findByMemberEmail 이 호출되더라도 fallback 이 동작하지 않아야 함을 검증하기 위해 stub 를 넣는다.
+            given(memberRepository.findByMemberEmailAndMemberDeletedAtNull("victim@example.com"))
+                    .willReturn(Optional.of(existing));
 
             assertThatThrownBy(() -> interceptor.preHandle(request, response, new Object()))
                     .isInstanceOf(CustomException.class)
                     .extracting(ex -> ((CustomException) ex).getErrorCode())
                     .isEqualTo(ErrorCode.USER_ID_HEADER_MISSING);
+            assertThat(UserContextHolder.getUserId()).isNull();
+        }
+
+        @Test
+        @DisplayName("sign-up 이외 URI 에서 X-USER-ID 가 DB 에 없고 email 로도 찾지 못하면 AUTHENTICATION_FAILED")
+        void nonSignUpUri_unknownUserIdAndEmail_throwsAuthenticationFailed() {
+            UUID incomingSub = UUID.randomUUID();
+            request.addHeader("X-USER-ID", incomingSub.toString());
+            request.addHeader("X-USER-EMAIL", "ghost@example.com");
+            request.setRequestURI("/api/members/me");
+            given(memberRepository.existsById(incomingSub)).willReturn(false);
+            given(memberRepository.findByMemberEmailAndMemberDeletedAtNull("ghost@example.com"))
+                    .willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> interceptor.preHandle(request, response, new Object()))
+                    .isInstanceOf(CustomException.class)
+                    .extracting(ex -> ((CustomException) ex).getErrorCode())
+                    .isEqualTo(ErrorCode.AUTHENTICATION_FAILED);
+            assertThat(UserContextHolder.getUserId()).isNull();
+        }
+
+        @Test
+        @DisplayName("sign-up 이외 URI 에서 X-USER-ID 가 DB 에 없고 email 도 없으면 AUTHENTICATION_FAILED")
+        void nonSignUpUri_unknownUserIdWithoutEmail_throwsAuthenticationFailed() {
+            UUID incomingSub = UUID.randomUUID();
+            request.addHeader("X-USER-ID", incomingSub.toString());
+            request.setRequestURI("/api/members/me");
+            given(memberRepository.existsById(incomingSub)).willReturn(false);
+
+            assertThatThrownBy(() -> interceptor.preHandle(request, response, new Object()))
+                    .isInstanceOf(CustomException.class)
+                    .extracting(ex -> ((CustomException) ex).getErrorCode())
+                    .isEqualTo(ErrorCode.AUTHENTICATION_FAILED);
         }
     }
 
