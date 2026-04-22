@@ -9,7 +9,7 @@
 set -ex
 
 # 2. 필요한 변수 설정 (가독성 및 재사용성 증가)
-ECR_REGISTRY="825773631552.dkr.ecr.ap-northeast-2.amazonaws.com"
+ECR_REGISTRY="867637277997.dkr.ecr.ap-northeast-2.amazonaws.com"
 REPOSITORY_NAME="undabang/dev-server-repository"
 IMAGE_NAME="${ECR_REGISTRY}/${REPOSITORY_NAME}:latest"
 CONTAINER_NAME="server-dev"
