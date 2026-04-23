@@ -20,6 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @DisplayName("XUserIdCheckInterceptor 단위 테스트")
 class XUserIdCheckInterceptorTest {
@@ -53,7 +55,7 @@ class XUserIdCheckInterceptorTest {
             UUID userId = UUID.randomUUID();
             request.addHeader("X-USER-ID", userId.toString());
             request.addHeader("X-USER-EMAIL", "user@example.com");
-            given(memberRepository.existsById(userId)).willReturn(true);
+            given(memberRepository.existsByMemberIdAndMemberDeletedAtNull(userId)).willReturn(true);
 
             boolean result = interceptor.preHandle(request, response, new Object());
 
@@ -67,7 +69,7 @@ class XUserIdCheckInterceptorTest {
         void existingUserId_withoutEmail_setsContext() {
             UUID userId = UUID.randomUUID();
             request.addHeader("X-USER-ID", userId.toString());
-            given(memberRepository.existsById(userId)).willReturn(true);
+            given(memberRepository.existsByMemberIdAndMemberDeletedAtNull(userId)).willReturn(true);
 
             boolean result = interceptor.preHandle(request, response, new Object());
 
@@ -90,7 +92,7 @@ class XUserIdCheckInterceptorTest {
 
             request.addHeader("X-USER-ID", incomingSub.toString());
             request.addHeader("X-USER-EMAIL", "user@example.com");
-            given(memberRepository.existsById(incomingSub)).willReturn(false);
+            given(memberRepository.existsByMemberIdAndMemberDeletedAtNull(incomingSub)).willReturn(false);
             given(memberRepository.findByMemberEmailAndMemberDeletedAtNull("user@example.com"))
                     .willReturn(Optional.of(existing));
 
@@ -113,7 +115,7 @@ class XUserIdCheckInterceptorTest {
             request.addHeader("X-USER-ID", incomingSub.toString());
             request.addHeader("X-USER-EMAIL", "newuser@example.com");
             request.setRequestURI("/auth/v1/sign-up");
-            given(memberRepository.existsById(incomingSub)).willReturn(false);
+            given(memberRepository.existsByMemberIdAndMemberDeletedAtNull(incomingSub)).willReturn(false);
             given(memberRepository.findByMemberEmailAndMemberDeletedAtNull("newuser@example.com"))
                     .willReturn(Optional.empty());
 
@@ -130,7 +132,7 @@ class XUserIdCheckInterceptorTest {
             UUID incomingSub = UUID.randomUUID();
             request.addHeader("X-USER-ID", incomingSub.toString());
             request.setRequestURI("/auth/v1/sign-up");
-            given(memberRepository.existsById(incomingSub)).willReturn(false);
+            given(memberRepository.existsByMemberIdAndMemberDeletedAtNull(incomingSub)).willReturn(false);
 
             boolean result = interceptor.preHandle(request, response, new Object());
 
@@ -187,7 +189,7 @@ class XUserIdCheckInterceptorTest {
             request.addHeader("X-USER-ID", incomingSub.toString());
             request.addHeader("X-USER-EMAIL", "ghost@example.com");
             request.setRequestURI("/api/members/me");
-            given(memberRepository.existsById(incomingSub)).willReturn(false);
+            given(memberRepository.existsByMemberIdAndMemberDeletedAtNull(incomingSub)).willReturn(false);
             given(memberRepository.findByMemberEmailAndMemberDeletedAtNull("ghost@example.com"))
                     .willReturn(Optional.empty());
 
@@ -204,12 +206,141 @@ class XUserIdCheckInterceptorTest {
             UUID incomingSub = UUID.randomUUID();
             request.addHeader("X-USER-ID", incomingSub.toString());
             request.setRequestURI("/api/members/me");
-            given(memberRepository.existsById(incomingSub)).willReturn(false);
+            given(memberRepository.existsByMemberIdAndMemberDeletedAtNull(incomingSub)).willReturn(false);
 
             assertThatThrownBy(() -> interceptor.preHandle(request, response, new Object()))
                     .isInstanceOf(CustomException.class)
                     .extracting(ex -> ((CustomException) ex).getErrorCode())
                     .isEqualTo(ErrorCode.AUTHENTICATION_FAILED);
+        }
+
+        @Test
+        @DisplayName("soft-delete 된 회원은 existsByMemberIdAndMemberDeletedAtNull=false, email 조회도 탈퇴 필터로 empty → AUTHENTICATION_FAILED")
+        void softDeletedMember_blockedByDeletedAtNullFilters() {
+            // soft-delete 된 사용자가 탈퇴 후에도 캐시되지 않은 상태에서 요청했을 때,
+            // existsByMemberIdAndMemberDeletedAtNull 와 findByMemberEmailAndMemberDeletedAtNull 두 쿼리 모두
+            // memberDeletedAtNull 조건 덕에 탈퇴자를 제외해 인증이 차단되는지 확인한다.
+            UUID deletedUserId = UUID.randomUUID();
+            request.addHeader("X-USER-ID", deletedUserId.toString());
+            request.addHeader("X-USER-EMAIL", "deleted@example.com");
+            request.setRequestURI("/api/members/me");
+            given(memberRepository.existsByMemberIdAndMemberDeletedAtNull(deletedUserId)).willReturn(false);
+            given(memberRepository.findByMemberEmailAndMemberDeletedAtNull("deleted@example.com"))
+                    .willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> interceptor.preHandle(request, response, new Object()))
+                    .isInstanceOf(CustomException.class)
+                    .extracting(ex -> ((CustomException) ex).getErrorCode())
+                    .isEqualTo(ErrorCode.AUTHENTICATION_FAILED);
+            assertThat(UserContextHolder.getUserId()).isNull();
+            // 두 쿼리 모두 soft-delete 필터를 거쳐 탈퇴자를 제외했는지 확인
+            verify(memberRepository).existsByMemberIdAndMemberDeletedAtNull(deletedUserId);
+            verify(memberRepository).findByMemberEmailAndMemberDeletedAtNull("deleted@example.com");
+        }
+    }
+
+    @Nested
+    @DisplayName("해석 결과 positive 캐시")
+    class ResolvedMemberIdCache {
+
+        @Test
+        @DisplayName("직접 일치 케이스: 연속된 요청에서 동일 userId 에 대한 DB 조회는 한 번만 발생한다")
+        void directMatch_cachedAfterFirstHit() {
+            UUID userId = UUID.randomUUID();
+            given(memberRepository.existsByMemberIdAndMemberDeletedAtNull(userId)).willReturn(true);
+
+            for (int i = 0; i < 5; i++) {
+                MockHttpServletRequest req = new MockHttpServletRequest();
+                req.addHeader("X-USER-ID", userId.toString());
+                boolean result = interceptor.preHandle(req, response, new Object());
+                assertThat(result).isTrue();
+                UserContextHolder.reset();
+            }
+
+            verify(memberRepository, times(1)).existsByMemberIdAndMemberDeletedAtNull(userId);
+        }
+
+        @Test
+        @DisplayName("Cognito 이전 fallback 케이스: incomingSub→resolvedMemberId 매핑이 캐시되어 다음 요청에서 email 재조회 생략")
+        void emailFallback_cachesIncomingSubToResolvedMemberId() {
+            UUID incomingSub = UUID.randomUUID();
+            UUID dbMemberId = UUID.randomUUID();
+            Member existing = Member.builder().memberId(dbMemberId).memberEmail("user@example.com").build();
+
+            given(memberRepository.existsByMemberIdAndMemberDeletedAtNull(incomingSub)).willReturn(false);
+            given(memberRepository.findByMemberEmailAndMemberDeletedAtNull("user@example.com"))
+                    .willReturn(Optional.of(existing));
+
+            for (int i = 0; i < 3; i++) {
+                MockHttpServletRequest req = new MockHttpServletRequest();
+                req.addHeader("X-USER-ID", incomingSub.toString());
+                req.addHeader("X-USER-EMAIL", "user@example.com");
+                boolean result = interceptor.preHandle(req, response, new Object());
+                assertThat(result).isTrue();
+                assertThat(UserContextHolder.getUserId()).isEqualTo(dbMemberId);
+                UserContextHolder.reset();
+            }
+
+            // 첫 요청에서 existsBy 1회 + findByEmail 1회, 이후 2회는 캐시로 둘 다 생략
+            verify(memberRepository, times(1)).existsByMemberIdAndMemberDeletedAtNull(incomingSub);
+            verify(memberRepository, times(1)).findByMemberEmailAndMemberDeletedAtNull("user@example.com");
+        }
+
+        @Test
+        @DisplayName("해석 실패는 캐시되지 않아, 이후 가입되면 즉시 반영된다")
+        void resolutionFailure_notCached_signUpReflectedImmediately() {
+            UUID userId = UUID.randomUUID();
+            request.addHeader("X-USER-ID", userId.toString());
+            request.setRequestURI("/auth/v1/sign-up");
+            given(memberRepository.existsByMemberIdAndMemberDeletedAtNull(userId)).willReturn(false, true);
+
+            // 1번째: 가입 전 - pass-through
+            boolean first = interceptor.preHandle(request, response, new Object());
+            assertThat(first).isTrue();
+            UserContextHolder.reset();
+
+            // 2번째: 가입 직후 - true 반환이 즉시 반영되어야 함
+            MockHttpServletRequest req2 = new MockHttpServletRequest();
+            req2.addHeader("X-USER-ID", userId.toString());
+            req2.setRequestURI("/api/members/me");
+            boolean second = interceptor.preHandle(req2, response, new Object());
+            assertThat(second).isTrue();
+            assertThat(UserContextHolder.getUserId()).isEqualTo(userId);
+
+            verify(memberRepository, times(2)).existsByMemberIdAndMemberDeletedAtNull(userId);
+        }
+
+        @Test
+        @DisplayName("evictResolvedMemberId 호출 후에는 다음 요청에서 DB 재조회가 발생한다 (탈퇴 즉시 반영)")
+        void evictResolvedMemberId_forcesFreshLookup() {
+            UUID userId = UUID.randomUUID();
+            given(memberRepository.existsByMemberIdAndMemberDeletedAtNull(userId)).willReturn(true, false);
+
+            // 1번째: 정상 통과, 캐시에 identity 매핑 저장
+            MockHttpServletRequest req1 = new MockHttpServletRequest();
+            req1.addHeader("X-USER-ID", userId.toString());
+            assertThat(interceptor.preHandle(req1, response, new Object())).isTrue();
+            UserContextHolder.reset();
+
+            // 2번째: 캐시 hit - DB 재조회 없음
+            MockHttpServletRequest req2 = new MockHttpServletRequest();
+            req2.addHeader("X-USER-ID", userId.toString());
+            assertThat(interceptor.preHandle(req2, response, new Object())).isTrue();
+            UserContextHolder.reset();
+            verify(memberRepository, times(1)).existsByMemberIdAndMemberDeletedAtNull(userId);
+
+            // 탈퇴 이벤트 발생: 캐시 무효화
+            interceptor.evictResolvedMemberId(userId);
+
+            // 3번째: DB 재조회 → 탈퇴 상태 반영되어 차단
+            MockHttpServletRequest req3 = new MockHttpServletRequest();
+            req3.addHeader("X-USER-ID", userId.toString());
+            req3.setRequestURI("/api/members/me");
+            assertThatThrownBy(() -> interceptor.preHandle(req3, response, new Object()))
+                    .isInstanceOf(CustomException.class)
+                    .extracting(ex -> ((CustomException) ex).getErrorCode())
+                    .isEqualTo(ErrorCode.AUTHENTICATION_FAILED);
+            verify(memberRepository, times(2)).existsByMemberIdAndMemberDeletedAtNull(userId);
         }
     }
 
