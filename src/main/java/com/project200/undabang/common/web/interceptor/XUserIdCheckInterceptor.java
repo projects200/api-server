@@ -32,8 +32,10 @@ import java.util.UUID;
  * X-USER-ID / X-USER-EMAIL 은 API Gateway Cognito Authorizer 가 검증된 JWT 클레임에서 주입/덮어쓰는 것으로 신뢰된다.
  * 요청 처리가 완료된 후에는 사용자 컨텍스트를 자동으로 초기화한다.
  * <p>
- * 존재 검증은 positive 캐시({@link Caffeine}, TTL 5 분)를 통해 요청당 DB 조회 부담을 완화한다.
+ * 존재 검증은 positive 캐시({@link Caffeine}, TTL 1 분)를 통해 요청당 DB 조회 부담을 완화한다.
  * 존재하지 않는 결과(false) 는 캐시하지 않아 가입/복구 직후 즉시 반영된다.
+ * soft-delete 시 TTL 만료 전까지 stale positive 가 남을 수 있으므로, 탈퇴 플로우는
+ * {@link #evictMemberExistence(UUID)} 를 호출해 즉시 무효화해야 한다.
  */
 @Slf4j
 public class XUserIdCheckInterceptor implements HandlerInterceptor {
@@ -65,7 +67,7 @@ public class XUserIdCheckInterceptor implements HandlerInterceptor {
     public XUserIdCheckInterceptor(@Nullable MemberRepository memberRepository) {
         this.memberRepository = memberRepository;
         this.memberExistenceCache = Caffeine.newBuilder()
-                .expireAfterWrite(Duration.ofMinutes(5))
+                .expireAfterWrite(Duration.ofMinutes(1))
                 .maximumSize(10_000)
                 .build();
     }
@@ -149,6 +151,14 @@ public class XUserIdCheckInterceptor implements HandlerInterceptor {
             memberExistenceCache.put(userId, Boolean.TRUE);
         }
         return exists;
+    }
+
+    /**
+     * 회원 탈퇴/복구 등으로 존재 상태가 바뀐 순간 stale positive 캐시를 즉시 무효화한다.
+     * 해당 커맨드 서비스에서 이 메서드를 직접 호출해 TTL 만료를 기다리지 않고 인증을 차단/허용하도록 한다.
+     */
+    public void evictMemberExistence(UUID userId) {
+        memberExistenceCache.invalidate(userId);
     }
 
     private static void setContext(UUID userId, String userEmail) {

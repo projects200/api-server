@@ -279,6 +279,39 @@ class XUserIdCheckInterceptorTest {
 
             verify(memberRepository, times(2)).existsByMemberIdAndMemberDeletedAtNull(userId);
         }
+
+        @Test
+        @DisplayName("evictMemberExistence 호출 후에는 다음 요청에서 DB 재조회가 발생한다 (탈퇴 즉시 반영)")
+        void evictMemberExistence_forcesFreshLookup() {
+            UUID userId = UUID.randomUUID();
+            given(memberRepository.existsByMemberIdAndMemberDeletedAtNull(userId)).willReturn(true, false);
+
+            // 1번째: 정상 통과, 캐시에 true 저장
+            MockHttpServletRequest req1 = new MockHttpServletRequest();
+            req1.addHeader("X-USER-ID", userId.toString());
+            assertThat(interceptor.preHandle(req1, response, new Object())).isTrue();
+            UserContextHolder.reset();
+
+            // 2번째: 캐시 hit - DB 재조회 없음
+            MockHttpServletRequest req2 = new MockHttpServletRequest();
+            req2.addHeader("X-USER-ID", userId.toString());
+            assertThat(interceptor.preHandle(req2, response, new Object())).isTrue();
+            UserContextHolder.reset();
+            verify(memberRepository, times(1)).existsByMemberIdAndMemberDeletedAtNull(userId);
+
+            // 탈퇴 이벤트 발생: 캐시 무효화
+            interceptor.evictMemberExistence(userId);
+
+            // 3번째: DB 재조회 → 탈퇴 상태 반영되어 차단
+            MockHttpServletRequest req3 = new MockHttpServletRequest();
+            req3.addHeader("X-USER-ID", userId.toString());
+            req3.setRequestURI("/api/members/me");
+            assertThatThrownBy(() -> interceptor.preHandle(req3, response, new Object()))
+                    .isInstanceOf(CustomException.class)
+                    .extracting(ex -> ((CustomException) ex).getErrorCode())
+                    .isEqualTo(ErrorCode.AUTHENTICATION_FAILED);
+            verify(memberRepository, times(2)).existsByMemberIdAndMemberDeletedAtNull(userId);
+        }
     }
 
     @Nested
