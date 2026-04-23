@@ -215,15 +215,16 @@ class XUserIdCheckInterceptorTest {
         }
 
         @Test
-        @DisplayName("soft-delete 된 회원(member_deleted_at NOT NULL)은 존재 검증에서 false 처리되어 통과하지 못한다")
-        void softDeletedMember_isNotConsideredExisting() {
+        @DisplayName("soft-delete 된 회원은 existsByMemberIdAndMemberDeletedAtNull=false, email 조회도 탈퇴 필터로 empty → AUTHENTICATION_FAILED")
+        void softDeletedMember_blockedByDeletedAtNullFilters() {
+            // soft-delete 된 사용자가 탈퇴 후에도 캐시되지 않은 상태에서 요청했을 때,
+            // existsByMemberIdAndMemberDeletedAtNull 와 findByMemberEmailAndMemberDeletedAtNull 두 쿼리 모두
+            // memberDeletedAtNull 조건 덕에 탈퇴자를 제외해 인증이 차단되는지 확인한다.
             UUID deletedUserId = UUID.randomUUID();
             request.addHeader("X-USER-ID", deletedUserId.toString());
             request.addHeader("X-USER-EMAIL", "deleted@example.com");
             request.setRequestURI("/api/members/me");
-            // soft-delete 된 회원은 existsByMemberIdAndMemberDeletedAtNull 이 false 를 반환한다.
             given(memberRepository.existsByMemberIdAndMemberDeletedAtNull(deletedUserId)).willReturn(false);
-            // email 조회 역시 memberDeletedAtNull 조건이라 탈퇴 회원을 찾지 못한다.
             given(memberRepository.findByMemberEmailAndMemberDeletedAtNull("deleted@example.com"))
                     .willReturn(Optional.empty());
 
@@ -232,16 +233,19 @@ class XUserIdCheckInterceptorTest {
                     .extracting(ex -> ((CustomException) ex).getErrorCode())
                     .isEqualTo(ErrorCode.AUTHENTICATION_FAILED);
             assertThat(UserContextHolder.getUserId()).isNull();
+            // 두 쿼리 모두 soft-delete 필터를 거쳐 탈퇴자를 제외했는지 확인
+            verify(memberRepository).existsByMemberIdAndMemberDeletedAtNull(deletedUserId);
+            verify(memberRepository).findByMemberEmailAndMemberDeletedAtNull("deleted@example.com");
         }
     }
 
     @Nested
-    @DisplayName("존재 검증 positive 캐시")
-    class ExistenceCache {
+    @DisplayName("해석 결과 positive 캐시")
+    class ResolvedMemberIdCache {
 
         @Test
-        @DisplayName("연속된 요청에서 동일 userId 에 대한 DB 조회는 한 번만 발생한다 (positive 캐시)")
-        void existsCheck_cachedAfterFirstHit() {
+        @DisplayName("직접 일치 케이스: 연속된 요청에서 동일 userId 에 대한 DB 조회는 한 번만 발생한다")
+        void directMatch_cachedAfterFirstHit() {
             UUID userId = UUID.randomUUID();
             given(memberRepository.existsByMemberIdAndMemberDeletedAtNull(userId)).willReturn(true);
 
@@ -257,8 +261,34 @@ class XUserIdCheckInterceptorTest {
         }
 
         @Test
-        @DisplayName("존재하지 않는 userId 는 캐시되지 않아, 이후 가입되면 즉시 반영된다")
-        void existsCheck_falseNotCached_signUpReflectedImmediately() {
+        @DisplayName("Cognito 이전 fallback 케이스: incomingSub→resolvedMemberId 매핑이 캐시되어 다음 요청에서 email 재조회 생략")
+        void emailFallback_cachesIncomingSubToResolvedMemberId() {
+            UUID incomingSub = UUID.randomUUID();
+            UUID dbMemberId = UUID.randomUUID();
+            Member existing = Member.builder().memberId(dbMemberId).memberEmail("user@example.com").build();
+
+            given(memberRepository.existsByMemberIdAndMemberDeletedAtNull(incomingSub)).willReturn(false);
+            given(memberRepository.findByMemberEmailAndMemberDeletedAtNull("user@example.com"))
+                    .willReturn(Optional.of(existing));
+
+            for (int i = 0; i < 3; i++) {
+                MockHttpServletRequest req = new MockHttpServletRequest();
+                req.addHeader("X-USER-ID", incomingSub.toString());
+                req.addHeader("X-USER-EMAIL", "user@example.com");
+                boolean result = interceptor.preHandle(req, response, new Object());
+                assertThat(result).isTrue();
+                assertThat(UserContextHolder.getUserId()).isEqualTo(dbMemberId);
+                UserContextHolder.reset();
+            }
+
+            // 첫 요청에서 existsBy 1회 + findByEmail 1회, 이후 2회는 캐시로 둘 다 생략
+            verify(memberRepository, times(1)).existsByMemberIdAndMemberDeletedAtNull(incomingSub);
+            verify(memberRepository, times(1)).findByMemberEmailAndMemberDeletedAtNull("user@example.com");
+        }
+
+        @Test
+        @DisplayName("해석 실패는 캐시되지 않아, 이후 가입되면 즉시 반영된다")
+        void resolutionFailure_notCached_signUpReflectedImmediately() {
             UUID userId = UUID.randomUUID();
             request.addHeader("X-USER-ID", userId.toString());
             request.setRequestURI("/auth/v1/sign-up");
@@ -269,7 +299,7 @@ class XUserIdCheckInterceptorTest {
             assertThat(first).isTrue();
             UserContextHolder.reset();
 
-            // 2번째: 가입 직후 - true 반환이 즉시 반영되어야 함 (캐시에 false 가 남아있지 않음)
+            // 2번째: 가입 직후 - true 반환이 즉시 반영되어야 함
             MockHttpServletRequest req2 = new MockHttpServletRequest();
             req2.addHeader("X-USER-ID", userId.toString());
             req2.setRequestURI("/api/members/me");
@@ -281,12 +311,12 @@ class XUserIdCheckInterceptorTest {
         }
 
         @Test
-        @DisplayName("evictMemberExistence 호출 후에는 다음 요청에서 DB 재조회가 발생한다 (탈퇴 즉시 반영)")
-        void evictMemberExistence_forcesFreshLookup() {
+        @DisplayName("evictResolvedMemberId 호출 후에는 다음 요청에서 DB 재조회가 발생한다 (탈퇴 즉시 반영)")
+        void evictResolvedMemberId_forcesFreshLookup() {
             UUID userId = UUID.randomUUID();
             given(memberRepository.existsByMemberIdAndMemberDeletedAtNull(userId)).willReturn(true, false);
 
-            // 1번째: 정상 통과, 캐시에 true 저장
+            // 1번째: 정상 통과, 캐시에 identity 매핑 저장
             MockHttpServletRequest req1 = new MockHttpServletRequest();
             req1.addHeader("X-USER-ID", userId.toString());
             assertThat(interceptor.preHandle(req1, response, new Object())).isTrue();
@@ -300,7 +330,7 @@ class XUserIdCheckInterceptorTest {
             verify(memberRepository, times(1)).existsByMemberIdAndMemberDeletedAtNull(userId);
 
             // 탈퇴 이벤트 발생: 캐시 무효화
-            interceptor.evictMemberExistence(userId);
+            interceptor.evictResolvedMemberId(userId);
 
             // 3번째: DB 재조회 → 탈퇴 상태 반영되어 차단
             MockHttpServletRequest req3 = new MockHttpServletRequest();

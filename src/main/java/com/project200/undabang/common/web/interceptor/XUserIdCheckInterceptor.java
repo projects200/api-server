@@ -32,10 +32,11 @@ import java.util.UUID;
  * X-USER-ID / X-USER-EMAIL 은 API Gateway Cognito Authorizer 가 검증된 JWT 클레임에서 주입/덮어쓰는 것으로 신뢰된다.
  * 요청 처리가 완료된 후에는 사용자 컨텍스트를 자동으로 초기화한다.
  * <p>
- * 존재 검증은 positive 캐시({@link Caffeine}, TTL 1 분)를 통해 요청당 DB 조회 부담을 완화한다.
- * 존재하지 않는 결과(false) 는 캐시하지 않아 가입/복구 직후 즉시 반영된다.
- * soft-delete 시 TTL 만료 전까지 stale positive 가 남을 수 있으므로, 탈퇴 플로우는
- * {@link #evictMemberExistence(UUID)} 를 호출해 즉시 무효화해야 한다.
+ * <b>해석 캐시</b>: 요청 헤더의 X-USER-ID(incomingSub) → 최종 사용할 member_id 매핑을 Caffeine 에 positive 캐시(TTL 1 분).
+ * 직접 일치 케이스는 identity 매핑(incomingSub==memberId)이 저장되고, Cognito 이전 fallback 케이스에서는
+ * incomingSub → 실제 member_id 매핑이 저장되어 다음 요청부터는 email 재조회 없이 통과한다.
+ * 해석 실패(false) 는 캐시하지 않아 가입 직후 즉시 반영된다. soft-delete / 복구 플로우는
+ * {@link #evictResolvedMemberId(UUID)} 를 호출해 TTL 만료를 기다리지 않고 stale 매핑을 제거해야 한다.
  */
 @Slf4j
 public class XUserIdCheckInterceptor implements HandlerInterceptor {
@@ -61,12 +62,12 @@ public class XUserIdCheckInterceptor implements HandlerInterceptor {
     @Nullable
     private final MemberRepository memberRepository;
 
-    /** sub UUID 단위 positive 존재 캐시 (soft-delete 되지 않은 회원만 true 로 저장) */
-    private final Cache<UUID, Boolean> memberExistenceCache;
+    /** incomingSub(JWT sub) → 실제 member_id 해석 결과를 positive 캐시. miss/실패는 저장하지 않는다. */
+    private final Cache<UUID, UUID> resolvedMemberIdCache;
 
     public XUserIdCheckInterceptor(@Nullable MemberRepository memberRepository) {
         this.memberRepository = memberRepository;
-        this.memberExistenceCache = Caffeine.newBuilder()
+        this.resolvedMemberIdCache = Caffeine.newBuilder()
                 .expireAfterWrite(Duration.ofMinutes(1))
                 .maximumSize(10_000)
                 .build();
@@ -86,37 +87,18 @@ public class XUserIdCheckInterceptor implements HandlerInterceptor {
         String userEmail = request.getHeader(USER_EMAIL_HEADER);
         String userIdString = request.getHeader(USER_ID_HEADER);
 
-        UUID parsedUserId = null;
-        if (userIdString != null && !userIdString.isEmpty()) {
-            try {
-                parsedUserId = UUID.fromString(userIdString);
-            } catch (IllegalArgumentException e) {
-                log.error("X-USER-ID header가 유효하지 않은 UUID 형식입니다: {}", userIdString, e);
-                throw new CustomException(ErrorCode.INVALID_USER_ID_FORMAT);
-            }
-        }
+        UUID parsedUserId = parseUserIdOrThrow(userIdString);
 
-        // 우선순위 1: X-USER-ID(sub) 가 회원 ID 와 일치하면 그대로 사용 (대부분의 요청)
-        // memberRepository 가 없는 슬라이스 테스트 컨텍스트에서는 존재 검증을 생략한다.
-        if (parsedUserId != null && memberExists(parsedUserId)) {
-            setContext(parsedUserId, userEmail);
-            return true;
-        }
-
-        // 우선순위 2: X-USER-EMAIL fallback (Cognito 이전으로 sub 가 바뀐 기존 회원 대응)
-        // X-USER-ID 가 선행 존재해야만 동작시켜, email 헤더 단독 위조로 타 계정을 가장하는 것을 차단한다.
-        if (parsedUserId != null && memberRepository != null && userEmail != null && !userEmail.isEmpty()) {
-            Optional<Member> memberOpt = memberRepository.findByMemberEmailAndMemberDeletedAtNull(userEmail);
-            if (memberOpt.isPresent()) {
-                UUID memberId = memberOpt.get().getMemberId();
-                memberExistenceCache.put(memberId, Boolean.TRUE);
-                setContext(memberId, userEmail);
+        if (parsedUserId != null) {
+            UUID resolvedMemberId = resolveMemberId(parsedUserId, userEmail);
+            if (resolvedMemberId != null) {
+                setContext(resolvedMemberId, userEmail);
                 return true;
             }
         }
 
-        // 우선순위 3: 회원 가입 등 allowlist URI 에서만, X-USER-ID 로 컨텍스트 세팅 후 pass-through
         String uri = request.getRequestURI();
+        // allowlist URI 에서만, X-USER-ID 로 컨텍스트 세팅 후 pass-through (회원 가입 등 신규 사용자)
         if (parsedUserId != null && UNREGISTERED_USER_ALLOWED_URIS.contains(uri)) {
             log.debug("신규 사용자 pass-through: userId={}, email={}, uri={}",
                     parsedUserId, maskEmail(userEmail), uri);
@@ -134,31 +116,63 @@ public class XUserIdCheckInterceptor implements HandlerInterceptor {
         throw new CustomException(ErrorCode.AUTHENTICATION_FAILED);
     }
 
-    /**
-     * soft-delete 되지 않은 회원인지 확인한다. Positive 캐시로 반복 조회 부담을 줄이되, false 는 캐시하지 않아
-     * 가입 직후 다음 요청에서 즉시 반영되도록 한다. 슬라이스 테스트 컨텍스트(memberRepository=null) 에서는 true 로 간주.
-     */
-    private boolean memberExists(UUID userId) {
-        if (memberRepository == null) {
-            return true;
+    private UUID parseUserIdOrThrow(String userIdString) {
+        if (userIdString == null || userIdString.isEmpty()) {
+            return null;
         }
-        Boolean cached = memberExistenceCache.getIfPresent(userId);
-        if (cached != null) {
-            return cached;
+        try {
+            return UUID.fromString(userIdString);
+        } catch (IllegalArgumentException e) {
+            log.error("X-USER-ID header가 유효하지 않은 UUID 형식입니다: {}", userIdString, e);
+            throw new CustomException(ErrorCode.INVALID_USER_ID_FORMAT);
         }
-        boolean exists = memberRepository.existsByMemberIdAndMemberDeletedAtNull(userId);
-        if (exists) {
-            memberExistenceCache.put(userId, Boolean.TRUE);
-        }
-        return exists;
     }
 
     /**
-     * 회원 탈퇴/복구 등으로 존재 상태가 바뀐 순간 stale positive 캐시를 즉시 무효화한다.
-     * 해당 커맨드 서비스에서 이 메서드를 직접 호출해 TTL 만료를 기다리지 않고 인증을 차단/허용하도록 한다.
+     * incomingSub(JWT sub) 를 실제 사용할 member_id 로 해석한다. 반환값이 null 이면 사용자를 특정할 수 없는 상태.
+     * <ol>
+     *   <li>해석 캐시 적중 시 DB 조회 없이 바로 반환 (직접 일치 / fallback 양쪽 모두 커버)</li>
+     *   <li>sub 가 soft-delete 되지 않은 member_id 와 일치하면 identity 매핑 캐시 후 반환</li>
+     *   <li>sub 가 DB 에 없고 X-USER-EMAIL 이 있으면 email 로 조회 (Cognito 이전 fallback).
+     *       성공 시 incomingSub → 실제 member_id 매핑을 캐시 후 반환</li>
+     * </ol>
+     * 슬라이스 테스트 컨텍스트(memberRepository=null) 에서는 DB 조회 없이 incomingSub 를 identity 매핑으로 반환.
      */
-    public void evictMemberExistence(UUID userId) {
-        memberExistenceCache.invalidate(userId);
+    @Nullable
+    private UUID resolveMemberId(UUID incomingSub, @Nullable String userEmail) {
+        if (memberRepository == null) {
+            return incomingSub;
+        }
+
+        UUID cached = resolvedMemberIdCache.getIfPresent(incomingSub);
+        if (cached != null) {
+            return cached;
+        }
+
+        if (memberRepository.existsByMemberIdAndMemberDeletedAtNull(incomingSub)) {
+            resolvedMemberIdCache.put(incomingSub, incomingSub);
+            return incomingSub;
+        }
+
+        if (userEmail != null && !userEmail.isEmpty()) {
+            Optional<Member> memberOpt = memberRepository.findByMemberEmailAndMemberDeletedAtNull(userEmail);
+            if (memberOpt.isPresent()) {
+                UUID actualMemberId = memberOpt.get().getMemberId();
+                resolvedMemberIdCache.put(incomingSub, actualMemberId);
+                return actualMemberId;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * 회원 탈퇴/복구 등으로 해석 결과가 바뀐 순간 stale 매핑을 즉시 무효화한다.
+     * 해당 커맨드 서비스에서 이 메서드를 직접 호출해 TTL(1분) 만료를 기다리지 않도록 한다.
+     * 현재 코드베이스에는 회원 탈퇴 플로우가 없으므로 호출 지점이 없지만, 추후 구현 시 함께 연결하기 위한 훅.
+     */
+    public void evictResolvedMemberId(UUID incomingSub) {
+        resolvedMemberIdCache.invalidate(incomingSub);
     }
 
     private static void setContext(UUID userId, String userEmail) {
