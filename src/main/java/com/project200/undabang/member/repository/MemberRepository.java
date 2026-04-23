@@ -15,6 +15,8 @@ public interface MemberRepository extends JpaRepository<Member, UUID>, MemberRep
 
     boolean existsByMemberId(UUID memberId);
 
+    boolean existsByMemberIdAndMemberDeletedAtNull(UUID memberId);
+
     Optional<Member> findByMemberIdAndMemberDeletedAtNull(UUID memberId);
 
     Optional<Member> findByMemberEmailAndMemberDeletedAtNull(String memberEmail);
