@@ -14,9 +14,7 @@ services:
       timeout: 5s
       retries: 5
     # 운영 서버는 스왑메모리 영역에 최대한 가지 않도록 설정
-
-    environment:
-      - JAVA_TOOL_OPTIONS=-Xms400m -Xmx500m -XX:MaxMetaspaceSize=128m
+    # JVM 메모리 옵션은 Dockerfile CMD 에 일원화 (중복 정의 제거)
 
     deploy:
       resources:
