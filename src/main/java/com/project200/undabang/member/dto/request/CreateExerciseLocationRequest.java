@@ -18,6 +18,14 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateExerciseLocationRequest {
+    /**
+     * SRID 4326 (WGS84) 전용 GeometryFactory. 매 호출마다 생성하면 Hibernate Spatial 이
+     * 좌표계를 반복 파싱하면서 geolatte CRS 객체 + ANTLR 파서 state 가 Metaspace 에 누적됨.
+     * JTS GeometryFactory 는 thread-safe 이므로 정적 공유 안전.
+     */
+    private static final GeometryFactory GEOMETRY_FACTORY =
+            new GeometryFactory(new PrecisionModel(), 4326);
+
     @NotNull
     @Size(min = 1, max = 100, message = "운동 장소명은 최대 100글자 입력 가능합니다.")
     private String name;
@@ -36,9 +44,7 @@ public class CreateExerciseLocationRequest {
      * 주어진 회원 정보를 기반으로 ExerciseLocation 엔티티를 생성합니다.
      */
     public ExerciseLocation toEntity(Member member) {
-        GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
-
-        Point point = geometryFactory.createPoint(new Coordinate(this.longitude, this.latitude));
+        Point point = GEOMETRY_FACTORY.createPoint(new Coordinate(this.longitude, this.latitude));
 
         return ExerciseLocation.builder()
                 .member(member)
