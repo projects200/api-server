@@ -64,6 +64,7 @@ class AuthControllerTest extends AbstractRestDocSupport {
                             .headers(getCommonApiHeaders(memberId))
                             .content(objectMapper.writeValueAsString(requestDto)))
                     .andExpect(MockMvcResultMatchers.status().isOk())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.data.memberId").value(memberId.toString()))
                     .andDo(document.document(
                             requestHeaders(
                                     RestDocsUtils.HEADER_ACCESS_TOKEN,
@@ -79,7 +80,9 @@ class AuthControllerTest extends AbstractRestDocSupport {
                                             .description("접속 모드를 의미합니다. APP, PWA, BROWSER 중 하나를 선택해야 합니다.")
                             ),
                             responseFields(
-                                    RestDocsUtils.commonResponseFieldsOnly()
+                                    RestDocsUtils.commonResponseFields(
+                                            fieldWithPath("data.memberId").type(JsonFieldType.STRING).description("로그인한 회원의 식별자(UUID)입니다.")
+                                    )
                             )
                     ));
 
@@ -101,7 +104,8 @@ class AuthControllerTest extends AbstractRestDocSupport {
                             .accept(MediaType.APPLICATION_JSON)
                             .headers(getCommonApiHeaders(memberId))
                             .content(objectMapper.writeValueAsString(requestDto)))
-                    .andExpect(MockMvcResultMatchers.status().isOk());
+                    .andExpect(MockMvcResultMatchers.status().isOk())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.data.memberId").value(memberId.toString()));
 
             BDDMockito.then(authService).should().login();
             // 토큰이 없으므로 saveFcmToken은 호출되지 않아야 함
@@ -120,12 +124,15 @@ class AuthControllerTest extends AbstractRestDocSupport {
                             .accept(MediaType.APPLICATION_JSON)
                             .headers(getCommonApiHeaders(memberId))) // Content 없이 요청
                     .andExpect(MockMvcResultMatchers.status().isOk())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.data.memberId").value(memberId.toString()))
                     .andDo(document.document(
                             requestHeaders(
                                     RestDocsUtils.HEADER_ACCESS_TOKEN
                             ),
                             responseFields(
-                                    RestDocsUtils.commonResponseFieldsOnly()
+                                    RestDocsUtils.commonResponseFields(
+                                            fieldWithPath("data.memberId").type(JsonFieldType.STRING).description("로그인한 회원의 식별자(UUID)입니다.")
+                                    )
                             )
                     ));
 
