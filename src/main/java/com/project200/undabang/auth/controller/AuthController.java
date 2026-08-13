@@ -1,6 +1,7 @@
 package com.project200.undabang.auth.controller;
 
 import com.project200.undabang.auth.dto.request.LoginRequestDto;
+import com.project200.undabang.auth.dto.response.LoginResponseDto;
 import com.project200.undabang.auth.service.AuthService;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
@@ -26,7 +27,7 @@ public class AuthController {
 
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/login")
-    public CommonResponse<Void> loginMember(@RequestHeader(value = "User-Agent", required = false) String userAgent,
+    public CommonResponse<LoginResponseDto> loginMember(@RequestHeader(value = "User-Agent", required = false) String userAgent,
                                             @RequestHeader(value = "X-Fcm-Token", required = false) String fcmToken,
                                             @Valid @RequestBody(required = false) LoginRequestDto requestDto) {
 
@@ -40,7 +41,7 @@ public class AuthController {
             fcmTokenCommandService.saveFcmToken(member, fcmToken, userAgent, requestDto);
         }
 
-        return CommonResponse.success(new SuccessDetails("LOGIN_SUCCESS", "로그인 성공"));
+        return CommonResponse.success(new SuccessDetails("LOGIN_SUCCESS", "로그인 성공"), LoginResponseDto.of(member));
     }
 
     @ResponseStatus(HttpStatus.OK)
