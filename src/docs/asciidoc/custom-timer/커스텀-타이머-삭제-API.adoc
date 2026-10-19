@@ -12,6 +12,12 @@
 === 개발 참고 사항
 
 - <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+- JSON 본문은 선택입니다. 본문이 없거나 `{}`이면 기존 `data: null` 응답이며, 이미 삭제된 대상은 기존 404를 유지합니다.
+- 동기화 삭제는 본문의 `editId`(UUID)와 `editedAt`(0 이상의 UTC epoch 밀리초)을 함께 전송합니다. 한 필드만 보내거나 음수 시각을 보내면 400입니다.
+- 삭제는 더 최신인 이름·전체 스텝 변경보다 우선하며 409 시각 충돌을 발생시키지 않습니다. 부모와 활성 스텝은 한 트랜잭션에서 삭제되고 타이머 `updatedAt`도 삭제 시각으로 변경됩니다.
+- 동기화 성공은 밀리초 정밀도의 ISO 로컬 일시 `data.updatedAt`을 반환합니다. 같은 편집 ID로 재전송하면 최초 성공 시각을 반환합니다. 새 편집 ID로 이미 삭제된 본인 타이머를 삭제해도 기존 삭제 시각으로 성공합니다.
+- 편집 ID를 이름 수정·전체 교체 등 다른 작업에 재사용하면 400 `TIMER_REQUEST_ID_REUSED`입니다. 삭제 후 새로운 편집은 타이머를 복구하지 않습니다.
+
 
 === 코드 샘플
 
@@ -21,11 +27,17 @@ operation::delete-custom-timer/delete-custom-timer_-success[snippets="curl-reque
 
 operation::delete-custom-timer/delete-custom-timer_-success[snippets="request-headers,response-fields"]
 
+==== 동기화 요청과 응답
+
+operation::sync-custom-timer/delete[snippets="http-request,http-response,request-fields,response-fields"]
+
+
 ==== 응답 상태 코드
 
 |===
 |상태 코드|설명
 |200| 커스텀 타이머가 성공적으로 삭제되었습니다.
+|400|동기화 메타데이터가 잘못되었습니다. 편집 ID를 다른 작업에 재사용했습니다.
 |404| 회원 정보가 올바르지 않습니다. +
 존재하지 않는 타이머입니다.
 |===

@@ -4,24 +4,34 @@ import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.entity.Member;
-import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.service.PolicyService;
 import com.project200.undabang.timer.custom.dto.request.CustomTimerCreateRequest;
 import com.project200.undabang.timer.custom.dto.request.CustomTimerNameUpdateRequest;
 import com.project200.undabang.timer.custom.dto.request.CustomTimerStepCreateRequest;
+import com.project200.undabang.timer.custom.dto.request.CustomTimerUpdateRequest;
 import com.project200.undabang.timer.custom.dto.response.CustomTimerCreateResponse;
+import com.project200.undabang.timer.custom.dto.response.CustomTimerDetailResponse;
+import com.project200.undabang.timer.custom.dto.response.CustomTimerStepRecord;
 import com.project200.undabang.timer.custom.entity.CustomTimer;
 import com.project200.undabang.timer.custom.entity.CustomTimerStep;
 import com.project200.undabang.timer.custom.repository.CustomTimerRepository;
 import com.project200.undabang.timer.custom.repository.CustomTimerStepRepository;
 import com.project200.undabang.timer.custom.service.CustomTimerCommandService;
+import com.project200.undabang.timer.sync.TimerCreateResult;
+import com.project200.undabang.timer.sync.TimerDeleteRequest;
+import com.project200.undabang.timer.sync.TimerEditOperation;
+import com.project200.undabang.timer.sync.TimerMutationResponse;
+import com.project200.undabang.timer.sync.TimerSyncConflictException;
+import com.project200.undabang.timer.sync.TimerSyncService;
+import com.project200.undabang.timer.sync.TimerType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -31,75 +41,120 @@ import java.util.UUID;
 public class CustomTimerCommandServiceImpl implements CustomTimerCommandService {
     private final CustomTimerRepository customTimerRepository;
     private final CustomTimerStepRepository customTimerStepRepository;
-    private final MemberRepository memberRepository;
+    private final TimerSyncService timerSyncService;
     private final PolicyService policyService;
 
-    /**
-     * 이 구현체는 다음의 순서로 커스텀 타이머를 생성합니다:
-     * 요청한 사용자의 유효성을 확인합니다.
-     * 커스텀 타이머 스텝의 개수와 순서의 유효성을 검증합니다.
-     * {@link CustomTimer} 엔티티를 먼저 저장합니다.
-     * 연관된 {@link CustomTimerStep} 엔티티들을 일괄 저장합니다.
-     */
     @Override
     public CustomTimerCreateResponse createCustomTimer(CustomTimerCreateRequest dto) {
-        Member member = getMember(UserContextHolder.getUserId());
+        TimerSyncService.validateCreateMetadata(dto.getCreateRequestId(), dto.getEditedAt());
+        Member member = timerSyncService.lockMember(UserContextHolder.getUserId());
+
+        if (dto.getCreateRequestId() != null) {
+            Optional<TimerCreateResult> replay = timerSyncService.findCreation(member.getMemberId(), dto.getCreateRequestId(), TimerType.CUSTOM);
+            if (replay.isPresent()) {
+                return new CustomTimerCreateResponse(replay.get().timerId(), replay.get().updatedAt());
+            }
+        }
 
         validateCustomTimerSteps(dto.getCustomTimerSteps());
-
-        CustomTimer customTimer = CustomTimer.of(member, dto.getCustomTimerName());
+        long editedAt = dto.getEditedAt() != null ? dto.getEditedAt() : System.currentTimeMillis();
+        CustomTimer customTimer = CustomTimer.of(member, dto.getCustomTimerName(), editedAt);
         CustomTimer savedTimer = customTimerRepository.save(customTimer);
-
         createStepTimerList(savedTimer, dto.getCustomTimerSteps());
 
-        return new CustomTimerCreateResponse(savedTimer.getId());
+        if (dto.getCreateRequestId() != null) {
+            timerSyncService.recordCreation(member, dto.getCreateRequestId(), TimerType.CUSTOM, savedTimer.getId(), savedTimer.getCustomTimerUpdatedAt());
+        }
+        return new CustomTimerCreateResponse(savedTimer.getId(), savedTimer.getCustomTimerUpdatedAt());
     }
 
-    /**
-     * 주어진 사용자와 타이머 ID를 기반으로 커스텀 타이머를 삭제합니다.
-     * 타이머와 연관된 모든 스텝도 함께 삭제됩니다.
-     */
     @Override
-    public void deleteCustomTimer(Long customTimerId) {
-        Member member = getMember(UserContextHolder.getUserId());
-        CustomTimer customTimer = getCustomTimer(member, customTimerId);
+    public TimerMutationResponse deleteCustomTimer(Long customTimerId, TimerDeleteRequest request) {
+        UUID editId = request != null ? request.editId() : null;
+        Long editedAt = request != null ? request.editedAt() : null;
+        boolean sync = TimerSyncService.isSyncEdit(editId, editedAt);
+        Member member = timerSyncService.lockMember(UserContextHolder.getUserId());
+        if (sync) {
+            Optional<TimerMutationResponse> replay = timerSyncService.findEdit(member.getMemberId(), TimerType.CUSTOM, customTimerId, editId, TimerEditOperation.DELETE);
+            if (replay.isPresent()) {
+                return replay.get();
+            }
+        }
 
-        customTimer.deleteCustomTimer();
-        // 벌크 연산을 사용하여 DB 접근 최소화 및 성능 향상
-        customTimerStepRepository.softDeleteAllByCustomTimer(customTimer);
+        CustomTimer customTimer = getCustomTimer(member, customTimerId);
+        if (customTimer.getCustomTimerDeletedAt() != null) {
+            if (!sync) {
+                throw new CustomException(ErrorCode.CUSTOM_TIMER_NOT_FOUND);
+            }
+        } else {
+            // 삭제는 기기 시각과 무관하게 우선한다. 부모의 모든 변경은 벌크 flush/clear 전에 설정한다.
+            customTimer.deleteCustomTimer(sync ? editedAt : System.currentTimeMillis());
+            customTimerStepRepository.softDeleteAllByCustomTimer(customTimer);
+        }
+
+        return recordEdit(member, customTimer, editId, TimerEditOperation.DELETE, sync);
     }
 
-    /**
-     * 주어진 커스텀 타이머 ID와 요청 데이터로 커스텀 타이머를 업데이트합니다.
-     * 요청된 타이머 스텝의 유효성을 검사하고, 기존 스텝을 삭제한 후 새로운 스텝을 추가합니다.
-     */
     @Override
-    public void updateCustomTimer(Long customTimerId, CustomTimerCreateRequest request) {
-        Member member = getMember(UserContextHolder.getUserId());
-        CustomTimer customTimer = getCustomTimer(member, customTimerId);
+    public TimerMutationResponse updateCustomTimer(Long customTimerId, CustomTimerUpdateRequest request) {
+        boolean sync = TimerSyncService.isSyncEdit(request.getEditId(), request.getEditedAt());
+        Member member = timerSyncService.lockMember(UserContextHolder.getUserId());
+        if (sync) {
+            Optional<TimerMutationResponse> replay = timerSyncService.findEdit(member.getMemberId(), TimerType.CUSTOM, customTimerId, request.getEditId(), TimerEditOperation.REPLACE);
+            if (replay.isPresent()) {
+                return replay.get();
+            }
+        }
 
-        // 커스텀 타이머 스텝 제약사항 검사
+        CustomTimer customTimer = getCustomTimer(member, customTimerId);
+        validateUpdate(customTimer, sync, request.getEditedAt());
         validateCustomTimerSteps(request.getCustomTimerSteps());
 
-        // 커스텀 타이머 이름 변경
-        customTimer.updateCustomTimerName(request.getCustomTimerName());
-
-        // 커스텀 타이머 스텝 전체 논리적 삭제
+        // 이름과 동기화 필드를 모두 먼저 변경한다. 스텝 벌크 삭제는 부모를 flush한 뒤 detach한다.
+        customTimer.updateCustomTimerName(request.getCustomTimerName(), sync ? request.getEditedAt() : System.currentTimeMillis());
         customTimerStepRepository.softDeleteAllByCustomTimer(customTimer);
-
-        // 커스텀 타이머 스텝 추가
         createStepTimerList(customTimer, request.getCustomTimerSteps());
+
+        return recordEdit(member, customTimer, request.getEditId(), TimerEditOperation.REPLACE, sync);
     }
 
-    /**
-     * 주어진 사용자와 커스텀 타이머 ID를 기반으로 커스텀 타이머의 이름을 업데이트합니다.
-     */
     @Override
-    public void updateCustomTimerName(Long customTimerId, CustomTimerNameUpdateRequest request) {
-        Member member = getMember(UserContextHolder.getUserId());
-        CustomTimer customTimer = getCustomTimer(member, customTimerId);
+    public TimerMutationResponse updateCustomTimerName(Long customTimerId, CustomTimerNameUpdateRequest request) {
+        boolean sync = TimerSyncService.isSyncEdit(request.getEditId(), request.getEditedAt());
+        Member member = timerSyncService.lockMember(UserContextHolder.getUserId());
+        if (sync) {
+            Optional<TimerMutationResponse> replay = timerSyncService.findEdit(member.getMemberId(), TimerType.CUSTOM, customTimerId, request.getEditId(), TimerEditOperation.RENAME);
+            if (replay.isPresent()) {
+                return replay.get();
+            }
+        }
 
-        customTimer.updateCustomTimerName(request.getCustomTimerName());
+        CustomTimer customTimer = getCustomTimer(member, customTimerId);
+        validateUpdate(customTimer, sync, request.getEditedAt());
+        customTimer.updateCustomTimerName(request.getCustomTimerName(), sync ? request.getEditedAt() : System.currentTimeMillis());
+        return recordEdit(member, customTimer, request.getEditId(), TimerEditOperation.RENAME, sync);
+    }
+
+    private void validateUpdate(CustomTimer timer, boolean sync, Long editedAt) {
+        if (timer.getCustomTimerDeletedAt() != null) {
+            throw new CustomException(sync ? ErrorCode.TIMER_DELETED : ErrorCode.CUSTOM_TIMER_NOT_FOUND);
+        }
+        if (sync && TimerSyncService.effectiveEditedAt(timer.getEditedAt(), timer.getCustomTimerUpdatedAt()) > editedAt) {
+            List<CustomTimerStepRecord> steps = customTimerStepRepository.findAllByCustomTimerAndCustomTimerStepDeletedAtNull(timer)
+                    .stream()
+                    .map(step -> new CustomTimerStepRecord(step.getId(), step.getCustomTimerStepName(), step.getCustomTimerStepOrder(), step.getCustomTimerStepTime()))
+                    .toList();
+            throw new TimerSyncConflictException(CustomTimerDetailResponse.from(timer, steps));
+        }
+    }
+
+    private TimerMutationResponse recordEdit(Member member, CustomTimer timer, UUID editId, TimerEditOperation operation, boolean sync) {
+        if (!sync) {
+            return null;
+        }
+        // 벌크 clear 뒤에도 같은 트랜잭션에서 기존 부모/회원 ID를 참조하는 영수증을 저장한다.
+        timerSyncService.recordEdit(member, TimerType.CUSTOM, timer.getId(), editId, operation, timer.getCustomTimerUpdatedAt());
+        return new TimerMutationResponse(timer.getCustomTimerUpdatedAt());
     }
 
     /**
@@ -149,18 +204,11 @@ public class CustomTimerCommandServiceImpl implements CustomTimerCommandService 
     }
 
     /**
-     * 주어진 ID로 회원 엔티티를 조회합니다. 회원이 존재하지 않을 경우 예외를 발생시킵니다.
-     */
-    private Member getMember(UUID memberId) {
-        return memberRepository.findById(memberId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-    }
-
-    /**
      * 주어진 사용자와 타이머 ID를 기반으로 커스텀 타이머를 조회합니다.
-     * 타이머가 존재하지 않거나 삭제된 상태일 경우 {@link CustomException}을 발생시킵니다.
+     * 타이머가 존재하지 않거나 다른 회원 소유이면 {@link CustomException}을 발생시킵니다.
      */
     private CustomTimer getCustomTimer(Member member, Long customTimerId) {
-        return customTimerRepository.findByIdAndMemberAndCustomTimerDeletedAtNull(customTimerId, member)
+        return customTimerRepository.findByIdAndMember(customTimerId, member)
                 .orElseThrow(() -> new CustomException(ErrorCode.CUSTOM_TIMER_NOT_FOUND));
     }
 }

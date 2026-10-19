@@ -6,16 +6,20 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class SimpleTimerCreateResponseDto {
     private Long simpleTimerId;
+    private LocalDateTime updatedAt;
 
     public static SimpleTimerCreateResponseDto from(SimpleTimer simpleTimer) {
         return SimpleTimerCreateResponseDto.builder()
                 .simpleTimerId(simpleTimer.getId())
+                .updatedAt(simpleTimer.getSimpleTimerUpdatedAt())
                 .build();
     }
 }

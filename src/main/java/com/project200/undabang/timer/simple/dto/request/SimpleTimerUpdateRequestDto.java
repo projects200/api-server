@@ -4,11 +4,18 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.util.UUID;
 
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor
 public class SimpleTimerUpdateRequestDto {
     @Min(value = 1, message = "시간은 1 이상이어야 합니다!")
     @Max(value = 3599, message = "시간은 59분 59초를 초과할 수 없습니다!")
     private int time;
+
+    private UUID editId;
+    private Long editedAt;
 }

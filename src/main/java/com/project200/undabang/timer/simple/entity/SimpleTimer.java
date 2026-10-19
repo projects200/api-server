@@ -1,6 +1,7 @@
 package com.project200.undabang.timer.simple.entity;
 
 import com.project200.undabang.member.entity.Member;
+import com.project200.undabang.timer.sync.TimerSyncService;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -35,34 +36,43 @@ public class SimpleTimer {
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Builder.Default
     @Column(name = "simple_timer_created_at", nullable = false, updatable = false)
-    private LocalDateTime simpleTimerCreatedAt = LocalDateTime.now();
+    private LocalDateTime simpleTimerCreatedAt = TimerSyncService.currentTimestamp();
 
     @NotNull
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @ColumnDefault("CURRENT_TIMESTAMP(3)")
     @Builder.Default
-    @Column(name = "simple_timer_updated_at", nullable = false)
-    private LocalDateTime simpleTimerUpdatedAt = LocalDateTime.now();
+    @Column(name = "simple_timer_updated_at", nullable = false, columnDefinition = "DATETIME(3)")
+    private LocalDateTime simpleTimerUpdatedAt = TimerSyncService.currentTimestamp();
 
     @Column(name = "simple_timer_deleted_at")
     private LocalDateTime simpleTimerDeletedAt;
 
-    public static SimpleTimer of(Member member, Integer time) {
+    @Column(name = "edited_at")
+    private Long editedAt;
+
+    public static SimpleTimer of(Member member, Integer time, Long editedAt) {
+        LocalDateTime now = TimerSyncService.currentTimestamp();
         return SimpleTimer.builder()
                 .member(member)
                 .simpleTimerTime(time)
-                .simpleTimerCreatedAt(LocalDateTime.now())
-                .simpleTimerUpdatedAt(LocalDateTime.now())
+                .simpleTimerCreatedAt(now)
+                .simpleTimerUpdatedAt(now)
+                .editedAt(editedAt == null ? System.currentTimeMillis() : editedAt)
                 .build();
     }
 
-    public void updateSimpleTimer(Integer time) {
-        if (!Objects.equals(this.simpleTimerTime, time)) {
+    public void updateSimpleTimer(Integer time, Long editedAt) {
+        if (editedAt != null || !Objects.equals(this.simpleTimerTime, time)) {
             this.simpleTimerTime = time;
-            this.simpleTimerUpdatedAt = LocalDateTime.now();
+            this.simpleTimerUpdatedAt = TimerSyncService.currentTimestamp();
+            this.editedAt = editedAt == null ? System.currentTimeMillis() : editedAt;
         }
     }
 
-    public void deleteSimpleTimer() {
-        this.simpleTimerDeletedAt = LocalDateTime.now();
+    public void deleteSimpleTimer(Long editedAt) {
+        LocalDateTime now = TimerSyncService.currentTimestamp();
+        this.simpleTimerDeletedAt = now;
+        this.simpleTimerUpdatedAt = now;
+        this.editedAt = editedAt == null ? System.currentTimeMillis() : editedAt;
     }
 }

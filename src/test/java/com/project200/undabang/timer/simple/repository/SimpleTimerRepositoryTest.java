@@ -13,6 +13,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -65,7 +66,7 @@ class SimpleTimerRepositoryTest {
 
             SimpleTimer activeTimer = createAndSaveSimpleTimer(member, 30);
             SimpleTimer deletedTimer = createAndSaveSimpleTimer(member, 60);
-            deletedTimer.deleteSimpleTimer(); // 수정된 부분
+            deletedTimer.deleteSimpleTimer(null);
             em.persist(deletedTimer);
 
             flushAndClear();
@@ -152,7 +153,7 @@ class SimpleTimerRepositoryTest {
             // given
             Member member = createAndSaveMember("testMember");
             SimpleTimer timer = createAndSaveSimpleTimer(member, 180);
-            timer.deleteSimpleTimer(); // 수정된 부분
+            timer.deleteSimpleTimer(null);
             em.persist(timer);
             flushAndClear();
 
@@ -161,6 +162,70 @@ class SimpleTimerRepositoryTest {
 
             // then
             assertThat(foundTimerOpt).isNotPresent();
+        }
+    }
+
+    @Nested
+    @DisplayName("동기화 조회와 저장은")
+    class SynchronizationPersistence {
+        @Test
+        @DisplayName("소유한 삭제 행을 조회하되 다른 회원과 누락 ID는 숨긴다")
+        void ownedLookupIncludesDeletedButNotForeignTimers() {
+            Member owner = createAndSaveMember("syncOwner");
+            Member other = createAndSaveMember("syncOther");
+            SimpleTimer timer = createAndSaveSimpleTimer(owner, 180);
+            timer.deleteSimpleTimer(0L);
+            flushAndClear();
+
+            Optional<SimpleTimer> deleted = simpleTimerRepository.findByIdAndMember(timer.getId(), owner);
+            assertThat(deleted).isPresent();
+            assertThat(deleted.get().getSimpleTimerDeletedAt()).isNotNull();
+            assertThat(deleted.get().getEditedAt()).isZero();
+            assertThat(simpleTimerRepository.findByIdAndMember(timer.getId(), other)).isEmpty();
+            assertThat(simpleTimerRepository.findByIdAndMember(-1L, owner)).isEmpty();
+        }
+
+        @Test
+        @DisplayName("기기 시각과 부모 updatedAt의 밀리초 정밀도를 flush clear 후에도 보존한다")
+        void retainsMillisecondUpdatedAtAndDeviceTime() {
+            Member member = createAndSaveMember("millisMember");
+            SimpleTimer timer = SimpleTimer.of(member, 120, 0L);
+            em.persist(timer);
+            timer.updateSimpleTimer(120, 100L);
+            LocalDateTime updatedAt = timer.getSimpleTimerUpdatedAt();
+            flushAndClear();
+
+            SimpleTimer reloaded = simpleTimerRepository.findByIdAndMember(timer.getId(), member).orElseThrow();
+            assertThat(reloaded.getSimpleTimerUpdatedAt()).isEqualTo(updatedAt);
+            assertThat(reloaded.getEditedAt()).isEqualTo(100L);
+            assertThat(updatedAt.getNano() % 1_000_000).isZero();
+
+            reloaded.deleteSimpleTimer(50L);
+            LocalDateTime deletedUpdatedAt = reloaded.getSimpleTimerUpdatedAt();
+            flushAndClear();
+            SimpleTimer deleted = simpleTimerRepository.findByIdAndMember(timer.getId(), member).orElseThrow();
+            assertThat(deleted.getSimpleTimerDeletedAt()).isNotNull();
+            assertThat(deleted.getSimpleTimerUpdatedAt()).isEqualTo(deletedUpdatedAt);
+            assertThat(deleted.getEditedAt()).isEqualTo(50L);
+            assertThat(deletedUpdatedAt.getNano() % 1_000_000).isZero();
+        }
+
+        @Test
+        @DisplayName("기존 행의 null 기기 시각을 유지하고 같은 시간의 타이머를 허용한다")
+        void permitsHistoricalNullMetadataAndDuplicateDurations() {
+            Member member = createAndSaveMember("duplicateMember");
+            SimpleTimer first = createAndSaveSimpleTimer(member, 60);
+            SimpleTimer second = createAndSaveSimpleTimer(member, 60);
+            flushAndClear();
+
+            List<SimpleTimer> timers = simpleTimerRepository.findByMemberAndSimpleTimerDeletedAtNullOrderBySimpleTimerTimeAsc(member);
+            assertThat(timers).hasSize(2);
+            assertThat(timers).extracting(SimpleTimer::getEditedAt).containsOnlyNulls();
+            assertThat(timers).extracting(SimpleTimer::getId).containsExactlyInAnyOrder(first.getId(), second.getId());
+            timers.forEach(timer -> timer.deleteSimpleTimer(null));
+            flushAndClear();
+            assertThat(simpleTimerRepository.findByMemberAndSimpleTimerDeletedAtNullOrderBySimpleTimerTimeAsc(member)).isEmpty();
+            assertThat(simpleTimerRepository.countByMemberAndSimpleTimerDeletedAtNull(member)).isZero();
         }
     }
 

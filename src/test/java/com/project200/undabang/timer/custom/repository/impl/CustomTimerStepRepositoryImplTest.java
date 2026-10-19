@@ -43,7 +43,7 @@ class CustomTimerStepRepositoryImplTest {
     }
 
     private CustomTimer createAndSaveCustomTimer(Member member, String name) {
-        CustomTimer timer = CustomTimer.of(member, name);
+        CustomTimer timer = CustomTimer.of(member, name, null);
         em.persist(timer);
         return timer;
     }

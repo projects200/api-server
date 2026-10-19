@@ -4,17 +4,18 @@ import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.entity.Member;
-import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.policy.entity.PolicyKey;
 import com.project200.undabang.policy.service.PolicyService;
 import com.project200.undabang.timer.custom.dto.request.CustomTimerCreateRequest;
 import com.project200.undabang.timer.custom.dto.request.CustomTimerNameUpdateRequest;
 import com.project200.undabang.timer.custom.dto.request.CustomTimerStepCreateRequest;
+import com.project200.undabang.timer.custom.dto.request.CustomTimerUpdateRequest;
 import com.project200.undabang.timer.custom.dto.response.CustomTimerCreateResponse;
 import com.project200.undabang.timer.custom.entity.CustomTimer;
 import com.project200.undabang.timer.custom.entity.CustomTimerStep;
 import com.project200.undabang.timer.custom.repository.CustomTimerRepository;
 import com.project200.undabang.timer.custom.repository.CustomTimerStepRepository;
+import com.project200.undabang.timer.sync.TimerSyncService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -46,7 +47,7 @@ class CustomTimerCommandServiceImplTest {
     private CustomTimerStepRepository customTimerStepRepository;
 
     @Mock
-    private MemberRepository memberRepository;
+    private TimerSyncService timerSyncService;
 
     @Mock
     private PolicyService policyService;
@@ -77,11 +78,11 @@ class CustomTimerCommandServiceImplTest {
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(userId);
-                given(memberRepository.findById(userId)).willReturn(Optional.of(member));
-                given(customTimerRepository.findByIdAndMemberAndCustomTimerDeletedAtNull(timerId, member))
+                given(timerSyncService.lockMember(userId)).willReturn(member);
+                given(customTimerRepository.findByIdAndMember(timerId, member))
                         .willReturn(Optional.of(timer));
                 // when
-                customTimerCommandService.deleteCustomTimer(timerId);
+                assertThat(customTimerCommandService.deleteCustomTimer(timerId, null)).isNull();
 
                 // then
                 verify(customTimerStepRepository, times(1)).softDeleteAllByCustomTimer(timer);
@@ -98,14 +99,14 @@ class CustomTimerCommandServiceImplTest {
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(userId);
-                given(memberRepository.findById(userId)).willReturn(Optional.empty());
+                given(timerSyncService.lockMember(userId)).willThrow(new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
                 // when & then
-                assertThatThrownBy(() -> customTimerCommandService.deleteCustomTimer(timerId))
+                assertThatThrownBy(() -> customTimerCommandService.deleteCustomTimer(timerId, null))
                         .isInstanceOf(CustomException.class)
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
 
-                verify(customTimerRepository, never()).findByIdAndMemberAndCustomTimerDeletedAtNull(any(), any());
+                verify(customTimerRepository, never()).findByIdAndMember(any(), any());
             }
         }
 
@@ -119,12 +120,12 @@ class CustomTimerCommandServiceImplTest {
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(userId);
-                given(memberRepository.findById(userId)).willReturn(Optional.of(member));
-                given(customTimerRepository.findByIdAndMemberAndCustomTimerDeletedAtNull(timerId, member))
+                given(timerSyncService.lockMember(userId)).willReturn(member);
+                given(customTimerRepository.findByIdAndMember(timerId, member))
                         .willReturn(Optional.empty());
 
                 // when & then
-                assertThatThrownBy(() -> customTimerCommandService.deleteCustomTimer(timerId))
+                assertThatThrownBy(() -> customTimerCommandService.deleteCustomTimer(timerId, null))
                         .isInstanceOf(CustomException.class)
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.CUSTOM_TIMER_NOT_FOUND);
 
@@ -134,7 +135,7 @@ class CustomTimerCommandServiceImplTest {
     }
 
     private CustomTimerNameUpdateRequest createUpdateRequest(String newName) {
-        return new CustomTimerNameUpdateRequest(newName);
+        return new CustomTimerNameUpdateRequest(newName, null, null);
     }
 
     @Nested
@@ -157,16 +158,16 @@ class CustomTimerCommandServiceImplTest {
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(userId);
 
-                given(memberRepository.findById(userId)).willReturn(Optional.of(member));
-                given(customTimerRepository.findByIdAndMemberAndCustomTimerDeletedAtNull(timerId, member))
+                given(timerSyncService.lockMember(userId)).willReturn(member);
+                given(customTimerRepository.findByIdAndMember(timerId, member))
                         .willReturn(Optional.of(spiedTimer));
 
                 // when
-                customTimerCommandService.updateCustomTimerName(timerId, request);
+                assertThat(customTimerCommandService.updateCustomTimerName(timerId, request)).isNull();
 
                 // then
                 ArgumentCaptor<String> nameCaptor = ArgumentCaptor.forClass(String.class);
-                verify(spiedTimer, times(1)).updateCustomTimerName(nameCaptor.capture());
+                verify(spiedTimer, times(1)).updateCustomTimerName(nameCaptor.capture(), anyLong());
                 assertThat(nameCaptor.getValue()).isEqualTo(request.getCustomTimerName());
             }
         }
@@ -181,14 +182,14 @@ class CustomTimerCommandServiceImplTest {
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(userId);
-                given(memberRepository.findById(userId)).willReturn(Optional.empty());
+                given(timerSyncService.lockMember(userId)).willThrow(new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
                 // when & then
                 assertThatThrownBy(() -> customTimerCommandService.updateCustomTimerName(timerId, request))
                         .isInstanceOf(CustomException.class)
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
 
-                verify(customTimerRepository, never()).findByIdAndMemberAndCustomTimerDeletedAtNull(any(), any());
+                verify(customTimerRepository, never()).findByIdAndMember(any(), any());
             }
         }
 
@@ -203,8 +204,8 @@ class CustomTimerCommandServiceImplTest {
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(userId);
-                given(memberRepository.findById(userId)).willReturn(Optional.of(member));
-                given(customTimerRepository.findByIdAndMemberAndCustomTimerDeletedAtNull(timerId, member))
+                given(timerSyncService.lockMember(userId)).willReturn(member);
+                given(customTimerRepository.findByIdAndMember(timerId, member))
                         .willReturn(Optional.empty());
 
                 // when & then
@@ -227,7 +228,7 @@ class CustomTimerCommandServiceImplTest {
                         60
                 ))
                 .toList();
-        return new CustomTimerCreateRequest("테스트 타이머", steps);
+        return new CustomTimerCreateRequest("테스트 타이머", steps, null, null);
     }
 
     @Nested
@@ -245,7 +246,7 @@ class CustomTimerCommandServiceImplTest {
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(testUserId);
-                given(memberRepository.findById(testUserId)).willReturn(Optional.of(testUser));
+                given(timerSyncService.lockMember(testUserId)).willReturn(testUser);
                 given(policyService.getPolicyValueAsInt(PolicyKey.CUSTOM_TIMER_STEP_MIN_COUNT)).willReturn(1);
                 given(policyService.getPolicyValueAsInt(PolicyKey.CUSTOM_TIMER_STEP_MAX_COUNT)).willReturn(10);
                 given(customTimerRepository.save(any(CustomTimer.class))).willReturn(mockSavedTimer);
@@ -280,7 +281,7 @@ class CustomTimerCommandServiceImplTest {
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(testUserId);
-                given(memberRepository.findById(testUserId)).willReturn(Optional.empty());
+                given(timerSyncService.lockMember(testUserId)).willThrow(new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
                 // when & then
                 assertThatThrownBy(() -> customTimerCommandService.createCustomTimer(request))
@@ -302,7 +303,7 @@ class CustomTimerCommandServiceImplTest {
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(testUserId);
-                given(memberRepository.findById(testUserId)).willReturn(Optional.of(testUser));
+                given(timerSyncService.lockMember(testUserId)).willReturn(testUser);
                 given(policyService.getPolicyValueAsInt(PolicyKey.CUSTOM_TIMER_STEP_MIN_COUNT)).willReturn(2); // 정책: 최소 2개
 
                 // when & then
@@ -324,7 +325,7 @@ class CustomTimerCommandServiceImplTest {
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(testUserId);
-                given(memberRepository.findById(testUserId)).willReturn(Optional.of(testUser));
+                given(timerSyncService.lockMember(testUserId)).willReturn(testUser);
                 given(policyService.getPolicyValueAsInt(PolicyKey.CUSTOM_TIMER_STEP_MIN_COUNT)).willReturn(1);
                 given(policyService.getPolicyValueAsInt(PolicyKey.CUSTOM_TIMER_STEP_MAX_COUNT)).willReturn(3); // 정책: 최대 3개
 
@@ -350,11 +351,11 @@ class CustomTimerCommandServiceImplTest {
                     new CustomTimerStepCreateRequest("스텝 3", (byte) 2, 60), // << 순서가 맞지 않음
                     new CustomTimerStepCreateRequest("스텝 2", (byte) 1, 30)
             );
-            CustomTimerCreateRequest request = new CustomTimerCreateRequest("정렬 안된 타이머", unsortedSteps);
+            CustomTimerCreateRequest request = new CustomTimerCreateRequest("정렬 안된 타이머", unsortedSteps, null, null);
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(testUserId);
-                given(memberRepository.findById(testUserId)).willReturn(Optional.of(testUser));
+                given(timerSyncService.lockMember(testUserId)).willReturn(testUser);
 
                 // when & then
                 assertThatThrownBy(() -> customTimerCommandService.createCustomTimer(request))
@@ -378,7 +379,7 @@ class CustomTimerCommandServiceImplTest {
             UUID userId = UUID.randomUUID();
             Member member = createTestUser(userId);
             Long timerId = 1L;
-            CustomTimerCreateRequest request = createRequest(2); // 2개의 새 스텝으로 교체 요청
+            CustomTimerUpdateRequest request = new CustomTimerUpdateRequest("테스트 타이머", createRequest(2).getCustomTimerSteps(), null, null);
 
             // 엔티티의 실제 메소드 호출을 검증하기 위해 Spy 객체 사용
             CustomTimer originalTimer = spy(CustomTimer.builder()
@@ -392,18 +393,18 @@ class CustomTimerCommandServiceImplTest {
 
                 // --- Mocking ---
                 // 1. 사용자 및 타이머 조회 성공
-                given(memberRepository.findById(userId)).willReturn(Optional.of(member));
-                given(customTimerRepository.findByIdAndMemberAndCustomTimerDeletedAtNull(timerId, member))
+                given(timerSyncService.lockMember(userId)).willReturn(member);
+                given(customTimerRepository.findByIdAndMember(timerId, member))
                         .willReturn(Optional.of(originalTimer));
                 // 2. 유효성 검사 통과를 위한 정책 모킹
                 given(policyService.getPolicyValueAsInt(any(PolicyKey.class))).willReturn(1).willReturn(10);
 
                 // when
-                customTimerCommandService.updateCustomTimer(timerId, request);
+                assertThat(customTimerCommandService.updateCustomTimer(timerId, request)).isNull();
 
                 // then
                 // 1. 타이머 이름이 올바르게 업데이트 되었는지 검증
-                verify(originalTimer, times(1)).updateCustomTimerName(request.getCustomTimerName());
+                verify(originalTimer, times(1)).updateCustomTimerName(eq(request.getCustomTimerName()), anyLong());
 
                 // 2. 기존 스텝들이 삭제 처리 되었는지 검증
                 verify(customTimerStepRepository, times(1)).softDeleteAllByCustomTimer(originalTimer);
@@ -423,13 +424,13 @@ class CustomTimerCommandServiceImplTest {
             UUID userId = UUID.randomUUID();
             Member member = createTestUser(userId);
             Long timerId = 1L;
-            CustomTimerCreateRequest request = createRequest(1); // 정책 위반 (2개 미만)
+            CustomTimerUpdateRequest request = new CustomTimerUpdateRequest("테스트 타이머", createRequest(1).getCustomTimerSteps(), null, null);
             CustomTimer timer = spy(CustomTimer.builder().id(timerId).member(member).build());
 
             try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
                 ignored.when(UserContextHolder::getUserId).thenReturn(userId);
-                given(memberRepository.findById(userId)).willReturn(Optional.of(member));
-                given(customTimerRepository.findByIdAndMemberAndCustomTimerDeletedAtNull(timerId, member))
+                given(timerSyncService.lockMember(userId)).willReturn(member);
+                given(customTimerRepository.findByIdAndMember(timerId, member))
                         .willReturn(Optional.of(timer));
                 given(policyService.getPolicyValueAsInt(PolicyKey.CUSTOM_TIMER_STEP_MIN_COUNT)).willReturn(2); // 정책: 최소 2개
 
@@ -439,7 +440,7 @@ class CustomTimerCommandServiceImplTest {
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.CUSTOM_TIMER_STEP_MIN_COUNT_VIOLATION);
 
                 // 예외 발생 후 DB 변경 작업이 전혀 호출되지 않았는지 검증 (중요)
-                verify(timer, never()).updateCustomTimerName(anyString());
+                verify(timer, never()).updateCustomTimerName(anyString(), anyLong());
                 verify(customTimerStepRepository, never()).softDeleteAllByCustomTimer(any());
                 verify(customTimerStepRepository, never()).saveAll(any());
             }

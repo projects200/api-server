@@ -6,6 +6,7 @@ import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.timer.simple.dto.response.SimpleTimerListResponse;
+import com.project200.undabang.timer.simple.dto.response.SimpleTimerRecord;
 import com.project200.undabang.timer.simple.entity.SimpleTimer;
 import com.project200.undabang.timer.simple.repository.SimpleTimerRepository;
 import org.assertj.core.api.Assertions;
@@ -62,6 +63,8 @@ class SimpleTimerQueryServiceImplTest {
                 Assertions.assertThat(responseDto.getSimpleTimers()).hasSize(simpleTimerList.size());
                 Assertions.assertThat(responseDto.getSimpleTimers().get(0).simpleTimerId()).isEqualTo(simpleTimerList.get(0).getId());
                 Assertions.assertThat(responseDto.getSimpleTimers().get(0).time()).isEqualTo(simpleTimerList.get(0).getSimpleTimerTime());
+                Assertions.assertThat(responseDto.getSimpleTimers().get(0).updatedAt())
+                        .isEqualTo(simpleTimerList.get(0).getSimpleTimerUpdatedAt());
             }
         }
 
@@ -78,6 +81,34 @@ class SimpleTimerQueryServiceImplTest {
                 Assertions.assertThatThrownBy(() -> simpleTimerQueryService.getSimpleTimers())
                         .isInstanceOf(CustomException.class)
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
+            }
+        }
+
+        @Test
+        @DisplayName("빈 목록을 초기화하지 않으며 같은 시간의 타이머를 별도 항목으로 반환한다")
+        void returnsEmptyAndDuplicateDurationLists() {
+            UUID memberId = UUID.randomUUID();
+            Member member = Member.builder().memberId(memberId).build();
+            SimpleTimer first = SimpleTimer.builder().id(1L).member(member).simpleTimerTime(60).build();
+            SimpleTimer second = SimpleTimer.builder().id(2L).member(member).simpleTimerTime(60).build();
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(memberId);
+                given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+                given(simpleTimerRepository.findByMemberAndSimpleTimerDeletedAtNullOrderBySimpleTimerTimeAsc(member))
+                        .willReturn(List.of(), List.of(first, second));
+
+                SimpleTimerListResponse empty = simpleTimerQueryService.getSimpleTimers();
+                Assertions.assertThat(empty.getSimpleTimerCount()).isZero();
+                Assertions.assertThat(empty.getSimpleTimers()).isEmpty();
+
+                SimpleTimerListResponse duplicates = simpleTimerQueryService.getSimpleTimers();
+                Assertions.assertThat(duplicates.getSimpleTimerCount()).isEqualTo(2);
+                Assertions.assertThat(duplicates.getSimpleTimers())
+                        .extracting(SimpleTimerRecord::simpleTimerId)
+                        .containsExactly(1L, 2L);
+                Assertions.assertThat(duplicates.getSimpleTimers())
+                        .extracting(SimpleTimerRecord::time)
+                        .containsExactly(60, 60);
             }
         }
 

@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -15,6 +16,7 @@ import java.util.List;
 public class CustomTimerDetailResponse {
     private long customTimerId;
     private String customTimerName;
+    private LocalDateTime updatedAt;
     private int customTimerStepCount;
     List<CustomTimerStepRecord> customTimerSteps;
 
@@ -22,6 +24,7 @@ public class CustomTimerDetailResponse {
         return CustomTimerDetailResponse.builder()
                 .customTimerId(customTimer.getId())
                 .customTimerName(customTimer.getCustomTimerName())
+                .updatedAt(customTimer.getCustomTimerUpdatedAt())
                 .customTimerStepCount(customTimerSteps.size())
                 .customTimerSteps(customTimerSteps)
                 .build();

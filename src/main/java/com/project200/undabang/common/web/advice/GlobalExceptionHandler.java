@@ -3,6 +3,7 @@ package com.project200.undabang.common.web.advice;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.response.CommonResponse;
+import com.project200.undabang.timer.sync.TimerSyncConflictException;
 import jakarta.persistence.LockTimeoutException;
 import jakarta.persistence.PersistenceException;
 import jakarta.validation.ConstraintViolationException;
@@ -42,6 +43,18 @@ import java.util.Map;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    /**
+     * 타이머 충돌 시 현재 서버 값을 오류 응답에 포함합니다.
+     */
+    @ExceptionHandler(TimerSyncConflictException.class)
+    protected ResponseEntity<CommonResponse<Object>> handleTimerSyncConflictException(TimerSyncConflictException ex) {
+        ErrorCode errorCode = ex.getErrorCode();
+        CommonResponse<Object> response = CommonResponse.<Object>error(errorCode)
+                .data(ex.getCurrentValue())
+                .build();
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
+    }
 
     /**
      * 비즈니스 로직에서 발생하는 커스텀 예외를 처리합니다.

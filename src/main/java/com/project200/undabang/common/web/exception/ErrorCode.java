@@ -45,6 +45,11 @@ public enum ErrorCode {
     POLICY_NOT_EXIST(404, "POLICY_NOT_EXIST", "존재하지 않는 정책명 입니다."),
     POLICY_NOT_FOUND(500, "POLICY_NOT_FOUND", "정책을 찾을 수 없습니다."),
 
+    // 타이머 동기화 관련 에러
+    TIMER_EDIT_CONFLICT(409, "TIMER_EDIT_CONFLICT", "서버에 더 최근에 수정된 타이머가 있습니다."),
+    TIMER_DELETED(410, "TIMER_DELETED", "이미 삭제된 타이머입니다."),
+    TIMER_REQUEST_ID_REUSED(400, "TIMER_REQUEST_ID_REUSED", "다른 종류의 요청에 이미 사용된 타이머 요청 ID입니다."),
+
     // 심플 타이머 관련 에러
     SIMPLE_TIMER_NOT_FOUND(404, "SIMPLE_TIMER_NOT_FOUND", "존재하지 않는 타이머 입니다."),
     SIMPLE_TIMER_MAX_COUNT_VIOLATION(409, "SIMPLE_TIMER_MAX_COUNT_VIOLATION", "최대 심플 타이머 개수(6개)를 초과했습니다."),
