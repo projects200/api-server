@@ -70,6 +70,7 @@ class CustomTimerQueryServiceImplTest {
                 assertThat(response).isNotNull();
                 assertThat(response.getCustomTimerId()).isEqualTo(timer.getId());
                 assertThat(response.getCustomTimerName()).isEqualTo(timer.getCustomTimerName());
+                assertThat(response.getUpdatedAt()).isEqualTo(timer.getCustomTimerUpdatedAt());
                 assertThat(response.getCustomTimerSteps()).hasSize(1);
                 assertThat(response.getCustomTimerSteps().get(0).customTimerStepName()).isEqualTo("스텝1");
             }
@@ -111,6 +112,47 @@ class CustomTimerQueryServiceImplTest {
                         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.AUTHORIZATION_DENIED);
             }
         }
+
+        @Test
+        @DisplayName("다른 회원의 삭제된 타이머도 기존 권한 예외를 유지한다")
+        void throws_authorization_when_foreign_timer_is_deleted() {
+            UUID userId = UUID.randomUUID();
+            Member member = Member.builder().memberId(userId).build();
+            Member otherMember = Member.builder().memberId(UUID.randomUUID()).build();
+            CustomTimer timer = CustomTimer.builder().id(1L).member(otherMember).build();
+            timer.deleteCustomTimer(100L);
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(userId);
+                given(memberRepository.findById(userId)).willReturn(Optional.of(member));
+                given(customTimerRepository.findById(1L)).willReturn(Optional.of(timer));
+
+                assertThatThrownBy(() -> customTimerQueryService.getCustomTimerDetail(1L))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.AUTHORIZATION_DENIED);
+                org.mockito.Mockito.verifyNoInteractions(customTimerStepRepository);
+            }
+        }
+
+        @Test
+        @DisplayName("삭제된 본인 타이머의 상세 정보는 반환하지 않는다")
+        void throws_when_owned_timer_is_deleted() {
+            UUID userId = UUID.randomUUID();
+            Member member = Member.builder().memberId(userId).build();
+            CustomTimer timer = CustomTimer.builder().id(1L).member(member).build();
+            timer.deleteCustomTimer(100L);
+
+            try (MockedStatic<UserContextHolder> ignored = mockStatic(UserContextHolder.class)) {
+                given(UserContextHolder.getUserId()).willReturn(userId);
+                given(memberRepository.findById(userId)).willReturn(Optional.of(member));
+                given(customTimerRepository.findById(1L)).willReturn(Optional.of(timer));
+
+                assertThatThrownBy(() -> customTimerQueryService.getCustomTimerDetail(1L))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.CUSTOM_TIMER_NOT_FOUND);
+                org.mockito.Mockito.verifyNoInteractions(customTimerStepRepository);
+            }
+        }
     }
 
     @Nested
@@ -139,6 +181,7 @@ class CustomTimerQueryServiceImplTest {
                 assertThat(response.getCustomTimers()).hasSize(customTimerList.size());
                 assertThat(response.getCustomTimers().get(0).customTimerId()).isEqualTo(customTimerList.get(0).getId());
                 assertThat(response.getCustomTimers().get(0).customTimerName()).isEqualTo(customTimerList.get(0).getCustomTimerName());
+                assertThat(response.getCustomTimers().get(0).updatedAt()).isEqualTo(customTimerList.get(0).getCustomTimerUpdatedAt());
             }
         }
 

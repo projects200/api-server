@@ -12,6 +12,11 @@
 === 개발 참고 사항
 
 - <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
+- 본문이 없거나 `{}`인 기존 요청은 성공 시 기존처럼 `data: null`을 반환합니다. 이미 삭제된 타이머는 기존처럼 404입니다.
+- 동기화 삭제는 선택적 JSON 본문에 UUID `editId`와 0 이상 UTC Unix 밀리초 `editedAt`을 함께 보냅니다. 부분 메타데이터·음수 시각은 400이며 성공 응답은 `data.updatedAt`입니다.
+- 삭제는 기기 시각과 무관하게 수정보다 우선합니다. 소유한 삭제 행에 새 삭제 키를 보내도 성공하며 기존 삭제 시각을 보존합니다.
+- 같은 삭제 키의 재시도는 최초 성공 시각을 반환합니다. 수정에 사용한 키를 삭제에 재사용하면 `TIMER_REQUEST_ID_REUSED`(400)입니다.
+- 마지막 타이머도 삭제할 수 있습니다. 회원이 없거나 타이머가 없거나 다른 회원의 소유라면 404입니다.
 
 === 코드 샘플
 
@@ -19,14 +24,18 @@ operation::delete-simple-timer/delete-simple-timer_-success[snippets="curl-reque
 
 === 매개 변수
 
-operation::delete-simple-timer/delete-simple-timer_-success[snippets="request-headers,response-fields"]
+operation::delete-simple-timer/delete-simple-timer_-success[snippets="request-headers,path-parameters,response-fields"]
+
+==== 동기화 삭제 예시
+
+operation::simple-timer-synchronization/delete-synced-simple-timer[snippets="curl-request,http-request,http-response,path-parameters,request-fields,response-fields"]
 
 ==== 응답 상태 코드
 
 |===
 |상태 코드|설명
 |200|심플 타이머 정보가 성공적으로 삭제되었습니다.
-|400|입력 정보가 정확하지 않습니다.
+|400|입력 정보가 정확하지 않거나 메타데이터가 잘못되었습니다. 다른 작업에 사용한 수정 키를 재사용했습니다.
 |404|회원이 존재하지 않습니다. +
 존재하지 않는 타이머 입니다.
 |===

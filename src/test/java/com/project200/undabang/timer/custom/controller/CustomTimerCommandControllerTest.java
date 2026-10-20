@@ -7,6 +7,7 @@ import com.project200.undabang.configuration.RestDocsUtils;
 import com.project200.undabang.timer.custom.dto.request.CustomTimerCreateRequest;
 import com.project200.undabang.timer.custom.dto.request.CustomTimerNameUpdateRequest;
 import com.project200.undabang.timer.custom.dto.request.CustomTimerStepCreateRequest;
+import com.project200.undabang.timer.custom.dto.request.CustomTimerUpdateRequest;
 import com.project200.undabang.timer.custom.dto.response.CustomTimerCreateResponse;
 import com.project200.undabang.timer.custom.service.CustomTimerCommandService;
 import org.junit.jupiter.api.DisplayName;
@@ -17,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,6 +41,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(CustomTimerCommandController.class)
 class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
+    private static final LocalDateTime UPDATED_AT = LocalDateTime.of(2026, 10, 19, 12, 0, 0, 123_000_000);
+
 
     @MockitoBean
     private CustomTimerCommandService customTimerCommandService;
@@ -59,10 +63,10 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
                     new CustomTimerStepCreateRequest("휴식", (byte) 1, 60),
                     new CustomTimerStepCreateRequest("스쿼트", (byte) 2, 120)
             );
-            CustomTimerCreateRequest request = new CustomTimerCreateRequest("3대 운동 루틴", steps);
+            CustomTimerCreateRequest request = new CustomTimerCreateRequest("3대 운동 루틴", steps, UUID.randomUUID(), 1_792_368_000_123L);
 
             // 서비스 계층의 응답 객체 생성
-            CustomTimerCreateResponse expectedResponse = new CustomTimerCreateResponse(1L);
+            CustomTimerCreateResponse expectedResponse = new CustomTimerCreateResponse(1L, UPDATED_AT);
 
             // 서비스 메소드가 어떤 요청이든(any) 받으면, 미리 정의된 응답을 반환하도록 설정
             given(customTimerCommandService.createCustomTimer(any(CustomTimerCreateRequest.class)))
@@ -78,7 +82,8 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
                             status().isCreated(), // 201 Created 상태 코드를 기대
                             jsonPath("$.succeed").value(true),
                             jsonPath("$.code").value("CREATED"),
-                            jsonPath("$.data.customTimerId").value(expectedResponse.customTimerId())
+                            jsonPath("$.data.customTimerId").value(expectedResponse.customTimerId()),
+                            jsonPath("$.data.updatedAt").value("2026-10-19T12:00:00.123")
                     )
                     .andDo(document.document(
                             requestHeaders(HEADER_ACCESS_TOKEN),
@@ -88,11 +93,14 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
                                     fieldWithPath("customTimerSteps").description("커스텀 타이머에 포함될 스텝 목록입니다."),
                                     fieldWithPath("customTimerSteps[].customTimerStepName").description("스텝의 이름입니다."),
                                     fieldWithPath("customTimerSteps[].customTimerStepOrder").description("스텝의 순서입니다."),
-                                    fieldWithPath("customTimerSteps[].customTimerStepTime").description("스텝의 시간(초)입니다.")
+                                    fieldWithPath("customTimerSteps[].customTimerStepTime").description("스텝의 시간(초)입니다."),
+                                    fieldWithPath("createRequestId").type(JsonFieldType.STRING).optional().description("선택 UUID. 같은 회원의 생성 요청 재전송을 식별합니다."),
+                                    fieldWithPath("editedAt").type(JsonFieldType.NUMBER).optional().description("선택 UTC epoch 밀리초. createRequestId가 필요하며 생략 시 서버 시각을 사용합니다.")
                             ),
                             // 응답 본문의 필드를 문서화합니다.
                             responseFields(commonResponseFields(
-                                    fieldWithPath("data.customTimerId").description("새롭게 생성된 커스텀 타이머의 ID입니다.")
+                                    fieldWithPath("data.customTimerId").description("생성 요청에 최초 할당된 커스텀 타이머의 ID입니다."),
+                                    fieldWithPath("data.updatedAt").description("최초 생성 응답의 서버 수정 시각입니다. 밀리초 정밀도입니다.")
                             ))
                     ));
 
@@ -107,7 +115,7 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
             // given
             UUID memberId = UUID.randomUUID();
             List<CustomTimerStepCreateRequest> steps = List.of(new CustomTimerStepCreateRequest("스텝 1", (byte) 1, 30));
-            CustomTimerCreateRequest request = new CustomTimerCreateRequest("", steps); // Invalid: blank name
+            CustomTimerCreateRequest request = new CustomTimerCreateRequest("", steps, null, null); // Invalid: blank name
 
             // when & then
             mockMvc.perform(post("/api/v1/custom-timers")
@@ -124,7 +132,7 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
         void shouldFail_whenStepsListIsNull() throws Exception {
             // given
             UUID memberId = UUID.randomUUID();
-            CustomTimerCreateRequest request = new CustomTimerCreateRequest("유효한 이름", null); // Invalid: null steps
+            CustomTimerCreateRequest request = new CustomTimerCreateRequest("유효한 이름", null, null, null); // Invalid: null steps
 
             // when & then
             mockMvc.perform(post("/api/v1/custom-timers")
@@ -144,7 +152,7 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
             List<CustomTimerStepCreateRequest> steps = List.of(
                     new CustomTimerStepCreateRequest("", (byte) 1, 30) // Invalid: blank step name
             );
-            CustomTimerCreateRequest request = new CustomTimerCreateRequest("유효한 이름", steps);
+            CustomTimerCreateRequest request = new CustomTimerCreateRequest("유효한 이름", steps, null, null);
 
             // when & then
             mockMvc.perform(post("/api/v1/custom-timers")
@@ -164,7 +172,7 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
             List<CustomTimerStepCreateRequest> steps = List.of(
                     new CustomTimerStepCreateRequest("유효한 스텝 이름", (byte) 1, 0) // Invalid: time is 0
             );
-            CustomTimerCreateRequest request = new CustomTimerCreateRequest("유효한 이름", steps);
+            CustomTimerCreateRequest request = new CustomTimerCreateRequest("유효한 이름", steps, null, null);
 
             // when & then
             mockMvc.perform(post("/api/v1/custom-timers")
@@ -188,8 +196,7 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
             UUID memberId = UUID.randomUUID();
             Long timerId = 1L;
 
-            // 실제로 삭제하지 않기위해 willDoNothing() 사용
-            willDoNothing().given(customTimerCommandService).deleteCustomTimer(timerId);
+            given(customTimerCommandService.deleteCustomTimer(timerId, null)).willReturn(null);
 
             // when & then
             mockMvc.perform(delete("/api/v1/custom-timers/{customTimerId}", timerId)
@@ -198,7 +205,7 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
                     .andExpect(jsonPath("$.succeed").value(true))
                     .andExpect(jsonPath("$.code").value("DELETED"))
                     .andExpect(jsonPath("$.message").value("리소스가 성공적으로 삭제되었습니다."))
-                    .andExpect(jsonPath("$.data").doesNotExist())
+                    .andExpect(jsonPath("$.data").value(org.hamcrest.Matchers.nullValue()))
                     .andDo(print())
                     .andDo(document.document(
                             requestHeaders(
@@ -213,7 +220,7 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
                             )
                     ));
 
-            then(customTimerCommandService).should().deleteCustomTimer(timerId);
+            then(customTimerCommandService).should().deleteCustomTimer(timerId, null);
         }
 
         @Test
@@ -225,7 +232,7 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
 
             // 서비스 계층에서 예외 발생하도록 설정
             doThrow(new CustomException(ErrorCode.CUSTOM_TIMER_NOT_FOUND))
-                    .when(customTimerCommandService).deleteCustomTimer(timerId);
+                    .when(customTimerCommandService).deleteCustomTimer(timerId, null);
 
             // when & then
             mockMvc.perform(delete("/api/v1/custom-timers/{customTimerId}", timerId)
@@ -234,7 +241,7 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
                     .andExpect(jsonPath("$.succeed").value(false))
                     .andExpect(jsonPath("$.code").value(ErrorCode.CUSTOM_TIMER_NOT_FOUND.name()));
 
-            then(customTimerCommandService).should().deleteCustomTimer(timerId);
+            then(customTimerCommandService).should().deleteCustomTimer(timerId, null);
         }
     }
 
@@ -254,11 +261,9 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
                     new CustomTimerStepCreateRequest("새로운 스텝 1", (byte) 0, 120),
                     new CustomTimerStepCreateRequest("새로운 휴식", (byte) 1, 30)
             );
-            CustomTimerCreateRequest request = new CustomTimerCreateRequest("새로운 타이머 이름", newSteps);
+            CustomTimerUpdateRequest request = new CustomTimerUpdateRequest("새로운 타이머 이름", newSteps, null, null);
 
-            // 서비스 계층의 void 메소드는 willDoNothing()으로 모킹
-            willDoNothing().given(customTimerCommandService)
-                    .updateCustomTimer(eq(timerId), any(CustomTimerCreateRequest.class));
+            given(customTimerCommandService.updateCustomTimer(eq(timerId), any(CustomTimerUpdateRequest.class))).willReturn(null);
 
             // when & then
             mockMvc.perform(put("/api/v1/custom-timers/{customTimerId}", timerId) // PUT 요청
@@ -269,7 +274,7 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
                     .andExpect(jsonPath("$.succeed").value(true))
                     .andExpect(jsonPath("$.code").value("UPDATED"))
                     .andExpect(jsonPath("$.message").value("리소스가 성공적으로 수정되었습니다."))
-                    .andExpect(jsonPath("$.data").doesNotExist())
+                    .andExpect(jsonPath("$.data").value(org.hamcrest.Matchers.nullValue()))
                     .andDo(print())
                     .andDo(document.document(
                             requestHeaders(
@@ -284,7 +289,9 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
                                     fieldWithPath("customTimerSteps").description("커스텀 타이머에 포함될 스텝 목록입니다."),
                                     fieldWithPath("customTimerSteps[].customTimerStepName").description("스텝의 이름입니다. 커스텀 타이머 스텝 이름은 최소 1글자, 최대 50글자 이내여야 합니다."),
                                     fieldWithPath("customTimerSteps[].customTimerStepOrder").description("스텝의 순서입니다. 커스텀 타이머의 순서는 0~49 이내의 연속적인 정수여야 합니다."),
-                                    fieldWithPath("customTimerSteps[].customTimerStepTime").description("스텝의 시간(초)입니다. 커스텀 타이머의 시간은 1 ~ 3599 이내의 값을 입력해야 합니다.")
+                                    fieldWithPath("customTimerSteps[].customTimerStepTime").description("스텝의 시간(초)입니다. 커스텀 타이머의 시간은 1 ~ 3599 이내의 값을 입력해야 합니다."),
+                                    fieldWithPath("editId").type(JsonFieldType.STRING).optional().description("선택 UUID. editedAt과 함께 전송합니다."),
+                                    fieldWithPath("editedAt").type(JsonFieldType.NUMBER).optional().description("선택 UTC epoch 밀리초. editId와 함께 전송합니다.")
                             ),
                             responseFields(
                                     RestDocsUtils.commonResponseFieldsOnly()
@@ -293,7 +300,7 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
 
             // 서비스 메소드가 정확한 인자와 함께 1번 호출되었는지 검증
             then(customTimerCommandService).should()
-                    .updateCustomTimer(eq(timerId), any(CustomTimerCreateRequest.class));
+                    .updateCustomTimer(eq(timerId), any(CustomTimerUpdateRequest.class));
         }
 
         @Test
@@ -304,7 +311,7 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
             Long timerId = 1L;
             List<CustomTimerStepCreateRequest> steps = List.of(new CustomTimerStepCreateRequest("유효한 스텝", (byte) 0, 30));
             // 유효성 검사에 실패할 요청 DTO (이름이 비어있음)
-            CustomTimerCreateRequest request = new CustomTimerCreateRequest("", steps);
+            CustomTimerUpdateRequest request = new CustomTimerUpdateRequest("", steps, null, null);
 
             // when & then
             mockMvc.perform(put("/api/v1/custom-timers/{customTimerId}", timerId)
@@ -323,12 +330,12 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
             // given
             UUID memberId = UUID.randomUUID();
             Long nonExistentTimerId = 999L;
-            CustomTimerCreateRequest request = new CustomTimerCreateRequest("유효한 이름", List.of(new CustomTimerStepCreateRequest("유효한 스텝", (byte) 0, 30)));
+            CustomTimerUpdateRequest request = new CustomTimerUpdateRequest("유효한 이름", List.of(new CustomTimerStepCreateRequest("유효한 스텝", (byte) 0, 30)), null, null);
 
             // 서비스 계층에서 예외가 발생하도록 설정
             doThrow(new CustomException(ErrorCode.CUSTOM_TIMER_NOT_FOUND))
                     .when(customTimerCommandService)
-                    .updateCustomTimer(eq(nonExistentTimerId), any(CustomTimerCreateRequest.class));
+                    .updateCustomTimer(eq(nonExistentTimerId), any(CustomTimerUpdateRequest.class));
 
             // when & then
             mockMvc.perform(put("/api/v1/custom-timers/{customTimerId}", nonExistentTimerId)
@@ -341,7 +348,7 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
 
             // 예외는 발생했지만 서비스 메소드 자체는 호출되었음을 검증
             then(customTimerCommandService).should()
-                    .updateCustomTimer(eq(nonExistentTimerId), any(CustomTimerCreateRequest.class));
+                    .updateCustomTimer(eq(nonExistentTimerId), any(CustomTimerUpdateRequest.class));
         }
 
         @Test
@@ -357,12 +364,12 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
                     new CustomTimerStepCreateRequest("스텝 2", (byte) 1, 30),
                     new CustomTimerStepCreateRequest("스텝 3", (byte) 2, 30)
             );
-            CustomTimerCreateRequest request = new CustomTimerCreateRequest("스텝이 너무 많은 타이머", tooManySteps);
+            CustomTimerUpdateRequest request = new CustomTimerUpdateRequest("스텝이 너무 많은 타이머", tooManySteps, null, null);
 
             // 서비스 계층에서 '정책 위반' 예외가 발생하도록 설정
             doThrow(new CustomException(ErrorCode.CUSTOM_TIMER_STEP_MAX_COUNT_VIOLATION))
                     .when(customTimerCommandService)
-                    .updateCustomTimer(eq(timerId), any(CustomTimerCreateRequest.class));
+                    .updateCustomTimer(eq(timerId), any(CustomTimerUpdateRequest.class));
 
             // when & then
             mockMvc.perform(put("/api/v1/custom-timers/{customTimerId}", timerId)
@@ -375,7 +382,7 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
 
             // 서비스 메소드 자체는 호출되었음을 검증
             then(customTimerCommandService).should()
-                    .updateCustomTimer(eq(timerId), any(CustomTimerCreateRequest.class));
+                    .updateCustomTimer(eq(timerId), any(CustomTimerUpdateRequest.class));
         }
     }
 
@@ -389,10 +396,9 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
             // given
             UUID memberId = UUID.randomUUID();
             Long timerId = 1L;
-            CustomTimerNameUpdateRequest request = new CustomTimerNameUpdateRequest("새로운 타이머 이름.");
+            CustomTimerNameUpdateRequest request = new CustomTimerNameUpdateRequest("새로운 타이머 이름.", null, null);
 
-            // 서비스 계층의 void 메소드는 willDoNothing()으로 모킹
-            willDoNothing().given(customTimerCommandService).updateCustomTimerName(eq(timerId), any(CustomTimerNameUpdateRequest.class));
+            given(customTimerCommandService.updateCustomTimerName(eq(timerId), any(CustomTimerNameUpdateRequest.class))).willReturn(null);
 
             // when & then
             mockMvc.perform(patch("/api/v1/custom-timers/{customTimerId}", timerId)
@@ -403,7 +409,7 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
                     .andExpect(jsonPath("$.succeed").value(true))
                     .andExpect(jsonPath("$.code").value("UPDATED"))
                     .andExpect(jsonPath("$.message").value("리소스가 성공적으로 수정되었습니다."))
-                    .andExpect(jsonPath("$.data").doesNotExist())
+                    .andExpect(jsonPath("$.data").value(org.hamcrest.Matchers.nullValue()))
                     .andDo(print())
                     .andDo(document.document(
                             requestHeaders(
@@ -414,7 +420,9 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
                                             .description("수정할 커스텀 타이머의 ID를 의미합니다.")
                             ),
                             requestFields(
-                                    fieldWithPath("customTimerName").description("새롭게 변경할 커스텀 타이머의 이름입니다.")
+                                    fieldWithPath("customTimerName").description("새롭게 변경할 커스텀 타이머의 이름입니다."),
+                                    fieldWithPath("editId").type(JsonFieldType.STRING).optional().description("선택 UUID. editedAt과 함께 전송합니다."),
+                                    fieldWithPath("editedAt").type(JsonFieldType.NUMBER).optional().description("선택 UTC epoch 밀리초. editId와 함께 전송합니다.")
                             ),
                             responseFields(
                                     RestDocsUtils.commonResponseFieldsOnly()
@@ -431,7 +439,7 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
             // given
             UUID memberId = UUID.randomUUID();
             Long timerId = 1L;
-            CustomTimerNameUpdateRequest request = new CustomTimerNameUpdateRequest("");
+            CustomTimerNameUpdateRequest request = new CustomTimerNameUpdateRequest("", null, null);
 
             // when & then
             mockMvc.perform(patch("/api/v1/custom-timers/{customTimerId}", timerId)
@@ -450,7 +458,7 @@ class CustomTimerCommandControllerTest extends AbstractRestDocSupport {
             // given
             UUID memberId = UUID.randomUUID();
             Long nonExistentTimerId = 999L;
-            CustomTimerNameUpdateRequest request = new CustomTimerNameUpdateRequest("수정될 리 없는 이름");
+            CustomTimerNameUpdateRequest request = new CustomTimerNameUpdateRequest("수정될 리 없는 이름", null, null);
 
             // 서비스 계층에서 예외가 발생하도록 설정
             doThrow(new CustomException(ErrorCode.CUSTOM_TIMER_NOT_FOUND))

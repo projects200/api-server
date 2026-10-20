@@ -13,6 +13,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +24,7 @@ import static org.springframework.restdocs.headers.HeaderDocumentation.requestHe
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
 import static org.springframework.restdocs.payload.JsonFieldType.ARRAY;
 import static org.springframework.restdocs.payload.JsonFieldType.NUMBER;
+import static org.springframework.restdocs.payload.JsonFieldType.STRING;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -33,6 +35,8 @@ class SimpleTimerQueryControllerTest extends AbstractRestDocSupport {
 
     @MockitoBean
     private SimpleTimerQueryService simpleTimerQueryService;
+
+    private static final LocalDateTime UPDATED_AT = LocalDateTime.of(2026, 10, 19, 10, 0, 0, 123_000_000);
 
     @Nested
     class GetSimpleTimer {
@@ -62,7 +66,10 @@ class SimpleTimerQueryControllerTest extends AbstractRestDocSupport {
                             jsonPath("$.data.simpleTimerCount").value(expectedResponse.getSimpleTimerCount()),
                             jsonPath("$.data.simpleTimers").isArray(),
                             jsonPath("$.data.simpleTimers[0].simpleTimerId").value(recordList.get(0).simpleTimerId()),
-                            jsonPath("$.data.simpleTimers[0].time").value(recordList.get(0).time())
+                            jsonPath("$.data.simpleTimers[0].time").value(recordList.get(0).time()),
+                            jsonPath("$.data.simpleTimers[0].updatedAt").value(UPDATED_AT.toString()),
+                            jsonPath("$.data.simpleTimers[0].editedAt").doesNotExist(),
+                            jsonPath("$.data.simpleTimers[0].deletedAt").doesNotExist()
                     )
                     .andDo(document.document(
                             requestHeaders(HEADER_ACCESS_TOKEN),
@@ -74,7 +81,9 @@ class SimpleTimerQueryControllerTest extends AbstractRestDocSupport {
                                     fieldWithPath("data.simpleTimers[].simpleTimerId").type(NUMBER)
                                             .description("심플 타이머의 식별자 정보 입니다."),
                                     fieldWithPath("data.simpleTimers[].time").type(NUMBER)
-                                            .description("심플 타이머의 시간 정보 입니다. 단위는 초 입니다.")
+                                            .description("심플 타이머의 시간 정보 입니다. 단위는 초 입니다."),
+                                    fieldWithPath("data.simpleTimers[].updatedAt").type(STRING)
+                                            .description("서버 수정 시각(ISO 로컬 일시, 밀리초 정밀도)")
                             ))
                     ));
 
@@ -108,12 +117,12 @@ class SimpleTimerQueryControllerTest extends AbstractRestDocSupport {
 
         private List<SimpleTimerRecord> createSimpleTimerRecordList() {
             return List.of(
-                    new SimpleTimerRecord(1L, 30),
-                    new SimpleTimerRecord(2L, 40),
-                    new SimpleTimerRecord(3L, 50),
-                    new SimpleTimerRecord(4L, 60),
-                    new SimpleTimerRecord(5L, 75),
-                    new SimpleTimerRecord(6L, 90)
+                    new SimpleTimerRecord(1L, 30, UPDATED_AT),
+                    new SimpleTimerRecord(2L, 40, UPDATED_AT),
+                    new SimpleTimerRecord(3L, 50, UPDATED_AT),
+                    new SimpleTimerRecord(4L, 60, UPDATED_AT),
+                    new SimpleTimerRecord(5L, 75, UPDATED_AT),
+                    new SimpleTimerRecord(6L, 90, UPDATED_AT)
             );
         }
     }

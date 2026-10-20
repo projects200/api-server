@@ -43,6 +43,10 @@ public class CustomTimerQueryServiceImpl implements CustomTimerQueryService {
             throw new CustomException(ErrorCode.AUTHORIZATION_DENIED);
         }
 
+        if (timer.getCustomTimerDeletedAt() != null) {
+            throw new CustomException(ErrorCode.CUSTOM_TIMER_NOT_FOUND);
+        }
+
         // 자신의 커스텀 리스트와 스텝 반환
         return findCustomTimerStepListAndMapToResponse(timer);
     }
@@ -90,7 +94,7 @@ public class CustomTimerQueryServiceImpl implements CustomTimerQueryService {
         List<CustomTimer> customTimerList = customTimerRepository.findAllByMemberAndCustomTimerDeletedAtNull(member);
 
         return customTimerList.stream()
-                .map(customTimer -> new CustomTimerRecord(customTimer.getId(), customTimer.getCustomTimerName()))
+                .map(customTimer -> new CustomTimerRecord(customTimer.getId(), customTimer.getCustomTimerName(), customTimer.getCustomTimerUpdatedAt()))
                 .toList();
     }
 }

@@ -3,8 +3,11 @@ package com.project200.undabang.timer.custom.controller;
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.timer.custom.dto.request.CustomTimerCreateRequest;
 import com.project200.undabang.timer.custom.dto.request.CustomTimerNameUpdateRequest;
+import com.project200.undabang.timer.custom.dto.request.CustomTimerUpdateRequest;
 import com.project200.undabang.timer.custom.dto.response.CustomTimerCreateResponse;
 import com.project200.undabang.timer.custom.service.CustomTimerCommandService;
+import com.project200.undabang.timer.sync.TimerDeleteRequest;
+import com.project200.undabang.timer.sync.TimerMutationResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,25 +27,20 @@ public class CustomTimerCommandController {
     }
 
     @DeleteMapping("/v1/custom-timers/{customTimerId}")
-    public ResponseEntity<CommonResponse<Void>> deleteCustomTimer(@PathVariable Long customTimerId) {
-
-        customTimerCommandService.deleteCustomTimer(customTimerId);
-        return ResponseEntity.ok(CommonResponse.delete(null));
+    public ResponseEntity<CommonResponse<TimerMutationResponse>> deleteCustomTimer(@PathVariable Long customTimerId,
+                                                                                 @RequestBody(required = false) TimerDeleteRequest request) {
+        return ResponseEntity.ok(CommonResponse.delete(customTimerCommandService.deleteCustomTimer(customTimerId, request)));
     }
 
     @PatchMapping("/v1/custom-timers/{customTimerId}")
-    public ResponseEntity<CommonResponse<Void>> updateCustomTimerName(@PathVariable("customTimerId") Long customTimerId,
-                                                                      @Valid @RequestBody CustomTimerNameUpdateRequest request) {
-
-        customTimerCommandService.updateCustomTimerName(customTimerId, request);
-        return ResponseEntity.ok(CommonResponse.update(null));
+    public ResponseEntity<CommonResponse<TimerMutationResponse>> updateCustomTimerName(@PathVariable("customTimerId") Long customTimerId,
+                                                                                     @Valid @RequestBody CustomTimerNameUpdateRequest request) {
+        return ResponseEntity.ok(CommonResponse.update(customTimerCommandService.updateCustomTimerName(customTimerId, request)));
     }
 
     @PutMapping("/v1/custom-timers/{customTimerId}")
-    public ResponseEntity<CommonResponse<Void>> updateCustomTimer(@PathVariable("customTimerId") Long customTimerId,
-                                                                  @Valid @RequestBody CustomTimerCreateRequest request) {
-
-        customTimerCommandService.updateCustomTimer(customTimerId, request);
-        return ResponseEntity.ok(CommonResponse.update(null));
+    public ResponseEntity<CommonResponse<TimerMutationResponse>> updateCustomTimer(@PathVariable("customTimerId") Long customTimerId,
+                                                                                 @Valid @RequestBody CustomTimerUpdateRequest request) {
+        return ResponseEntity.ok(CommonResponse.update(customTimerCommandService.updateCustomTimer(customTimerId, request)));
     }
 }

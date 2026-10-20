@@ -5,6 +5,8 @@ import com.project200.undabang.timer.simple.dto.request.SimpleTimerCreateRequest
 import com.project200.undabang.timer.simple.dto.request.SimpleTimerUpdateRequestDto;
 import com.project200.undabang.timer.simple.dto.response.SimpleTimerCreateResponseDto;
 import com.project200.undabang.timer.simple.service.SimpleTimerCommandService;
+import com.project200.undabang.timer.sync.TimerDeleteRequest;
+import com.project200.undabang.timer.sync.TimerMutationResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,16 +25,14 @@ public class SimpleTimerCommandController {
     }
 
     @PatchMapping("/v1/simple-timers/{simpleTimerId}")
-    public ResponseEntity<CommonResponse<Void>> updateSimpleTimer(@PathVariable("simpleTimerId") Long simpleTimerId,
-                                                                  @Valid @RequestBody SimpleTimerUpdateRequestDto dto) {
-
-        simpleTimerCommandService.updateSimpleTimer(simpleTimerId, dto);
-        return ResponseEntity.ok(CommonResponse.update(null));
+    public ResponseEntity<CommonResponse<TimerMutationResponse>> updateSimpleTimer(@PathVariable("simpleTimerId") Long simpleTimerId,
+                                                                                  @Valid @RequestBody SimpleTimerUpdateRequestDto dto) {
+        return ResponseEntity.ok(CommonResponse.update(simpleTimerCommandService.updateSimpleTimer(simpleTimerId, dto)));
     }
 
     @DeleteMapping("/v1/simple-timers/{simpleTimerId}")
-    public ResponseEntity<CommonResponse<Void>> deleteSimpleTimer(@PathVariable("simpleTimerId") Long simpleTimerId) {
-        simpleTimerCommandService.deleteSimpleTimer(simpleTimerId);
-        return ResponseEntity.ok(CommonResponse.delete(null));
+    public ResponseEntity<CommonResponse<TimerMutationResponse>> deleteSimpleTimer(@PathVariable("simpleTimerId") Long simpleTimerId,
+                                                                                  @RequestBody(required = false) TimerDeleteRequest dto) {
+        return ResponseEntity.ok(CommonResponse.delete(simpleTimerCommandService.deleteSimpleTimer(simpleTimerId, dto)));
     }
 }

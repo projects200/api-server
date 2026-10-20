@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @NoArgsConstructor
@@ -21,4 +22,7 @@ public class CustomTimerCreateRequest {
     @Valid
     @NotNull
     private List<CustomTimerStepCreateRequest> customTimerSteps;
+
+    private UUID createRequestId;
+    private Long editedAt;
 }

@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.project200.undabang.timer.sync.TimerSyncService.currentTimestamp;
+
 @Entity
 @Getter
 @Builder
@@ -35,36 +37,45 @@ public class CustomTimer {
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "custom_timer_created_at", nullable = false, updatable = false)
-    private LocalDateTime customTimerCreatedAt = LocalDateTime.now();
+    private LocalDateTime customTimerCreatedAt = currentTimestamp();
 
     @Builder.Default
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "custom_timer_updated_at", nullable = false)
-    private LocalDateTime customTimerUpdatedAt = LocalDateTime.now();
+    @Column(name = "custom_timer_updated_at", nullable = false, columnDefinition = "datetime(3)")
+    private LocalDateTime customTimerUpdatedAt = currentTimestamp();
 
     @Column(name = "custom_timer_deleted_at")
     private LocalDateTime customTimerDeletedAt;
+
+    @Column(name = "edited_at")
+    private Long editedAt;
 
     @Builder.Default
     @OneToMany(mappedBy = "customTimer")
     private List<CustomTimerStep> customTimerSteps = new ArrayList<>();
 
-    public static CustomTimer of(Member member, String customTimerName) {
+    public static CustomTimer of(Member member, String customTimerName, Long editedAt) {
+        LocalDateTime now = currentTimestamp();
         return CustomTimer.builder()
                 .member(member)
                 .customTimerName(customTimerName)
-                .customTimerCreatedAt(LocalDateTime.now())
-                .customTimerUpdatedAt(LocalDateTime.now())
+                .customTimerCreatedAt(now)
+                .customTimerUpdatedAt(now)
+                .editedAt(editedAt)
                 .build();
     }
 
-    public void deleteCustomTimer() {
-        this.customTimerDeletedAt = LocalDateTime.now();
+    public void deleteCustomTimer(Long editedAt) {
+        LocalDateTime now = currentTimestamp();
+        this.customTimerDeletedAt = now;
+        this.customTimerUpdatedAt = now;
+        this.editedAt = editedAt;
     }
 
-    public void updateCustomTimerName(String customTimerName) {
+    public void updateCustomTimerName(String customTimerName, Long editedAt) {
         this.customTimerName = customTimerName;
-        this.customTimerUpdatedAt = LocalDateTime.now();
+        this.customTimerUpdatedAt = currentTimestamp();
+        this.editedAt = editedAt;
     }
 }

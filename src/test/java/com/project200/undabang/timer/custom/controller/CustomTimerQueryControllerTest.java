@@ -16,6 +16,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,6 +33,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(CustomTimerQueryController.class)
 class CustomTimerQueryControllerTest extends AbstractRestDocSupport {
+    private static final LocalDateTime UPDATED_AT = LocalDateTime.of(2026, 10, 19, 12, 0, 0, 123_000_000);
+
 
     @MockitoBean
     private CustomTimerQueryService customTimerQueryService;
@@ -55,6 +58,7 @@ class CustomTimerQueryControllerTest extends AbstractRestDocSupport {
             CustomTimerDetailResponse response = CustomTimerDetailResponse.builder()
                     .customTimerId(customTimerId)
                     .customTimerName("타이머")
+                    .updatedAt(UPDATED_AT)
                     .customTimerStepCount(steps.size())
                     .customTimerSteps(steps)
                     .build();
@@ -74,13 +78,17 @@ class CustomTimerQueryControllerTest extends AbstractRestDocSupport {
                             jsonPath("$.data.customTimerName").value("타이머"),
                             jsonPath("$.data.customTimerStepCount").value(4),
                             jsonPath("$.data.customTimerSteps").isArray(),
-                            jsonPath("$.data.customTimerSteps[0].customTimerStepName").value("운동1")
+                            jsonPath("$.data.customTimerSteps[0].customTimerStepName").value("운동1"),
+                            jsonPath("$.data.updatedAt").value("2026-10-19T12:00:00.123"),
+                            jsonPath("$.data.editedAt").doesNotExist(),
+                            jsonPath("$.data.customTimerDeletedAt").doesNotExist()
                     )
                     .andDo(document.document(
                             requestHeaders(HEADER_ACCESS_TOKEN),
                             responseFields(commonResponseFields(
                                     fieldWithPath("data.customTimerId").type(NUMBER).description("커스텀 타이머 식별자 입니다."),
                                     fieldWithPath("data.customTimerName").type(STRING).description("커스텀 타이머 이름 입니다."),
+                                    fieldWithPath("data.updatedAt").type(STRING).description("이름과 전체 스텝을 하나의 단위로 관리하는 서버 수정 시각입니다. 밀리초 정밀도입니다."),
                                     fieldWithPath("data.customTimerStepCount").type(NUMBER).description("커스텀 타이머 스텝 리스트의 크기를 담고있는 데이터 입니다."),
                                     fieldWithPath("data.customTimerSteps").type(ARRAY).description("커스텀 타이머 스텝 리스트 입니다. 내용에는 스텝의 식별자, 이름, 순서, 시간이 포함됩니다"),
                                     fieldWithPath("data.customTimerSteps[].customTimerStepId").type(NUMBER).description("커스텀 타이머 스텝의 식별자 정보입니다."),
@@ -147,7 +155,10 @@ class CustomTimerQueryControllerTest extends AbstractRestDocSupport {
                             jsonPath("$.data.customTimerCount").value(expectedResponse.getCustomTimerCount()),
                             jsonPath("$.data.customTimers").isArray(),
                             jsonPath("$.data.customTimers[0].customTimerId").value(recordList.get(0).customTimerId()),
-                            jsonPath("$.data.customTimers[0].customTimerName").value(recordList.get(0).customTimerName())
+                            jsonPath("$.data.customTimers[0].customTimerName").value(recordList.get(0).customTimerName()),
+                            jsonPath("$.data.customTimers[0].updatedAt").value("2026-10-19T12:00:00.123"),
+                            jsonPath("$.data.customTimers[0].editedAt").doesNotExist(),
+                            jsonPath("$.data.customTimers[0].customTimerDeletedAt").doesNotExist()
                     )
                     .andDo(document.document(
                             requestHeaders(HEADER_ACCESS_TOKEN),
@@ -155,7 +166,8 @@ class CustomTimerQueryControllerTest extends AbstractRestDocSupport {
                                     fieldWithPath("data.customTimerCount").type(NUMBER).description("커스텀 타이머 리스트의 크기를 담고있는 데이터 입니다."),
                                     fieldWithPath("data.customTimers").type(ARRAY).description("커스텀 타이머 리스트 입니다. 내용에는 커스텀 타이머 식별자, 커스텀 타이머 이름이 포함됩니다."),
                                     fieldWithPath("data.customTimers[].customTimerId").type(NUMBER).description("커스텀 타이머의 식별자 정보입니다."),
-                                    fieldWithPath("data.customTimers[].customTimerName").type(STRING).description("커스텀 타이머의 이름 입니다.")
+                                    fieldWithPath("data.customTimers[].customTimerName").type(STRING).description("커스텀 타이머의 이름 입니다."),
+                                    fieldWithPath("data.customTimers[].updatedAt").type(STRING).description("서버 수정 시각입니다. 밀리초 정밀도입니다.")
                             ))
                     ));
 
@@ -187,9 +199,9 @@ class CustomTimerQueryControllerTest extends AbstractRestDocSupport {
 
         private List<CustomTimerRecord> createCustomTimerRecordList() {
             return List.of(
-                    new CustomTimerRecord(1L, "공부"),
-                    new CustomTimerRecord(2L, "운동"),
-                    new CustomTimerRecord(3L, "독서")
+                    new CustomTimerRecord(1L, "공부", UPDATED_AT),
+                    new CustomTimerRecord(2L, "운동", UPDATED_AT),
+                    new CustomTimerRecord(3L, "독서", UPDATED_AT)
             );
         }
     }

@@ -1,3 +1,4 @@
+-- 신규 설치 전용: 기존 데이터베이스에는 timer_sync_upgrade.sql을 먼저 적용합니다.
 -- 순서 정렬 및 FK 체크 해제
 SET foreign_key_checks = 0;
 
@@ -45,6 +46,8 @@ DROP TABLE IF EXISTS exercise_types;
 DROP TABLE IF EXISTS custom_timer_steps;
 DROP TABLE IF EXISTS custom_timers;
 DROP TABLE IF EXISTS simple_timers;
+DROP TABLE IF EXISTS timer_edit_receipts;
+DROP TABLE IF EXISTS timer_create_receipts;
 
 DROP TABLE IF EXISTS matches;
 DROP TABLE IF EXISTS open_chatrooms;
@@ -395,8 +398,9 @@ create table if not exists custom_timers
     member_id               char(36)     not null comment 'UUID_SELF',
     custom_timer_name       varchar(100) null comment '커스텀 타이머 이름',
     custom_timer_created_at datetime     not null default current_timestamp,
-    custom_timer_updated_at datetime     not null default current_timestamp ON UPDATE CURRENT_TIMESTAMP,
+    custom_timer_updated_at datetime(3)  not null default current_timestamp(3),
     custom_timer_deleted_at datetime     null,
+    edited_at               bigint       null comment '기기 수정 시각 UTC Unix epoch milliseconds',
     foreign key (member_id) references members (member_id)
 );
 
@@ -405,10 +409,42 @@ create table if not exists simple_timers
     simple_timer_id         bigint   not null auto_increment primary key,
     member_id               char(36) not null comment 'UUID_SELF',
     simple_timer_time       int      null comment '심플 타이머 시간',
-    simple_timer_created_at datetime not null default current_timestamp,
-    simple_timer_updated_at datetime not null default current_timestamp ON UPDATE CURRENT_TIMESTAMP,
-    simple_timer_deleted_at datetime null,
+    simple_timer_created_at datetime    not null default current_timestamp,
+    simple_timer_updated_at datetime(3) not null default current_timestamp(3),
+    simple_timer_deleted_at datetime    null,
+    edited_at               bigint      null comment '기기 수정 시각 UTC Unix epoch milliseconds',
     foreign key (member_id) references members (member_id)
+);
+
+-- 타이머 삭제/정리와 독립적으로 유지하며 회원의 물리 삭제 시에만 함께 삭제합니다.
+create table if not exists timer_create_receipts
+(
+    timer_create_receipt_id bigint      not null auto_increment primary key,
+    member_id               char(36)    not null,
+    create_request_id       char(36)    not null,
+    timer_type              varchar(10) not null,
+    timer_id                bigint      not null,
+    updated_at              datetime(3) not null,
+    constraint uk_timer_create_receipt_member_request unique (member_id, create_request_id),
+    constraint fk_timer_create_receipt_member foreign key (member_id)
+        references members (member_id) on delete cascade,
+    constraint chk_timer_create_receipt_type check (timer_type in ('SIMPLE', 'CUSTOM'))
+);
+
+create table if not exists timer_edit_receipts
+(
+    timer_edit_receipt_id bigint      not null auto_increment primary key,
+    member_id             char(36)    not null,
+    timer_type            varchar(10) not null,
+    timer_id              bigint      not null,
+    edit_id               char(36)    not null,
+    operation             varchar(10) not null,
+    updated_at            datetime(3) not null,
+    constraint uk_timer_edit_receipt_request unique (member_id, timer_type, timer_id, edit_id),
+    constraint fk_timer_edit_receipt_member foreign key (member_id)
+        references members (member_id) on delete cascade,
+    constraint chk_timer_edit_receipt_type check (timer_type in ('SIMPLE', 'CUSTOM')),
+    constraint chk_timer_edit_receipt_operation check (operation in ('UPDATE', 'RENAME', 'REPLACE', 'DELETE'))
 );
 
 create table if not exists custom_timer_steps

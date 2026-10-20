@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Getter
 @Builder
 @NoArgsConstructor
@@ -15,4 +17,7 @@ public class SimpleTimerCreateRequestDto {
     @Min(value = 1, message = "0보다 커야 합니다.")
     @Max(value = 3599, message = "1시간 보다 작아야 합니다.")
     private Integer time;
+
+    private UUID createRequestId;
+    private Long editedAt;
 }
