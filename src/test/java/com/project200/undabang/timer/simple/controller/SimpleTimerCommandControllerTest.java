@@ -360,7 +360,10 @@ class SimpleTimerCommandControllerTest extends AbstractRestDocSupport {
                     .andExpect(jsonPath("$.data.updatedAt").value(UPDATED_AT.toString()))
                     .andDo(document.document(
                             requestHeaders(RestDocsUtils.HEADER_ACCESS_TOKEN),
-                            pathParameters(parameterWithName("simpleTimerId").description("수정할 타이머 ID")),
+                            pathParameters(
+                                    parameterWithName("simpleTimerId").attributes(getTypeFormat(JsonFieldType.NUMBER))
+                                            .description("수정할 타이머 ID")
+                            ),
                             requestFields(
                                     fieldWithPath("time").type(JsonFieldType.NUMBER).description("수정할 시간(1~3599초)"),
                                     fieldWithPath("editId").type(JsonFieldType.STRING).optional().description("수정 멱등 키(UUID)"),
@@ -391,7 +394,10 @@ class SimpleTimerCommandControllerTest extends AbstractRestDocSupport {
                     .andExpect(jsonPath("$.data.updatedAt").value(UPDATED_AT.toString()))
                     .andDo(document.document(
                             requestHeaders(RestDocsUtils.HEADER_ACCESS_TOKEN),
-                            pathParameters(parameterWithName("simpleTimerId").description("삭제할 타이머 ID")),
+                            pathParameters(
+                                    parameterWithName("simpleTimerId").attributes(getTypeFormat(JsonFieldType.NUMBER))
+                                            .description("삭제할 타이머 ID")
+                            ),
                             requestFields(
                                     fieldWithPath("editId").type(JsonFieldType.STRING).optional().description("삭제 멱등 키(UUID)"),
                                     fieldWithPath("editedAt").type(JsonFieldType.NUMBER).optional()
