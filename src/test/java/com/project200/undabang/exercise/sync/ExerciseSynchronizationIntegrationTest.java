@@ -35,6 +35,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -43,6 +44,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
@@ -283,10 +286,18 @@ class ExerciseSynchronizationIntegrationTest {
     void legacy_score_policy_failure_preserves_record_but_sync_does_not_invent_zero() {
         UUID member = member((byte) 0);
         when(policyService.getPolicy(PolicyKey.EXERCISE_RECORD_VALIDITY_PERIOD)).thenThrow(new IllegalStateException("정책 오류"));
-        assertThat(command(member, () -> service.createExercise(create(null, "기존 요청", START))).earnedPoints()).isZero();
-        assertThat(exerciseCount(member)).isEqualTo(1);
-        assertThat(score(member)).isZero();
-        verify(notifyErrorToAdmin).sendErrorToSlackApi(any());
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setMethod("POST");
+        request.setRequestURI("/api/v1/exercises");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+        try {
+            assertThat(command(member, () -> service.createExercise(create(null, "기존 요청", START))).earnedPoints()).isZero();
+            assertThat(exerciseCount(member)).isEqualTo(1);
+            assertThat(score(member)).isZero();
+            verify(notifyErrorToAdmin).sendErrorToSlackApi(any());
+        } finally {
+            RequestContextHolder.resetRequestAttributes();
+        }
     }
 
     @Test

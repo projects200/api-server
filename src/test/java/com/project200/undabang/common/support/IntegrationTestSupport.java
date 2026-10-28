@@ -25,7 +25,8 @@ public abstract class IntegrationTestSupport {
 
         try {
             // 1. LocalStack 시도
-            localStack = new LocalStackContainer(DockerImageName.parse("localstack/localstack:latest"))
+            // 인증이 필요한 latest 대신, 인증 없이 재현 가능한 S3 테스트용 Community 이미지를 고정한다.
+            localStack = new LocalStackContainer(DockerImageName.parse("localstack/localstack:4.4.0"))
                     .withServices(LocalStackContainer.Service.S3)
                     .withEnv("DEFAULT_REGION", "ap-northeast-2");
             localStack.start();

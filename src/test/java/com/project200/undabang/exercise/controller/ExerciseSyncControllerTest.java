@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static com.project200.undabang.configuration.DocumentFormatGenerator.getTypeFormat;
 import static com.project200.undabang.configuration.HeadersGenerator.getCommonApiHeaders;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -119,9 +120,12 @@ class ExerciseSyncControllerTest extends AbstractRestDocSupport {
                 .andExpect(status().isCreated()).andExpect(jsonPath("data.pictures[0].clientImageId").value(imageId.toString()))
                 .andExpect(jsonPath("data.pictures[0].pictureId").value(10))
                 .andDo(document.document(queryParameters(
-                                parameterWithName("uploadRequestId").description("불변 배치 UUID"),
-                                parameterWithName("clientImageIds").description("pictures 순서와 1:1 대응하는 고유 이미지 UUID 목록")),
-                        requestParts(partWithName("pictures").description("1..5개 jpg/jpeg/png 파일. 재시도 시 바이너리/메타데이터 불변")),
+                                parameterWithName("uploadRequestId").attributes(getTypeFormat(JsonFieldType.STRING))
+                                        .description("불변 배치 UUID"),
+                                parameterWithName("clientImageIds").attributes(getTypeFormat(JsonFieldType.STRING))
+                                        .description("pictures 순서와 1:1 대응하는 고유 이미지 UUID 목록")),
+                        requestParts(partWithName("pictures").attributes(getTypeFormat("FILE"))
+                                .description("1..5개 jpg/jpeg/png 파일. 재시도 시 바이너리/메타데이터 불변")),
                         responseFields(RestDocsUtils.commonResponseFields(
                                 fieldWithPath("data.exerciseId").description("서버 기록 ID"),
                                 fieldWithPath("data.version").description("서버 버전"),
@@ -157,7 +161,8 @@ class ExerciseSyncControllerTest extends AbstractRestDocSupport {
         when(service.deleteExercise(1L, key)).thenReturn(new ExerciseIdResponseDto(1L, 4));
         mockMvc.perform(delete("/api/v1/exercises/{exerciseId}", 1).queryParam("editId", key.toString()).headers(getCommonApiHeaders(memberId)))
                 .andExpect(status().isOk()).andExpect(jsonPath("data.version").value(4))
-                .andDo(document.document(queryParameters(parameterWithName("editId").description("불변 삭제 UUID. baseVersion 불필요")),
+                .andDo(document.document(queryParameters(parameterWithName("editId").attributes(getTypeFormat(JsonFieldType.STRING))
+                                .description("불변 삭제 UUID. baseVersion 불필요")),
                         responseFields(mutationFields())));
     }
 
@@ -169,8 +174,10 @@ class ExerciseSyncControllerTest extends AbstractRestDocSupport {
                         .queryParam("pictureIds", "10", "11").headers(getCommonApiHeaders(memberId)))
                 .andExpect(status().isOk()).andExpect(jsonPath("data.exerciseId").value(1)).andExpect(jsonPath("data.version").value(4))
                 .andDo(document.document(queryParameters(
-                                parameterWithName("editId").description("불변 사진 삭제 UUID"),
-                                parameterWithName("pictureIds").description("이 운동에 속한 사진 ID 목록. 순서/중복은 무시")),
+                                parameterWithName("editId").attributes(getTypeFormat(JsonFieldType.STRING))
+                                        .description("불변 사진 삭제 UUID"),
+                                parameterWithName("pictureIds").attributes(getTypeFormat(JsonFieldType.STRING))
+                                        .description("이 운동에 속한 사진 ID 목록. 순서/중복은 무시")),
                         responseFields(mutationFields())));
     }
 
