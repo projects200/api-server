@@ -119,6 +119,7 @@ tasks.named('test') {
     useJUnitPlatform()
 //    systemProperty("spring.profiles.active", System.getProperty("spring.profiles.active", "local"))
     jvmArgs("-javaagent:${configurations.mockitoAgent.asPath}")
+    systemProperty 'requireIntegrationTests', System.getProperty('requireIntegrationTests', 'false')
 
     maxHeapSize = '4g'
 }
@@ -195,3 +196,25 @@ jacocoTestReport {
 
 // 'test' 태스크가 성공적으로 끝나면 jacocoTestReport 태스크가 실행되도록 설정
 test.finalizedBy jacocoTestReport
+
+// 보고서와 동일한 전체 애플리케이션 클래스 집합에 LINE 80% 기준을 적용합니다.
+jacocoTestCoverageVerification {
+    dependsOn test
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.80
+            }
+        }
+    }
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    '**/entity/Q*.class',
+                    '**/*Dto.class',
+            ])
+        }))
+    }
+}

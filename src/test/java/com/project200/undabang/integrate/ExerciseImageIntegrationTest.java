@@ -6,6 +6,7 @@ import com.project200.undabang.common.support.IntegrationTestSupport;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.member.entity.Member;
 import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,9 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.context.transaction.TestTransaction;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -56,6 +60,38 @@ public class ExerciseImageIntegrationTest extends IntegrationTestSupport {
 
     @Autowired
     private S3Client s3Client;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
+
+    private UUID fixtureMemberId;
+
+    @AfterEach
+    void removeCommittedFixture() {
+        if (fixtureMemberId == null || TestTransaction.isActive()) {
+            return;
+        }
+        new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+            List<Picture> pictures = em.createQuery("select ep.picture from ExercisePicture ep where ep.exercise.member.memberId = :member", Picture.class)
+                    .setParameter("member", fixtureMemberId).getResultList();
+            for (Picture picture : pictures) {
+                em.createQuery("delete from ExercisePhotoCleanup t where t.objectKey = :key")
+                        .setParameter("key", s3Service.extractObjectKeyFromUrl(picture.getPictureUrl())).executeUpdate();
+            }
+            em.createQuery("delete from ExerciseReceipt r where r.member.memberId = :member")
+                    .setParameter("member", fixtureMemberId).executeUpdate();
+            em.createQuery("delete from ExercisePicture ep where ep.exercise.id in (select e.id from Exercise e where e.member.memberId = :member)")
+                    .setParameter("member", fixtureMemberId).executeUpdate();
+            if (!pictures.isEmpty()) {
+                em.createQuery("delete from Picture p where p.id in :ids")
+                        .setParameter("ids", pictures.stream().map(Picture::getId).toList()).executeUpdate();
+            }
+            em.createQuery("delete from Exercise e where e.member.memberId = :member")
+                    .setParameter("member", fixtureMemberId).executeUpdate();
+            em.createQuery("delete from Member m where m.memberId = :member")
+                    .setParameter("member", fixtureMemberId).executeUpdate();
+        });
+    }
 
 //    @Container
 //    static LocalStackContainer localStack = new LocalStackContainer(
@@ -113,6 +149,7 @@ public class ExerciseImageIntegrationTest extends IntegrationTestSupport {
         // given
         // 테스트용 회원, 운동 기록 데이터 DB에 저장
         UUID testMemberId = UUID.randomUUID();
+        fixtureMemberId = testMemberId;
         Member testMember = Member.builder()
                 .memberId(testMemberId)
                 .memberEmail("test@test.com")
@@ -182,6 +219,10 @@ public class ExerciseImageIntegrationTest extends IntegrationTestSupport {
                 .andDo(print())
                 .andExpect(status().isOk());
 
+        // DB 커밋 전에는 활성 객체를 삭제하지 않으며, 커밋 뒤 정리 작업이 S3 삭제를 수행합니다.
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+
         // then
         // S3에서 파일이 삭제되었는지 확인
         boolean fileDeleted = s3Service.isFileExists(s3ObjectKey);
@@ -218,6 +259,7 @@ public class ExerciseImageIntegrationTest extends IntegrationTestSupport {
         // given
         // 테스트용 회원, 운동 기록 데이터 DB에 저장
         UUID testMemberId = UUID.randomUUID();
+        fixtureMemberId = testMemberId;
         Member testMember = Member.builder()
                 .memberId(testMemberId)
                 .memberEmail("test@test.com")

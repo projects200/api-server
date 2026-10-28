@@ -38,6 +38,8 @@ DROP TABLE IF EXISTS chatroom_members;
 DROP TABLE IF EXISTS chatrooms;
 
 DROP TABLE IF EXISTS exercise_pictures;
+DROP TABLE IF EXISTS exercise_receipts;
+DROP TABLE IF EXISTS exercise_photo_cleanup;
 DROP TABLE IF EXISTS preferred_exercises;
 DROP TABLE IF EXISTS exercise_locations;
 DROP TABLE IF EXISTS exercises;
@@ -229,8 +231,31 @@ create table if not exists exercises
     exercise_created_at    datetime default CURRENT_TIMESTAMP                         not null,
     exercise_deleted_at    datetime                                                   null,
     exercise_location      varchar(255)                                               null,
+    version                bigint default 0                                           not null,
     constraint FK_ex_member
         foreign key (member_id) references members (member_id)
+);
+
+create table if not exists exercise_receipts
+(
+    exercise_receipt_id bigint not null auto_increment primary key,
+    member_id char(36) not null,
+    request_id char(36) not null,
+    operation varchar(20) not null,
+    exercise_id bigint null,
+    fingerprint varchar(64) not null,
+    response_json text not null,
+    constraint uk_exercise_receipt_member_request unique (member_id, request_id),
+    constraint FK_exercise_receipt_member foreign key (member_id) references members (member_id) on delete cascade
+);
+
+create table if not exists exercise_photo_cleanup
+(
+    exercise_photo_cleanup_id bigint not null auto_increment primary key,
+    object_key varchar(512) not null unique,
+    attempts int not null default 0,
+    next_attempt_at datetime(6) not null,
+    index idx_exercise_cleanup_due (next_attempt_at)
 );
 
 create table if not exists member_blocks

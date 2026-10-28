@@ -73,6 +73,9 @@ public abstract class IntegrationTestSupport {
      */
     @BeforeAll
     static void checkDockerRequirement() {
+        if (Boolean.getBoolean("requireIntegrationTests") && !IS_DOCKER_AVAILABLE) {
+            throw new IllegalStateException("PR 검증은 LocalStack/WireMock 통합 테스트를 생략할 수 없습니다.");
+        }
         Assumptions.assumeTrue(IS_DOCKER_AVAILABLE,
                 "Docker 환경을 찾을 수 없어 통합 테스트를 건너뜁니다 (CI 환경 이슈 등).");
     }

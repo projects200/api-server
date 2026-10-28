@@ -8,7 +8,10 @@
 - <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
 - 운동 기록의 ID는 `exerciseId` 경로 매개 변수로 전달됩니다.
 - 이 API는 운동 기록의 상세 정보와 관련된 이미지 URL을 포함하여 응답합니다.
-- 운동 기록의 이미지 URL은 `exerciseImageUrl` 필드에 포함되어 있습니다. 이 URL을 통해 운동 기록에 첨부된 이미지를 조회할 수 있습니다. 이미지는 생성 시 저장된 순서로 정렬되어 반환됩니다.
+- 사진은 `pictureDataList`에 저장된 Picture ID와 URL로 반환됩니다. 동기화 업로드의 `pictureId`와 동일한 ID입니다.
+- 응답 `version`은 현재 본문/사진 상태의 버전입니다. 편집 시 이 값을 `baseVersion`으로 보내세요.
+  조회 후 다른 기기가 수정했다면 서버는 409로 거절합니다. 버전 없는 구 캐시에 새 GET 버전을 끼워 넣어 자동 덮어쓰지 마세요.
+  기존 데이터는 스키마 업그레이드 시 버전 0에서 시작하며 삭제된 기록은 상세 조회하지 않습니다.
 
 === 코드 샘플
 operation::exercise-query-controller-test/find-member-exercise-record[snippets="curl-request,http-request,http-response"]
@@ -19,7 +22,7 @@ operation::exercise-query-controller-test/find-member-exercise-record[snippets="
 ==== 응답 상태 코드
 |===
 |상태 코드|설명
-|200|운동 기록이 성공적으로 생성되었습니다.
+|200|운동 기록을 성공적으로 조회했습니다.
 |403|운동 기록에 접근 권한이 없습니다. 다른 회원의 운동 기록을 조회한 경우입니다.
 |404|운동 기록이 존재하지 않습니다.
 |===

@@ -1,5 +1,6 @@
 package com.project200.undabang.exercise.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project200.undabang.common.context.UserContextHolder;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
@@ -10,551 +11,183 @@ import com.project200.undabang.exercise.dto.response.ExerciseIdResponseDto;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.exercise.repository.ExerciseRepository;
 import com.project200.undabang.exercise.service.ExercisePictureService;
+import com.project200.undabang.exercise.sync.ExerciseSyncConflictException;
+import com.project200.undabang.exercise.sync.ExerciseSyncService;
+import com.project200.undabang.exercise.sync.repository.ExerciseReceiptRepository;
 import com.project200.undabang.member.entity.Member;
-import com.project200.undabang.member.enums.MemberGender;
 import com.project200.undabang.member.repository.MemberRepository;
 import com.project200.undabang.score.service.ExerciseScoreCommandService;
-import org.assertj.core.api.Assertions;
-import org.assertj.core.api.SoftAssertions;
-import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Supplier;
+
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ExerciseCommandServiceImplTest {
+    @Mock ExerciseRepository exerciseRepository;
+    @Mock MemberRepository memberRepository;
+    @Mock ExerciseReceiptRepository receiptRepository;
+    @Mock ExercisePictureService pictureService;
+    @Mock ExerciseScoreCommandService scoreService;
 
-    @InjectMocks
-    private ExerciseCommandServiceImpl exerciseCommandService;
+    private ExerciseCommandServiceImpl service;
+    private Member member;
+    private Exercise exercise;
+    private static final LocalDateTime START = LocalDateTime.of(2025, 5, 1, 10, 0);
 
-    @Mock
-    private ExerciseRepository exerciseRepository;
-
-    @Mock
-    private MemberRepository memberRepository;
-
-    @Mock
-    private ExercisePictureService exercisePictureService;
-
-    @Mock
-    private ExerciseScoreCommandService exerciseScoreCommandService;
-
-    // 운동 필드 생성 관련 테스트들
-    // 성공적으로 운동 데이터를 생성하는 테스트
-    @Test
-    @DisplayName("운동 생성 성공 테스트")
-    void createExercise_Success() {
-        // given
-        UUID testUserId = UUID.randomUUID();
-        ExerciseIdResponseDto expectedResponse = new ExerciseIdResponseDto(1L);
-
-        Member testMember = Member.builder()
-                .memberId(testUserId)
-                .memberEmail("test@test.com")
-                .memberNickname("테스트닉네임")
-                .build();
-
-        CreateExerciseRequestDto requestDto = CreateExerciseRequestDto.builder()
-                .exerciseTitle("운동 제목")
-                .exerciseDetail("운동 상세 내용")
-                .exerciseLocation("운동 장소")
-                .exercisePersonalType("헬스")
-                .exerciseStartedAt(LocalDateTime.now().minusHours(1))
-                .exerciseEndedAt(LocalDateTime.now())
-                .build();
-
-        try (MockedStatic<UserContextHolder> ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
-            BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
-            BDDMockito.given(memberRepository.findById(testUserId)).willReturn(Optional.of(testMember));
-            BDDMockito.given(exerciseRepository.save(ArgumentMatchers.any(Exercise.class))).willAnswer(invocation -> {
-                Exercise savedExercise = invocation.getArgument(0);
-                ReflectionTestUtils.setField(savedExercise, "id", 1L);
-                return savedExercise;
-            });
-            BDDMockito.given(exerciseScoreCommandService.awardPointsForExercise(ArgumentMatchers.any(Exercise.class)))
-                    .willReturn((byte) 10);
-
-            // when
-            CreateExerciseResponseDto actualResponse = exerciseCommandService.createExercise(requestDto);
-
-            // then
-            SoftAssertions.assertSoftly(softAssertions -> {
-                softAssertions.assertThat(actualResponse).as("응답 객체가 null이 아니어야함").isNotNull();
-                softAssertions.assertThat(actualResponse.exerciseId()).as("운동 ID가 일치해야함").isEqualTo(expectedResponse.exerciseId());
-                softAssertions.assertThat(actualResponse.earnedPoints()).as("획득한 포인트가 일치해야함").isEqualTo((byte) 10);
-                BDDMockito.then(exerciseRepository).should(BDDMockito.times(1)).save(ArgumentMatchers.any(Exercise.class));
-            });
-        }
+    @BeforeEach
+    void setUp() {
+        member = Member.builder().memberId(UUID.randomUUID()).build();
+        exercise = Exercise.builder().id(1L).member(member).exerciseTitle("원본")
+                .exerciseStartedAt(START).exerciseEndedAt(START.plusHours(1)).build();
+        UserContextHolder.setUserId(member.getMemberId());
+        lenient().when(memberRepository.findByIdForUpdate(member.getMemberId())).thenReturn(Optional.of(member));
+        lenient().when(exerciseRepository.findById(1L)).thenReturn(Optional.of(exercise));
+        ExerciseSyncService sync = new ExerciseSyncService(memberRepository, exerciseRepository, receiptRepository,
+                new ObjectMapper().findAndRegisterModules());
+        service = new ExerciseCommandServiceImpl(pictureService, exerciseRepository, scoreService, sync);
     }
 
-    // 회원 정보를 찾을 수 없어 운동 데이터를 생성할 수 없는 경우의 테스트
-    @Test
-    @DisplayName("운동 생성 실패 테스트 - 회원 정보 없음")
-    void createExercise_Failure_WhenMemberNotFound() {
-        // given
-        UUID testUserId = UUID.randomUUID();
-        CreateExerciseRequestDto requestDto = BDDMockito.mock(CreateExerciseRequestDto.class);
-
-        try (MockedStatic<UserContextHolder> ignored = BDDMockito.mockStatic(UserContextHolder.class)) {
-            BDDMockito.given(UserContextHolder.getUserId()).willReturn(testUserId);
-            BDDMockito.given(memberRepository.findById(testUserId)).willReturn(Optional.empty());
-
-            // when and then
-            Assertions.assertThatThrownBy(() -> exerciseCommandService.createExercise(requestDto))
-                    .as("회원 정보를 찾을 수 없으면 예외가 발생해야 함")
-                    .isInstanceOf(CustomException.class)
-                    .hasMessage(ErrorCode.MEMBER_NOT_FOUND.getMessage());
-        }
+    @AfterEach
+    void tearDown() {
+        UserContextHolder.reset();
     }
 
-    // 운동 이미지 업로드 관련 테스트들
-    // 운동 이미지 업로드가 성공적으로 완료되는 경우의 테스트
     @Test
-    @DisplayName("운동 이미지 업로드 성공 테스트")
-    void uploadExerciseImages_Success() {
-        // given
-        Long exerciseId = 1L;
-        List<MultipartFile> mockFiles = List.of(BDDMockito.mock(MultipartFile.class), BDDMockito.mock(MultipartFile.class));
-        ExerciseIdResponseDto expectedResponse = new ExerciseIdResponseDto(exerciseId);
-
-        BDDMockito.given(exercisePictureService.uploadExercisePictures(exerciseId, mockFiles))
-                .willReturn(expectedResponse);
-
-        // when
-        ExerciseIdResponseDto actualResponse = exerciseCommandService.uploadExerciseImages(exerciseId, mockFiles);
-
-        // then
-        SoftAssertions.assertSoftly(softAssertions -> {
-            softAssertions.assertThat(actualResponse).as("응답 객체가 null이 아님").isNotNull();
-            softAssertions.assertThat(actualResponse.exerciseId()).as("운동 ID가 일치함").isEqualTo(expectedResponse.exerciseId());
+    void legacy_creation_keeps_the_original_score_response() {
+        when(exerciseRepository.save(any())).thenAnswer(invocation -> {
+            Exercise saved = invocation.getArgument(0);
+            ReflectionTestUtils.setField(saved, "id", 2L);
+            return saved;
         });
+        when(scoreService.awardPointsForExercise(any())).thenReturn((byte) 10);
+        assertThat(service.createExercise(create(null))).isEqualTo(new CreateExerciseResponseDto(2L, (byte) 10, 0));
     }
 
+    @Test
+    void sync_score_failure_is_not_a_successful_creation() {
+        when(scoreService.awardPointsAtomically(any())).thenThrow(new IllegalStateException("정책 오류"));
+        assertThatThrownBy(() -> service.createExercise(create(UUID.randomUUID()))).isInstanceOf(IllegalStateException.class);
+        verify(exerciseRepository, never()).save(any());
+        verify(receiptRepository, never()).save(any());
+    }
 
     @Test
-    @DisplayName("운동기록 문자데이터 업데이트 _ 성공상황")
-    void updateExercise() {
-        // given
-        UUID memberId = UUID.randomUUID();
-
-        Member member = Member.builder()
-                .memberId(memberId)
-                .memberDesc("설명")
-                .memberBday(LocalDate.now().minusDays(1))
-                .memberGender(MemberGender.MALE)
-                .memberNickname("nickname")
-                .memberEmail("email.com")
-                .memberDesc("memberDesc")
-                .build();
-
-        Long exerciseId = 1L;
-        Exercise exercise = Exercise.builder()
-                .member(member)
-                .exerciseTitle("title")
-                .exerciseDetail("내용")
-                .exerciseLocation("장소")
-                .exercisePersonalType("헬스")
-                .exerciseStartedAt(LocalDateTime.of(2025, 5, 27, 00, 00, 00))
-                .exerciseEndedAt(LocalDateTime.of(2025, 5, 27, 01, 00, 00))
-                .build();
-
-        UpdateExerciseRequestDto dto = UpdateExerciseRequestDto.builder()
-                .exerciseTitle("수정된 운동제목")
-                .exerciseStartedAt(LocalDateTime.now().minusDays(1))
-                .exerciseEndedAt(LocalDateTime.now())
-                .build();
-
-        try (MockedStatic<UserContextHolder> mockedUserContextHolder = Mockito.mockStatic(UserContextHolder.class)) {
-            mockedUserContextHolder.when(UserContextHolder::getUserId).thenReturn(memberId);
-
-            BDDMockito.given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-            BDDMockito.given(exerciseRepository.findById(exerciseId)).willReturn(Optional.of(exercise));
-            // 예외처리 통과설정
-            BDDMockito.given(exerciseRepository.existsByRecordIdAndMemberId(memberId, exerciseId)).willReturn(true);
-
-            //when
-            ExerciseIdResponseDto responseDto = exerciseCommandService.updateExercise(exerciseId, dto);
-
-            //then
-            Assertions.assertThat(responseDto).isNotNull();
-            Assertions.assertThat(responseDto.exerciseId()).isEqualTo(exerciseId);
-
-            Assertions.assertThat(dto.getExerciseTitle()).isEqualTo(exercise.getExerciseTitle());
-            Assertions.assertThat(dto.getExerciseStartedAt()).isEqualTo(exercise.getExerciseStartedAt());
-            Assertions.assertThat(dto.getExerciseEndedAt()).isEqualTo(exercise.getExerciseEndedAt());
+    void missing_member_rejects_every_command() {
+        when(memberRepository.findByIdForUpdate(member.getMemberId())).thenReturn(Optional.empty());
+        for (Supplier<?> action : commands()) {
+            assertError(action, ErrorCode.MEMBER_NOT_FOUND);
         }
     }
 
     @Test
-    @DisplayName("운동기록 수정 _ 회원인증실패")
-    void updateExercise_memberCheckFailed() {
-        // given
-        UUID memberId = UUID.randomUUID();
-        Long exerciseId = 1L;
-        UpdateExerciseRequestDto dto = UpdateExerciseRequestDto.builder()
-                .exerciseTitle("수정된 운동제목")
-                .exerciseStartedAt(LocalDateTime.now().minusDays(1))
-                .exerciseEndedAt(LocalDateTime.now())
-                .build();
+    void another_members_record_rejects_update_and_both_deletions() {
+        when(exerciseRepository.findById(1L)).thenReturn(Optional.of(Exercise.builder()
+                .member(Member.builder().memberId(UUID.randomUUID()).build()).build()));
+        for (Supplier<?> action : mutations()) {
+            assertError(action, ErrorCode.AUTHORIZATION_DENIED);
+        }
+        verifyNoInteractions(pictureService);
+    }
 
-        try (MockedStatic<UserContextHolder> mockedUserContextHolder = Mockito.mockStatic(UserContextHolder.class)) {
-            mockedUserContextHolder.when(UserContextHolder::getUserId).thenReturn(memberId);
-
-            BDDMockito.given(memberRepository.findById(memberId)).willThrow(new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-
-            //when then
-            Assertions.assertThatThrownBy(() -> exerciseCommandService.updateExercise(exerciseId, dto))
-                    .isInstanceOf(CustomException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
+    @Test
+    void missing_record_rejects_update_and_both_deletions() {
+        when(exerciseRepository.findById(1L)).thenReturn(Optional.empty());
+        for (Supplier<?> action : mutations()) {
+            assertError(action, ErrorCode.EXERCISE_NOT_FOUND);
         }
     }
 
     @Test
-    @DisplayName("운동기록 수정 _ 날짜 입력 실패")
-    void updateExercise_dateInputFailed() {
-        //given
-        UUID memberId = UUID.randomUUID();
-        Long exerciseId = 1L;
-        Member mockedMember = Member.builder().memberId(memberId).build();
-        UpdateExerciseRequestDto dto = UpdateExerciseRequestDto.builder()
-                .exerciseTitle("수정된 운동제목")
-                .exerciseStartedAt(LocalDateTime.now().minusHours(1))
-                .exerciseEndedAt(LocalDateTime.now().plusDays(1))
-                .build();
-
-        try (MockedStatic<UserContextHolder> mockedUserContextHolder = Mockito.mockStatic(UserContextHolder.class)) {
-            mockedUserContextHolder.when(UserContextHolder::getUserId).thenReturn(memberId);
-
-            BDDMockito.given(memberRepository.findById(memberId)).willReturn(Optional.of(mockedMember));
-
-            Assertions.assertThatThrownBy(() -> exerciseCommandService.updateExercise(exerciseId, dto))
-                    .isInstanceOf(CustomException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT_VALUE);
-        }
+    void legacy_edit_changes_text_and_increments_only_for_a_real_change() {
+        assertThat(service.updateExercise(1L, update("변경", null, null))).isEqualTo(new ExerciseIdResponseDto(1L, 1));
+        assertThat(exercise.getExerciseTitle()).isEqualTo("변경");
+        assertThat(service.updateExercise(1L, update("변경", null, null)).version()).isEqualTo(1);
     }
 
     @Test
-    @DisplayName("운동기록 수정 _ 타인의 운동기록 접근")
-    void updateExercise_wrongExerciseIdInput() {
-        UUID memberId = UUID.randomUUID();
-        Long exerciseId = 1L;
-        Member mockedMember = Member.builder().memberId(memberId).build();
-        UpdateExerciseRequestDto dto = UpdateExerciseRequestDto.builder()
-                .exerciseTitle("수정된 운동제목")
-                .exerciseStartedAt(LocalDateTime.now().minusHours(1))
-                .exerciseEndedAt(LocalDateTime.now())
-                .build();
-
-        try (MockedStatic<UserContextHolder> mockedUserContextHolder = Mockito.mockStatic(UserContextHolder.class)) {
-            mockedUserContextHolder.when(UserContextHolder::getUserId).thenReturn(memberId);
-
-            BDDMockito.given(memberRepository.findById(memberId)).willReturn(Optional.of(mockedMember));
-            BDDMockito.given(exerciseRepository.existsByRecordIdAndMemberId(memberId, exerciseId)).willReturn(false);
-
-            Assertions.assertThatThrownBy(() -> exerciseCommandService.updateExercise(exerciseId, dto))
-                    .isInstanceOf(CustomException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.AUTHORIZATION_DENIED);
-        }
+    void invalid_dates_and_partial_metadata_are_rejected() {
+        UpdateExerciseRequestDto future = UpdateExerciseRequestDto.builder().exerciseTitle("변경")
+                .exerciseStartedAt(START).exerciseEndedAt(LocalDateTime.now().plusDays(2)).build();
+        assertError(() -> service.updateExercise(1L, future), ErrorCode.INVALID_INPUT_VALUE);
+        assertError(() -> service.updateExercise(1L, update("변경", UUID.randomUUID(), null)), ErrorCode.INVALID_INPUT_VALUE);
+        assertError(() -> service.updateExercise(1L, update("변경", null, 0L)), ErrorCode.INVALID_INPUT_VALUE);
+        assertError(() -> service.updateExercise(1L, update("변경", UUID.randomUUID(), -1L)), ErrorCode.INVALID_INPUT_VALUE);
     }
 
     @Test
-    @DisplayName("운동기록 수정 _ 운동기록 불러오기 실패")
-    void updateExercise_recordNotFound() {
-        UUID memberId = UUID.randomUUID();
-        Long exerciseId = 1L;
-        Member mockedMember = Member.builder().memberId(memberId).build();
-        UpdateExerciseRequestDto dto = UpdateExerciseRequestDto.builder()
-                .exerciseTitle("수정된 운동제목")
-                .exerciseStartedAt(LocalDateTime.now().minusHours(1))
-                .exerciseEndedAt(LocalDateTime.now())
-                .build();
-
-        try (MockedStatic<UserContextHolder> mockedUserContextHolder = Mockito.mockStatic(UserContextHolder.class)) {
-            mockedUserContextHolder.when(UserContextHolder::getUserId).thenReturn(memberId);
-
-            BDDMockito.given(memberRepository.findById(memberId)).willReturn(Optional.of(mockedMember));
-            BDDMockito.given(exerciseRepository.existsByRecordIdAndMemberId(memberId, exerciseId)).willReturn(true);
-            BDDMockito.given(exerciseRepository.findById(exerciseId)).willThrow(new CustomException(ErrorCode.EXERCISE_RECORD_NOT_FOUND));
-
-            Assertions.assertThatThrownBy(() -> exerciseCommandService.updateExercise(exerciseId, dto))
-                    .isInstanceOf(CustomException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.EXERCISE_RECORD_NOT_FOUND);
-        }
+    void stale_edit_reports_current_version_without_changing_text() {
+        exercise.incrementVersion();
+        assertThatThrownBy(() -> service.updateExercise(1L, update("덮어쓰기", UUID.randomUUID(), 0L)))
+                .isInstanceOf(ExerciseSyncConflictException.class)
+                .extracting("currentValue").isEqualTo(new ExerciseIdResponseDto(1L, 1));
+        assertThat(exercise.getExerciseTitle()).isEqualTo("원본");
     }
 
     @Test
-    @DisplayName("운동기록 이미지 삭제 _ 성공")
-    void deleteExerciseImages() {
-        // given
-        Long testExerciseId = 1L;
-        UUID testMemberId = UUID.randomUUID();
-        List<Long> deletePictureIdList = List.of(1L, 2L, 3L);
-        Member testMember = Member.builder().memberId(testMemberId).build();
-
-        try (MockedStatic<UserContextHolder> mockedUserContextHolder = Mockito.mockStatic(UserContextHolder.class)) {
-            mockedUserContextHolder.when(UserContextHolder::getUserId).thenReturn(testMemberId);
-            BDDMockito.given(memberRepository.findById(testMemberId)).willReturn(Optional.of(testMember));
-            BDDMockito.given(exerciseRepository.existsByRecordIdAndMemberId(testMemberId, testExerciseId)).willReturn(true);
-            // 반환타입이 void라 willDoNothing() 사용
-            BDDMockito.willDoNothing().given(exercisePictureService).deleteExercisePictures(testMemberId, testExerciseId, deletePictureIdList);
-
-            // when
-            exerciseCommandService.deleteImages(testExerciseId, deletePictureIdList);
-
-            // then
-            BDDMockito.then(exercisePictureService).should(BDDMockito.times(1)).deleteExercisePictures(testMemberId, testExerciseId, deletePictureIdList);
-        }
+    void photo_deletion_increments_only_when_an_active_picture_changes() {
+        when(pictureService.deleteExercisePictures(member.getMemberId(), 1L, List.of(1L, 2L))).thenReturn(true, false);
+        assertThat(service.deleteImages(1L, List.of(2L, 1L, 1L), null).version()).isEqualTo(1);
+        assertThat(service.deleteImages(1L, List.of(1L, 2L), null).version()).isEqualTo(1);
     }
 
     @Test
-    @DisplayName("운동기록 이미지 삭제 _ 회원 인증 실패")
-    void deleteExerciseImages_MemberNotFound() {
-        // given
-        UUID testMemberId = UUID.randomUUID();
-        Long testExerciseId = 1L;
-        List<Long> deletePictureIdList = List.of(1L, 2L, 3L);
-
-        try (MockedStatic<UserContextHolder> mockedStatic = Mockito.mockStatic(UserContextHolder.class)) {
-            mockedStatic.when(UserContextHolder::getUserId).thenReturn(testMemberId);
-            BDDMockito.given(memberRepository.findById(testMemberId)).willReturn(Optional.empty());
-
-            //when, then
-            Assertions.assertThatThrownBy(() -> exerciseCommandService.deleteImages(testExerciseId, deletePictureIdList))
-                    .isInstanceOf(CustomException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
-
-            BDDMockito.then(exercisePictureService).should(BDDMockito.never()).deleteExercisePictures(testMemberId, testExerciseId, deletePictureIdList);
-        }
+    void record_deletion_is_idempotent_and_blocks_later_updates() {
+        when(pictureService.getAllImagesFromExercise(member.getMemberId(), 1L)).thenReturn(List.of(3L));
+        assertThat(service.deleteExercise(1L, null).version()).isEqualTo(1);
+        assertThat(service.deleteExercise(1L, null).version()).isEqualTo(1);
+        assertThat(exercise.getExerciseDeletedAt()).isNotNull();
+        assertError(() -> service.updateExercise(1L, update("변경", null, null)), ErrorCode.EXERCISE_DELETED);
+        verify(pictureService, times(1)).deleteExercisePictures(member.getMemberId(), 1L, List.of(3L));
     }
 
     @Test
-    @DisplayName("운동기록 이미지 삭제 _ 타인의 운동기록, 사진 접근 확인")
-    void deleteExerciseImages_AuthorizationDenied() {
-        UUID testMemberId = UUID.randomUUID();
-        Long testExerciseId = 1L;
-        List<Long> deletePictureIdList = List.of(1L, 2L, 3L);
-        Member testMember = Member.builder().memberId(testMemberId).build();
-
-        try (MockedStatic<UserContextHolder> mockedStatic = Mockito.mockStatic(UserContextHolder.class)) {
-            mockedStatic.when(UserContextHolder::getUserId).thenReturn(testMemberId);
-            BDDMockito.given(memberRepository.findById(testMemberId)).willReturn(Optional.of(testMember));
-            BDDMockito.given(exerciseRepository.existsByRecordIdAndMemberId(testMemberId, testExerciseId)).willReturn(false);
-
-            //when, then
-            Assertions.assertThatThrownBy(() -> exerciseCommandService.deleteImages(testExerciseId, deletePictureIdList))
-                    .isInstanceOf(CustomException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.AUTHORIZATION_DENIED);
-
-            BDDMockito.then(exercisePictureService).should(BDDMockito.never()).deleteExercisePictures(testMemberId, testExerciseId, deletePictureIdList);
-        }
+    void failed_picture_lookup_or_deletion_does_not_tombstone_record() {
+        when(pictureService.getAllImagesFromExercise(member.getMemberId(), 1L))
+                .thenThrow(new CustomException(ErrorCode.EXERCISE_NOT_FOUND))
+                .thenThrow(new CustomException(ErrorCode.AUTHORIZATION_DENIED))
+                .thenReturn(List.of(3L));
+        assertError(() -> service.deleteExercise(1L, null), ErrorCode.EXERCISE_NOT_FOUND);
+        assertError(() -> service.deleteExercise(1L, null), ErrorCode.AUTHORIZATION_DENIED);
+        when(pictureService.deleteExercisePictures(member.getMemberId(), 1L, List.of(3L)))
+                .thenThrow(new CustomException(ErrorCode.EXERCISE_PICTURE_DELETE_FAILED));
+        assertError(() -> service.deleteExercise(1L, null), ErrorCode.EXERCISE_PICTURE_DELETE_FAILED);
+        assertThat(exercise.getExerciseDeletedAt()).isNull();
     }
 
-    @Test
-    @DisplayName("운동기록 삭제")
-    void deleteExercise() {
-        UUID testMemberId = UUID.randomUUID();
-        Long testExerciseId = 1L;
-
-        Member testMember = Member.builder().memberId(testMemberId).build();
-        Exercise testExercise = Exercise.builder().id(testExerciseId).member(testMember).build();
-
-        List<Long> testPictureIdList = List.of(1L, 2L, 3L);
-
-        try (MockedStatic<UserContextHolder> mockedStatic = Mockito.mockStatic(UserContextHolder.class)) {
-            mockedStatic.when(UserContextHolder::getUserId).thenReturn(testMemberId);
-
-            BDDMockito.given(memberRepository.findById(testMemberId)).willReturn(Optional.of(testMember));
-            BDDMockito.given(exerciseRepository.existsByRecordIdAndMemberId(testMemberId, testExerciseId)).willReturn(true);
-            BDDMockito.given(exercisePictureService.getAllImagesFromExercise(testMemberId, testExerciseId)).willReturn(testPictureIdList);
-
-            BDDMockito.given(exerciseRepository.findById(testExerciseId)).willReturn(Optional.of(testExercise));
-            BDDMockito.willDoNothing().given(exercisePictureService).deleteExercisePictures(testMemberId, testExerciseId, testPictureIdList);
-
-            // when
-            exerciseCommandService.deleteExercise(testExerciseId);
-
-            // then
-            BDDMockito.then(exercisePictureService).should(BDDMockito.times(1)).deleteExercisePictures(testMemberId, testExerciseId, testPictureIdList);
-            Assertions.assertThat(testExercise.getExerciseDeletedAt()).isNotNull();
-        }
+    private List<Supplier<?>> mutations() {
+        return List.of(() -> service.updateExercise(1L, update("변경", null, null)),
+                () -> service.deleteExercise(1L, null), () -> service.deleteImages(1L, List.of(1L), null));
     }
 
-    @Test
-    @DisplayName("운동기록 삭제 _ 회원 ID 불일치")
-    void deleteExercise_FailedMemberIdAuthorization() {
-        UUID testMemberId = UUID.randomUUID();
-        Long testExerciseId = 1L;
-
-        try (MockedStatic<UserContextHolder> mockedStatic = Mockito.mockStatic(UserContextHolder.class)) {
-            mockedStatic.when(UserContextHolder::getUserId).thenReturn(testMemberId);
-
-            BDDMockito.given(memberRepository.findById(testMemberId)).willThrow(new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-
-            Assertions.assertThatThrownBy(() ->
-                            exerciseCommandService.deleteExercise(testExerciseId))
-                    .isInstanceOf(CustomException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
-
-            BDDMockito.then(exercisePictureService).should(BDDMockito.never()).getAllImagesFromExercise(BDDMockito.any(), BDDMockito.anyLong());
-            BDDMockito.then(exercisePictureService).should(BDDMockito.never()).deleteExercisePictures(BDDMockito.any(), BDDMockito.anyLong(), BDDMockito.anyList());
-            BDDMockito.then(exerciseRepository).should(BDDMockito.never()).findById(BDDMockito.anyLong());
-        }
+    private List<Supplier<?>> commands() {
+        return List.of(() -> service.createExercise(create(null)), () -> service.updateExercise(1L, update("변경", null, null)),
+                () -> service.deleteExercise(1L, null), () -> service.deleteImages(1L, List.of(1L), null));
     }
 
-    @Test
-    @DisplayName("운동기록 삭제 _ 타인의 운동기록 접근 시도")
-    void deleteExercise_FailedToAccessExercise() {
-        UUID testMemberId = UUID.randomUUID();
-        Long testExerciseId = 1L;
-
-        Member member = Member.builder().memberId(testMemberId).build();
-        Exercise exercise = Exercise.builder().id(testExerciseId).member(member).build();
-
-        try (MockedStatic<UserContextHolder> mockedStatic = Mockito.mockStatic(UserContextHolder.class)) {
-            mockedStatic.when(UserContextHolder::getUserId).thenReturn(testMemberId);
-
-            BDDMockito.given(memberRepository.findById(testMemberId)).willReturn(Optional.of(member));
-            BDDMockito.given(exerciseRepository.existsByRecordIdAndMemberId(testMemberId, testExerciseId)).willThrow(new CustomException(ErrorCode.AUTHORIZATION_DENIED));
-
-            Assertions.assertThatThrownBy(() ->
-                            exerciseCommandService.deleteExercise(testExerciseId))
-                    .isInstanceOf(CustomException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.AUTHORIZATION_DENIED);
-
-            BDDMockito.then(memberRepository).should(BDDMockito.times(1)).findById(testMemberId);
-            BDDMockito.then(exerciseRepository).should(BDDMockito.times(1)).existsByRecordIdAndMemberId(testMemberId, testExerciseId);
-            BDDMockito.then(exercisePictureService).should(BDDMockito.never()).getAllImagesFromExercise(BDDMockito.any(), BDDMockito.anyLong());
-            BDDMockito.then(exercisePictureService).should(BDDMockito.never()).deleteExercisePictures(BDDMockito.any(), BDDMockito.anyLong(), BDDMockito.anyList());
-            BDDMockito.then(exerciseRepository).should(BDDMockito.never()).findById(BDDMockito.anyLong());
-        }
+    private void assertError(Supplier<?> action, ErrorCode error) {
+        assertThatThrownBy(action::get).isInstanceOf(CustomException.class).hasFieldOrPropertyWithValue("errorCode", error);
     }
 
-    @Test
-    @DisplayName("운동기록 삭제 _ 삭제 대상 운동기록 없음")
-    void deleteExercise_TargetExerciseNotFound() {
-        UUID testMemberId = UUID.randomUUID();
-        Long testExerciseId = 1L;
-
-        Member member = Member.builder().memberId(testMemberId).build();
-        List<Long> pictureIds = List.of(1L, 2L);
-
-        try (MockedStatic<UserContextHolder> mockedStatic = Mockito.mockStatic(UserContextHolder.class)) {
-            mockedStatic.when(UserContextHolder::getUserId).thenReturn(testMemberId);
-
-            BDDMockito.given(memberRepository.findById(testMemberId)).willReturn(Optional.of(member));
-            BDDMockito.given(exerciseRepository.existsByRecordIdAndMemberId(testMemberId, testExerciseId)).willReturn(true);
-            BDDMockito.given(exercisePictureService.getAllImagesFromExercise(testMemberId, testExerciseId)).willReturn(pictureIds);
-            BDDMockito.willDoNothing().given(exercisePictureService).deleteExercisePictures(testMemberId, testExerciseId, pictureIds);
-
-            // 삭제할 운동기록이 없는 경우
-            BDDMockito.given(exerciseRepository.findById(testExerciseId)).willReturn(Optional.empty());
-
-            Assertions.assertThatThrownBy(() ->
-                            exerciseCommandService.deleteExercise(testExerciseId))
-                    .isInstanceOf(CustomException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.EXERCISE_RECORD_NOT_FOUND);
-
-            BDDMockito.then(memberRepository).should(BDDMockito.times(1)).findById(testMemberId);
-            BDDMockito.then(exerciseRepository).should(BDDMockito.times(1)).existsByRecordIdAndMemberId(testMemberId, testExerciseId);
-            BDDMockito.then(exercisePictureService).should(BDDMockito.times(1)).getAllImagesFromExercise(testMemberId, testExerciseId);
-            BDDMockito.then(exercisePictureService).should(BDDMockito.times(1)).deleteExercisePictures(testMemberId, testExerciseId, pictureIds);
-            BDDMockito.then(exerciseRepository).should(BDDMockito.times(1)).findById(testExerciseId);
-        }
+    private CreateExerciseRequestDto create(UUID key) {
+        return CreateExerciseRequestDto.builder().createRequestId(key).exerciseTitle("생성")
+                .exerciseStartedAt(START).exerciseEndedAt(START.plusHours(1)).build();
     }
 
-    @Test
-    @DisplayName("운동기록 삭제 _ 사진 목록 조회 중 예외 발생")
-    void deleteExercise_GetAllImagesFails() {
-        UUID testMemberId = UUID.randomUUID();
-        Long testExerciseId = 1L;
-        Member member = Member.builder().memberId(testMemberId).build();
-
-        try (MockedStatic<UserContextHolder> mockedStatic = Mockito.mockStatic(UserContextHolder.class)) {
-            mockedStatic.when(UserContextHolder::getUserId).thenReturn(testMemberId);
-
-            BDDMockito.given(memberRepository.findById(testMemberId)).willReturn(Optional.of(member));
-            BDDMockito.given(exerciseRepository.existsByRecordIdAndMemberId(testMemberId, testExerciseId)).willReturn(true);
-
-            BDDMockito.given(exercisePictureService.getAllImagesFromExercise(testMemberId, testExerciseId))
-                    .willThrow(new CustomException(ErrorCode.EXERCISE_NOT_FOUND));
-
-            Assertions.assertThatThrownBy(() -> exerciseCommandService.deleteExercise(testExerciseId))
-                    .isInstanceOf(CustomException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.EXERCISE_NOT_FOUND);
-
-            BDDMockito.then(memberRepository).should(BDDMockito.times(1)).findById(testMemberId);
-            BDDMockito.then(exerciseRepository).should(BDDMockito.times(1)).existsByRecordIdAndMemberId(testMemberId, testExerciseId);
-            BDDMockito.then(exercisePictureService).should(BDDMockito.times(1)).getAllImagesFromExercise(testMemberId, testExerciseId);
-            BDDMockito.then(exercisePictureService).should(BDDMockito.never()).deleteExercisePictures(ArgumentMatchers.any(), ArgumentMatchers.anyLong(), ArgumentMatchers.anyList());
-            BDDMockito.then(exerciseRepository).should(BDDMockito.never()).findById(testExerciseId);
-        }
-    }
-
-    @Test
-    @DisplayName("운동기록 삭제 _ 사진 목록 조회 중 예외 발생 2(회원의 운동기록이 아닌 경우)")
-    void deleteExercise_GetAllImagesFails2() {
-        UUID testMemberId = UUID.randomUUID();
-        Long testExerciseId = 1L;
-        Member member = Member.builder().memberId(testMemberId).build();
-
-        try (MockedStatic<UserContextHolder> mockedStatic = Mockito.mockStatic(UserContextHolder.class)) {
-            mockedStatic.when(UserContextHolder::getUserId).thenReturn(testMemberId);
-
-            BDDMockito.given(memberRepository.findById(testMemberId)).willReturn(Optional.of(member));
-            BDDMockito.given(exerciseRepository.existsByRecordIdAndMemberId(testMemberId, testExerciseId)).willReturn(true);
-
-            BDDMockito.given(exercisePictureService.getAllImagesFromExercise(testMemberId, testExerciseId))
-                    .willThrow(new CustomException(ErrorCode.AUTHORIZATION_DENIED));
-
-            Assertions.assertThatThrownBy(() -> exerciseCommandService.deleteExercise(testExerciseId))
-                    .isInstanceOf(CustomException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.AUTHORIZATION_DENIED);
-
-            BDDMockito.then(memberRepository).should(BDDMockito.times(1)).findById(testMemberId);
-            BDDMockito.then(exerciseRepository).should(BDDMockito.times(1)).existsByRecordIdAndMemberId(testMemberId, testExerciseId);
-            BDDMockito.then(exercisePictureService).should(BDDMockito.times(1)).getAllImagesFromExercise(testMemberId, testExerciseId);
-            BDDMockito.then(exercisePictureService).should(BDDMockito.never()).deleteExercisePictures(ArgumentMatchers.any(), ArgumentMatchers.anyLong(), ArgumentMatchers.anyList());
-            BDDMockito.then(exerciseRepository).should(BDDMockito.never()).findById(testExerciseId);
-        }
-    }
-
-    @Test
-    @DisplayName("운동기록 삭제 _ 사진 삭제 중 예외 발생")
-    void deleteExercise_DeletePicturesFails() {
-        UUID testMemberId = UUID.randomUUID();
-        Long testExerciseId = 1L;
-
-        Member member = Member.builder().memberId(testMemberId).build();
-        List<Long> pictureIds = List.of(1L, 2L);
-
-        try (MockedStatic<UserContextHolder> mockedStatic = Mockito.mockStatic(UserContextHolder.class)) {
-            mockedStatic.when(UserContextHolder::getUserId).thenReturn(testMemberId);
-
-            BDDMockito.given(memberRepository.findById(testMemberId)).willReturn(Optional.of(member));
-            BDDMockito.given(exerciseRepository.existsByRecordIdAndMemberId(testMemberId, testExerciseId)).willReturn(true);
-            BDDMockito.given(exercisePictureService.getAllImagesFromExercise(testMemberId, testExerciseId)).willReturn(pictureIds);
-
-            BDDMockito.willThrow(new CustomException(ErrorCode.EXERCISE_PICTURE_DELETE_FAILED))
-                    .given(exercisePictureService).deleteExercisePictures(testMemberId, testExerciseId, pictureIds);
-
-            Assertions.assertThatThrownBy(() -> exerciseCommandService.deleteExercise(testExerciseId))
-                    .isInstanceOf(CustomException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.EXERCISE_PICTURE_DELETE_FAILED);
-
-            BDDMockito.then(memberRepository).should(BDDMockito.times(1)).findById(testMemberId);
-            BDDMockito.then(exerciseRepository).should(BDDMockito.times(1)).existsByRecordIdAndMemberId(testMemberId, testExerciseId);
-            BDDMockito.then(exercisePictureService).should(BDDMockito.times(1)).getAllImagesFromExercise(testMemberId, testExerciseId);
-            BDDMockito.then(exercisePictureService).should(BDDMockito.times(1)).deleteExercisePictures(testMemberId, testExerciseId, pictureIds);
-            BDDMockito.then(exerciseRepository).should(BDDMockito.never()).findById(testExerciseId);
-        }
+    private UpdateExerciseRequestDto update(String title, UUID key, Long version) {
+        return UpdateExerciseRequestDto.builder().editId(key).baseVersion(version).exerciseTitle(title)
+                .exerciseStartedAt(START).exerciseEndedAt(START.plusHours(1)).build();
     }
 }

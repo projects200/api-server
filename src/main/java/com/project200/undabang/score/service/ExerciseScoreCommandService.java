@@ -15,5 +15,11 @@ public interface ExerciseScoreCommandService {
      * @return 획득한 점수. 점수를 획득하지 못한 경우 0을 반환합니다.
      */
     byte awardPointsForExercise(Exercise exercise);
+
+    /**
+     * 새 기록 저장 전에 호출합니다. 점수와 기록은 호출자의 트랜잭션에서 함께 확정됩니다.
+     * 정책 또는 저장 오류를 0점 성공으로 바꾸지 않습니다.
+     */
+    byte awardPointsAtomically(Exercise exercise);
 }
 

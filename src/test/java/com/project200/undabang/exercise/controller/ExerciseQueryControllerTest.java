@@ -101,6 +101,7 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
                                         .description("운동 ID입니다. 조회할 운동 기록 ID를 입력하시면 됩니다.")
                         ),
                         responseFields(commonResponseFields(
+                                fieldWithPath("data.version").type(JsonFieldType.NUMBER).description("현재 서버 버전"),
                                 fieldWithPath("data.exerciseTitle").type(JsonFieldType.STRING)
                                         .description("운동 제목입니다."),
                                 fieldWithPath("data.exerciseDetail").type(JsonFieldType.STRING)
@@ -165,6 +166,7 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
                 .andDo(this.document.document(
                         requestHeaders(HEADER_ACCESS_TOKEN),
                         responseFields(commonResponseFields(
+                                fieldWithPath("data.version").type(JsonFieldType.NUMBER).description("현재 서버 버전"),
                                 fieldWithPath("data.exerciseTitle").type(JsonFieldType.STRING).description("운동 제목"),
                                 fieldWithPath("data.exerciseDetail").type(JsonFieldType.STRING).description("운동 내용"),
                                 fieldWithPath("data.exercisePersonalType").type(JsonFieldType.STRING).description("운동 종류"),
