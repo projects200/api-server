@@ -42,20 +42,8 @@ public class ExerciseScoreCommandServiceImpl implements ExerciseScoreCommandServ
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public byte awardPointsForExercise(Exercise exercise) {
-        byte actualEarnedPoints = 0; // 실제 획득 점수를 담을 변수
-
         try {
-            EarnablePointsInfoDto pointsInfo = checkEarnablePoints(exercise.getMember(), exercise.getExerciseStartedAt());
-
-            if (pointsInfo.isEarnable()) {
-                Member member = exercise.getMember();
-                byte minScore = policyService.getPolicyValueAsByte(PolicyKey.EXERCISE_SCORE_MIN_POINTS);
-                byte maxScore = policyService.getPolicyValueAsByte(PolicyKey.EXERCISE_SCORE_MAX_POINTS);
-
-                // member.addScore()가 반환하는 실제 증가분을 받음
-                actualEarnedPoints = member.addScore(pointsInfo.getPointsToAward(), minScore, maxScore);
-            }
-            return actualEarnedPoints;
+            return calculateAndApplyPoints(exercise);
         } catch (Exception e) {
             log.error("운동 기록 점수 부여 중 오류 발생. exerciseId: {}, memberId: {}",
                     exercise.getId(), exercise.getMember().getMemberId(), e);
@@ -70,6 +58,22 @@ public class ExerciseScoreCommandServiceImpl implements ExerciseScoreCommandServ
 
             return 0; // 예외 발생 시 0점 반환
         }
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public byte awardPointsAtomically(Exercise exercise) {
+        return calculateAndApplyPoints(exercise);
+    }
+
+    private byte calculateAndApplyPoints(Exercise exercise) {
+        EarnablePointsInfoDto pointsInfo = checkEarnablePoints(exercise.getMember(), exercise.getExerciseStartedAt());
+        if (!pointsInfo.isEarnable()) {
+            return 0;
+        }
+        byte minScore = policyService.getPolicyValueAsByte(PolicyKey.EXERCISE_SCORE_MIN_POINTS);
+        byte maxScore = policyService.getPolicyValueAsByte(PolicyKey.EXERCISE_SCORE_MAX_POINTS);
+        return exercise.getMember().addScore(pointsInfo.getPointsToAward(), minScore, maxScore);
     }
 
 

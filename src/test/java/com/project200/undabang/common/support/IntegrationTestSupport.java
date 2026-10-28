@@ -25,7 +25,8 @@ public abstract class IntegrationTestSupport {
 
         try {
             // 1. LocalStack 시도
-            localStack = new LocalStackContainer(DockerImageName.parse("localstack/localstack:latest"))
+            // 인증이 필요한 latest 대신, 인증 없이 재현 가능한 S3 테스트용 Community 이미지를 고정한다.
+            localStack = new LocalStackContainer(DockerImageName.parse("localstack/localstack:4.4.0"))
                     .withServices(LocalStackContainer.Service.S3)
                     .withEnv("DEFAULT_REGION", "ap-northeast-2");
             localStack.start();
@@ -73,6 +74,9 @@ public abstract class IntegrationTestSupport {
      */
     @BeforeAll
     static void checkDockerRequirement() {
+        if (Boolean.getBoolean("requireIntegrationTests") && !IS_DOCKER_AVAILABLE) {
+            throw new IllegalStateException("PR 검증은 LocalStack/WireMock 통합 테스트를 생략할 수 없습니다.");
+        }
         Assumptions.assumeTrue(IS_DOCKER_AVAILABLE,
                 "Docker 환경을 찾을 수 없어 통합 테스트를 건너뜁니다 (CI 환경 이슈 등).");
     }

@@ -6,7 +6,22 @@
 - 이미지를 제외한 운동 기록 문자데이터 필드를 수정하는 API입니다.
 이 API를 통해 사용자는 자신의 운동 기록을 수정할 수 있습니다.
 - 사용자는 운동 제목, 종류, 장소, 상세 내용, 시작 시간, 종료 시간을 포함하여 운동 기록을 작성할 수 있습니다.
-- 수정하지 않은 데이터는 변하지 않습니다.
+- 기존과 같이 전체 문자 필드를 보냅니다. 필수 제목/시작/종료 검증을 유지하며 선택 필드의 null은 해당 값을 비웁니다.
+
+=== 오프라인 동기화 계약
+- `editId` UUID와 0 이상의 `baseVersion`을 함께 보냅니다. 둘 다 생략한 기존 요청은 지원하지만 하나만 보내면 400입니다.
+- `baseVersion`은 편집할 때 확인한 서버 버전이어야 합니다. 다르면 HTTP 409 `EXERCISE_EDIT_CONFLICT`이며
+  오류 `data`에 `exerciseId`와 현재 `version`이 있습니다. 서버는 충돌한 본문을 덮어쓰지 않습니다.
+- 같은 작업/대상/본문의 `editId` 재시도는 버전/삭제 검사보다 먼저 원본 성공 응답을 반환합니다.
+  같은 키에 다른 본문/기준 버전/대상을 보내면 400 `EXERCISE_REQUEST_ID_REUSED`입니다.
+- 삭제된 본문에 새 편집을 보내면 410 `EXERCISE_DELETED`입니다. 타인에게는 소유권 오류를 반환합니다.
+- 메타데이터 없는 기존 클라이언트의 변경도 버전을 증가시키므로 새 클라이언트가 충돌을 감지합니다.
+  내용이 동일한 편집은 버전을 증가시키지 않습니다. 편집/날짜 이동은 기존 점수를 바꾸지 않습니다.
+
+operation::exercise-sync-controller-test/sync-edit[snippets="http-request,http-response,request-fields,response-fields"]
+
+==== 버전 충돌 예시
+operation::exercise-sync-controller-test/stale-version-conflict[snippets="http-request,http-response,response-fields"]
 
 === 개발 참고 사항
 - <<공통-개발-참고-사항,공통 개발 참고 사항>>을 참고하세요.
@@ -20,9 +35,11 @@ operation::exercise-command-controller-test/exercise-update_-success[snippets="r
 ==== 응답 상태 코드
 |===
 |상태 코드|설명
-|201|운동 기록이 성공적으로 생성되었습니다.
+|200|운동 기록이 성공적으로 수정되었습니다.
 |400|입력값 검증에 실패했습니다.
 |403|운동 기록에 접근 권한이 없습니다
 |404|운동 기록이나 회원이 존재하지 않습니다.
+|409|기준 버전이 현재 서버 버전과 다릅니다.
+|410|이미 삭제된 기록에 대한 새 편집입니다.
 |===
 

@@ -9,6 +9,7 @@ import com.project200.undabang.exercise.dto.request.CreateExerciseRequestDto;
 import com.project200.undabang.exercise.dto.request.UpdateExerciseRequestDto;
 import com.project200.undabang.exercise.dto.response.CreateExerciseResponseDto;
 import com.project200.undabang.exercise.dto.response.ExerciseIdResponseDto;
+import com.project200.undabang.exercise.dto.response.ExercisePicturesResponse;
 import com.project200.undabang.exercise.service.ExerciseCommandService;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -58,7 +59,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                 .exerciseEndedAt(LocalDateTime.of(2023, 10, 1, 7, 0))
                 .build();
 
-        CreateExerciseResponseDto responseDto = new CreateExerciseResponseDto(1L, (byte) 3);
+        CreateExerciseResponseDto responseDto = new CreateExerciseResponseDto(1L, (byte) 3, 0);
         BDDMockito.given(exerciseCommandService.createExercise(BDDMockito.any(CreateExerciseRequestDto.class)))
                 .willReturn(responseDto);
 
@@ -76,6 +77,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                                 RestDocsUtils.HEADER_ACCESS_TOKEN
                         ),
                         requestFields(
+                                fieldWithPath("createRequestId").optional().type(JsonFieldType.STRING).description("불변 생성 요청 UUID"),
                                 fieldWithPath("exerciseTitle").type(JsonFieldType.STRING)
                                         .description("운동 제목입니다. 최대 255자까지 입력 가능합니다. null, 빈 문자열, 공백을 받지 않습니다"),
                                 fieldWithPath("exercisePersonalType").type(JsonFieldType.STRING).optional()
@@ -90,6 +92,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                                         .description("종료일시 입니다.ISO 8601 형식으로 입력 받습니다. 오늘 이전 일시여야 하며 시작 일시 이후여야 합니다.")
                         ),
                         responseFields(RestDocsUtils.commonResponseFields(
+                                fieldWithPath("data.version").type(JsonFieldType.NUMBER).description("초기 서버 버전"),
                                 fieldWithPath("data.exerciseId").type(JsonFieldType.NUMBER)
                                         .description("운동 ID입니다. 이미지 업로드 시 사용 가능합니다."),
                                 fieldWithPath("data.earnedPoints").type(JsonFieldType.NUMBER)
@@ -101,7 +104,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
 
         // then
         Assertions.assertThat(response).isEqualTo(objectMapper.writeValueAsString(
-                CommonResponse.create(new CreateExerciseResponseDto(1L, (byte) 3))
+                CommonResponse.create(new CreateExerciseResponseDto(1L, (byte) 3, 0))
         ));
         BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1))
                 .createExercise(BDDMockito.any(CreateExerciseRequestDto.class));
@@ -129,8 +132,8 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                 "DummyImage2".getBytes()
         );
 
-        ExerciseIdResponseDto responseDto = new ExerciseIdResponseDto(exerciseId);
-        BDDMockito.given(exerciseCommandService.uploadExerciseImages(BDDMockito.eq(exerciseId), BDDMockito.anyList()))
+        ExercisePicturesResponse responseDto = new ExercisePicturesResponse(exerciseId, 1, null);
+        BDDMockito.given(exerciseCommandService.uploadExerciseImages(BDDMockito.eq(exerciseId), BDDMockito.anyList(), BDDMockito.isNull(), BDDMockito.isNull()))
                 .willReturn(responseDto);
 
         // when
@@ -160,6 +163,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                                                 "파일의 확장자는 .jpg, .jpeg, .png만 허용됩니다.")
                         ),
                         responseFields(RestDocsUtils.commonResponseFields(
+                                fieldWithPath("data.version").type(JsonFieldType.NUMBER).description("서버 버전"),
                                 fieldWithPath("data.exerciseId").type(JsonFieldType.NUMBER)
                                         .description("이미지가 업로드 된 운동 ID입니다.")
                         ))
@@ -168,10 +172,10 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
 
         // then
         Assertions.assertThat(response).isEqualTo(objectMapper.writeValueAsString(
-                CommonResponse.create(new ExerciseIdResponseDto(exerciseId))
+                CommonResponse.create(new ExercisePicturesResponse(exerciseId, 1, null))
         ));
         BDDMockito.then(exerciseCommandService).should()
-                .uploadExerciseImages(BDDMockito.eq(exerciseId), BDDMockito.anyList());
+                .uploadExerciseImages(BDDMockito.eq(exerciseId), BDDMockito.anyList(), BDDMockito.isNull(), BDDMockito.isNull());
         BDDMockito.then(exerciseCommandService).shouldHaveNoMoreInteractions();
     }
 
@@ -201,7 +205,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         // then
         Assertions.assertThat(response).contains("허용되지 않은 파일 확장자입니다.");
         BDDMockito.then(exerciseCommandService).should(BDDMockito.never())
-                .uploadExerciseImages(BDDMockito.eq(exerciseId), BDDMockito.anyList());
+                .uploadExerciseImages(BDDMockito.eq(exerciseId), BDDMockito.anyList(), BDDMockito.isNull(), BDDMockito.isNull());
         BDDMockito.then(exerciseCommandService).shouldHaveNoMoreInteractions();
     }
 
@@ -236,7 +240,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         // then
         Assertions.assertThat(response).contains("최대 5개의 파일만 업로드할 수 있습니다.");
         BDDMockito.then(exerciseCommandService).should(BDDMockito.never())
-                .uploadExerciseImages(BDDMockito.eq(exerciseId), BDDMockito.anyList());
+                .uploadExerciseImages(BDDMockito.eq(exerciseId), BDDMockito.anyList(), BDDMockito.isNull(), BDDMockito.isNull());
         BDDMockito.then(exerciseCommandService).shouldHaveNoMoreInteractions();
     }
 
@@ -255,9 +259,9 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                 .exerciseEndedAt(LocalDateTime.of(2025, 5, 1, 1, 0, 0))
                 .build();
 
-        ExerciseIdResponseDto responseDto = new ExerciseIdResponseDto(1L);
+        ExerciseIdResponseDto responseDto = new ExerciseIdResponseDto(1L, 1);
 
-        BDDMockito.given(exerciseCommandService.updateExercise(exerciseId, requestDto)).willReturn(responseDto);
+        BDDMockito.given(exerciseCommandService.updateExercise(BDDMockito.eq(exerciseId), BDDMockito.any(UpdateExerciseRequestDto.class))).willReturn(responseDto);
 
         // when
         this.mockMvc.perform(MockMvcRequestBuilders.patch("/api/v1/exercises/{exerciseId}", exerciseId)
@@ -273,6 +277,8 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                         ),
                         requestHeaders(RestDocsUtils.HEADER_ACCESS_TOKEN),
                         requestFields(
+                                fieldWithPath("editId").optional().type(JsonFieldType.STRING).description("불변 편집 UUID"),
+                                fieldWithPath("baseVersion").optional().type(JsonFieldType.NUMBER).description("편집 기준 서버 버전"),
                                 fieldWithPath("exerciseTitle").type(JsonFieldType.STRING)
                                         .description("운동 제목입니다. 최대 255자까지 입력 가능합니다. null, 빈 문자열, 공백을 받지 않습니다"),
                                 fieldWithPath("exercisePersonalType").type(JsonFieldType.STRING).optional()
@@ -287,6 +293,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                                         .description("종료일시 입니다.ISO 8601 형식으로 입력 받습니다. 오늘 이전 일시여야 하며 시작 일시 이후여야 합니다.")
                         ),
                         responseFields(RestDocsUtils.commonResponseFields(
+                                        fieldWithPath("data.version").type(JsonFieldType.NUMBER).description("변경 후 서버 버전"),
                                         fieldWithPath("data.exerciseId").type(JsonFieldType.NUMBER)
                                                 .description("운동 ID 입니다. 이미지 업로드 시 사용 가능합니다.")
                                 )
@@ -393,8 +400,8 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
 
         String[] queryParamPictureIdArr = pictureIds.stream().map(String::valueOf).toArray(String[]::new);
 
-        // void 니까 willDoNothing()
-        BDDMockito.willDoNothing().given(exerciseCommandService).deleteImages(testExerciseId, pictureIds);
+        BDDMockito.given(exerciseCommandService.deleteImages(testExerciseId, pictureIds, null))
+                .willReturn(new ExerciseIdResponseDto(testExerciseId, 1));
 
         this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}/pictures", testExerciseId)
                         .queryParam("pictureIds", queryParamPictureIdArr)
@@ -417,7 +424,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                 ))
                 .andReturn().getResponse().getContentAsString();
 
-        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteImages(testExerciseId, pictureIds);
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteImages(testExerciseId, pictureIds, null);
     }
 
     @Test
@@ -440,7 +447,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                 .andExpect(jsonPath("message").value("요청 파라미터 유효성 검증에 실패했습니다."));
 
 
-        BDDMockito.then(exerciseCommandService).should(BDDMockito.never()).deleteImages(BDDMockito.anyLong(), BDDMockito.anyList());
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.never()).deleteImages(BDDMockito.anyLong(), BDDMockito.anyList(), BDDMockito.any());
     }
 
     @Test
@@ -460,7 +467,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                 .andExpect(jsonPath("code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
                 .andExpect(jsonPath("message").value("필수 파라미터를 입력해주세요"));
 
-        BDDMockito.then(exerciseCommandService).should(BDDMockito.never()).deleteImages(BDDMockito.anyLong(), BDDMockito.anyList());
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.never()).deleteImages(BDDMockito.anyLong(), BDDMockito.anyList(), BDDMockito.any());
     }
 
 
@@ -474,7 +481,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         String[] queryParamPictureIdArr = pictureIds.stream().map(String::valueOf).toArray(String[]::new);
 
         BDDMockito.willThrow(new CustomException(ErrorCode.AUTHORIZATION_DENIED))
-                .given(exerciseCommandService).deleteImages(testExerciseId, pictureIds);
+                .given(exerciseCommandService).deleteImages(testExerciseId, pictureIds, null);
 
         // when & then
         this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}/pictures", testExerciseId)
@@ -487,7 +494,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                 .andExpect(jsonPath("code").value(ErrorCode.AUTHORIZATION_DENIED.getCode()))
                 .andExpect(jsonPath("message").value(ErrorCode.AUTHORIZATION_DENIED.getMessage()));
 
-        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteImages(testExerciseId, pictureIds);
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteImages(testExerciseId, pictureIds, null);
     }
 
     @Test
@@ -500,7 +507,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         String[] queryParamPictureIdArr = pictureIds.stream().map(String::valueOf).toArray(String[]::new);
 
         BDDMockito.willThrow(new CustomException(ErrorCode.MEMBER_NOT_FOUND))
-                .given(exerciseCommandService).deleteImages(testExerciseId, pictureIds);
+                .given(exerciseCommandService).deleteImages(testExerciseId, pictureIds, null);
 
         // when & then
         this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}/pictures", testExerciseId)
@@ -513,7 +520,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                 .andExpect(jsonPath("code").value(ErrorCode.MEMBER_NOT_FOUND.getCode()))
                 .andExpect(jsonPath("message").value(ErrorCode.MEMBER_NOT_FOUND.getMessage()));
 
-        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteImages(testExerciseId, pictureIds);
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteImages(testExerciseId, pictureIds, null);
     }
 
     @Test
@@ -523,7 +530,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         Long testExerciseId = 1L;
         UUID testMemberId = UUID.randomUUID();
 
-        BDDMockito.willDoNothing().given(exerciseCommandService).deleteExercise(testExerciseId);
+        BDDMockito.given(exerciseCommandService.deleteExercise(testExerciseId, null)).willReturn(new ExerciseIdResponseDto(testExerciseId, 1));
 
         this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}", testExerciseId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -543,7 +550,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                         )
                 )).andReturn().getResponse().getContentAsString();
 
-        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteExercise(testExerciseId);
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteExercise(testExerciseId, null);
     }
 
     @Test
@@ -562,7 +569,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                 .andExpect(jsonPath("code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
                 .andReturn().getResponse().getContentAsString();
 
-        BDDMockito.then(exerciseCommandService).should(BDDMockito.never()).deleteExercise(testExerciseId);
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.never()).deleteExercise(testExerciseId, null);
     }
 
     @Test
@@ -571,7 +578,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         Long testExerciseId = 1L;
         UUID testMemberId = UUID.randomUUID();
 
-        BDDMockito.willThrow(new CustomException(ErrorCode.AUTHORIZATION_DENIED)).given(exerciseCommandService).deleteExercise(testExerciseId);
+        BDDMockito.willThrow(new CustomException(ErrorCode.AUTHORIZATION_DENIED)).given(exerciseCommandService).deleteExercise(testExerciseId, null);
 
         this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}", testExerciseId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -583,7 +590,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                 .andExpect(jsonPath("message").value(ErrorCode.AUTHORIZATION_DENIED.getMessage()))
                 .andReturn().getResponse().getContentAsString();
 
-        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteExercise(testExerciseId);
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteExercise(testExerciseId, null);
     }
 
     @Test
@@ -592,7 +599,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         Long testExerciseId = 1L;
         UUID testMemberId = UUID.randomUUID();
 
-        BDDMockito.willThrow(new CustomException(ErrorCode.MEMBER_NOT_FOUND)).given(exerciseCommandService).deleteExercise(testExerciseId);
+        BDDMockito.willThrow(new CustomException(ErrorCode.MEMBER_NOT_FOUND)).given(exerciseCommandService).deleteExercise(testExerciseId, null);
 
         this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}", testExerciseId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -604,7 +611,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                 .andExpect(jsonPath("message").value(ErrorCode.MEMBER_NOT_FOUND.getMessage()))
                 .andReturn().getResponse().getContentAsString();
 
-        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteExercise(testExerciseId);
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteExercise(testExerciseId, null);
     }
 
     @Test
@@ -613,7 +620,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         Long testExerciseId = 1L;
         UUID testMemberId = UUID.randomUUID();
 
-        BDDMockito.willThrow(new CustomException(ErrorCode.EXERCISE_RECORD_NOT_FOUND)).given(exerciseCommandService).deleteExercise(testExerciseId);
+        BDDMockito.willThrow(new CustomException(ErrorCode.EXERCISE_RECORD_NOT_FOUND)).given(exerciseCommandService).deleteExercise(testExerciseId, null);
 
         this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}", testExerciseId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -625,7 +632,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                 .andExpect(jsonPath("message").value(ErrorCode.EXERCISE_RECORD_NOT_FOUND.getMessage()))
                 .andReturn().getResponse().getContentAsString();
 
-        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteExercise(testExerciseId);
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteExercise(testExerciseId, null);
     }
 
     @Test
@@ -635,7 +642,7 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
         UUID testMemberId = UUID.randomUUID();
 
         BDDMockito.willThrow(new CustomException(ErrorCode.EXERCISE_PICTURE_DELETE_FAILED))
-                .given(exerciseCommandService).deleteExercise(testExerciseId);
+                .given(exerciseCommandService).deleteExercise(testExerciseId, null);
 
         this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/exercises/{exerciseId}", testExerciseId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -647,6 +654,6 @@ class ExerciseCommandControllerTest extends AbstractRestDocSupport {
                 .andExpect(jsonPath("message").value(ErrorCode.EXERCISE_PICTURE_DELETE_FAILED.getMessage()))
                 .andReturn().getResponse().getContentAsString();
 
-        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteExercise(testExerciseId);
+        BDDMockito.then(exerciseCommandService).should(BDDMockito.times(1)).deleteExercise(testExerciseId, null);
     }
 }

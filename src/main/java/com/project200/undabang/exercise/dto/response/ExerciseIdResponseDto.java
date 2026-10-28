@@ -1,4 +1,4 @@
 package com.project200.undabang.exercise.dto.response;
 
-public record ExerciseIdResponseDto(Long exerciseId) {
+public record ExerciseIdResponseDto(Long exerciseId, long version) {
 }

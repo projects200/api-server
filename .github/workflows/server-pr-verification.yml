@@ -1,0 +1,48 @@
+name: Server PR verification
+
+on:
+  pull_request:
+    branches: [develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: server-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DOCKER_HOST: unix:///var/run/docker.sock
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: ap-northeast-2
+      AWS_EC2_METADATA_DISABLED: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: corretto
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Require Docker for existing LocalStack and WireMock support
+        run: docker info
+      - name: Run all tests, REST Docs and global LINE coverage gate
+        run: bash gradlew --no-daemon --continue -DrequireIntegrationTests=true test jacocoTestReport jacocoTestCoverageVerification asciidoctor
+      - name: Upload test and coverage evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-pr-test-and-coverage
+          if-no-files-found: warn
+          path: |
+            build/test-results/test/**
+            build/reports/tests/test/**
+            build/reports/jacoco/test/**
+            build/generated-snippets/**
+            build/docs/asciidoc/**

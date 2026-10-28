@@ -40,6 +40,9 @@ public enum ErrorCode {
     EXERCISE_PICTURE_UPLOAD_FAILED(500, "EXERCISE_PICTURE_UPLOAD_FAILED", "운동 이미지 업로드에 실패했습니다."),
     EXERCISE_PICTURE_DELETE_FAILED(500, "EXERCISE_PICTURE_DELETE_FAILED", "운동 이미지 수정에 실패했습니다."),
     EXERCISE_PICTURE_COUNT_EXCEEDED(400, "EXERCISE_PICTURE_COUNT_EXCEEDED", "운동 사진은 최대 5개까지만 업로드할 수 있습니다."),
+    EXERCISE_REQUEST_ID_REUSED(400, "EXERCISE_REQUEST_ID_REUSED", "다른 운동 요청에 이미 사용된 요청 ID입니다."),
+    EXERCISE_EDIT_CONFLICT(409, "EXERCISE_EDIT_CONFLICT", "운동 기록의 서버 버전이 변경되었습니다."),
+    EXERCISE_DELETED(410, "EXERCISE_DELETED", "이미 삭제된 운동 기록입니다."),
 
     // 정책 관련 에러
     POLICY_NOT_EXIST(404, "POLICY_NOT_EXIST", "존재하지 않는 정책명 입니다."),

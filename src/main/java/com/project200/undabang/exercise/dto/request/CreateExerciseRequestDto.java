@@ -1,5 +1,6 @@
 package com.project200.undabang.exercise.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.project200.undabang.common.validation.StartBeforeEnd;
 import com.project200.undabang.exercise.entity.Exercise;
 import com.project200.undabang.member.entity.Member;
@@ -11,11 +12,15 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder
 @StartBeforeEnd(startTimeFieldName = "exerciseStartedAt", endTimeFieldName = "exerciseEndedAt")
 public class CreateExerciseRequestDto {
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private UUID createRequestId;
+
     @Size(max = 255)
     @NotBlank(message = "제목은 필수 입력값입니다.")
     private String exerciseTitle;

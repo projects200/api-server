@@ -4,6 +4,7 @@ import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.common.web.response.CommonResponse;
 import com.project200.undabang.timer.sync.TimerSyncConflictException;
+import com.project200.undabang.exercise.sync.ExerciseSyncConflictException;
 import jakarta.persistence.LockTimeoutException;
 import jakarta.persistence.PersistenceException;
 import jakarta.validation.ConstraintViolationException;
@@ -43,6 +44,12 @@ import java.util.Map;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ExerciseSyncConflictException.class)
+    protected ResponseEntity<CommonResponse<Object>> handleExerciseSyncConflictException(ExerciseSyncConflictException ex) {
+        return ResponseEntity.status(ex.getErrorCode().getStatus())
+                .body(CommonResponse.<Object>error(ex.getErrorCode()).data(ex.getCurrentValue()).build());
+    }
 
     /**
      * 타이머 충돌 시 현재 서버 값을 오류 응답에 포함합니다.

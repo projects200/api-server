@@ -69,6 +69,14 @@ public class Exercise {
     @Column(name = "exercise_deleted_at")
     private LocalDateTime exerciseDeletedAt;
 
+    @Column(name = "version", nullable = false)
+    @ColumnDefault("0")
+    private long version;
+
+    public void incrementVersion() {
+        version++;
+    }
+
     public boolean isOwnedBy(UUID memberId) {
         return this.member.getMemberId().equals(memberId);
     }
@@ -81,6 +89,14 @@ public class Exercise {
             LocalDateTime exerciseStartedAt,
             LocalDateTime exerciseEndedAt) {
 
+        if (!java.util.Objects.equals(this.exerciseTitle, exerciseTitle)
+                || !java.util.Objects.equals(this.exerciseDetail, exerciseDetail)
+                || !java.util.Objects.equals(this.exercisePersonalType, exercisePersonalType)
+                || !java.util.Objects.equals(this.exerciseLocation, exerciseLocation)
+                || !java.util.Objects.equals(this.exerciseStartedAt, exerciseStartedAt)
+                || !java.util.Objects.equals(this.exerciseEndedAt, exerciseEndedAt)) {
+            incrementVersion();
+        }
         this.exerciseTitle = exerciseTitle;
         this.exerciseDetail = exerciseDetail;
         this.exercisePersonalType = exercisePersonalType;
@@ -90,6 +106,9 @@ public class Exercise {
     }
 
     public void deleteExercise(){
-        this.exerciseDeletedAt = LocalDateTime.now();
+        if (exerciseDeletedAt == null) {
+            this.exerciseDeletedAt = LocalDateTime.now();
+            incrementVersion();
+        }
     }
 }

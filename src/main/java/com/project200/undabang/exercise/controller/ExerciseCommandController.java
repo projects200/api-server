@@ -6,7 +6,9 @@ import com.project200.undabang.exercise.dto.request.CreateExerciseRequestDto;
 import com.project200.undabang.exercise.dto.request.UpdateExerciseRequestDto;
 import com.project200.undabang.exercise.dto.response.CreateExerciseResponseDto;
 import com.project200.undabang.exercise.dto.response.ExerciseIdResponseDto;
+import com.project200.undabang.exercise.dto.response.ExercisePicturesResponse;
 import com.project200.undabang.exercise.service.ExerciseCommandService;
+import com.project200.undabang.exercise.sync.ExerciseSyncService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.UUID;
 
 
 /**
@@ -49,12 +52,16 @@ public class ExerciseCommandController {
      * @return 이미지가 업로드된 운동 기록 ID를 포함하는 응답
      */
     @PostMapping(path = "/v1/exercises/{exerciseId}/pictures", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<CommonResponse<ExerciseIdResponseDto>> uploadExerciseImages(
+    public ResponseEntity<CommonResponse<ExercisePicturesResponse>> uploadExerciseImages(
             @PathVariable @Positive(message = "올바른 Exercise ID를 입력해주세요") Long exerciseId,
             @Size(max = 5, message = "최대 5개의 파일만 업로드할 수 있습니다.")
             @AllowedExtensions(extensions = {".jpg", ".jpeg", ".png"})
-            @RequestPart("pictures") List<MultipartFile> exercisePictureList) {
-        ExerciseIdResponseDto responseData = exerciseCommandService.uploadExerciseImages(exerciseId, exercisePictureList);
+            @RequestPart("pictures") List<MultipartFile> exercisePictureList,
+            @RequestParam(required = false) UUID uploadRequestId,
+            @RequestParam(required = false) List<UUID> clientImageIds) {
+        ExerciseSyncService.validatePictures(exercisePictureList, uploadRequestId, clientImageIds);
+        ExercisePicturesResponse responseData = exerciseCommandService.uploadExerciseImages(
+                exerciseId, exercisePictureList, uploadRequestId, clientImageIds);
         return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.create(responseData));
     }
 
@@ -81,11 +88,12 @@ public class ExerciseCommandController {
      * @return 성공 응답
      */
     @DeleteMapping(path = "/v1/exercises/{exerciseId}/pictures")
-    public ResponseEntity<CommonResponse<Void>> deleteExerciseImages(
+    public ResponseEntity<CommonResponse<ExerciseIdResponseDto>> deleteExerciseImages(
             @PathVariable @Positive(message = "올바른 Exercise ID를 입력해주세요") Long exerciseId,
-            @RequestParam("pictureIds") List<Long> pictureIds) {
-        exerciseCommandService.deleteImages(exerciseId, pictureIds);
-        return ResponseEntity.ok(CommonResponse.success());
+            @RequestParam("pictureIds") List<Long> pictureIds,
+            @RequestParam(required = false) UUID editId) {
+        ExerciseIdResponseDto response = exerciseCommandService.deleteImages(exerciseId, pictureIds, editId);
+        return ResponseEntity.ok(editId == null ? CommonResponse.success() : CommonResponse.success(response));
     }
 
     /**
@@ -95,9 +103,10 @@ public class ExerciseCommandController {
      * @return 성공 응답
      */
     @DeleteMapping(path = "/v1/exercises/{exerciseId}")
-    public ResponseEntity<CommonResponse<Void>> deleteExercise(
-            @PathVariable @Positive(message = "올바른 Exercise ID를 입력해주세요") Long exerciseId) {
-        exerciseCommandService.deleteExercise(exerciseId);
-        return ResponseEntity.ok(CommonResponse.success());
+    public ResponseEntity<CommonResponse<ExerciseIdResponseDto>> deleteExercise(
+            @PathVariable @Positive(message = "올바른 Exercise ID를 입력해주세요") Long exerciseId,
+            @RequestParam(required = false) UUID editId) {
+        ExerciseIdResponseDto response = exerciseCommandService.deleteExercise(exerciseId, editId);
+        return ResponseEntity.ok(editId == null ? CommonResponse.success() : CommonResponse.success(response));
     }
 }
