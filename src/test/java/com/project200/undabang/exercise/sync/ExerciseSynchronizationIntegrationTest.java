@@ -18,6 +18,8 @@ import com.project200.undabang.exercise.repository.ExerciseRepository;
 import com.project200.undabang.exercise.service.ExerciseCommandService;
 import com.project200.undabang.exercise.service.impl.ExerciseCommandServiceImpl;
 import com.project200.undabang.exercise.service.impl.ExercisePictureServiceImpl;
+import com.project200.undabang.exercise.sync.entity.ExerciseReceipt;
+import com.project200.undabang.exercise.sync.repository.ExerciseReceiptRepository;
 import com.project200.undabang.exercise.sync.repository.ExercisePhotoCleanupRepository;
 import com.project200.undabang.member.entity.Member;
 import com.project200.undabang.member.repository.MemberRepository;
@@ -48,9 +50,12 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -82,6 +87,8 @@ class ExerciseSynchronizationIntegrationTest {
     @Autowired MemberRepository memberRepository;
     @Autowired ExerciseRepository exerciseRepository;
     @Autowired ExercisePhotoCleanupRepository cleanupRepository;
+    @Autowired ExerciseReceiptRepository receiptRepository;
+    @Autowired ObjectMapper objectMapper;
     @Autowired ExercisePhotoCleanupWorker cleanupWorker;
     private ExercisePhotoCleanupScheduler cleanupScheduler;
     @Autowired EntityManager em;
@@ -493,6 +500,198 @@ class ExerciseSynchronizationIntegrationTest {
                 .map(CustomException::getErrorCode).toList()).containsExactly(ErrorCode.EXERCISE_PICTURE_COUNT_EXCEEDED);
         assertThat(activePictures(id)).isEqualTo(5);
         assertThat(snapshot(id).version()).isEqualTo(2);
+    }
+
+    @Test
+    void older_late_arrival_and_equal_clock_keep_the_newer_server_body() {
+        UUID member = member((byte) 0);
+        long id = command(member, () -> service.createExercise(clockedCreate(UUID.randomUUID(), "원본", 100L))).exerciseId();
+        command(member, () -> service.updateExercise(id, clockedUpdate(UUID.randomUUID(), 0L, "최신 본문", 300L)));
+        assertThatThrownBy(() -> command(member,
+                () -> service.updateExercise(id, clockedUpdate(UUID.randomUUID(), 1L, "늦게 도착한 과거", 200L))))
+                .isInstanceOf(ExerciseSyncConflictException.class).extracting("currentValue")
+                .isEqualTo(new ExerciseIdResponseDto(id, 1));
+        assertThatThrownBy(() -> command(member,
+                () -> service.updateExercise(id, clockedUpdate(UUID.randomUUID(), 1L, "같은 시각 다른 본문", 300L))))
+                .isInstanceOf(ExerciseSyncConflictException.class);
+        var detail = transaction(() -> exerciseRepository.findExerciseByExerciseId(member, id));
+        assertThat(detail.getExerciseTitle()).isEqualTo("최신 본문");
+        assertThat(detail.getEditedAt()).isEqualTo(300L);
+        assertThat(detail.getVersion()).isEqualTo(1);
+        assertThat(receiptCount(member)).isEqualTo(2);
+        assertThat(score(member)).isEqualTo((byte) 3);
+    }
+
+    @Test
+    void newer_body_clock_wins_with_a_stale_base_version() {
+        UUID member = member((byte) 0);
+        long id = command(member, () -> service.createExercise(clockedCreate(UUID.randomUUID(), "원본", 100L))).exerciseId();
+        command(member, () -> service.updateExercise(id, clockedUpdate(UUID.randomUUID(), 0L, "먼저 도착", 200L)));
+        var accepted = command(member,
+                () -> service.updateExercise(id, clockedUpdate(UUID.randomUUID(), 0L, "더 최근 저장", 300L)));
+        assertThat(accepted).isEqualTo(new ExerciseIdResponseDto(id, 2));
+        var detail = transaction(() -> exerciseRepository.findExerciseByExerciseId(member, id));
+        assertThat(detail.getExerciseTitle()).isEqualTo("더 최근 저장");
+        assertThat(detail.getEditedAt()).isEqualTo(300L);
+        assertThat(detail.getVersion()).isEqualTo(2);
+    }
+
+    @Test
+    void photo_upload_and_deletion_change_version_but_never_the_body_clock_or_body_order() {
+        UUID member = member((byte) 0);
+        long id = command(member, () -> service.createExercise(clockedCreate(UUID.randomUUID(), "본문", 100L))).exerciseId();
+        var uploaded = command(member, () -> service.uploadExerciseImages(id, List.of(file("1.jpg", 1)),
+                UUID.randomUUID(), List.of(UUID.randomUUID())));
+        assertThat(uploaded.version()).isEqualTo(1);
+        assertThat(transaction(() -> exerciseRepository.findExerciseByExerciseId(member, id)).getEditedAt()).isEqualTo(100L);
+        command(member, () -> service.deleteImages(id, List.of(uploaded.pictures().getFirst().pictureId()), UUID.randomUUID()));
+        assertThat(transaction(() -> exerciseRepository.findExerciseByExerciseId(member, id)).getEditedAt()).isEqualTo(100L);
+        var accepted = command(member,
+                () -> service.updateExercise(id, clockedUpdate(UUID.randomUUID(), 0L, "사진과 독립인 최신 본문", 200L)));
+        assertThat(accepted.version()).isEqualTo(3);
+        assertThat(activePictures(id)).isZero();
+        assertThat(transaction(() -> exerciseRepository.findExerciseByExerciseId(member, id)).getEditedAt()).isEqualTo(200L);
+    }
+
+    @Test
+    void unknown_legacy_clock_requires_matching_cas_before_initialization() {
+        UUID member = member((byte) 0);
+        long id = command(member, () -> service.createExercise(create(UUID.randomUUID(), "과거 본문", START))).exerciseId();
+        assertThat(transaction(() -> exerciseRepository.findExerciseByExerciseId(member, id)).getEditedAt()).isNull();
+        command(member, () -> service.uploadExerciseImages(id, List.of(file("1.jpg", 1)),
+                UUID.randomUUID(), List.of(UUID.randomUUID())));
+        assertThatThrownBy(() -> command(member,
+                () -> service.updateExercise(id, clockedUpdate(UUID.randomUUID(), 0L, "순서 추측 금지", 300L))))
+                .isInstanceOf(ExerciseSyncConflictException.class);
+        assertThat(transaction(() -> exerciseRepository.findExerciseByExerciseId(member, id)).getEditedAt()).isNull();
+        command(member, () -> service.updateExercise(id, clockedUpdate(UUID.randomUUID(), 1L, "확인 후 저장", 200L)));
+        var detail = transaction(() -> exerciseRepository.findExerciseByExerciseId(member, id));
+        assertThat(detail.getEditedAt()).isEqualTo(200L);
+        assertThat(detail.getVersion()).isEqualTo(2);
+        assertThat(activePictures(id)).isEqualTo(1);
+    }
+
+    @Test
+    void unclocked_writes_keep_cas_and_only_a_changed_body_clears_a_known_clock() {
+        UUID member = member((byte) 0);
+        long id = command(member, () -> service.createExercise(clockedCreate(UUID.randomUUID(), "본문", 100L))).exerciseId();
+        command(member, () -> service.updateExercise(id, update(UUID.randomUUID(), 0L, "본문")));
+        assertThat(transaction(() -> exerciseRepository.findExerciseByExerciseId(member, id)).getEditedAt()).isEqualTo(100L);
+        command(member, () -> service.updateExercise(id, clockedUpdate(UUID.randomUUID(), 0L, "본문", 200L)));
+        assertThat(snapshot(id).version()).isEqualTo(1);
+        assertThatThrownBy(() -> command(member, () -> service.updateExercise(id, update(UUID.randomUUID(), 0L, "오래된 CAS"))))
+                .isInstanceOf(ExerciseSyncConflictException.class);
+        command(member, () -> service.updateExercise(id, update(UUID.randomUUID(), 1L, "시각 없는 변경")));
+        assertThat(transaction(() -> exerciseRepository.findExerciseByExerciseId(member, id)).getEditedAt()).isNull();
+        assertThatThrownBy(() -> command(member,
+                () -> service.updateExercise(id, clockedUpdate(UUID.randomUUID(), 1L, "순서 불명", 500L))))
+                .isInstanceOf(ExerciseSyncConflictException.class);
+        command(member, () -> service.updateExercise(id, clockedUpdate(UUID.randomUUID(), 2L, "새 저장", 300L)));
+        command(member, () -> service.updateExercise(id, update(null, null, "메타데이터 없는 변경")));
+        assertThat(transaction(() -> exerciseRepository.findExerciseByExerciseId(member, id)).getEditedAt()).isNull();
+    }
+
+    @Test
+    void clocked_success_receipts_replay_before_later_edits_and_deletion_but_changed_clocks_reuse_no_key() {
+        UUID member = member((byte) 0);
+        UUID createKey = UUID.randomUUID();
+        var create = clockedCreate(createKey, "생성", 100L);
+        var created = command(member, () -> service.createExercise(create));
+        long id = created.exerciseId();
+        UUID editKey = UUID.randomUUID();
+        var edit = clockedUpdate(editKey, 0L, "편집", 200L);
+        var edited = command(member, () -> service.updateExercise(id, edit));
+        command(member, () -> service.updateExercise(id, clockedUpdate(UUID.randomUUID(), 0L, "후속 편집", 300L)));
+        assertThat(command(member, () -> service.updateExercise(id, edit))).isEqualTo(edited);
+        assertThat(snapshot(id).title()).isEqualTo("후속 편집");
+        command(member, () -> service.deleteExercise(id, UUID.randomUUID()));
+        assertThat(command(member, () -> service.createExercise(create))).isEqualTo(created);
+        assertThat(command(member, () -> service.updateExercise(id, edit))).isEqualTo(edited);
+        assertError(() -> command(member, () -> service.createExercise(clockedCreate(createKey, "생성", 101L))),
+                ErrorCode.EXERCISE_REQUEST_ID_REUSED);
+        assertError(() -> command(member, () -> service.updateExercise(id, clockedUpdate(editKey, 0L, "편집", 201L))),
+                ErrorCode.EXERCISE_REQUEST_ID_REUSED);
+        assertError(() -> command(member, () -> service.updateExercise(id, clockedUpdate(UUID.randomUUID(), 0L, "복원 금지", 999L))),
+                ErrorCode.EXERCISE_DELETED);
+        assertThat(snapshot(id).deleted()).isTrue();
+        assertThat(transaction(() -> exerciseRepository.findById(id).orElseThrow().getEditedAt())).isEqualTo(300L);
+        assertThat(score(member)).isEqualTo((byte) 3);
+    }
+
+    @Test
+    void pre_clock_receipt_fingerprints_and_json_still_replay_byte_compatible_requests() throws Exception {
+        UUID member = member((byte) 0);
+        var created = command(member, () -> service.createExercise(create(null, "과거 생성", START)));
+        long id = created.exerciseId();
+        UUID createKey = UUID.randomUUID();
+        UUID editKey = UUID.randomUUID();
+        var legacyEdit = update(editKey, 0L, "과거 편집");
+        var edited = command(member, () -> service.updateExercise(id, update(null, null, "과거 편집")));
+        // 현재 fingerprint 구현을 호출하지 않고 배포된 배열 순서와 원본 JSON으로 과거 영수증을 만듭니다.
+        String createFingerprint = legacyFingerprint("과거 생성", null, null, null, START, START.plusHours(1));
+        String editFingerprint = legacyFingerprint(0L, "과거 편집", null, null, null, START, START.plusHours(1));
+        transaction(() -> {
+            Member owner = memberRepository.findById(member).orElseThrow();
+            receiptRepository.save(ExerciseReceipt.of(owner, createKey, ExerciseOperation.CREATE, null, createFingerprint,
+                    "{\"exerciseId\":" + id + ",\"earnedPoints\":3,\"version\":0}"));
+            receiptRepository.save(ExerciseReceipt.of(owner, editKey, ExerciseOperation.UPDATE, id, editFingerprint,
+                    "{\"exerciseId\":" + id + ",\"version\":1}"));
+            return null;
+        });
+        command(member, () -> service.deleteExercise(id, UUID.randomUUID()));
+        assertThat(command(member, () -> service.createExercise(create(createKey, "과거 생성", START)))).isEqualTo(created);
+        assertThat(command(member, () -> service.updateExercise(id, legacyEdit))).isEqualTo(edited);
+        assertError(() -> command(member, () -> service.createExercise(clockedCreate(createKey, "과거 생성", 100L))),
+                ErrorCode.EXERCISE_REQUEST_ID_REUSED);
+        assertError(() -> command(member, () -> service.updateExercise(id, clockedUpdate(editKey, 0L, "과거 편집", 100L))),
+                ErrorCode.EXERCISE_REQUEST_ID_REUSED);
+        assertThat(score(member)).isEqualTo((byte) 3);
+    }
+
+    @Test
+    void clocked_edits_and_receipts_remain_scoped_to_the_authenticated_owner() {
+        UUID owner = member((byte) 0);
+        UUID stranger = member((byte) 0);
+        long id = command(owner, () -> service.createExercise(clockedCreate(UUID.randomUUID(), "비공개", 100L))).exerciseId();
+        UUID editKey = UUID.randomUUID();
+        var edit = clockedUpdate(editKey, 0L, "본인 편집", 200L);
+        command(owner, () -> service.updateExercise(id, edit));
+        assertError(() -> command(stranger, () -> service.updateExercise(id, edit)), ErrorCode.AUTHORIZATION_DENIED);
+        assertError(() -> command(stranger,
+                () -> service.updateExercise(id, clockedUpdate(UUID.randomUUID(), 0L, "타인 최신 시각", Long.MAX_VALUE))),
+                ErrorCode.AUTHORIZATION_DENIED);
+        assertThat(transaction(() -> exerciseRepository.findExerciseByExerciseId(stranger, id))).isNull();
+        assertThat(snapshot(id).title()).isEqualTo("본인 편집");
+        assertThat(receiptCount(stranger)).isZero();
+    }
+
+    @Test
+    void concurrent_clocked_edits_converge_on_the_later_user_save() throws Exception {
+        UUID member = member((byte) 0);
+        long id = command(member, () -> service.createExercise(clockedCreate(UUID.randomUUID(), "원본", 100L))).exerciseId();
+        var results = concurrent(member,
+                () -> outcome(() -> service.updateExercise(id, clockedUpdate(UUID.randomUUID(), 0L, "이른 저장", 200L))),
+                () -> outcome(() -> service.updateExercise(id, clockedUpdate(UUID.randomUUID(), 0L, "늦은 저장", 300L))));
+        assertThat(results.getLast()).isInstanceOf(ExerciseIdResponseDto.class);
+        assertThat(results.getFirst()).isInstanceOfAny(ExerciseIdResponseDto.class, ExerciseSyncConflictException.class);
+        var detail = transaction(() -> exerciseRepository.findExerciseByExerciseId(member, id));
+        assertThat(detail.getExerciseTitle()).isEqualTo("늦은 저장");
+        assertThat(detail.getEditedAt()).isEqualTo(300L);
+    }
+
+    private String legacyFingerprint(Object... fields) throws Exception {
+        return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                .digest(objectMapper.writeValueAsString(fields).getBytes(StandardCharsets.UTF_8)));
+    }
+
+    private CreateExerciseRequestDto clockedCreate(UUID key, String title, Long editedAt) {
+        return CreateExerciseRequestDto.builder().createRequestId(key).editedAt(editedAt).exerciseTitle(title)
+                .exerciseStartedAt(START).exerciseEndedAt(START.plusHours(1)).build();
+    }
+
+    private UpdateExerciseRequestDto clockedUpdate(UUID key, Long version, String title, Long editedAt) {
+        return UpdateExerciseRequestDto.builder().editId(key).baseVersion(version).editedAt(editedAt).exerciseTitle(title)
+                .exerciseStartedAt(START).exerciseEndedAt(START.plusHours(1)).build();
     }
 
     private UUID member(byte score) {

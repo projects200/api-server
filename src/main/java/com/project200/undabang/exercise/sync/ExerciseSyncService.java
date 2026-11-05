@@ -85,6 +85,16 @@ public class ExerciseSyncService {
         return HexFormat.of().formatHex(digest().digest(json(fields).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
     }
 
+    /** 시각 없는 기존 요청의 배열과 해시 바이트를 유지하고, 제공한 시각만 마지막 필드에 추가합니다. */
+    public String bodyFingerprint(Long editedAt, Object... fields) {
+        if (editedAt == null) {
+            return fingerprint(fields);
+        }
+        Object[] clockedFields = Arrays.copyOf(fields, fields.length + 1);
+        clockedFields[fields.length] = editedAt;
+        return fingerprint(clockedFields);
+    }
+
     public String pictureFingerprint(List<MultipartFile> files, List<UUID> clientImageIds) {
         List<Object> fields = new ArrayList<>();
         for (int index = 0; index < files.size(); index++) {
@@ -101,8 +111,15 @@ public class ExerciseSyncService {
         return fingerprint(fields);
     }
 
-    public static void validateEdit(UUID editId, Long baseVersion) {
-        if ((editId == null) != (baseVersion == null) || (baseVersion != null && baseVersion < 0)) {
+    public static void validateCreate(UUID createRequestId, Long editedAt) {
+        if (editedAt != null && (editedAt <= 0 || createRequestId == null)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+    }
+
+    public static void validateEdit(UUID editId, Long baseVersion, Long editedAt) {
+        if ((editId == null) != (baseVersion == null) || (baseVersion != null && baseVersion < 0)
+                || (editedAt != null && (editedAt <= 0 || editId == null || baseVersion == null))) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
         }
     }
