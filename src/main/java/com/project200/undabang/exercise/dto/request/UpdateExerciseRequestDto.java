@@ -2,6 +2,7 @@ package com.project200.undabang.exercise.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.validation.constraints.AssertTrue;
 import com.project200.undabang.common.validation.StartBeforeEnd;
 import jakarta.validation.constraints.NotBlank;
@@ -22,12 +23,16 @@ public class UpdateExerciseRequestDto {
     private UUID editId;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Long baseVersion;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonDeserialize(using = ExerciseEditedAtDeserializer.class)
+    private Long editedAt;
 
     @JsonIgnore
-    @AssertTrue(message = "editId와 0 이상의 baseVersion을 함께 입력해주세요.")
+    @AssertTrue(message = "editId와 0 이상의 baseVersion을 함께 입력하고 editedAt은 양수로 입력해주세요.")
     public boolean isSyncMetadataValid() {
-        return (editId == null && baseVersion == null)
-                || (editId != null && baseVersion != null && baseVersion >= 0);
+        return ((editId == null && baseVersion == null)
+                || (editId != null && baseVersion != null && baseVersion >= 0))
+                && (editedAt == null || (editedAt > 0 && editId != null && baseVersion != null));
     }
 
     @Size(max = 255)

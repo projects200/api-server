@@ -1,5 +1,6 @@
 package com.project200.undabang.exercise.controller;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.project200.undabang.common.web.exception.CustomException;
 import com.project200.undabang.common.web.exception.ErrorCode;
 import com.project200.undabang.configuration.AbstractRestDocSupport;
@@ -40,36 +41,44 @@ class ExerciseSyncControllerTest extends AbstractRestDocSupport {
     @MockitoBean ExerciseCommandService service;
     private final UUID memberId = UUID.randomUUID();
     private static final LocalDateTime START = LocalDateTime.of(2025, 5, 1, 10, 0);
+    private static final long EDITED_AT = 1793869597994L;
 
     @Test
     void syncCreation() throws Exception {
-        var request = CreateExerciseRequestDto.builder().createRequestId(UUID.randomUUID()).exerciseTitle("오프라인 운동")
-                .exerciseStartedAt(START).exerciseEndedAt(START.plusHours(1)).build();
+        var request = CreateExerciseRequestDto.builder().createRequestId(UUID.randomUUID()).editedAt(EDITED_AT)
+                .exerciseTitle("오프라인 운동").exerciseStartedAt(START).exerciseEndedAt(START.plusHours(1)).build();
         when(service.createExercise(any())).thenReturn(new CreateExerciseResponseDto(1L, (byte) 3, 0));
         mockMvc.perform(post("/api/v1/exercises").headers(getCommonApiHeaders(memberId))
                         .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated()).andExpect(jsonPath("data.earnedPoints").value(3))
                 .andExpect(jsonPath("data.version").value(0))
                 .andDo(document.document(requestFields(textFields(
-                                fieldWithPath("createRequestId").type(JsonFieldType.STRING).description("불변 생성 UUID. 동일 본문 재시도는 원본 응답 재생"))),
+                                fieldWithPath("createRequestId").type(JsonFieldType.STRING).description("불변 생성 UUID. 동일 본문 재시도는 원본 응답 재생"),
+                                fieldWithPath("editedAt").type(JsonFieldType.NUMBER).optional()
+                                        .description("사용자 저장 시 고정한 양수 UTC epoch 밀리초. createRequestId 필수"))),
                         responseFields(RestDocsUtils.commonResponseFields(
                                 fieldWithPath("data.exerciseId").description("서버 기록 ID"),
                                 fieldWithPath("data.earnedPoints").description("이 생성에서 확정된 실제 점수"),
                                 fieldWithPath("data.version").description("초기 버전 0")))));
-        verify(service).createExercise(argThat(dto -> dto.getCreateRequestId().equals(request.getCreateRequestId())));
+        verify(service).createExercise(argThat(dto -> dto.getCreateRequestId().equals(request.getCreateRequestId())
+                && dto.getEditedAt().equals(EDITED_AT)));
     }
 
     @Test
     void syncEdit() throws Exception {
-        var request = edit(UUID.randomUUID(), 2L);
-        when(service.updateExercise(eq(1L), any())).thenReturn(new ExerciseIdResponseDto(1L, 3));
+        var request = clockedEdit(UUID.randomUUID(), 2L, EDITED_AT);
+        when(service.updateExercise(eq(1L), any())).thenReturn(new ExerciseIdResponseDto(1L, 5));
         mockMvc.perform(patch("/api/v1/exercises/{exerciseId}", 1).headers(getCommonApiHeaders(memberId))
                         .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk()).andExpect(jsonPath("data.version").value(3))
+                .andExpect(status().isOk()).andExpect(jsonPath("data.version").value(5))
                 .andDo(document.document(requestFields(textFields(
                                 fieldWithPath("editId").description("불변 편집 UUID"),
-                                fieldWithPath("baseVersion").description("편집 기준 버전. 서버와 일치해야 함"))), responseFields(mutationFields())));
-        verify(service).updateExercise(eq(1L), argThat(dto -> dto.getBaseVersion() == 2L && dto.getEditId().equals(request.getEditId())));
+                                fieldWithPath("baseVersion").description("편집 기준 버전. 시각 불명 또는 시각 없는 요청은 일치 필수"),
+                                fieldWithPath("editedAt").type(JsonFieldType.NUMBER).optional()
+                                        .description("양수 UTC epoch 밀리초. 서버 본문 시각보다 엄격히 최신이면 오래된 기준 버전도 허용"))),
+                        responseFields(mutationFields())));
+        verify(service).updateExercise(eq(1L), argThat(dto -> dto.getBaseVersion() == 2L
+                && dto.getEditId().equals(request.getEditId()) && dto.getEditedAt().equals(EDITED_AT)));
     }
 
     @Test
@@ -103,6 +112,49 @@ class ExerciseSyncControllerTest extends AbstractRestDocSupport {
                 mode.equals("editOnly") ? null : mode.equals("negative") ? -1L : 0L);
         mockMvc.perform(patch("/api/v1/exercises/1").headers(getCommonApiHeaders(memberId))
                         .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("code").value("INVALID_INPUT_VALUE"));
+        verifyNoInteractions(service);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"withoutKey", "zero", "negative"})
+    void invalidCreateClockIsRejectedBeforeCallingService(String mode) throws Exception {
+        var request = CreateExerciseRequestDto.builder()
+                .createRequestId(mode.equals("withoutKey") ? null : UUID.randomUUID())
+                .editedAt(mode.equals("zero") ? 0L : mode.equals("negative") ? -1L : EDITED_AT)
+                .exerciseTitle("생성").exerciseStartedAt(START).exerciseEndedAt(START.plusHours(1)).build();
+        mockMvc.perform(post("/api/v1/exercises").headers(getCommonApiHeaders(memberId))
+                        .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("code").value("INVALID_INPUT_VALUE"));
+        verifyNoInteractions(service);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"withoutMetadata", "withoutKey", "withoutVersion", "zero", "negative"})
+    void invalidEditClockIsRejectedBeforeCallingService(String mode) throws Exception {
+        var request = clockedEdit(mode.equals("withoutMetadata") || mode.equals("withoutKey") ? null : UUID.randomUUID(),
+                mode.equals("withoutMetadata") || mode.equals("withoutVersion") ? null : 0L,
+                mode.equals("zero") ? 0L : mode.equals("negative") ? -1L : EDITED_AT);
+        mockMvc.perform(patch("/api/v1/exercises/1").headers(getCommonApiHeaders(memberId))
+                        .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("code").value("INVALID_INPUT_VALUE"));
+        verifyNoInteractions(service);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"1.5", "\"100\"", "true", "9223372036854775808", "{}", "[]"})
+    void nonIntegralOrOverflowClockIsRejectedWithoutCoercion(String clockJson) throws Exception {
+        var create = CreateExerciseRequestDto.builder().createRequestId(UUID.randomUUID()).exerciseTitle("생성")
+                .exerciseStartedAt(START).exerciseEndedAt(START.plusHours(1)).build();
+        ObjectNode createJson = objectMapper.valueToTree(create);
+        createJson.set("editedAt", objectMapper.readTree(clockJson));
+        ObjectNode editJson = objectMapper.valueToTree(edit(UUID.randomUUID(), 0L));
+        editJson.set("editedAt", objectMapper.readTree(clockJson));
+        mockMvc.perform(post("/api/v1/exercises").headers(getCommonApiHeaders(memberId))
+                        .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(createJson)))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("code").value("INVALID_INPUT_VALUE"));
+        mockMvc.perform(patch("/api/v1/exercises/1").headers(getCommonApiHeaders(memberId))
+                        .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(editJson)))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("code").value("INVALID_INPUT_VALUE"));
         verifyNoInteractions(service);
     }
@@ -206,6 +258,11 @@ class ExerciseSyncControllerTest extends AbstractRestDocSupport {
 
     private UpdateExerciseRequestDto edit(UUID key, Long version) {
         return UpdateExerciseRequestDto.builder().editId(key).baseVersion(version).exerciseTitle("편집")
+                .exerciseStartedAt(START).exerciseEndedAt(START.plusHours(1)).build();
+    }
+
+    private UpdateExerciseRequestDto clockedEdit(UUID key, Long version, Long editedAt) {
+        return UpdateExerciseRequestDto.builder().editId(key).baseVersion(version).editedAt(editedAt).exerciseTitle("편집")
                 .exerciseStartedAt(START).exerciseEndedAt(START.plusHours(1)).build();
     }
 

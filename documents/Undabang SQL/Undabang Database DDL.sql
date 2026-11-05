@@ -232,6 +232,7 @@ create table if not exists exercises
     exercise_deleted_at    datetime                                                   null,
     exercise_location      varchar(255)                                               null,
     version                bigint default 0                                           not null,
+    edited_at              bigint                                                     null,
     constraint FK_ex_member
         foreign key (member_id) references members (member_id)
 );

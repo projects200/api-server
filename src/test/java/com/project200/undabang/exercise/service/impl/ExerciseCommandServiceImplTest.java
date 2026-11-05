@@ -128,6 +128,28 @@ class ExerciseCommandServiceImplTest {
     }
 
     @Test
+    void invalid_clock_and_missing_clock_idempotency_metadata_are_rejected_at_the_service_boundary() {
+        for (long clock : new long[]{0L, -1L}) {
+            var create = CreateExerciseRequestDto.builder().createRequestId(UUID.randomUUID()).editedAt(clock)
+                    .exerciseTitle("생성").exerciseStartedAt(START).exerciseEndedAt(START.plusHours(1)).build();
+            var edit = UpdateExerciseRequestDto.builder().editId(UUID.randomUUID()).baseVersion(0L).editedAt(clock)
+                    .exerciseTitle("편집").exerciseStartedAt(START).exerciseEndedAt(START.plusHours(1)).build();
+            assertError(() -> service.createExercise(create), ErrorCode.INVALID_INPUT_VALUE);
+            assertError(() -> service.updateExercise(1L, edit), ErrorCode.INVALID_INPUT_VALUE);
+        }
+        var createWithoutKey = CreateExerciseRequestDto.builder().editedAt(100L).exerciseTitle("생성")
+                .exerciseStartedAt(START).exerciseEndedAt(START.plusHours(1)).build();
+        assertError(() -> service.createExercise(createWithoutKey), ErrorCode.INVALID_INPUT_VALUE);
+        for (var edit : List.of(
+                UpdateExerciseRequestDto.builder().editedAt(100L).build(),
+                UpdateExerciseRequestDto.builder().editId(UUID.randomUUID()).editedAt(100L).build(),
+                UpdateExerciseRequestDto.builder().baseVersion(0L).editedAt(100L).build())) {
+            assertError(() -> service.updateExercise(1L, edit), ErrorCode.INVALID_INPUT_VALUE);
+        }
+        verifyNoInteractions(scoreService, receiptRepository);
+    }
+
+    @Test
     void stale_edit_reports_current_version_without_changing_text() {
         exercise.incrementVersion();
         assertThatThrownBy(() -> service.updateExercise(1L, update("덮어쓰기", UUID.randomUUID(), 0L)))

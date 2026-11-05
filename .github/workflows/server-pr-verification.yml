@@ -1,6 +1,8 @@
 name: Server PR verification
 
 on:
+  push:
+    branches: [feat/exercise-edit-clock-android-656]
   pull_request:
     branches: [develop]
 
@@ -8,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: server-pr-${{ github.event.pull_request.number }}
+  group: server-pr-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -33,7 +35,13 @@ jobs:
       - name: Require Docker for existing LocalStack and WireMock support
         run: docker info
       - name: Run all tests, REST Docs and global LINE coverage gate
-        run: bash gradlew --no-daemon --continue -DrequireIntegrationTests=true test jacocoTestReport jacocoTestCoverageVerification asciidoctor
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p build/ci
+          bash gradlew --no-daemon --console=plain --continue -DrequireIntegrationTests=true \
+            test jacocoTestReport jacocoTestCoverageVerification asciidoctor \
+            2>&1 | tee build/ci/verification-tasks.log
       - name: Upload test and coverage evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -42,6 +50,7 @@ jobs:
           if-no-files-found: warn
           path: |
             build/test-results/test/**
+            build/ci/verification-tasks.log
             build/reports/tests/test/**
             build/reports/jacoco/test/**
             build/generated-snippets/**

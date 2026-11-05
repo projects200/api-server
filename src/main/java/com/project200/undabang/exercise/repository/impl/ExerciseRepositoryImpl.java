@@ -67,7 +67,8 @@ public class ExerciseRepositoryImpl implements ExerciseRepositoryCustom {
                         exercise.exerciseStartedAt,
                         exercise.exerciseEndedAt,
                         exercise.exerciseLocation,
-                        exercise.version))
+                        exercise.version,
+                        exercise.editedAt))
                 .from(exercise)
                 .where(exercise.member.memberId.eq(memberId),
                         exercise.id.eq(recordId),

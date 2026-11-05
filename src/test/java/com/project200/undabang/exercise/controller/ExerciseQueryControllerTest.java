@@ -28,11 +28,13 @@ import java.util.*;
 import static com.project200.undabang.configuration.DocumentFormatGenerator.getTypeFormat;
 import static com.project200.undabang.configuration.HeadersGenerator.getCommonApiHeaders;
 import static com.project200.undabang.configuration.RestDocsUtils.*;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ExerciseQueryController.class)
@@ -83,6 +85,7 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
         respDto.setExerciseStartedAt(currentTime);
         respDto.setExerciseEndedAt(currentTime.plusHours(12));
         respDto.setPictureDataList(Optional.of(pictureDataResponseList));
+        respDto.setEditedAt(1793869597994L);
 
 
         given(exerciseQueryService.findExerciseRecordByRecordId(recordId)).willReturn(respDto);
@@ -94,6 +97,7 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
                         .accept(MediaType.APPLICATION_JSON)
                         .headers(getCommonApiHeaders(memberId)))
                 .andExpectAll(status().isOk())
+                .andExpect(jsonPath("data.editedAt").value(1793869597994L))
                 .andDo(this.document.document(
                         requestHeaders(HEADER_ACCESS_TOKEN),
                         pathParameters(
@@ -102,6 +106,8 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
                         ),
                         responseFields(commonResponseFields(
                                 fieldWithPath("data.version").type(JsonFieldType.NUMBER).description("현재 서버 버전"),
+                                fieldWithPath("data.editedAt").type(JsonFieldType.NUMBER).optional()
+                                        .description("본문 사용자 저장 시각(양수 UTC epoch 밀리초). 과거 시각을 모르면 null이며 사진 변경과 독립입니다."),
                                 fieldWithPath("data.exerciseTitle").type(JsonFieldType.STRING)
                                         .description("운동 제목입니다."),
                                 fieldWithPath("data.exerciseDetail").type(JsonFieldType.STRING)
@@ -163,10 +169,13 @@ class ExerciseQueryControllerTest extends AbstractRestDocSupport {
                         .accept(MediaType.APPLICATION_JSON)
                         .headers(getCommonApiHeaders(memberId)))
                 .andExpectAll(status().isOk())
+                .andExpect(jsonPath("data.editedAt").value(nullValue()))
                 .andDo(this.document.document(
                         requestHeaders(HEADER_ACCESS_TOKEN),
                         responseFields(commonResponseFields(
                                 fieldWithPath("data.version").type(JsonFieldType.NUMBER).description("현재 서버 버전"),
+                                fieldWithPath("data.editedAt").type(JsonFieldType.NULL).optional()
+                                        .description("과거 본문 편집 시각을 알 수 없어 null입니다. 현재 시각이나 0으로 대체하지 않습니다."),
                                 fieldWithPath("data.exerciseTitle").type(JsonFieldType.STRING).description("운동 제목"),
                                 fieldWithPath("data.exerciseDetail").type(JsonFieldType.STRING).description("운동 내용"),
                                 fieldWithPath("data.exercisePersonalType").type(JsonFieldType.STRING).description("운동 종류"),

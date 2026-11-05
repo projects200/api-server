@@ -73,6 +73,10 @@ public class Exercise {
     @ColumnDefault("0")
     private long version;
 
+    /** 본문을 저장한 기기 시각(UTC epoch 밀리초). 과거 기록과 시각 없는 변경은 알 수 없습니다. */
+    @Column(name = "edited_at")
+    private Long editedAt;
+
     public void incrementVersion() {
         version++;
     }
@@ -87,15 +91,21 @@ public class Exercise {
             String exercisePersonalType,
             String exerciseLocation,
             LocalDateTime exerciseStartedAt,
-            LocalDateTime exerciseEndedAt) {
+            LocalDateTime exerciseEndedAt,
+            Long editedAt) {
 
-        if (!java.util.Objects.equals(this.exerciseTitle, exerciseTitle)
+        boolean bodyChanged = !java.util.Objects.equals(this.exerciseTitle, exerciseTitle)
                 || !java.util.Objects.equals(this.exerciseDetail, exerciseDetail)
                 || !java.util.Objects.equals(this.exercisePersonalType, exercisePersonalType)
                 || !java.util.Objects.equals(this.exerciseLocation, exerciseLocation)
                 || !java.util.Objects.equals(this.exerciseStartedAt, exerciseStartedAt)
-                || !java.util.Objects.equals(this.exerciseEndedAt, exerciseEndedAt)) {
+                || !java.util.Objects.equals(this.exerciseEndedAt, exerciseEndedAt);
+        if (bodyChanged || (editedAt != null && !java.util.Objects.equals(this.editedAt, editedAt))) {
             incrementVersion();
+        }
+        // 시각 없는 실제 본문 변경은 과거 시각을 재사용하지 않습니다. 사진 변경은 이 필드를 건드리지 않습니다.
+        if (bodyChanged || editedAt != null) {
+            this.editedAt = editedAt;
         }
         this.exerciseTitle = exerciseTitle;
         this.exerciseDetail = exerciseDetail;

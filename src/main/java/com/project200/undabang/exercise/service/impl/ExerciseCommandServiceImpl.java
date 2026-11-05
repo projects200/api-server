@@ -38,9 +38,10 @@ public class ExerciseCommandServiceImpl implements ExerciseCommandService {
     @Override
     @Transactional
     public CreateExerciseResponseDto createExercise(CreateExerciseRequestDto request) {
+        ExerciseSyncService.validateCreate(request.getCreateRequestId(), request.getEditedAt());
         Member member = syncService.lockMember(UserContextHolder.getUserId());
-        String fingerprint = request.getCreateRequestId() == null ? null : syncService.fingerprint(
-                request.getExerciseTitle(), request.getExerciseDetail(), request.getExercisePersonalType(),
+        String fingerprint = request.getCreateRequestId() == null ? null : syncService.bodyFingerprint(
+                request.getEditedAt(), request.getExerciseTitle(), request.getExerciseDetail(), request.getExercisePersonalType(),
                 request.getExerciseLocation(), request.getExerciseStartedAt(), request.getExerciseEndedAt());
         var replay = syncService.replay(member, request.getCreateRequestId(), ExerciseOperation.CREATE,
                 null, fingerprint, CreateExerciseResponseDto.class);
@@ -72,10 +73,10 @@ public class ExerciseCommandServiceImpl implements ExerciseCommandService {
     @Override
     @Transactional
     public ExerciseIdResponseDto updateExercise(Long exerciseId, UpdateExerciseRequestDto request) {
-        ExerciseSyncService.validateEdit(request.getEditId(), request.getBaseVersion());
+        ExerciseSyncService.validateEdit(request.getEditId(), request.getBaseVersion(), request.getEditedAt());
         Member member = syncService.lockMember(UserContextHolder.getUserId());
-        String fingerprint = request.getEditId() == null ? null : syncService.fingerprint(
-                request.getBaseVersion(), request.getExerciseTitle(), request.getExerciseDetail(),
+        String fingerprint = request.getEditId() == null ? null : syncService.bodyFingerprint(
+                request.getEditedAt(), request.getBaseVersion(), request.getExerciseTitle(), request.getExerciseDetail(),
                 request.getExercisePersonalType(), request.getExerciseLocation(),
                 request.getExerciseStartedAt(), request.getExerciseEndedAt());
         var replay = syncService.replay(member, request.getEditId(), ExerciseOperation.UPDATE,
@@ -85,12 +86,16 @@ public class ExerciseCommandServiceImpl implements ExerciseCommandService {
         }
         Exercise exercise = syncService.ownedExercise(member.getMemberId(), exerciseId);
         syncService.requireActive(exercise);
-        if (request.getBaseVersion() != null && request.getBaseVersion() != exercise.getVersion()) {
+        // 알려진 본문 시각끼리만 순서를 비교합니다. 과거 시각이 없거나 시각 없는 요청은 기존 CAS를 유지합니다.
+        boolean conflict = request.getEditedAt() != null && exercise.getEditedAt() != null
+                ? request.getEditedAt() <= exercise.getEditedAt()
+                : request.getBaseVersion() != null && request.getBaseVersion() != exercise.getVersion();
+        if (conflict) {
             throw new ExerciseSyncConflictException(exerciseId, exercise.getVersion());
         }
         checkStartEndDate(request.getExerciseStartedAt(), request.getExerciseEndedAt());
         exercise.updateExercise(request.getExerciseTitle(), request.getExerciseDetail(), request.getExercisePersonalType(),
-                request.getExerciseLocation(), request.getExerciseStartedAt(), request.getExerciseEndedAt());
+                request.getExerciseLocation(), request.getExerciseStartedAt(), request.getExerciseEndedAt(), request.getEditedAt());
         ExerciseIdResponseDto response = new ExerciseIdResponseDto(exerciseId, exercise.getVersion());
         syncService.record(member, request.getEditId(), ExerciseOperation.UPDATE, exerciseId, fingerprint, response);
         return response;
